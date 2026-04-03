@@ -175,7 +175,7 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
                 }
 
                 return (
-                  <div key={student.name} className={cardClasses}>
+                  <div key={`${student.name}-${rank}`} className={cardClasses}>
                     <div className="relative mb-3">
                       {studentImages[student.name] ? (
                         <img src={studentImages[student.name]} alt={student.name} className={`${rank === 1 ? 'w-28 h-28' : 'w-24 h-24'} rounded-full object-cover border-4 border-white shadow-md`} />
@@ -220,7 +220,7 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
           <h2 className="text-xl font-bold mb-4 border-b pb-2">All Students</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 print:grid-cols-8 gap-2 print:gap-1">
             {results.map((student, index) => (
-              <div key={student.name} className="flex flex-col p-2 border border-gray-200 rounded-lg text-center bg-white shadow-sm print:shadow-none print:border-gray-300">
+              <div key={`${student.name}-${index}`} className="flex flex-col p-2 border border-gray-200 rounded-lg text-center bg-white shadow-sm print:shadow-none print:border-gray-300">
                 <div className="flex justify-between items-start mb-1">
                   <span className="text-[10px] font-bold text-gray-400">#{index + 1}</span>
                   <span className="text-sm font-black text-indigo-600">{calculateScore(student)}</span>

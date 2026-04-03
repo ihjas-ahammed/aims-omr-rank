@@ -117,7 +117,7 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
 
           return (
             <div 
-              key={student.name}
+              key={`${student.name}-${index}`}
               onClick={() => onStudentClick(student)}
               className={`relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${cardBg} ${spanClass}`}
             >
