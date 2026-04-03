@@ -1,0 +1,5 @@
+{
+  "name": "OMR Checker Pro",
+  "description": "Evaluate OMR sheets using Gemini AI with support for bulk uploads, custom rules, and CSV export.",
+  "requestFramePermissions": ["camera"]
+}
