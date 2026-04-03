@@ -101,32 +101,34 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
           const isTop3 = index < 3;
           let cardBg = 'bg-white border-gray-200';
           let rankColor = 'text-gray-500';
+          let spanClass = '';
           
           if (index === 0) {
-            cardBg = 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-300';
-            rankColor = 'text-yellow-600';
+            cardBg = 'bg-gradient-to-br from-yellow-100 to-yellow-200 border-yellow-400 shadow-yellow-100';
+            rankColor = 'text-yellow-700';
+            spanClass = 'md:col-span-2 md:row-span-2';
           } else if (index === 1) {
-            cardBg = 'bg-gradient-to-br from-gray-50 to-gray-200 border-gray-300';
-            rankColor = 'text-gray-600';
+            cardBg = 'bg-gradient-to-br from-gray-100 to-gray-200 border-gray-400';
+            rankColor = 'text-gray-700';
           } else if (index === 2) {
-            cardBg = 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-300';
-            rankColor = 'text-orange-600';
+            cardBg = 'bg-gradient-to-br from-orange-100 to-orange-200 border-orange-400';
+            rankColor = 'text-orange-700';
           }
 
           return (
             <div 
               key={student.name}
               onClick={() => onStudentClick(student)}
-              className={`relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${cardBg}`}
+              className={`relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${cardBg} ${spanClass}`}
             >
-              <div className="absolute top-0 right-0 bg-black/5 px-3 py-1 rounded-bl-xl font-bold text-lg">
+              <div className={`absolute top-0 right-0 bg-black/5 px-4 py-1.5 rounded-bl-xl font-black text-lg ${rankColor}`}>
                 #{index + 1}
               </div>
 
-              <div className="flex items-center gap-4 mb-4">
+              <div className={`flex items-center gap-4 mb-4 ${index === 0 ? 'md:flex-col md:items-start md:gap-6' : ''}`}>
                 {isTop3 && (
                   <div 
-                    className="relative w-20 h-20 rounded-full bg-white border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden group shrink-0"
+                    className={`relative rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center overflow-hidden group shrink-0 ${index === 0 ? 'w-24 h-24 md:w-32 md:h-32' : 'w-20 h-20'}`}
                     onClick={(e) => triggerImageUpload(e, student.name)}
                   >
                     {studentImages[student.name] ? (
@@ -143,32 +145,32 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
                 )}
                 
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-lg font-bold text-gray-900 truncate" title={student.name}>
+                  <h3 className={`${index === 0 ? 'text-2xl md:text-3xl' : 'text-lg'} font-bold text-gray-900 truncate`} title={student.name}>
                     {student.name}
                   </h3>
-                  <div className="flex items-center gap-3 mt-1 text-sm">
-                    <span className="font-medium text-green-600">Right: {student.right}</span>
-                    <span className="font-medium text-red-600">Wrong: {student.wrong}</span>
+                  <div className="flex items-center gap-3 mt-2 text-sm">
+                    <span className="font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded">Correct: {student.right}</span>
+                    <span className="font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded">Wrong: {student.wrong}</span>
                   </div>
-                  <div className="text-2xl font-black mt-1 text-gray-800">
+                  <div className={`${index === 0 ? 'text-4xl' : 'text-2xl'} font-black mt-2 text-gray-800`}>
                     {calculateScore(student)} <span className="text-sm font-medium text-gray-500">pts</span>
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-3 mt-4 pt-4 border-t border-black/5">
+              <div className={`space-y-3 mt-4 pt-4 border-t ${index === 0 ? 'border-yellow-300' : 'border-black/5'}`}>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500">Chapter Progress</h4>
                 {chapters.map(chapter => {
                   const progress = calculateChapterProgress(student, chapter);
                   return (
                     <div key={chapter.name} className="space-y-1">
                       <div className="flex justify-between text-xs">
-                        <span className="text-gray-700 truncate pr-2" title={chapter.name}>{chapter.name}</span>
-                        <span className="font-medium text-gray-900">{Math.round(progress)}%</span>
+                        <span className="text-gray-700 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
+                        <span className="font-bold text-gray-900">{Math.round(progress)}%</span>
                       </div>
-                      <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                          className={`h-full rounded-full transition-all duration-500 ${index === 0 ? 'bg-yellow-500' : 'bg-blue-500'}`}
                           style={{ width: `${progress}%` }}
                         />
                       </div>

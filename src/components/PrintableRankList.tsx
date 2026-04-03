@@ -50,7 +50,8 @@ const CircularProgress = ({ percentage, chapterNumber }: { percentage: number, c
 };
 
 export default function PrintableRankList({ files, topicMapping, parsedTopicMapping, onBack }: PrintableRankListProps) {
-  const [subjectName, setSubjectName] = useState('Physics');
+  const [subjectName, setSubjectName] = useState('PHYSICS');
+  const [dayNumber, setDayNumber] = useState('4');
   const [studentImages, setStudentImages] = useState<Record<string, string>>({});
 
   const chapters: Chapter[] = parsedTopicMapping || parseTopicMapping(topicMapping);
@@ -88,6 +89,15 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
 
   const top3 = results.slice(0, 3);
 
+  // Reorder top 3 to put 1st place in the middle: [2nd, 1st, 3rd]
+  const displayTop3 = [];
+  if (top3.length > 1) displayTop3.push({ student: top3[1], rank: 2 });
+  if (top3.length > 0) displayTop3.push({ student: top3[0], rank: 1 });
+  if (top3.length > 2) displayTop3.push({ student: top3[2], rank: 3 });
+
+  // Generate the chapter/topic string
+  const chapterTopicString = chapters.map(c => c.name).join(' · ');
+
   return (
     <div className="min-h-screen bg-white text-black p-4 md:p-8">
       {/* Non-printable controls */}
@@ -107,59 +117,100 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
             Print
           </button>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
-          <input
-            type="text"
-            value={subjectName}
-            onChange={(e) => setSubjectName(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 max-w-xs w-full"
-          />
+        <div className="flex gap-4">
+          <div className="flex-1 max-w-xs">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
+            <input
+              type="text"
+              value={subjectName}
+              onChange={(e) => setSubjectName(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 w-full"
+            />
+          </div>
+          <div className="w-32">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Day</label>
+            <input
+              type="text"
+              value={dayNumber}
+              onChange={(e) => setDayNumber(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 w-full"
+            />
+          </div>
         </div>
       </div>
 
       {/* Printable Content */}
       <div className="print:m-0">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold uppercase tracking-wider">{subjectName} RANK LIST</h1>
-          <p className="text-gray-500 mt-1">Generated on {new Date().toLocaleDateString()}</p>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <img src="/logo1.png" alt="Logo 1" className="h-16 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
+            <div className="text-center flex-1">
+              <h1 className="text-xl font-bold tracking-[0.2em] text-gray-800">A I M S  P L U S  T E S T  S E R I E S  ·  C R A S H  2 0 2 6</h1>
+              <h2 className="text-2xl font-black mt-1">DAY {dayNumber} — RANK LIST</h2>
+            </div>
+            <img src="/logo2.png" alt="Logo 2" className="h-16 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
+          </div>
+          <div className="text-center text-sm font-medium text-gray-700 max-w-4xl mx-auto uppercase">
+            <span className="font-bold">{subjectName}</span> | {chapterTopicString}
+          </div>
         </div>
 
         {/* Top 3 Section */}
-        {top3.length > 0 && (
+        {displayTop3.length > 0 && (
           <div className="mb-10">
-            <h2 className="text-xl font-bold mb-4 text-center border-b pb-2">Top Performers</h2>
-            <div className="flex flex-wrap justify-center gap-6">
-              {top3.map((student, index) => (
-                <div key={student.name} className="flex flex-col items-center bg-gray-50 rounded-xl p-4 border border-gray-200 w-72">
-                  <div className="relative mb-3">
-                    {studentImages[student.name] ? (
-                      <img src={studentImages[student.name]} alt={student.name} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md" />
-                    ) : (
-                      <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-4 border-white shadow-md text-gray-400 font-bold text-2xl">
-                        {student.name.charAt(0)}
+            <div className="flex flex-wrap justify-center items-end gap-6">
+              {displayTop3.map(({ student, rank }) => {
+                let cardClasses = "flex flex-col items-center rounded-xl p-4 border shadow-sm ";
+                let badgeClasses = "absolute -bottom-2 -right-2 w-8 h-8 rounded-full text-white flex items-center justify-center font-bold border-2 border-white ";
+                
+                if (rank === 1) {
+                  cardClasses += "bg-gradient-to-br from-yellow-50 to-yellow-200 border-yellow-400 w-80 transform scale-105 z-10";
+                  badgeClasses += "bg-yellow-500";
+                } else if (rank === 2) {
+                  cardClasses += "bg-gradient-to-br from-gray-50 to-gray-200 border-gray-400 w-72";
+                  badgeClasses += "bg-gray-500";
+                } else {
+                  cardClasses += "bg-gradient-to-br from-orange-50 to-orange-200 border-orange-400 w-72";
+                  badgeClasses += "bg-orange-500";
+                }
+
+                return (
+                  <div key={student.name} className={cardClasses}>
+                    <div className="relative mb-3">
+                      {studentImages[student.name] ? (
+                        <img src={studentImages[student.name]} alt={student.name} className={`${rank === 1 ? 'w-28 h-28' : 'w-24 h-24'} rounded-full object-cover border-4 border-white shadow-md`} />
+                      ) : (
+                        <div className={`${rank === 1 ? 'w-28 h-28 text-3xl' : 'w-24 h-24 text-2xl'} rounded-full bg-white flex items-center justify-center border-4 border-white shadow-md text-gray-400 font-bold`}>
+                          {student.name.charAt(0)}
+                        </div>
+                      )}
+                      <div className={badgeClasses}>
+                        #{rank}
                       </div>
-                    )}
-                    <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold border-2 border-white">
-                      #{index + 1}
+                    </div>
+                    <h3 className={`${rank === 1 ? 'text-xl' : 'text-lg'} font-bold text-center truncate w-full`}>{student.name}</h3>
+                    <div className={`${rank === 1 ? 'text-3xl' : 'text-2xl'} font-black text-indigo-600 my-1`}>
+                      {calculateScore(student)} <span className="text-sm font-normal text-gray-600">pts</span>
+                    </div>
+                    <div className="flex gap-3 text-xs font-medium mb-2">
+                      <span className="text-green-700 bg-green-100 px-2 py-0.5 rounded">Correct: {student.right}</span>
+                      <span className="text-red-700 bg-red-100 px-2 py-0.5 rounded">Wrong: {student.wrong}</span>
+                    </div>
+                    
+                    <div className="w-full mt-2 space-y-1">
+                      {chapters.map((chapter, cIdx) => {
+                        const progress = calculateChapterProgress(student, chapter);
+                        return (
+                          <div key={cIdx} className="flex items-center justify-between text-xs">
+                            <span className="truncate pr-2 text-gray-700 font-medium">{chapter.name}</span>
+                            <span className="font-bold">{Math.round(progress)}%</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                  <h3 className="font-bold text-lg text-center truncate w-full">{student.name}</h3>
-                  <div className="text-2xl font-black text-indigo-600 my-1">{calculateScore(student)} <span className="text-sm font-normal text-gray-500">pts</span></div>
-                  
-                  <div className="w-full mt-3 space-y-1">
-                    {chapters.map((chapter, cIdx) => {
-                      const progress = calculateChapterProgress(student, chapter);
-                      return (
-                        <div key={cIdx} className="flex items-center justify-between text-xs">
-                          <span className="truncate pr-2 text-gray-600">{chapter.name}</span>
-                          <span className="font-medium">{Math.round(progress)}%</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -175,6 +226,10 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
                   <span className="text-sm font-black text-indigo-600">{calculateScore(student)}</span>
                 </div>
                 <h4 className="text-[10px] font-bold truncate mb-1" title={student.name}>{student.name}</h4>
+                <div className="flex justify-center gap-2 text-[8px] font-medium mb-1.5">
+                  <span className="text-green-600">C: {student.right}</span>
+                  <span className="text-red-600">W: {student.wrong}</span>
+                </div>
                 <div className="flex flex-wrap justify-center gap-0.5 mt-auto">
                   {chapters.map((chapter, cIdx) => (
                     <CircularProgress 
