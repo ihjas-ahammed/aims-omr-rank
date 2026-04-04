@@ -107,7 +107,6 @@ Questions 26 through 30 have not been bubbled. Ignore them.
 ### Evaluation Rules:
 - For each question Q1 to Q25, determine if the student's answer is correct, wrong, or unattempted.
 - Give 1 if correct, -1 if wrong, 0 if no answer.
-- Q17 is cancelled, so automatically give 1 point for Q17 regardless of the answer.
 - Cross marks: If a student made a mistake and used a cross mark on a bubble, evaluate their second option (the bubbled one without a cross). If they only have one cross mark and no other bubble, skip the question (give 0).
 - Extract the student's NAME from the sheet.
 - Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).

@@ -6,6 +6,7 @@ import RankList from './components/RankList';
 import StudentDetail from './components/StudentDetail';
 import PrintableRankList from './components/PrintableRankList';
 import TopicEditor from './components/TopicEditor';
+import ReviewModal from './components/ReviewModal';
 
 interface ProcessedFile {
   id: string;
@@ -219,6 +220,7 @@ export default function App() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [reviewFileId, setReviewFileId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -950,7 +952,15 @@ export default function App() {
             
             <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
               {files.map((file) => (
-                <div key={file.id} className="p-4 flex items-start gap-4">
+                <div 
+                  key={file.id} 
+                  className={`p-4 flex items-start gap-4 ${file.status === 'success' ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''}`}
+                  onClick={() => {
+                    if (file.status === 'success') {
+                      setReviewFileId(file.id);
+                    }
+                  }}
+                >
                   {file.previewUrl ? (
                     <img src={file.previewUrl} alt="Preview" className="w-24 h-24 object-cover rounded-lg border border-gray-200 shrink-0" />
                   ) : (
@@ -965,7 +975,10 @@ export default function App() {
                         {file.fileName || 'Camera Capture'}
                       </h3>
                       <button 
-                        onClick={() => removeFile(file.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFile(file.id);
+                        }}
                         className="text-gray-400 hover:text-red-500"
                         disabled={file.status === 'processing'}
                       >
@@ -988,7 +1001,10 @@ export default function App() {
                         <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                         <span className="flex-1">{file.error}</span>
                         <button 
-                          onClick={() => retryFile(file.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            retryFile(file.id);
+                          }}
                           disabled={isProcessing}
                           className="ml-2 text-blue-600 hover:text-blue-800 flex items-center gap-1 disabled:opacity-50 font-medium"
                         >
@@ -1008,7 +1024,10 @@ export default function App() {
                             </span>
                           </div>
                           <button 
-                            onClick={() => recheckFile(file.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              recheckFile(file.id);
+                            }}
                             disabled={isProcessing}
                             className="text-purple-600 hover:text-purple-800 flex items-center gap-1 disabled:opacity-50 font-medium text-sm"
                           >
@@ -1040,6 +1059,20 @@ export default function App() {
           </>
         )}
       </main>
+
+      {reviewFileId && (
+        <ReviewModal
+          fileId={reviewFileId}
+          fileName={files.find(f => f.id === reviewFileId)?.fileName || ''}
+          previewUrl={files.find(f => f.id === reviewFileId)?.previewUrl}
+          result={files.find(f => f.id === reviewFileId)?.result}
+          onClose={() => setReviewFileId(null)}
+          onRetry={(id) => {
+            recheckFile(id);
+          }}
+          isProcessing={isProcessing}
+        />
+      )}
     </div>
   );
 }
