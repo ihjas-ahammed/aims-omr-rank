@@ -186,8 +186,10 @@ export default function App() {
     if (oldSaved) return oldSaved.split(',').map(k => k.trim()).filter(Boolean);
     return [''];
   });
-  const [selectedModel, setSelectedModel] = useState<string>(() => localStorage.getItem('omr_model') || 'gemini-3.1-flash-lite-preview');
-  const [availableModels, setAvailableModels] = useState<string[]>(['gemini-3.1-flash-lite-preview', 'gemini-3.1-flash-preview', 'gemini-3.1-pro-preview', 'gemini-2.5-flash', 'gemini-2.5-pro']);
+  const [liteModel, setLiteModel] = useState<string>(() => localStorage.getItem('omr_liteModel') || 'gemini-3.1-flash-lite-preview');
+  const [proModel, setProModel] = useState<string>(() => localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview');
+  const [imageResolution, setImageResolution] = useState<number>(() => parseInt(localStorage.getItem('omr_imageResolution') || '1024', 10));
+  const [availableModels, setAvailableModels] = useState<string[]>(['gemini-3.1-flash-lite-preview', 'gemini-3.1-flash-preview', 'gemini-3.1-pro-preview', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemma-2-2b-it', 'gemma-2-9b-it', 'gemma-2-27b-it']);
   const [attendanceSheet, setAttendanceSheet] = useState<string>(() => localStorage.getItem('omr_attendance') || DEFAULT_ATTENDANCE);
   const [answerKey, setAnswerKey] = useState<string>(() => localStorage.getItem('omr_answerKey') || DEFAULT_ANSWER_KEY);
   const [topicMapping, setTopicMapping] = useState<string>(() => localStorage.getItem('omr_topicMapping') || DEFAULT_TOPIC_MAPPING);
@@ -225,8 +227,16 @@ export default function App() {
   }, [apiKeys]);
 
   useEffect(() => {
-    localStorage.setItem('omr_model', selectedModel);
-  }, [selectedModel]);
+    localStorage.setItem('omr_liteModel', liteModel);
+  }, [liteModel]);
+
+  useEffect(() => {
+    localStorage.setItem('omr_proModel', proModel);
+  }, [proModel]);
+
+  useEffect(() => {
+    localStorage.setItem('omr_imageResolution', imageResolution.toString());
+  }, [imageResolution]);
 
   useEffect(() => {
     localStorage.setItem('omr_attendance', attendanceSheet);
@@ -287,8 +297,11 @@ export default function App() {
       const keys = apiKeys.filter(k => k.trim());
       const models = await fetchAvailableModels(keys);
       setAvailableModels(models);
-      if (!models.includes(selectedModel) && models.length > 0) {
-        setSelectedModel(models[0]);
+      if (!models.includes(liteModel) && models.length > 0) {
+        setLiteModel(models[0]);
+      }
+      if (!models.includes(proModel) && models.length > 0) {
+        setProModel(models[0]);
       }
       alert(`Fetched ${models.length} models successfully!`);
     } catch (error: any) {
@@ -300,7 +313,7 @@ export default function App() {
     setIsUpdatingMapping(true);
     try {
       const keys = apiKeys.filter(k => k.trim());
-      const parsed = await parseTopicMappingWithAI(topicMapping, keys, selectedModel);
+      const parsed = await parseTopicMappingWithAI(topicMapping, keys, proModel);
       setParsedTopicMapping(parsed);
       alert('Topic mapping updated successfully!');
     } catch (error: any) {
@@ -339,6 +352,57 @@ export default function App() {
       await clearImages();
       setFiles([]);
     }
+  };
+
+  const processImage = (file: File, maxResolution: number, rotation: number = 0): Promise<{ base64: string, mimeType: string }> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+      };
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('Could not get canvas context'));
+
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxResolution || height > maxResolution) {
+          if (width > height) {
+            height = Math.round((height * maxResolution) / width);
+            width = maxResolution;
+          } else {
+            width = Math.round((width * maxResolution) / height);
+            height = maxResolution;
+          }
+        }
+
+        if (rotation === 90 || rotation === 270) {
+          canvas.width = height;
+          canvas.height = width;
+        } else {
+          canvas.width = width;
+          canvas.height = height;
+        }
+
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.drawImage(img, -width / 2, -height / 2, width, height);
+
+        const mimeType = 'image/jpeg';
+        const dataUrl = canvas.toDataURL(mimeType, 0.8);
+        const base64 = dataUrl.split(',')[1];
+        resolve({ base64, mimeType });
+      };
+      
+      img.onerror = reject;
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -380,8 +444,17 @@ export default function App() {
             if (!fileObj) throw new Error('No file found in database');
           }
           
-          const base64 = await fileToBase64(fileObj);
-          const result = await evaluateOMR(base64, fileObj.type, keys, selectedModel, answerKey);
+          // Step 1: Compress image for rotation check
+          const { base64: initialBase64, mimeType } = await processImage(fileObj, imageResolution, 0);
+          
+          // Step 2: Check rotation with Lite Model
+          const rotation = await checkRotationWithAI(initialBase64, mimeType, keys, liteModel);
+          
+          // Step 3: Process image with rotation (if any) and compression
+          const { base64: finalBase64 } = await processImage(fileObj, imageResolution, rotation);
+
+          // Step 4: Evaluate with Pro Model
+          const result = await evaluateOMR(finalBase64, mimeType, keys, proModel, answerKey);
 
           setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'success', result, file: fileObj } : f));
         } catch (error: any) {
@@ -426,7 +499,7 @@ export default function App() {
       try {
         const uniqueNames = Array.from(new Set(successfulFiles.map(f => f.result!.name)));
         const keys = apiKeys.filter(k => k.trim());
-        const nameMap = await correctNamesBatch(uniqueNames, attendanceSheet, keys, selectedModel);
+        const nameMap = await correctNamesBatch(uniqueNames, attendanceSheet, keys, proModel);
         
         // Update the files in state so the UI reflects the corrected names too
         setFiles(prev => prev.map(f => {
@@ -608,27 +681,58 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              <div className="flex gap-4 items-end">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Model
+                    Lite Model (for rotation check)
                   </label>
-                  <select
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
+                  <input
+                    type="text"
+                    list="available-models"
+                    value={liteModel}
+                    onChange={(e) => setLiteModel(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {availableModels.map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
-                <button
-                  onClick={handleFetchModels}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md font-medium hover:bg-gray-200 border border-gray-300 transition-colors"
-                >
-                  Fetch Models
-                </button>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pro Model (for valuation)
+                  </label>
+                  <input
+                    type="text"
+                    list="available-models"
+                    value={proModel}
+                    onChange={(e) => setProModel(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <datalist id="available-models">
+                  {availableModels.map(m => (
+                    <option key={m} value={m} />
+                  ))}
+                </datalist>
+                <div className="md:col-span-2 flex gap-4 items-end">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Max Image Resolution: {imageResolution}px
+                    </label>
+                    <input
+                      type="range"
+                      min="500"
+                      max="2048"
+                      step="100"
+                      value={imageResolution}
+                      onChange={(e) => setImageResolution(parseInt(e.target.value, 10))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                  <button
+                    onClick={handleFetchModels}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md font-medium hover:bg-gray-200 border border-gray-300 transition-colors whitespace-nowrap h-[42px]"
+                  >
+                    Fetch Models
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

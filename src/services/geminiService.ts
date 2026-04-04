@@ -38,6 +38,53 @@ export async function fetchAvailableModels(apiKeys: string[]): Promise<string[]>
   throw lastError || new Error('Failed to fetch models');
 }
 
+export async function checkRotationWithAI(
+  imageBase64: string,
+  mimeType: string,
+  apiKeys: string[],
+  model: string
+): Promise<number> {
+  const keysToTry = getKeys(apiKeys);
+
+  const prompt = `
+Does this image need to be rotated to be upright?
+Answer with ONLY one of the following numbers: 0, 90, 180, 270.
+Where the number represents the clockwise rotation in degrees needed to make it upright.
+`;
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const key = keysToTry[(currentKeyIndex + i) % keysToTry.length];
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-flash-lite-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: imageBase64, mimeType } }
+        ],
+      });
+
+      const text = response.text?.trim() || '0';
+      const rotation = parseInt(text, 10);
+      
+      currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
+      
+      if ([0, 90, 180, 270].includes(rotation)) {
+        return rotation;
+      }
+      return 0; // Default to 0 if unexpected response
+    } catch (error: any) {
+      console.error('Error with API key in checkRotationWithAI:', error);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Failed to check rotation with all provided keys.');
+}
+
 export async function evaluateOMR(
   imageBase64: string,
   mimeType: string,
@@ -50,7 +97,6 @@ export async function evaluateOMR(
   const prompt = `
 You are an expert OMR sheet evaluator.
 Evaluate the provided OMR sheet image based on the following rules and answer key.
-Some images might be in landscape, please rotate them mentally before analysis.
 GIVE full focus on validation.
 
 ### Answer Key
@@ -61,10 +107,10 @@ Questions 26 through 30 have not been bubbled. Ignore them.
 ### Evaluation Rules:
 - For each question Q1 to Q25, determine if the student's answer is correct, wrong, or unattempted.
 - Give 1 if correct, -1 if wrong, 0 if no answer.
+- Q17 is cancelled, so automatically give 1 point for Q17 regardless of the answer.
 - Cross marks: If a student made a mistake and used a cross mark on a bubble, evaluate their second option (the bubbled one without a cross). If they only have one cross mark and no other bubble, skip the question (give 0).
 - Extract the student's NAME from the sheet.
-- Calculate total RIGHT (sum of 1s) and WRONG (count of -1s)
-- For canacelled questions give score to every student
+- Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
 `;
 
   let lastError: any;
