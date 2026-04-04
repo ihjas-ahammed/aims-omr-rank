@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, Camera, Settings, Download, Trash2, CheckCircle, XCircle, AlertCircle, Play, RefreshCw, FileImage, Loader2, Plus, Minus, RotateCcw, Trophy } from 'lucide-react';
-import { evaluateOMR, fetchAvailableModels, correctNamesBatch, parseTopicMappingWithAI, OMRResult } from './services/geminiService';
+import { evaluateOMR, fetchAvailableModels, correctNamesBatch, parseTopicMappingWithAI, checkRotationWithAI, OMRResult } from './services/geminiService';
 import { saveImage, getImage, deleteImage, clearImages } from './services/db';
 import RankList from './components/RankList';
 import StudentDetail from './components/StudentDetail';

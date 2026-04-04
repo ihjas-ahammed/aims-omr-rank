@@ -30,7 +30,7 @@ export async function fetchAvailableModels(apiKeys: string[]): Promise<string[]>
       currentKeyIndex = (currentKeyIndex + i) % keys.length;
       return data.models
         .map((m: any) => m.name.replace('models/', ''))
-        .filter((name: string) => name.includes('gemini'));
+        .filter((name: string) => name.includes('gemini') || name.includes('gemma'));
     } catch (error) {
       lastError = error;
     }
