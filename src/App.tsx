@@ -7,6 +7,7 @@ import StudentDetail from './components/StudentDetail';
 import PrintableRankList from './components/PrintableRankList';
 import TopicEditor from './components/TopicEditor';
 import ReviewModal from './components/ReviewModal';
+import PredictiveProgressBar from './components/PredictiveProgressBar';
 
 interface ProcessedFile {
   id: string;
@@ -14,6 +15,8 @@ interface ProcessedFile {
   file?: File;
   previewUrl?: string;
   status: 'pending' | 'processing' | 'success' | 'error';
+  attempt?: number;
+  maxAttempts?: number;
   result?: OMRResult;
   error?: string;
 }
@@ -234,6 +237,7 @@ export default function App() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const answerKeyFileInputRef = useRef<HTMLInputElement>(null);
   const topicMappingFileInputRef = useRef<HTMLInputElement>(null);
+  const averageTimeRef = useRef<number>(8000); // Default 8 seconds per attempt
 
   useEffect(() => {
     localStorage.setItem('omr_apiKeysList', JSON.stringify(apiKeys));
@@ -484,7 +488,7 @@ export default function App() {
       while (currentIndex < pendingIds.length) {
         const id = pendingIds[currentIndex++];
         
-        setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'processing', error: undefined } : f));
+        setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'processing', error: undefined, attempt: 1, maxAttempts: sampling + 3 } : f));
 
         try {
           const currentFile = files.find(f => f.id === id);
@@ -506,10 +510,17 @@ export default function App() {
           let bestResult: OMRResult | null = null;
 
           for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            setFiles(prev => prev.map(f => f.id === id ? { ...f, attempt: attempt + 1, maxAttempts } : f));
+            
+            const attemptStartTime = Date.now();
+            
             // We must run at least `sampling` times, or until we find a match if we've exceeded `sampling`
             if (attempt < sampling || !bestResult) {
               const result = await evaluateOMR(finalBase64, mimeType, keys, proModel, liteModel, answerKey);
               results.push(result);
+              
+              const elapsed = Date.now() - attemptStartTime;
+              averageTimeRef.current = (averageTimeRef.current * 4 + elapsed) / 5;
               
               // Check for matches
               const counts = new Map<string, number>();
@@ -765,7 +776,7 @@ export default function App() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Lite Model (for rotation check)
+                    Fallback Model (for JSON restructuring)
                   </label>
                   <input
                     type="text"
@@ -1142,9 +1153,17 @@ export default function App() {
                       </span>
                     )}
                     {file.status === 'processing' && (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 animate-pulse">
-                        Processing...
-                      </span>
+                      <div className="w-full">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 animate-pulse mb-2">
+                          Processing...
+                        </span>
+                        <PredictiveProgressBar 
+                          isProcessing={true} 
+                          attempt={file.attempt || 1} 
+                          maxAttempts={file.maxAttempts || 1} 
+                          averageTime={averageTimeRef.current} 
+                        />
+                      </div>
                     )}
                     {file.status === 'error' && (
                       <div className="text-sm text-red-600 flex items-start gap-1 mt-1">
