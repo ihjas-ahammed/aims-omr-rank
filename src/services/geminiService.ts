@@ -184,10 +184,9 @@ Questions 26 through 30 have not been bubbled. Ignore them.
 ### Evaluation Rules:
 - For each question Q1 to Q25, determine if the student's answer is correct, wrong, or unattempted.
 - Give 1 if correct, -1 if wrong, 0 if no answer.
-- Cross marks: If a student made a mistake and used a cross mark on a bubble, evaluate their second option (the bubbled one without a cross). If they only have one cross mark and no other bubble, skip the question (give 0).
 - Extract the student's NAME from the sheet. (Best effort only, exact spelling is not critical as it will be verified against an attendance sheet later).
 - Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
-- Provide a confidence score from 0 to 100 representing how confident you are in your evaluation of this sheet.
+- Provide a confidence score from 0 to 100 representing how confident you are in your evaluation of this sheet. (be accurate)
 
 You will receive ${images.length} images. Each image corresponds to an ID. Evaluate each image and return a JSON object mapping the image ID to its evaluation result.
 
