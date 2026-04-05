@@ -145,7 +145,7 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
           <div className="flex items-center justify-between mb-4">
             <img src="/logo1.png" alt="Logo 1" className="h-16 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
             <div className="text-center flex-1">
-              <h1 className="text-xl font-bold tracking-[0.2em] text-gray-800">A I M S  P L U S  T E S T  S E R I E S  ·  C R A S H  2 0 2 6</h1>
+              <h1 className="text-xl font-bold tracking-[0.4em] text-gray-800 uppercase ml-[0.4em]">AIMS PLUS TEST SERIES · CRASH 2026</h1>
               <h2 className="text-2xl font-black mt-1">DAY {dayNumber} — RANK LIST</h2>
             </div>
             <img src="/logo2.png" alt="Logo 2" className="h-16 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />

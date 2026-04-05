@@ -612,6 +612,41 @@ export default function App() {
     setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'pending', error: undefined, result: undefined } : f));
   };
 
+  const fixNames = async () => {
+    const successfulFiles = files.filter(f => f.status === 'success' && f.result);
+    if (successfulFiles.length === 0) return;
+    if (!attendanceSheet.trim()) {
+      alert('Please enter the attendance sheet first.');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const uniqueNames = Array.from(new Set(successfulFiles.map(f => f.result!.name)));
+      const keys = apiKeys.split(',').map(k => k.trim()).filter(Boolean);
+      const nameMap = await correctNamesBatch(uniqueNames, attendanceSheet, keys, proModel);
+      
+      setFiles(prev => prev.map(f => {
+        if (f.status === 'success' && f.result && nameMap[f.result.name]) {
+          return {
+            ...f,
+            result: {
+              ...f.result,
+              name: nameMap[f.result.name].correctedName,
+              nameConfidence: nameMap[f.result.name].confidence
+            }
+          };
+        }
+        return f;
+      }));
+    } catch (error) {
+      console.error("Failed to fix names:", error);
+      alert("Failed to fix names. Check console for details.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const exportCSV = async () => {
     const successfulFiles = files.filter(f => f.status === 'success' && f.result);
     if (successfulFiles.length === 0) return;
@@ -622,7 +657,7 @@ export default function App() {
       setIsExporting(true);
       try {
         const uniqueNames = Array.from(new Set(successfulFiles.map(f => f.result!.name)));
-        const keys = apiKeys.filter(k => k.trim());
+        const keys = apiKeys.split(',').map(k => k.trim()).filter(Boolean);
         const nameMap = await correctNamesBatch(uniqueNames, attendanceSheet, keys, proModel);
         
         // Update the files in state so the UI reflects the corrected names too
@@ -632,7 +667,8 @@ export default function App() {
               ...f,
               result: {
                 ...f.result,
-                name: nameMap[f.result.name]
+                name: nameMap[f.result.name].correctedName,
+                nameConfidence: nameMap[f.result.name].confidence
               }
             };
           }
@@ -646,7 +682,8 @@ export default function App() {
               ...f,
               result: {
                 ...f.result,
-                name: nameMap[f.result.name]
+                name: nameMap[f.result.name].correctedName,
+                nameConfidence: nameMap[f.result.name].confidence
               }
             };
           }
@@ -1159,6 +1196,14 @@ export default function App() {
                     {isProcessing ? 'Processing...' : 'Start Processing'}
                   </button>
                   <button
+                    onClick={fixNames}
+                    disabled={!files.some(f => f.status === 'success') || isProcessing || isExporting}
+                    className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-md font-medium hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Fix Names
+                  </button>
+                  <button
                     onClick={exportCSV}
                     disabled={!files.some(f => f.status === 'success') || isExporting}
                     className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -1301,6 +1346,15 @@ export default function App() {
                                 'bg-green-100 text-green-800'
                               }`}>
                                 {file.result.confidence}% Conf
+                              </span>
+                            )}
+                            {file.result.nameConfidence !== undefined && (
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                                file.result.nameConfidence < 30 ? 'bg-orange-100 text-orange-800' : 
+                                file.result.nameConfidence < 50 ? 'bg-blue-100 text-blue-800' : 
+                                'bg-purple-100 text-purple-800'
+                              }`} title="Name Match Confidence">
+                                Name: {file.result.nameConfidence}%
                               </span>
                             )}
                           </div>

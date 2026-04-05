@@ -7,6 +7,7 @@ export interface OMRResult {
   scores: Record<string, number>; // q1 to q25
   confidence: number;
   confidences?: number[];
+  nameConfidence?: number;
 }
 
 let currentKeyIndex = 0;
@@ -64,7 +65,7 @@ Questions 26 through 30 have not been bubbled. Ignore them.
 - For each question Q1 to Q25, determine if the student's answer is correct, wrong, or unattempted.
 - Give 1 if correct, -1 if wrong, 0 if no answer.
 - Cross marks: If a student made a mistake and used a cross mark on a bubble, evaluate their second option (the bubbled one without a cross). If they only have one cross mark and no other bubble, skip the question (give 0).
-- Extract the student's NAME from the sheet.
+- Extract the student's NAME from the sheet. (Best effort only, exact spelling is not critical as it will be verified against an attendance sheet later).
 - Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
 - Provide a confidence score from 0 to 100 representing how confident you are in your evaluation of this sheet.
 
@@ -184,7 +185,7 @@ Questions 26 through 30 have not been bubbled. Ignore them.
 - For each question Q1 to Q25, determine if the student's answer is correct, wrong, or unattempted.
 - Give 1 if correct, -1 if wrong, 0 if no answer.
 - Cross marks: If a student made a mistake and used a cross mark on a bubble, evaluate their second option (the bubbled one without a cross). If they only have one cross mark and no other bubble, skip the question (give 0).
-- Extract the student's NAME from the sheet.
+- Extract the student's NAME from the sheet. (Best effort only, exact spelling is not critical as it will be verified against an attendance sheet later).
 - Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
 - Provide a confidence score from 0 to 100 representing how confident you are in your evaluation of this sheet.
 
@@ -310,7 +311,7 @@ export async function correctNamesBatch(
   attendanceSheet: string,
   apiKeys: string[],
   model: string
-): Promise<Record<string, string>> {
+): Promise<Record<string, { correctedName: string, confidence: number }>> {
   const keysToTry = getKeys(apiKeys);
   
   const prompt = `
@@ -320,6 +321,8 @@ I also have an official attendance sheet.
 Map each extracted name to the closest matching name in the attendance sheet.
 Watch out specifically for these three distinct people: "Fathima Nasha", "Fathima Nasha CP", and "Nasha Fathima P".
 similarly, we have Ridha K and Rihan K
+
+For each name, provide the closest match from the attendance sheet and a confidence score (0-100) representing how certain you are of this match. If no good match is found, return the original name and a low confidence score.
 
 Extracted Names:
 ${JSON.stringify(foundNames)}
@@ -336,7 +339,7 @@ ${attendanceSheet}
       const ai = new GoogleGenAI({ apiKey: key });
       
       const response = await ai.models.generateContent({
-        model: model || 'gemini-3.1-flash-lite-preview',
+        model: model || 'gemini-3.1-pro-preview',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -346,9 +349,10 @@ ${attendanceSheet}
               type: Type.OBJECT,
               properties: {
                 original: { type: Type.STRING, description: "The exact extracted name" },
-                corrected: { type: Type.STRING, description: "The corrected name from the attendance sheet" }
+                corrected: { type: Type.STRING, description: "The corrected name from the attendance sheet" },
+                confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" }
               },
-              required: ["original", "corrected"]
+              required: ["original", "corrected", "confidence"]
             }
           }
         }
@@ -357,10 +361,10 @@ ${attendanceSheet}
       const text = response.text;
       if (!text) throw new Error('Empty response from model');
       
-      const data = JSON.parse(text) as { original: string, corrected: string }[];
-      const map: Record<string, string> = {};
+      const data = JSON.parse(text) as { original: string, corrected: string, confidence: number }[];
+      const map: Record<string, { correctedName: string, confidence: number }> = {};
       for (const item of data) {
-        map[item.original] = item.corrected;
+        map[item.original] = { correctedName: item.corrected, confidence: item.confidence };
       }
 
       currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
