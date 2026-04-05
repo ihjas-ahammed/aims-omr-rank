@@ -559,10 +559,15 @@ export default function App() {
               }
               
               if (bestResult) {
+                bestResult.confidences = resultsHistory[img.id].map(r => r.confidence);
                 finalResults[img.id] = bestResult;
                 completedIds.add(img.id);
               } else if (attempt === maxAttempts - 1) {
-                finalResults[img.id] = resultsHistory[img.id][resultsHistory[img.id].length - 1];
+                const lastRes = resultsHistory[img.id][resultsHistory[img.id].length - 1];
+                if (lastRes) {
+                  lastRes.confidences = resultsHistory[img.id].map(r => r.confidence);
+                  finalResults[img.id] = lastRes;
+                }
                 completedIds.add(img.id);
               }
             }
@@ -1277,7 +1282,19 @@ export default function App() {
                               (Right: <span className="text-green-600 font-medium">{file.result.right}</span>, 
                               Wrong: <span className="text-red-600 font-medium">{file.result.wrong}</span>)
                             </span>
-                            {file.result.confidence !== undefined && (
+                            {file.result.confidences && file.result.confidences.length > 0 ? (
+                              <div className="flex gap-1">
+                                {file.result.confidences.map((conf, idx) => (
+                                  <span key={idx} className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                                    conf < 30 ? 'bg-red-100 text-red-800' : 
+                                    conf < 50 ? 'bg-yellow-100 text-yellow-800' : 
+                                    'bg-green-100 text-green-800'
+                                  }`} title={`Attempt ${idx + 1} Confidence`}>
+                                    {conf}%
+                                  </span>
+                                ))}
+                              </div>
+                            ) : file.result.confidence !== undefined && (
                               <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                                 file.result.confidence < 30 ? 'bg-red-100 text-red-800' : 
                                 file.result.confidence < 50 ? 'bg-yellow-100 text-yellow-800' : 

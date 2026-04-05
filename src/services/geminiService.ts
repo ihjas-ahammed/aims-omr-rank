@@ -6,6 +6,7 @@ export interface OMRResult {
   wrong: number;
   scores: Record<string, number>; // q1 to q25
   confidence: number;
+  confidences?: number[];
 }
 
 let currentKeyIndex = 0;
