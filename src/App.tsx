@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, Camera, Settings, Download, Trash2, CheckCircle, XCircle, AlertCircle, Play, RefreshCw, FileImage, Loader2, Plus, Minus, RotateCcw, Trophy } from 'lucide-react';
-import { evaluateOMR, fetchAvailableModels, correctNamesBatch, parseTopicMappingWithAI, checkRotationWithAI, OMRResult } from './services/geminiService';
+import { evaluateOMR, fetchAvailableModels, correctNamesBatch, parseTopicMappingWithAI, extractTextFromDocument, OMRResult } from './services/geminiService';
 import { saveImage, getImage, deleteImage, clearImages } from './services/db';
 import RankList from './components/RankList';
 import StudentDetail from './components/StudentDetail';
@@ -219,10 +219,21 @@ export default function App() {
     return [];
   });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
   const [reviewFileId, setReviewFileId] = useState<string | null>(null);
+  const [sampling, setSampling] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_sampling');
+    return saved ? parseInt(saved, 10) : 2;
+  });
+  const [concurrency, setConcurrency] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_concurrency');
+    return saved ? parseInt(saved, 10) : 1;
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const answerKeyFileInputRef = useRef<HTMLInputElement>(null);
+  const topicMappingFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     localStorage.setItem('omr_apiKeysList', JSON.stringify(apiKeys));
@@ -239,6 +250,14 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('omr_imageResolution', imageResolution.toString());
   }, [imageResolution]);
+
+  useEffect(() => {
+    localStorage.setItem('omr_sampling', sampling.toString());
+  }, [sampling]);
+
+  useEffect(() => {
+    localStorage.setItem('omr_concurrency', concurrency.toString());
+  }, [concurrency]);
 
   useEffect(() => {
     localStorage.setItem('omr_attendance', attendanceSheet);
@@ -322,6 +341,35 @@ export default function App() {
       alert('Failed to update topic mapping: ' + error.message);
     }
     setIsUpdatingMapping(false);
+  };
+
+  const handleExtractTextFromFile = async (event: React.ChangeEvent<HTMLInputElement>, type: 'answerKey' | 'topicMapping') => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const keys = apiKeys.filter(k => k.trim());
+      if (keys.length === 0) {
+        alert('Please add at least one API key first.');
+        return;
+      }
+
+      const base64 = await fileToBase64(file);
+      const extractedText = await extractTextFromDocument(base64, file.type, keys, proModel, type);
+      
+      if (type === 'answerKey') {
+        setAnswerKey(extractedText);
+      } else {
+        setTopicMapping(extractedText);
+      }
+      
+      alert(`Successfully extracted ${type === 'answerKey' ? 'Answer Key' : 'Topic Mapping'}!`);
+    } catch (error: any) {
+      alert(`Failed to extract text: ${error.message}`);
+    }
+    
+    // Reset input
+    event.target.value = '';
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -425,10 +473,12 @@ export default function App() {
     setIsProcessing(true);
 
     const keys = apiKeys.filter(k => k.trim());
-    const concurrencyLimit = Math.max(1, keys.length);
+    const concurrencyLimit = Math.max(1, concurrency);
     
     const pendingIds = files.filter(f => f.status === 'pending' || f.status === 'error').map(f => f.id);
+    setProgress({ current: 0, total: pendingIds.length });
     let currentIndex = 0;
+    let completedCount = 0;
 
     const worker = async () => {
       while (currentIndex < pendingIds.length) {
@@ -446,21 +496,50 @@ export default function App() {
             if (!fileObj) throw new Error('No file found in database');
           }
           
-          // Step 1: Compress image for rotation check
-          const { base64: initialBase64, mimeType } = await processImage(fileObj, imageResolution, 0);
-          
-          // Step 2: Check rotation with Lite Model
-          const rotation = await checkRotationWithAI(initialBase64, mimeType, keys, liteModel);
-          
-          // Step 3: Process image with rotation (if any) and compression
-          const { base64: finalBase64 } = await processImage(fileObj, imageResolution, rotation);
+          // Compress image
+          const { base64: finalBase64, mimeType } = await processImage(fileObj, imageResolution, 0);
 
-          // Step 4: Evaluate with Pro Model
-          const result = await evaluateOMR(finalBase64, mimeType, keys, proModel, answerKey);
+          // Evaluate with Sampling
+          let results: OMRResult[] = [];
+          let targetMatches = sampling >= 2 ? 2 : 1;
+          let maxAttempts = sampling + 3; // Prevent infinite loop
+          let bestResult: OMRResult | null = null;
 
-          setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'success', result, file: fileObj } : f));
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            // We must run at least `sampling` times, or until we find a match if we've exceeded `sampling`
+            if (attempt < sampling || !bestResult) {
+              const result = await evaluateOMR(finalBase64, mimeType, keys, proModel, liteModel, answerKey);
+              results.push(result);
+              
+              // Check for matches
+              const counts = new Map<string, number>();
+              for (const r of results) {
+                const key = JSON.stringify(r.scores);
+                counts.set(key, (counts.get(key) || 0) + 1);
+                if (counts.get(key)! >= targetMatches) {
+                  bestResult = r;
+                  break;
+                }
+              }
+              
+              // If we found a match AND we've run at least `sampling` times, we can stop
+              if (bestResult && attempt >= sampling - 1) {
+                break;
+              }
+            }
+          }
+
+          if (!bestResult) {
+            // Fallback to the last result if we never got a match
+            bestResult = results[results.length - 1];
+          }
+
+          setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'success', result: bestResult!, file: fileObj } : f));
         } catch (error: any) {
           setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'error', error: error.message } : f));
+        } finally {
+          completedCount++;
+          setProgress(p => ({ ...p, current: completedCount }));
         }
       }
     };
@@ -728,6 +807,34 @@ export default function App() {
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                     />
                   </div>
+                  <div className="w-32">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Sampling
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={sampling}
+                      onChange={(e) => setSampling(parseInt(e.target.value, 10) || 1)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
+                      title="Number of validations to run for consensus"
+                    />
+                  </div>
+                  <div className="w-32">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Concurrency
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={concurrency}
+                      onChange={(e) => setConcurrency(parseInt(e.target.value, 10) || 1)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
+                      title="Number of images to process simultaneously"
+                    />
+                  </div>
                   <button
                     onClick={handleFetchModels}
                     className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md font-medium hover:bg-gray-200 border border-gray-300 transition-colors whitespace-nowrap h-[42px]"
@@ -737,9 +844,26 @@ export default function App() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Answer Key
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Answer Key
+                  </label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="file" 
+                      accept="image/*,application/pdf" 
+                      className="hidden" 
+                      ref={answerKeyFileInputRef}
+                      onChange={(e) => handleExtractTextFromFile(e, 'answerKey')}
+                    />
+                    <button
+                      onClick={() => answerKeyFileInputRef.current?.click()}
+                      className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium hover:bg-gray-200 transition-colors"
+                    >
+                      <Upload className="w-4 h-4" /> Load from Image/PDF
+                    </button>
+                  </div>
+                </div>
                 <textarea
                   value={answerKey}
                   onChange={(e) => setAnswerKey(e.target.value)}
@@ -765,14 +889,29 @@ export default function App() {
                   <label className="block text-sm font-medium text-gray-700">
                     Topic Wise Questions (for Rank List)
                   </label>
-                  <button
-                    onClick={handleUpdateTopicMapping}
-                    disabled={isUpdatingMapping}
-                    className="flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded text-sm font-medium hover:bg-indigo-200 disabled:opacity-50 transition-colors"
-                  >
-                    {isUpdatingMapping ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                    {isUpdatingMapping ? 'Updating...' : 'Update Mapping'}
-                  </button>
+                  <div className="flex gap-2">
+                    <input 
+                      type="file" 
+                      accept="image/*,application/pdf" 
+                      className="hidden" 
+                      ref={topicMappingFileInputRef}
+                      onChange={(e) => handleExtractTextFromFile(e, 'topicMapping')}
+                    />
+                    <button
+                      onClick={() => topicMappingFileInputRef.current?.click()}
+                      className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium hover:bg-gray-200 transition-colors"
+                    >
+                      <Upload className="w-4 h-4" /> Load from Image/PDF
+                    </button>
+                    <button
+                      onClick={handleUpdateTopicMapping}
+                      disabled={isUpdatingMapping}
+                      className="flex items-center gap-1 px-3 py-1 bg-indigo-100 text-indigo-700 rounded text-sm font-medium hover:bg-indigo-200 disabled:opacity-50 transition-colors"
+                    >
+                      {isUpdatingMapping ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                      {isUpdatingMapping ? 'Updating...' : 'Update Mapping'}
+                    </button>
+                  </div>
                 </div>
                 <textarea
                   value={topicMapping}
@@ -869,85 +1008,96 @@ export default function App() {
 
         {files.length > 0 && (
           <section className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-gray-50">
-              <h2 className="text-lg font-medium">Processing Queue ({files.length} files)</h2>
-              <div className="flex gap-2 items-center">
-                <label className="flex items-center gap-2 text-sm text-gray-700 mr-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={correctNamesOnExport}
-                    onChange={(e) => setCorrectNamesOnExport(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            <div className="p-4 border-b border-gray-200 flex flex-col gap-4 bg-gray-50">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-medium">Processing Queue ({files.length} files)</h2>
+                <div className="flex gap-2 items-center">
+                  <label className="flex items-center gap-2 text-sm text-gray-700 mr-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={correctNamesOnExport}
+                      onChange={(e) => setCorrectNamesOnExport(e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    Correct names against attendance sheet
+                  </label>
+                  <button
+                    onClick={clearAllFiles}
+                    disabled={isProcessing || isExporting}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-md font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Clear All
+                  </button>
+                  {files.some(f => f.status === 'error') && (
+                    <button
+                      onClick={retryAllFailed}
+                      disabled={isProcessing || isExporting}
+                      className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-md font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Retry Failed
+                    </button>
+                  )}
+                  {files.some(f => f.status === 'success') && (
+                    <button
+                      onClick={recheckAll}
+                      disabled={isProcessing || isExporting}
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-md font-medium hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Recheck All
+                    </button>
+                  )}
+                  <button
+                    onClick={processFiles}
+                    disabled={isProcessing || isExporting || files.every(f => f.status === 'success')}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Play className="w-4 h-4" />
+                    {isProcessing ? 'Processing...' : 'Start Processing'}
+                  </button>
+                  <button
+                    onClick={exportCSV}
+                    disabled={!files.some(f => f.status === 'success') || isExporting}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                    {isExporting ? 'Correcting...' : 'Export CSV'}
+                  </button>
+                  <input 
+                    type="file" 
+                    accept=".csv" 
+                    className="hidden" 
+                    ref={csvInputRef}
+                    onChange={handleImportCSV}
                   />
-                  Correct names against attendance sheet
-                </label>
-                <button
-                  onClick={clearAllFiles}
-                  disabled={isProcessing || isExporting}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-md font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Clear All
-                </button>
-                {files.some(f => f.status === 'error') && (
                   <button
-                    onClick={retryAllFailed}
-                    disabled={isProcessing || isExporting}
-                    className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-md font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    onClick={() => csvInputRef.current?.click()}
+                    className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-md font-medium hover:bg-teal-700 transition-colors"
                   >
-                    <RefreshCw className="w-4 h-4" />
-                    Retry Failed
+                    <Upload className="w-4 h-4" />
+                    Import CSV
                   </button>
-                )}
-                {files.some(f => f.status === 'success') && (
                   <button
-                    onClick={recheckAll}
-                    disabled={isProcessing || isExporting}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-md font-medium hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    onClick={() => setView('ranklist')}
+                    disabled={!files.some(f => f.status === 'success')}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    <RotateCcw className="w-4 h-4" />
-                    Recheck All
+                    <Trophy className="w-4 h-4" />
+                    Rank List
                   </button>
-                )}
-                <button
-                  onClick={processFiles}
-                  disabled={isProcessing || isExporting || files.every(f => f.status === 'success')}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Play className="w-4 h-4" />
-                  {isProcessing ? 'Processing...' : 'Start Processing'}
-                </button>
-                <button
-                  onClick={exportCSV}
-                  disabled={!files.some(f => f.status === 'success') || isExporting}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  {isExporting ? 'Correcting...' : 'Export CSV'}
-                </button>
-                <input 
-                  type="file" 
-                  accept=".csv" 
-                  className="hidden" 
-                  ref={csvInputRef}
-                  onChange={handleImportCSV}
-                />
-                <button
-                  onClick={() => csvInputRef.current?.click()}
-                  className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-md font-medium hover:bg-teal-700 transition-colors"
-                >
-                  <Upload className="w-4 h-4" />
-                  Import CSV
-                </button>
-                <button
-                  onClick={() => setView('ranklist')}
-                  disabled={!files.some(f => f.status === 'success')}
-                  className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Trophy className="w-4 h-4" />
-                  Rank List
-                </button>
+                </div>
               </div>
+              
+              {isProcessing && progress.total > 0 && (
+                <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 overflow-hidden">
+                  <div 
+                    className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out" 
+                    style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                  ></div>
+                </div>
+              )}
             </div>
             
             <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">

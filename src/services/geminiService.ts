@@ -38,58 +38,12 @@ export async function fetchAvailableModels(apiKeys: string[]): Promise<string[]>
   throw lastError || new Error('Failed to fetch models');
 }
 
-export async function checkRotationWithAI(
-  imageBase64: string,
-  mimeType: string,
-  apiKeys: string[],
-  model: string
-): Promise<number> {
-  const keysToTry = getKeys(apiKeys);
-
-  const prompt = `
-Does this image need to be rotated to be upright?
-Answer with ONLY one of the following numbers: 0, 90, 180, 270.
-Where the number represents the clockwise rotation in degrees needed to make it upright.
-`;
-
-  let lastError: any;
-
-  for (let i = 0; i < keysToTry.length; i++) {
-    const key = keysToTry[(currentKeyIndex + i) % keysToTry.length];
-    try {
-      const ai = new GoogleGenAI({ apiKey: key });
-      
-      const response = await ai.models.generateContent({
-        model: model || 'gemini-3.1-flash-lite-preview',
-        contents: [
-          { text: prompt },
-          { inlineData: { data: imageBase64, mimeType } }
-        ],
-      });
-
-      const text = response.text?.trim() || '0';
-      const rotation = parseInt(text, 10);
-      
-      currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
-      
-      if ([0, 90, 180, 270].includes(rotation)) {
-        return rotation;
-      }
-      return 0; // Default to 0 if unexpected response
-    } catch (error: any) {
-      console.error('Error with API key in checkRotationWithAI:', error);
-      lastError = error;
-    }
-  }
-
-  throw lastError || new Error('Failed to check rotation with all provided keys.');
-}
-
 export async function evaluateOMR(
   imageBase64: string,
   mimeType: string,
   apiKeys: string[],
   model: string,
+  liteModel: string,
   answerKeyPrompt: string
 ): Promise<OMRResult> {
   const keysToTry = getKeys(apiKeys);
@@ -110,7 +64,36 @@ Questions 26 through 30 have not been bubbled. Ignore them.
 - Cross marks: If a student made a mistake and used a cross mark on a bubble, evaluate their second option (the bubbled one without a cross). If they only have one cross mark and no other bubble, skip the question (give 0).
 - Extract the student's NAME from the sheet.
 - Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
+
+Output your response as a JSON object with the following structure:
+{
+  "name": "Student Name",
+  "right": 10,
+  "wrong": 5,
+  "q1": 1,
+  "q2": -1,
+  "q3": 0,
+  // ... up to q25
+}
 `;
+
+  const schemaConfig = {
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: {
+        name: { type: Type.STRING, description: "Student's name" },
+        right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
+        wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
+        q1: { type: Type.INTEGER }, q2: { type: Type.INTEGER }, q3: { type: Type.INTEGER }, q4: { type: Type.INTEGER }, q5: { type: Type.INTEGER },
+        q6: { type: Type.INTEGER }, q7: { type: Type.INTEGER }, q8: { type: Type.INTEGER }, q9: { type: Type.INTEGER }, q10: { type: Type.INTEGER },
+        q11: { type: Type.INTEGER }, q12: { type: Type.INTEGER }, q13: { type: Type.INTEGER }, q14: { type: Type.INTEGER }, q15: { type: Type.INTEGER },
+        q16: { type: Type.INTEGER }, q17: { type: Type.INTEGER }, q18: { type: Type.INTEGER }, q19: { type: Type.INTEGER }, q20: { type: Type.INTEGER },
+        q21: { type: Type.INTEGER }, q22: { type: Type.INTEGER }, q23: { type: Type.INTEGER }, q24: { type: Type.INTEGER }, q25: { type: Type.INTEGER },
+      },
+      required: ["name", "right", "wrong", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22", "q23", "q24", "q25"]
+    }
+  };
 
   let lastError: any;
 
@@ -120,66 +103,46 @@ Questions 26 through 30 have not been bubbled. Ignore them.
       const ai = new GoogleGenAI({ apiKey: key });
       
       const response = await ai.models.generateContent({
-        model: model || 'gemini-3.1-flash-lite-preview',
+        model: model || 'gemini-3.1-pro-preview',
         contents: [
           { text: prompt },
           { inlineData: { data: imageBase64, mimeType } }
-        ],
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING, description: "Student's name" },
-              right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
-              wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
-              q1: { type: Type.INTEGER },
-              q2: { type: Type.INTEGER },
-              q3: { type: Type.INTEGER },
-              q4: { type: Type.INTEGER },
-              q5: { type: Type.INTEGER },
-              q6: { type: Type.INTEGER },
-              q7: { type: Type.INTEGER },
-              q8: { type: Type.INTEGER },
-              q9: { type: Type.INTEGER },
-              q10: { type: Type.INTEGER },
-              q11: { type: Type.INTEGER },
-              q12: { type: Type.INTEGER },
-              q13: { type: Type.INTEGER },
-              q14: { type: Type.INTEGER },
-              q15: { type: Type.INTEGER },
-              q16: { type: Type.INTEGER },
-              q17: { type: Type.INTEGER },
-              q18: { type: Type.INTEGER },
-              q19: { type: Type.INTEGER },
-              q20: { type: Type.INTEGER },
-              q21: { type: Type.INTEGER },
-              q22: { type: Type.INTEGER },
-              q23: { type: Type.INTEGER },
-              q24: { type: Type.INTEGER },
-              q25: { type: Type.INTEGER },
-            },
-            required: ["name", "right", "wrong", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22", "q23", "q24", "q25"]
-          }
-        }
+        ]
       });
 
       const text = response.text;
       if (!text) throw new Error('Empty response from model');
       
-      const data = JSON.parse(text);
+      let data;
+      try {
+        // Try to parse directly, stripping potential markdown blocks
+        const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+        data = JSON.parse(cleanedText);
+      } catch (parseError) {
+        console.log('Failed to parse JSON from pro model, using lite model to restructure...', text);
+        // Fallback to lite model to restructure
+        const restructureResponse = await ai.models.generateContent({
+          model: liteModel || 'gemini-3.1-flash-lite-preview',
+          contents: `Extract the OMR evaluation data from the following text and format it as JSON.\n\nText:\n${text}`,
+          config: schemaConfig as any
+        });
+        
+        const restructuredText = restructureResponse.text;
+        if (!restructuredText) throw new Error('Empty response from lite model during restructure');
+        data = JSON.parse(restructuredText);
+      }
       
       const scores: Record<string, number> = {};
       for (let j = 1; j <= 25; j++) {
-        scores[`q${j}`] = data[`q${j}`];
+        scores[`q${j}`] = data[`q${j}`] ?? 0;
       }
 
       currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
 
       return {
-        name: data.name,
-        right: data.right,
-        wrong: data.wrong,
+        name: data.name || 'Unknown',
+        right: data.right || 0,
+        wrong: data.wrong || 0,
         scores
       };
 
@@ -206,6 +169,7 @@ I have a list of names extracted via OCR from OMR sheets, which might have spell
 I also have an official attendance sheet.
 Map each extracted name to the closest matching name in the attendance sheet.
 Watch out specifically for these three distinct people: "Fathima Nasha", "Fathima Nasha CP", and "Nasha Fathima P".
+similarly, we have Ridha K and Rihan K
 
 Extracted Names:
 ${JSON.stringify(foundNames)}
@@ -258,6 +222,60 @@ ${attendanceSheet}
   }
 
   throw lastError || new Error('Failed to correct names with all provided keys.');
+}
+
+export async function extractTextFromDocument(
+  base64: string,
+  mimeType: string,
+  apiKeys: string[],
+  model: string,
+  extractionType: 'answerKey' | 'topicMapping'
+): Promise<string> {
+  const keysToTry = getKeys(apiKeys);
+  
+  const prompt = extractionType === 'answerKey' 
+    ? `Extract the answer key from this document. Format it as a simple list like:
+* **Q1.** A
+* **Q2.** B
+* **Q3.** C
+Only output the formatted text, nothing else.`
+    : `Extract the chapter and topic mapping from this document. Format it exactly like this:
+### Chapter Name
+* Topic Name: Q1, Q2, Q3
+* Another Topic: Q4, Q5
+
+### Another Chapter
+* Topic Name: Q6, Q7
+
+Only output the formatted text, nothing else.`;
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const key = keysToTry[(currentKeyIndex + i) % keysToTry.length];
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-pro-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: base64, mimeType } }
+        ]
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+      
+      currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
+      return text.trim();
+    } catch (error: any) {
+      console.error('Error with API key in extractTextFromDocument:', error);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Failed to extract text with all provided keys.');
 }
 
 export async function parseTopicMappingWithAI(
