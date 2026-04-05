@@ -535,7 +535,16 @@ export default function App() {
           
           const attemptStartTime = Date.now();
           
-          const batchResults = await evaluateOMRBatch(remainingImages, keys, proModel, liteModel, answerKey);
+          const chunkedPromises = [];
+          const baseConcurrency = Math.max(1, concurrency);
+          for (let k = 0; k < remainingImages.length; k += baseConcurrency) {
+            const chunk = remainingImages.slice(k, k + baseConcurrency);
+            const keyToUse = keys.length > 0 ? [keys[Math.floor(k / baseConcurrency) % keys.length]] : [];
+            chunkedPromises.push(evaluateOMRBatch(chunk, keyToUse, proModel, liteModel, answerKey));
+          }
+          
+          const chunkResults = await Promise.all(chunkedPromises);
+          const batchResults = chunkResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
           
           const elapsed = Date.now() - attemptStartTime;
           averageTimeRef.current = (averageTimeRef.current * 4 + elapsed) / 5;
@@ -623,7 +632,7 @@ export default function App() {
     setIsProcessing(true);
     try {
       const uniqueNames = Array.from(new Set(successfulFiles.map(f => f.result!.name)));
-      const keys = apiKeys.split(',').map(k => k.trim()).filter(Boolean);
+      const keys = apiKeys.filter(k => k.trim());
       const nameMap = await correctNamesBatch(uniqueNames, attendanceSheet, keys, proModel);
       
       setFiles(prev => prev.map(f => {
@@ -657,7 +666,7 @@ export default function App() {
       setIsExporting(true);
       try {
         const uniqueNames = Array.from(new Set(successfulFiles.map(f => f.result!.name)));
-        const keys = apiKeys.split(',').map(k => k.trim()).filter(Boolean);
+        const keys = apiKeys.filter(k => k.trim());
         const nameMap = await correctNamesBatch(uniqueNames, attendanceSheet, keys, proModel);
         
         // Update the files in state so the UI reflects the corrected names too
