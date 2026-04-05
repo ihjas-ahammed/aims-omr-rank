@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 
 interface Props {
   isProcessing: boolean;
+  stageName: string;
   attempt: number;
-  maxAttempts: number;
+  expectedAttempts: number;
   averageTime: number;
 }
 
-export default function PredictiveProgressBar({ isProcessing, attempt, maxAttempts, averageTime }: Props) {
+export default function PredictiveProgressBar({ isProcessing, stageName, attempt, expectedAttempts, averageTime }: Props) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -16,26 +17,31 @@ export default function PredictiveProgressBar({ isProcessing, attempt, maxAttemp
       return;
     }
 
-    setProgress(0);
     const startTime = Date.now();
     
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
-      // Easing function: goes fast initially, slows down, asymptotes at 95%
-      // Using a simple exponential decay curve
-      const currentProgress = 95 * (1 - Math.exp(-elapsed / (averageTime / 2)));
-      setProgress(currentProgress);
+      
+      const currentAttemptProgress = 95 * (1 - Math.exp(-elapsed / (averageTime / 2)));
+      
+      const baseProgress = ((attempt - 1) / expectedAttempts) * 100;
+      const attemptContribution = currentAttemptProgress / expectedAttempts;
+      
+      let totalProgress = baseProgress + attemptContribution;
+      if (totalProgress > 98) totalProgress = 98;
+      
+      setProgress(prev => Math.max(prev, totalProgress));
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isProcessing, attempt, averageTime]);
+  }, [isProcessing, attempt, expectedAttempts, averageTime]);
 
   if (!isProcessing && progress === 0) return null;
 
   return (
     <div className="w-full mt-2">
       <div className="flex justify-between text-xs text-gray-500 mb-1 font-medium">
-        <span>{isProcessing ? `Validating (Attempt ${attempt} of ${maxAttempts})...` : 'Complete'}</span>
+        <span>{isProcessing ? stageName : 'Complete'}</span>
         <span>{Math.round(progress)}%</span>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">

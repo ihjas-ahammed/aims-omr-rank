@@ -17,6 +17,7 @@ interface ProcessedFile {
   status: 'pending' | 'processing' | 'success' | 'error';
   attempt?: number;
   maxAttempts?: number;
+  stageName?: string;
   result?: OMRResult;
   error?: string;
 }
@@ -347,14 +348,18 @@ export default function App() {
     setIsUpdatingMapping(false);
   };
 
+  const [isExtractingText, setIsExtractingText] = useState<'answerKey' | 'topicMapping' | null>(null);
+
   const handleExtractTextFromFile = async (event: React.ChangeEvent<HTMLInputElement>, type: 'answerKey' | 'topicMapping') => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    setIsExtractingText(type);
     try {
       const keys = apiKeys.filter(k => k.trim());
       if (keys.length === 0) {
         alert('Please add at least one API key first.');
+        setIsExtractingText(null);
         return;
       }
 
@@ -370,6 +375,8 @@ export default function App() {
       alert(`Successfully extracted ${type === 'answerKey' ? 'Answer Key' : 'Topic Mapping'}!`);
     } catch (error: any) {
       alert(`Failed to extract text: ${error.message}`);
+    } finally {
+      setIsExtractingText(null);
     }
     
     // Reset input
@@ -477,18 +484,22 @@ export default function App() {
     setIsProcessing(true);
 
     const keys = apiKeys.filter(k => k.trim());
-    const concurrencyLimit = Math.max(1, concurrency);
+    const baseConcurrency = Math.max(1, concurrency);
+    const concurrencyLimit = keys.length > 0 ? baseConcurrency * keys.length : baseConcurrency;
     
     const pendingIds = files.filter(f => f.status === 'pending' || f.status === 'error').map(f => f.id);
     setProgress({ current: 0, total: pendingIds.length });
     let currentIndex = 0;
     let completedCount = 0;
 
-    const worker = async () => {
+    const worker = async (workerIndex: number) => {
+      const workerKey = keys.length > 0 ? keys[workerIndex % keys.length] : '';
+      const keysToUse = workerKey ? [workerKey] : [];
+
       while (currentIndex < pendingIds.length) {
         const id = pendingIds[currentIndex++];
         
-        setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'processing', error: undefined, attempt: 1, maxAttempts: sampling + 3 } : f));
+        setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'processing', error: undefined, attempt: 1, maxAttempts: sampling + 3, stageName: `Sampling 1/${sampling}` } : f));
 
         try {
           const currentFile = files.find(f => f.id === id);
@@ -510,13 +521,14 @@ export default function App() {
           let bestResult: OMRResult | null = null;
 
           for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            setFiles(prev => prev.map(f => f.id === id ? { ...f, attempt: attempt + 1, maxAttempts } : f));
+            let stageName = attempt < sampling ? `Sampling ${attempt + 1}/${sampling}` : `Verification ${attempt - sampling + 1}`;
+            setFiles(prev => prev.map(f => f.id === id ? { ...f, attempt: attempt + 1, maxAttempts, stageName } : f));
             
             const attemptStartTime = Date.now();
             
             // We must run at least `sampling` times, or until we find a match if we've exceeded `sampling`
             if (attempt < sampling || !bestResult) {
-              const result = await evaluateOMR(finalBase64, mimeType, keys, proModel, liteModel, answerKey);
+              const result = await evaluateOMR(finalBase64, mimeType, keysToUse, proModel, liteModel, answerKey);
               results.push(result);
               
               const elapsed = Date.now() - attemptStartTime;
@@ -557,7 +569,7 @@ export default function App() {
 
     const workers = [];
     for (let i = 0; i < concurrencyLimit; i++) {
-      workers.push(worker());
+      workers.push(worker(i));
     }
 
     await Promise.all(workers);
@@ -717,6 +729,28 @@ export default function App() {
     }
   };
 
+  const reviewableFiles = files.filter(f => f.result);
+  const currentReviewIndex = reviewableFiles.findIndex(f => f.id === reviewFileId);
+  const hasNextReview = currentReviewIndex >= 0 && currentReviewIndex < reviewableFiles.length - 1;
+  const hasPrevReview = currentReviewIndex > 0;
+
+  const handleNextReview = () => {
+    if (hasNextReview) setReviewFileId(reviewableFiles[currentReviewIndex + 1].id);
+  };
+
+  const handlePrevReview = () => {
+    if (hasPrevReview) setReviewFileId(reviewableFiles[currentReviewIndex - 1].id);
+  };
+
+  const handleUpdateResultName = (id: string, newName: string) => {
+    setFiles(prev => prev.map(f => {
+      if (f.id === id && f.result) {
+        return { ...f, result: { ...f.result, name: newName } };
+      }
+      return f;
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans print:bg-white">
       <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
@@ -869,9 +903,14 @@ export default function App() {
                     />
                     <button
                       onClick={() => answerKeyFileInputRef.current?.click()}
-                      className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium hover:bg-gray-200 transition-colors"
+                      disabled={isExtractingText === 'answerKey'}
+                      className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
                     >
-                      <Upload className="w-4 h-4" /> Load from Image/PDF
+                      {isExtractingText === 'answerKey' ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Extracting...</>
+                      ) : (
+                        <><Upload className="w-4 h-4" /> Load from Image/PDF</>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -910,9 +949,14 @@ export default function App() {
                     />
                     <button
                       onClick={() => topicMappingFileInputRef.current?.click()}
-                      className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium hover:bg-gray-200 transition-colors"
+                      disabled={isExtractingText === 'topicMapping'}
+                      className="flex items-center gap-1 px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
                     >
-                      <Upload className="w-4 h-4" /> Load from Image/PDF
+                      {isExtractingText === 'topicMapping' ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Extracting...</>
+                      ) : (
+                        <><Upload className="w-4 h-4" /> Load from Image/PDF</>
+                      )}
                     </button>
                     <button
                       onClick={handleUpdateTopicMapping}
@@ -1159,8 +1203,9 @@ export default function App() {
                         </span>
                         <PredictiveProgressBar 
                           isProcessing={true} 
+                          stageName={file.stageName || 'Processing...'}
                           attempt={file.attempt || 1} 
-                          maxAttempts={file.maxAttempts || 1} 
+                          expectedAttempts={file.maxAttempts || 1} 
                           averageTime={averageTimeRef.current} 
                         />
                       </div>
@@ -1235,11 +1280,17 @@ export default function App() {
           fileName={files.find(f => f.id === reviewFileId)?.fileName || ''}
           previewUrl={files.find(f => f.id === reviewFileId)?.previewUrl}
           result={files.find(f => f.id === reviewFileId)?.result}
+          answerKey={answerKey}
           onClose={() => setReviewFileId(null)}
           onRetry={(id) => {
             recheckFile(id);
           }}
           isProcessing={isProcessing}
+          onNext={handleNextReview}
+          onPrev={handlePrevReview}
+          hasNext={hasNextReview}
+          hasPrev={hasPrevReview}
+          onUpdateName={handleUpdateResultName}
         />
       )}
     </div>
