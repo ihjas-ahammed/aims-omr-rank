@@ -751,6 +751,32 @@ export default function App() {
     }));
   };
 
+  const handleUpdateResultScore = (id: string, qNum: number, newScore: number) => {
+    setFiles(prev => prev.map(f => {
+      if (f.id === id && f.result) {
+        const newScores = { ...f.result.scores, [`q${qNum}`]: newScore };
+        
+        let right = 0;
+        let wrong = 0;
+        Object.values(newScores).forEach(score => {
+          if (score === 1) right++;
+          if (score === -1) wrong++;
+        });
+
+        return { 
+          ...f, 
+          result: { 
+            ...f.result, 
+            scores: newScores,
+            right,
+            wrong
+          } 
+        };
+      }
+      return f;
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans print:bg-white">
       <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
@@ -1236,6 +1262,15 @@ export default function App() {
                               (Right: <span className="text-green-600 font-medium">{file.result.right}</span>, 
                               Wrong: <span className="text-red-600 font-medium">{file.result.wrong}</span>)
                             </span>
+                            {file.result.confidence !== undefined && (
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                                file.result.confidence < 30 ? 'bg-red-100 text-red-800' : 
+                                file.result.confidence < 50 ? 'bg-yellow-100 text-yellow-800' : 
+                                'bg-green-100 text-green-800'
+                              }`}>
+                                {file.result.confidence}% Conf
+                              </span>
+                            )}
                           </div>
                           <button 
                             onClick={(e) => {
@@ -1291,6 +1326,7 @@ export default function App() {
           hasNext={hasNextReview}
           hasPrev={hasPrevReview}
           onUpdateName={handleUpdateResultName}
+          onUpdateScore={handleUpdateResultScore}
         />
       )}
     </div>

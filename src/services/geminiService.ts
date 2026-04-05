@@ -5,6 +5,7 @@ export interface OMRResult {
   right: number;
   wrong: number;
   scores: Record<string, number>; // q1 to q25
+  confidence: number;
 }
 
 let currentKeyIndex = 0;
@@ -64,12 +65,14 @@ Questions 26 through 30 have not been bubbled. Ignore them.
 - Cross marks: If a student made a mistake and used a cross mark on a bubble, evaluate their second option (the bubbled one without a cross). If they only have one cross mark and no other bubble, skip the question (give 0).
 - Extract the student's NAME from the sheet.
 - Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
+- Provide a confidence score from 0 to 100 representing how confident you are in your evaluation of this sheet.
 
 Output your response as a JSON object with the following structure:
 {
   "name": "Student Name",
   "right": 10,
   "wrong": 5,
+  "confidence": 95,
   "q1": 1,
   "q2": -1,
   "q3": 0,
@@ -85,13 +88,14 @@ Output your response as a JSON object with the following structure:
         name: { type: Type.STRING, description: "Student's name" },
         right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
         wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
+        confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" },
         q1: { type: Type.INTEGER }, q2: { type: Type.INTEGER }, q3: { type: Type.INTEGER }, q4: { type: Type.INTEGER }, q5: { type: Type.INTEGER },
         q6: { type: Type.INTEGER }, q7: { type: Type.INTEGER }, q8: { type: Type.INTEGER }, q9: { type: Type.INTEGER }, q10: { type: Type.INTEGER },
         q11: { type: Type.INTEGER }, q12: { type: Type.INTEGER }, q13: { type: Type.INTEGER }, q14: { type: Type.INTEGER }, q15: { type: Type.INTEGER },
         q16: { type: Type.INTEGER }, q17: { type: Type.INTEGER }, q18: { type: Type.INTEGER }, q19: { type: Type.INTEGER }, q20: { type: Type.INTEGER },
         q21: { type: Type.INTEGER }, q22: { type: Type.INTEGER }, q23: { type: Type.INTEGER }, q24: { type: Type.INTEGER }, q25: { type: Type.INTEGER },
       },
-      required: ["name", "right", "wrong", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22", "q23", "q24", "q25"]
+      required: ["name", "right", "wrong", "confidence", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22", "q23", "q24", "q25"]
     }
   };
 

@@ -16,12 +16,13 @@ interface ReviewModalProps {
   hasNext?: boolean;
   hasPrev?: boolean;
   onUpdateName?: (id: string, newName: string) => void;
+  onUpdateScore?: (id: string, qNum: number, newScore: number) => void;
 }
 
 export default function ReviewModal({ 
   fileId, fileName, previewUrl, result, answerKey, 
   onClose, onRetry, isProcessing,
-  onNext, onPrev, hasNext, hasPrev, onUpdateName
+  onNext, onPrev, hasNext, hasPrev, onUpdateName, onUpdateScore
 }: ReviewModalProps) {
   const [rotation, setRotation] = useState(0);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -163,7 +164,17 @@ export default function ReviewModal({
                 }
 
                 return (
-                  <div key={qNum} className={`flex flex-col items-center p-2 rounded border ${bgColor}`}>
+                  <div 
+                    key={qNum} 
+                    onClick={() => {
+                      if (onUpdateScore) {
+                        const nextScore = score === 1 ? -1 : score === -1 ? 0 : 1;
+                        onUpdateScore(fileId, qNum, nextScore);
+                      }
+                    }}
+                    className={`flex flex-col items-center p-2 rounded border cursor-pointer hover:opacity-80 transition-opacity ${bgColor}`}
+                    title="Click to toggle result (Right -> Wrong -> No Answer)"
+                  >
                     <span className="text-xs font-medium mb-1">Q{qNum}</span>
                     <Icon className={`w-5 h-5 ${iconColor}`} />
                     <span className="text-xs mt-1 font-bold">{score > 0 ? '+1' : score < 0 ? '-1' : '0'}</span>
