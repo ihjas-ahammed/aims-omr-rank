@@ -147,6 +147,7 @@ Output your response as a JSON object with the following structure:
         name: data.name || 'Unknown',
         right: data.right || 0,
         wrong: data.wrong || 0,
+        confidence: data.confidence ?? 100,
         scores
       };
 
@@ -157,6 +158,150 @@ Output your response as a JSON object with the following structure:
   }
 
   throw lastError || new Error('Failed to evaluate OMR sheet with all provided keys.');
+}
+
+export async function evaluateOMRBatch(
+  images: { id: string, base64: string, mimeType: string }[],
+  apiKeys: string[],
+  model: string,
+  liteModel: string,
+  answerKeyPrompt: string
+): Promise<Record<string, OMRResult>> {
+  const keysToTry = getKeys(apiKeys);
+
+  const prompt = `
+You are an expert OMR sheet evaluator.
+Evaluate the provided OMR sheet images based on the following rules and answer key.
+GIVE full focus on validation.
+
+### Answer Key
+${answerKeyPrompt}
+
+Questions 26 through 30 have not been bubbled. Ignore them.
+
+### Evaluation Rules:
+- For each question Q1 to Q25, determine if the student's answer is correct, wrong, or unattempted.
+- Give 1 if correct, -1 if wrong, 0 if no answer.
+- Cross marks: If a student made a mistake and used a cross mark on a bubble, evaluate their second option (the bubbled one without a cross). If they only have one cross mark and no other bubble, skip the question (give 0).
+- Extract the student's NAME from the sheet.
+- Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
+- Provide a confidence score from 0 to 100 representing how confident you are in your evaluation of this sheet.
+
+You will receive ${images.length} images. Each image corresponds to an ID. Evaluate each image and return a JSON object mapping the image ID to its evaluation result.
+
+Output your response as a JSON object with the following structure:
+{
+  "image_id_1": {
+    "name": "Student Name",
+    "right": 10,
+    "wrong": 5,
+    "confidence": 95,
+    "q1": 1,
+    "q2": -1,
+    "q3": 0,
+    // ... up to q25
+  },
+  "image_id_2": {
+    // ...
+  }
+}
+`;
+
+  const schemaConfig = {
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: images.reduce((acc, img) => {
+        acc[img.id] = {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING, description: "Student's name" },
+            right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
+            wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
+            confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" },
+            q1: { type: Type.INTEGER }, q2: { type: Type.INTEGER }, q3: { type: Type.INTEGER }, q4: { type: Type.INTEGER }, q5: { type: Type.INTEGER },
+            q6: { type: Type.INTEGER }, q7: { type: Type.INTEGER }, q8: { type: Type.INTEGER }, q9: { type: Type.INTEGER }, q10: { type: Type.INTEGER },
+            q11: { type: Type.INTEGER }, q12: { type: Type.INTEGER }, q13: { type: Type.INTEGER }, q14: { type: Type.INTEGER }, q15: { type: Type.INTEGER },
+            q16: { type: Type.INTEGER }, q17: { type: Type.INTEGER }, q18: { type: Type.INTEGER }, q19: { type: Type.INTEGER }, q20: { type: Type.INTEGER },
+            q21: { type: Type.INTEGER }, q22: { type: Type.INTEGER }, q23: { type: Type.INTEGER }, q24: { type: Type.INTEGER }, q25: { type: Type.INTEGER },
+          },
+          required: ["name", "right", "wrong", "confidence", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22", "q23", "q24", "q25"]
+        };
+        return acc;
+      }, {} as any),
+      required: images.map(img => img.id)
+    }
+  };
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const key = keysToTry[(currentKeyIndex + i) % keysToTry.length];
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      
+      const contentsParts: any[] = [{ text: prompt }];
+      images.forEach((img) => {
+        contentsParts.push({ text: `Image ID: ${img.id}` });
+        contentsParts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } });
+      });
+
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-pro-preview',
+        contents: contentsParts
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+      
+      let data;
+      try {
+        const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+        data = JSON.parse(cleanedText);
+      } catch (parseError) {
+        console.log('Failed to parse JSON from pro model, using lite model to restructure...', text);
+        const restructureResponse = await ai.models.generateContent({
+          model: liteModel || 'gemini-3.1-flash-lite-preview',
+          contents: `Extract the OMR evaluation data from the following text and format it as JSON.\n\nText:\n${text}`,
+          config: schemaConfig as any
+        });
+        
+        const restructuredText = restructureResponse.text;
+        if (!restructuredText) throw new Error('Empty response from lite model during restructure');
+        data = JSON.parse(restructuredText);
+      }
+      
+      const finalResults: Record<string, OMRResult> = {};
+      
+      for (const img of images) {
+        const imgData = data[img.id];
+        if (!imgData) continue;
+        
+        const scores: Record<string, number> = {};
+        for (let j = 1; j <= 25; j++) {
+          scores[`q${j}`] = imgData[`q${j}`] ?? 0;
+        }
+        
+        finalResults[img.id] = {
+          name: imgData.name || 'Unknown',
+          right: imgData.right || 0,
+          wrong: imgData.wrong || 0,
+          confidence: imgData.confidence ?? 100,
+          scores
+        };
+      }
+
+      currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
+
+      return finalResults;
+
+    } catch (error: any) {
+      console.error('Error with API key:', error);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Failed to evaluate OMR sheets with all provided keys.');
 }
 
 export async function correctNamesBatch(

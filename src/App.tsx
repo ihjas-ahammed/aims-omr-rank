@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, Camera, Settings, Download, Trash2, CheckCircle, XCircle, AlertCircle, Play, RefreshCw, FileImage, Loader2, Plus, Minus, RotateCcw, Trophy } from 'lucide-react';
-import { evaluateOMR, fetchAvailableModels, correctNamesBatch, parseTopicMappingWithAI, extractTextFromDocument, OMRResult } from './services/geminiService';
+import { evaluateOMR, evaluateOMRBatch, fetchAvailableModels, correctNamesBatch, parseTopicMappingWithAI, extractTextFromDocument, OMRResult } from './services/geminiService';
 import { saveImage, getImage, deleteImage, clearImages } from './services/db';
 import RankList from './components/RankList';
 import StudentDetail from './components/StudentDetail';
@@ -489,54 +489,67 @@ export default function App() {
     
     const pendingIds = files.filter(f => f.status === 'pending' || f.status === 'error').map(f => f.id);
     setProgress({ current: 0, total: pendingIds.length });
-    let currentIndex = 0;
     let completedCount = 0;
 
-    const worker = async (workerIndex: number) => {
-      const workerKey = keys.length > 0 ? keys[workerIndex % keys.length] : '';
-      const keysToUse = workerKey ? [workerKey] : [];
+    for (let i = 0; i < pendingIds.length; i += concurrencyLimit) {
+      const chunkIds = pendingIds.slice(i, i + concurrencyLimit);
+      
+      setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'processing', error: undefined, attempt: 1, maxAttempts: sampling + 3, stageName: `Sampling 1/${sampling}` } : f));
 
-      while (currentIndex < pendingIds.length) {
-        const id = pendingIds[currentIndex++];
+      try {
+        const imagesToProcess: { id: string, base64: string, mimeType: string, fileObj: File }[] = [];
         
-        setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'processing', error: undefined, attempt: 1, maxAttempts: sampling + 3, stageName: `Sampling 1/${sampling}` } : f));
-
-        try {
+        for (const id of chunkIds) {
           const currentFile = files.find(f => f.id === id);
-          if (!currentFile) throw new Error('File not found in state');
+          if (!currentFile) continue;
           
           let fileObj = currentFile.file;
           if (!fileObj) {
             fileObj = await getImage(id);
-            if (!fileObj) throw new Error('No file found in database');
+            if (!fileObj) continue;
           }
           
-          // Compress image
-          const { base64: finalBase64, mimeType } = await processImage(fileObj, imageResolution, 0);
+          const { base64, mimeType } = await processImage(fileObj, imageResolution, 0);
+          imagesToProcess.push({ id, base64, mimeType, fileObj });
+        }
 
-          // Evaluate with Sampling
-          let results: OMRResult[] = [];
-          let targetMatches = sampling >= 2 ? 2 : 1;
-          let maxAttempts = sampling + 3; // Prevent infinite loop
-          let bestResult: OMRResult | null = null;
+        if (imagesToProcess.length === 0) continue;
 
-          for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            let stageName = attempt < sampling ? `Sampling ${attempt + 1}/${sampling}` : `Verification ${attempt - sampling + 1}`;
-            setFiles(prev => prev.map(f => f.id === id ? { ...f, attempt: attempt + 1, maxAttempts, stageName } : f));
+        let resultsHistory: Record<string, OMRResult[]> = {};
+        for (const img of imagesToProcess) {
+          resultsHistory[img.id] = [];
+        }
+        
+        let targetMatches = sampling >= 2 ? 2 : 1;
+        let maxAttempts = sampling + 3;
+        let finalResults: Record<string, OMRResult> = {};
+        let completedIds = new Set<string>();
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          let stageName = attempt < sampling ? `Sampling ${attempt + 1}/${sampling}` : `Verification ${attempt - sampling + 1}`;
+          
+          const remainingImages = imagesToProcess.filter(img => !completedIds.has(img.id));
+          if (remainingImages.length === 0) break;
+          
+          setFiles(prev => prev.map(f => remainingImages.some(img => img.id === f.id) ? { ...f, attempt: attempt + 1, maxAttempts, stageName } : f));
+          
+          const attemptStartTime = Date.now();
+          
+          const batchResults = await evaluateOMRBatch(remainingImages, keys, proModel, liteModel, answerKey);
+          
+          const elapsed = Date.now() - attemptStartTime;
+          averageTimeRef.current = (averageTimeRef.current * 4 + elapsed) / 5;
+
+          for (const img of remainingImages) {
+            if (batchResults[img.id]) {
+              resultsHistory[img.id].push(batchResults[img.id]);
+            }
             
-            const attemptStartTime = Date.now();
-            
-            // We must run at least `sampling` times, or until we find a match if we've exceeded `sampling`
-            if (attempt < sampling || !bestResult) {
-              const result = await evaluateOMR(finalBase64, mimeType, keysToUse, proModel, liteModel, answerKey);
-              results.push(result);
-              
-              const elapsed = Date.now() - attemptStartTime;
-              averageTimeRef.current = (averageTimeRef.current * 4 + elapsed) / 5;
-              
-              // Check for matches
+            if (attempt >= sampling - 1) {
               const counts = new Map<string, number>();
-              for (const r of results) {
+              let bestResult: OMRResult | null = null;
+              
+              for (const r of resultsHistory[img.id]) {
                 const key = JSON.stringify(r.scores);
                 counts.set(key, (counts.get(key) || 0) + 1);
                 if (counts.get(key)! >= targetMatches) {
@@ -545,34 +558,36 @@ export default function App() {
                 }
               }
               
-              // If we found a match AND we've run at least `sampling` times, we can stop
-              if (bestResult && attempt >= sampling - 1) {
-                break;
+              if (bestResult) {
+                finalResults[img.id] = bestResult;
+                completedIds.add(img.id);
+              } else if (attempt === maxAttempts - 1) {
+                finalResults[img.id] = resultsHistory[img.id][resultsHistory[img.id].length - 1];
+                completedIds.add(img.id);
               }
             }
           }
-
-          if (!bestResult) {
-            // Fallback to the last result if we never got a match
-            bestResult = results[results.length - 1];
-          }
-
-          setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'success', result: bestResult!, file: fileObj } : f));
-        } catch (error: any) {
-          setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'error', error: error.message } : f));
-        } finally {
-          completedCount++;
-          setProgress(p => ({ ...p, current: completedCount }));
         }
-      }
-    };
 
-    const workers = [];
-    for (let i = 0; i < concurrencyLimit; i++) {
-      workers.push(worker(i));
+        setFiles(prev => prev.map(f => {
+          if (finalResults[f.id]) {
+            const fileObj = imagesToProcess.find(img => img.id === f.id)?.fileObj;
+            return { ...f, status: 'success', result: finalResults[f.id], file: fileObj };
+          }
+          if (chunkIds.includes(f.id) && !finalResults[f.id]) {
+            return { ...f, status: 'error', error: 'Failed to evaluate' };
+          }
+          return f;
+        }));
+
+      } catch (error: any) {
+        setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'error', error: error.message } : f));
+      } finally {
+        completedCount += chunkIds.length;
+        setProgress(p => ({ ...p, current: completedCount }));
+      }
     }
 
-    await Promise.all(workers);
     setIsProcessing(false);
   };
 
