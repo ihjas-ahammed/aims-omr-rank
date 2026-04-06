@@ -215,7 +215,9 @@ export default function App() {
     const saved = localStorage.getItem('omr_files');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved) as ProcessedFile[];
+        // Reset any stuck 'processing' files back to 'pending' on load
+        return parsed.map(f => f.status === 'processing' ? { ...f, status: 'pending', attempt: 0, stageName: undefined } : f);
       } catch (e) {
         return [];
       }
@@ -566,7 +568,7 @@ export default function App() {
               resultsHistory[img.id].push(batchResults[img.id]);
             }
             
-            if (attempt >= sampling - 1) {
+            if (attempt >= targetMatches - 1) {
               const counts = new Map<string, number>();
               let bestResult: OMRResult | null = null;
               
@@ -574,7 +576,8 @@ export default function App() {
                 const key = JSON.stringify(r.scores);
                 counts.set(key, (counts.get(key) || 0) + 1);
                 if (counts.get(key)! >= targetMatches) {
-                  bestResult = r;
+                  // Use the first result that had these scores to keep its name
+                  bestResult = resultsHistory[img.id].find(res => JSON.stringify(res.scores) === key) || r;
                   break;
                 }
               }
