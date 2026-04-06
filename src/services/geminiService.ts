@@ -28,17 +28,22 @@ function getKeys(apiKeys: string[]) {
   return keys;
 }
 
+function getNextKey(keys: string[]): { key: string, index: number } {
+  const index = currentKeyIndex;
+  currentKeyIndex = (currentKeyIndex + 1) % keys.length;
+  return { key: keys[index], index };
+}
+
 export async function fetchAvailableModels(apiKeys: string[]): Promise<string[]> {
   const keys = getKeys(apiKeys);
   let lastError: any;
   
   for (let i = 0; i < keys.length; i++) {
-    const key = keys[(currentKeyIndex + i) % keys.length];
+    const { key } = getNextKey(keys);
     try {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
-      currentKeyIndex = (currentKeyIndex + i) % keys.length;
       return data.models
         .map((m: any) => m.name.replace('models/', ''))
         .filter((name: string) => name.includes('gemini') || name.includes('gemma'));
@@ -112,7 +117,7 @@ Output your response as a JSON object with the following structure:
   let lastError: any;
 
   for (let i = 0; i < keysToTry.length; i++) {
-    const key = keysToTry[(currentKeyIndex + i) % keysToTry.length];
+    const { key } = getNextKey(keysToTry);
     try {
       const ai = new GoogleGenAI({ apiKey: key });
       
@@ -129,12 +134,10 @@ Output your response as a JSON object with the following structure:
       
       let data;
       try {
-        // Try to parse directly, stripping potential markdown blocks
         const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
         data = JSON.parse(cleanedText);
       } catch (parseError) {
         console.log('Failed to parse JSON from pro model, using lite model to restructure...', text);
-        // Fallback to lite model to restructure
         const restructureResponse = await ai.models.generateContent({
           model: liteModel || 'gemini-3.1-flash-lite-preview',
           contents: `Extract the OMR evaluation data from the following text and format it as JSON.\n\nText:\n${text}`,
@@ -150,8 +153,6 @@ Output your response as a JSON object with the following structure:
       for (let j = 1; j <= 25; j++) {
         scores[`q${j}`] = data[`q${j}`] ?? 0;
       }
-
-      currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
 
       return {
         name: data.name || 'Unknown',
@@ -245,7 +246,7 @@ Output your response as a JSON object with the following structure:
   let lastError: any;
 
   for (let i = 0; i < keysToTry.length; i++) {
-    const key = keysToTry[(currentKeyIndex + i) % keysToTry.length];
+    const { key } = getNextKey(keysToTry);
     try {
       const ai = new GoogleGenAI({ apiKey: key });
       
@@ -300,8 +301,6 @@ Output your response as a JSON object with the following structure:
         };
       }
 
-      currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
-
       return finalResults;
 
     } catch (error: any) {
@@ -323,19 +322,11 @@ export async function correctNamesBatch(
   
   const keysToTry = getKeys(apiKeys);
   const finalMap: Record<string, { correctedName: string, confidence: number }> = {};
-  
-  // Batch size of 20 names per request
   const BATCH_SIZE = 20;
-  
-  // Create an array of promises for each batch
   const batchPromises = [];
   
   for (let batchStart = 0; batchStart < foundNames.length; batchStart += BATCH_SIZE) {
     const batchNames = foundNames.slice(batchStart, batchStart + BATCH_SIZE);
-    
-    // Assign a key for this batch
-    const keyIndex = (currentKeyIndex + Math.floor(batchStart / BATCH_SIZE)) % keysToTry.length;
-    const key = keysToTry[keyIndex];
     
     batchPromises.push((async () => {
       const prompt = `
@@ -356,11 +347,10 @@ ${attendanceSheet}
 `;
 
       let lastError: any;
-      // Try up to keysToTry.length times for this specific batch
       for (let i = 0; i < keysToTry.length; i++) {
-        const tryKey = keysToTry[(keyIndex + i) % keysToTry.length];
+        const { key } = getNextKey(keysToTry);
         try {
-          const ai = new GoogleGenAI({ apiKey: tryKey });
+          const ai = new GoogleGenAI({ apiKey: key });
           
           const response = await ai.models.generateContent({
             model: model || 'gemini-3.1-pro-preview',
@@ -396,13 +386,8 @@ ${attendanceSheet}
     })());
   }
   
-  // Wait for all batches to complete
   const results = await Promise.all(batchPromises);
   
-  // Update the global key index
-  currentKeyIndex = (currentKeyIndex + Math.ceil(foundNames.length / BATCH_SIZE)) % keysToTry.length;
-  
-  // Merge results
   for (const batchResult of results) {
     for (const item of batchResult) {
       finalMap[item.original] = { correctedName: item.corrected, confidence: item.confidence };
@@ -440,7 +425,7 @@ Only output the formatted text, nothing else.`;
   let lastError: any;
 
   for (let i = 0; i < keysToTry.length; i++) {
-    const key = keysToTry[(currentKeyIndex + i) % keysToTry.length];
+    const { key } = getNextKey(keysToTry);
     try {
       const ai = new GoogleGenAI({ apiKey: key });
       
@@ -455,7 +440,6 @@ Only output the formatted text, nothing else.`;
       const text = response.text;
       if (!text) throw new Error('Empty response from model');
       
-      currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
       return text.trim();
     } catch (error: any) {
       console.error('Error with API key in extractTextFromDocument:', error);
@@ -485,7 +469,7 @@ ${mappingText}
   let lastError: any;
 
   for (let i = 0; i < keysToTry.length; i++) {
-    const key = keysToTry[(currentKeyIndex + i) % keysToTry.length];
+    const { key } = getNextKey(keysToTry);
     try {
       const ai = new GoogleGenAI({ apiKey: key });
       
@@ -529,7 +513,6 @@ ${mappingText}
 
       const jsonStr = response.text?.trim() || '[]';
       const parsed = JSON.parse(jsonStr);
-      currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
       return parsed;
     } catch (error) {
       console.error('Error with API key in parseTopicMappingWithAI:', error);
@@ -569,7 +552,7 @@ Output your response as a JSON object with this exact structure:
   let lastError: any;
 
   for (let i = 0; i < keysToTry.length; i++) {
-    const key = keysToTry[(currentKeyIndex + i) % keysToTry.length];
+    const { key } = getNextKey(keysToTry);
     try {
       const ai = new GoogleGenAI({ apiKey: key });
       
@@ -599,7 +582,6 @@ Output your response as a JSON object with this exact structure:
       if (!text) throw new Error('Empty response from model');
       
       const data = JSON.parse(text) as AutoCropResult;
-      currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
       return data;
     } catch (error) {
       console.error('Error with API key in autoCropAndRotate:', error);

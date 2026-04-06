@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, RefreshCw, CheckCircle, XCircle, MinusCircle, ChevronLeft, ChevronRight, RotateCw, Edit2, Check } from 'lucide-react';
+import { X, RefreshCw, CheckCircle, XCircle, MinusCircle, ChevronLeft, ChevronRight, RotateCw, Edit2, Check, Crop } from 'lucide-react';
 import { OMRResult } from '../services/geminiService';
+import ImageCropper from './ImageCropper';
 
 interface ReviewModalProps {
   fileId: string;
@@ -17,32 +18,33 @@ interface ReviewModalProps {
   hasPrev?: boolean;
   onUpdateName?: (id: string, newName: string) => void;
   onUpdateScore?: (id: string, qNum: number, newScore: number) => void;
+  onUpdateImage?: (id: string, file: File) => void;
 }
 
 export default function ReviewModal({ 
   fileId, fileName, previewUrl, result, answerKey, 
   onClose, onRetry, isProcessing,
-  onNext, onPrev, hasNext, hasPrev, onUpdateName, onUpdateScore
+  onNext, onPrev, hasNext, hasPrev, onUpdateName, onUpdateScore, onUpdateImage
 }: ReviewModalProps) {
-  const [rotation, setRotation] = useState(0);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(result?.name || '');
+  const [isEditingImage, setIsEditingImage] = useState(false);
 
   useEffect(() => {
-    setRotation(0);
     setIsEditingName(false);
     setEditedName(result?.name || '');
+    setIsEditingImage(false);
   }, [fileId, result?.name]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isEditingName) return; // Don't navigate while typing
+      if (isEditingName || isEditingImage) return; // Don't navigate while typing or cropping
       if (e.key === 'ArrowRight' && hasNext && onNext) onNext();
       if (e.key === 'ArrowLeft' && hasPrev && onPrev) onPrev();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasNext, hasPrev, onNext, onPrev, isEditingName]);
+  }, [hasNext, hasPrev, onNext, onPrev, isEditingName, isEditingImage]);
 
   if (!result) return null;
 
@@ -55,47 +57,61 @@ export default function ReviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      {hasPrev && (
+      {hasPrev && !isEditingImage && (
         <button onClick={onPrev} className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/80 hover:bg-white rounded-full shadow-lg z-50 transition-all">
           <ChevronLeft className="w-8 h-8 text-gray-800" />
         </button>
       )}
-      {hasNext && (
+      {hasNext && !isEditingImage && (
         <button onClick={onNext} className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/80 hover:bg-white rounded-full shadow-lg z-50 transition-all">
           <ChevronRight className="w-8 h-8 text-gray-800" />
         </button>
       )}
 
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden relative">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50 shrink-0">
           <h2 className="text-xl font-semibold text-gray-800">Review: {fileName}</h2>
           <button onClick={onClose} className="p-2 text-gray-500 hover:bg-gray-200 rounded-full transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
         
-        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
           {/* Image Side */}
-          <div className="md:w-5/12 bg-gray-100 p-4 flex flex-col items-center justify-center overflow-hidden border-r border-gray-200 relative">
-            <button 
-              onClick={() => setRotation(r => (r + 90) % 360)} 
-              className="absolute top-4 right-4 p-2 bg-white/90 hover:bg-white rounded-full shadow z-10 text-gray-700 transition-colors"
-              title="Rotate Image"
-            >
-              <RotateCw className="w-5 h-5" />
-            </button>
-            <div className="w-full h-full flex items-center justify-center overflow-auto">
-              {previewUrl ? (
-                <img 
-                  src={previewUrl} 
-                  alt="OMR Sheet" 
-                  className="max-w-full max-h-full object-contain shadow-sm rounded border border-gray-300 transition-transform duration-200" 
-                  style={{ transform: `rotate(${rotation}deg)` }}
-                />
-              ) : (
-                <div className="text-gray-500">No image preview available</div>
-              )}
-            </div>
+          <div className="md:w-5/12 bg-gray-100 p-0 md:p-4 flex flex-col items-center justify-center overflow-hidden border-r border-gray-200 relative min-h-0">
+            {isEditingImage && previewUrl ? (
+              <ImageCropper 
+                imageUrl={previewUrl}
+                onSave={async (file) => {
+                  if (onUpdateImage) await onUpdateImage(fileId, file);
+                  setIsEditingImage(false);
+                }}
+                onCancel={() => setIsEditingImage(false)}
+              />
+            ) : (
+              <>
+                <div className="absolute top-4 right-4 flex gap-2 z-10">
+                  <button 
+                    onClick={() => setIsEditingImage(true)} 
+                    className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow transition-colors"
+                    title="Crop / Edit Image"
+                  >
+                    <Crop className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="w-full h-full flex items-center justify-center overflow-auto p-4">
+                  {previewUrl ? (
+                    <img 
+                      src={previewUrl} 
+                      alt="OMR Sheet" 
+                      className="max-w-full max-h-full object-contain shadow-sm rounded border border-gray-300" 
+                    />
+                  ) : (
+                    <div className="text-gray-500">No image preview available</div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
           
           {/* Details Side */}
@@ -183,7 +199,7 @@ export default function ReviewModal({
               })}
             </div>
 
-            <div className="mt-auto pt-4 border-t border-gray-200">
+            <div className="mt-auto pt-4 border-t border-gray-200 shrink-0">
               <button
                 onClick={() => {
                   onRetry(fileId);
