@@ -311,9 +311,26 @@ export async function correctNamesBatch(
   apiKeys: string[],
   model: string
 ): Promise<Record<string, { correctedName: string, confidence: number }>> {
-  const keysToTry = getKeys(apiKeys);
+  if (foundNames.length === 0) return {};
   
-  const prompt = `
+  const keysToTry = getKeys(apiKeys);
+  const finalMap: Record<string, { correctedName: string, confidence: number }> = {};
+  
+  // Batch size of 20 names per request
+  const BATCH_SIZE = 20;
+  
+  // Create an array of promises for each batch
+  const batchPromises = [];
+  
+  for (let batchStart = 0; batchStart < foundNames.length; batchStart += BATCH_SIZE) {
+    const batchNames = foundNames.slice(batchStart, batchStart + BATCH_SIZE);
+    
+    // Assign a key for this batch
+    const keyIndex = (currentKeyIndex + Math.floor(batchStart / BATCH_SIZE)) % keysToTry.length;
+    const key = keysToTry[keyIndex];
+    
+    batchPromises.push((async () => {
+      const prompt = `
 You are a data correction assistant.
 I have a list of names extracted via OCR from OMR sheets, which might have spelling mistakes.
 I also have an official attendance sheet.
@@ -324,57 +341,67 @@ similarly, we have Ridha K and Rihan K
 For each name, provide the closest match from the attendance sheet and a confidence score (0-100) representing how certain you are of this match. If no good match is found, return the original name and a low confidence score.
 
 Extracted Names:
-${JSON.stringify(foundNames)}
+${JSON.stringify(batchNames)}
 
 Attendance Sheet:
 ${attendanceSheet}
 `;
 
-  let lastError: any;
-
-  for (let i = 0; i < keysToTry.length; i++) {
-    const key = keysToTry[(currentKeyIndex + i) % keysToTry.length];
-    try {
-      const ai = new GoogleGenAI({ apiKey: key });
-      
-      const response = await ai.models.generateContent({
-        model: model || 'gemini-3.1-pro-preview',
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                original: { type: Type.STRING, description: "The exact extracted name" },
-                corrected: { type: Type.STRING, description: "The corrected name from the attendance sheet" },
-                confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" }
-              },
-              required: ["original", "corrected", "confidence"]
+      let lastError: any;
+      // Try up to keysToTry.length times for this specific batch
+      for (let i = 0; i < keysToTry.length; i++) {
+        const tryKey = keysToTry[(keyIndex + i) % keysToTry.length];
+        try {
+          const ai = new GoogleGenAI({ apiKey: tryKey });
+          
+          const response = await ai.models.generateContent({
+            model: model || 'gemini-3.1-pro-preview',
+            contents: prompt,
+            config: {
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    original: { type: Type.STRING, description: "The exact extracted name" },
+                    corrected: { type: Type.STRING, description: "The corrected name from the attendance sheet" },
+                    confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" }
+                  },
+                  required: ["original", "corrected", "confidence"]
+                }
+              }
             }
-          }
+          });
+
+          const text = response.text;
+          if (!text) throw new Error('Empty response from model');
+          
+          const data = JSON.parse(text) as { original: string, corrected: string, confidence: number }[];
+          return data;
+        } catch (error) {
+          console.error('Error with API key in batch correction:', error);
+          lastError = error;
         }
-      });
-
-      const text = response.text;
-      if (!text) throw new Error('Empty response from model');
-      
-      const data = JSON.parse(text) as { original: string, corrected: string, confidence: number }[];
-      const map: Record<string, { correctedName: string, confidence: number }> = {};
-      for (const item of data) {
-        map[item.original] = { correctedName: item.corrected, confidence: item.confidence };
       }
-
-      currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
-      return map;
-    } catch (error) {
-      console.error('Error with API key in batch correction:', error);
-      lastError = error;
+      throw lastError || new Error('Failed to correct names with all provided keys.');
+    })());
+  }
+  
+  // Wait for all batches to complete
+  const results = await Promise.all(batchPromises);
+  
+  // Update the global key index
+  currentKeyIndex = (currentKeyIndex + Math.ceil(foundNames.length / BATCH_SIZE)) % keysToTry.length;
+  
+  // Merge results
+  for (const batchResult of results) {
+    for (const item of batchResult) {
+      finalMap[item.original] = { correctedName: item.corrected, confidence: item.confidence };
     }
   }
 
-  throw lastError || new Error('Failed to correct names with all provided keys.');
+  return finalMap;
 }
 
 export async function extractTextFromDocument(

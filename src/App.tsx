@@ -857,16 +857,18 @@ export default function App() {
         }
         cells.push(currentCell.trim());
         
-        if (cells.length < 4) continue;
+        if (cells.length < 3) continue;
 
         const name = cells[0].replace(/^"|"$/g, '').replace(/""/g, '"');
         const right = parseInt(cells[1], 10) || 0;
         const wrong = parseInt(cells[2], 10) || 0;
         
         const scores: Record<string, number> = {};
-        for (let q = 1; q <= 25; q++) {
-          const scoreIdx = 3 + q - 1; // Q1 is at index 3
-          scores[`q${q}`] = parseInt(cells[scoreIdx] || '0', 10) || 0;
+        if (cells.length >= 4) {
+          for (let q = 1; q <= 25; q++) {
+            const scoreIdx = 3 + q - 1; // Q1 is at index 3
+            scores[`q${q}`] = parseInt(cells[scoreIdx] || '0', 10) || 0;
+          }
         }
 
         importedFiles.push({
