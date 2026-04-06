@@ -4487,6 +4487,35 @@ export default defineConfig(({mode}) => {
 - Error 503, is high demand, if this happens, retry with same api key after ten seconds 
 --- END OF FILE future.md ---
 
+--- START OF FILE firebase.json ---
+{
+  "hosting": {
+    "public": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
+
+--- END OF FILE firebase.json ---
+
+--- START OF FILE .firebaserc ---
+{
+  "projects": {
+    "default": "aims-plus-evaluation"
+  }
+}
+
+--- END OF FILE .firebaserc ---
+
 --- START OF FILE src/index.css ---
 @import "tailwindcss";
 
@@ -8122,6 +8151,37 @@ export default function ChapterProgressBars({ chapters, student, compact = false
 
 --- END OF FILE src/components/print/ChapterProgressBars.tsx ---
 
+--- START OF FILE src/components/print/PrintHeader.tsx ---
+import React from 'react';
+
+interface PrintHeaderProps {
+  subjectName: string;
+  dayNumber: string;
+  chapterTopicString: string;
+}
+
+export default function PrintHeader({ subjectName, dayNumber, chapterTopicString }: PrintHeaderProps) {
+  return (
+    <div className="mb-8 pt-4">
+      <div className="flex items-center justify-between mb-4">
+        <img src="/logo1.png" alt="Logo" className="h-12 md:h-16 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
+        <div className="text-center flex-1">
+          <h1 className="text-sm md:text-xl font-bold tracking-[0.4em] uppercase ml-[0.4em] text-slate-800">
+            AIMS PLUS TEST SERIES · CRASH 2026
+          </h1>
+          <h2 className="text-xl md:text-2xl font-black mt-1 text-slate-900">DAY {dayNumber} — RANK LIST</h2>
+        </div>
+        <img src="/logo2.png" alt="Logo" className="h-12 md:h-16 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
+      </div>
+      <div className="text-center text-xs md:text-sm font-medium max-w-4xl mx-auto uppercase text-slate-700">
+        <span className="font-bold text-slate-900">{subjectName}</span> | {chapterTopicString}
+      </div>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/print/PrintHeader.tsx ---
+
 --- START OF FILE src/services/db.ts ---
 const DB_NAME = 'omr-db';
 const STORE_NAME = 'images';
@@ -9092,3 +9152,12 @@ export async function getCroppedImg(imageSrc: string, pixelCrop: PixelCrop | nul
   });
 }
 --- END OF FILE src/utils/cropUtils.ts ---
+
+--- START OF FILE .firebase/hosting.ZGlzdA.cache ---
+index.html,1775494378079,f79f18c801825551ff426f1ce57413e691349ba64a04ed63e44cae682af11547
+assets/index-BzG3wJxU.css,1775494378077,9311886de86a47cb18c8af6a808d91101fa9d86addbbfb348a3defce47c3e5d0
+assets/index-B5xZwjBv.js,1775494378080,153b1febe23eadee12a7ed1664b1e09185740ff2d879d8ba04361eab77490569
+logo2.png,1775494377755,75154f784e8338006ce3ab25e18738a880af1687440174a3699349cf2073cf70
+logo1.png,1775494377755,a4358fe8405e596c4249027c94d247f4c64aedbd68c260136dbeeccdcb82f15f
+
+--- END OF FILE .firebase/hosting.ZGlzdA.cache ---
