@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Camera, Settings, Download, Trash2, CheckCircle, Play, RefreshCw, FileImage, Loader2, Plus, Minus, RotateCcw, Trophy, X, Beaker } from 'lucide-react';
+import { Upload, Camera, Settings, CheckCircle, Plus, X, Beaker } from 'lucide-react';
 import { evaluateOMRBatch, correctNamesBatch, autoCropAndRotate, OMRResult } from './services/geminiService';
 import { saveImage, getImage, deleteImage } from './services/db';
-import { processImage, fileToBase64, applyCropAndRotate } from './utils/imageProcessing';
+import { processImage, fileToBase64, applyCropAndRotate, rotateImageFile } from './utils/imageProcessing';
 import { dataURLtoFile } from './utils/fileUtils';
 
 import SettingsPanel from './components/SettingsPanel';
@@ -13,6 +13,7 @@ import ReviewModal from './components/ReviewModal';
 import Lab from './components/Lab';
 import AutoCropTool from './components/lab/AutoCropTool';
 import QueueItem, { ProcessedFile } from './components/QueueItem';
+import QueueToolbar from './components/QueueToolbar';
 
 const DEFAULT_ATTENDANCE = `ADIL MARZOOQUE
 ADISANKAR
@@ -272,12 +273,16 @@ export default function App() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
   const [reviewFileId, setReviewFileId] = useState<string | null>(null);
   
   const [sortBy, setSortBy] = useState<'default' | 'name' | 'score' | 'verification_confidence' | 'name_confidence'>('default');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
+  const [isRotating, setIsRotating] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -302,30 +307,55 @@ export default function App() {
   useEffect(() => { localStorage.setItem('omr_days', JSON.stringify(days)); }, [days]);
   useEffect(() => { localStorage.setItem('omr_currentDay', currentDay.toString()); }, [currentDay]);
 
+  // Handle restoring missing file previews after reloading from local storage
   useEffect(() => {
-    const loadImages = async () => {
-      const loadedFiles = await Promise.all(files.map(async f => {
-        if (!f.previewUrl) {
-          try {
-            const file = await getImage(f.id);
-            if (file) {
-              return { ...f, file, previewUrl: URL.createObjectURL(file) };
+    const missingPreviewFiles = files.filter(f => !f.previewUrl && !failedImageIds.has(f.id));
+    
+    if (missingPreviewFiles.length > 0) {
+      const loadMissingImages = async () => {
+        const loadedData = await Promise.all(
+          missingPreviewFiles.map(async (f) => {
+            try {
+              const file = await getImage(f.id);
+              if (file) {
+                return { id: f.id, file, previewUrl: URL.createObjectURL(file) };
+              }
+            } catch (e) {
+              console.error('Failed to load image from DB', e);
             }
-          } catch (e) {
-            console.error('Failed to load image from DB', e);
-          }
+            return { id: f.id, failed: true };
+          })
+        );
+
+        const newFailedIds = loadedData.filter(l => l.failed).map(l => l.id);
+        if (newFailedIds.length > 0) {
+          setFailedImageIds(prev => new Set([...prev, ...newFailedIds]));
         }
-        return f;
-      }));
-      setFiles(loadedFiles);
-      setIsLoaded(true);
-    };
-    if (!isLoaded && files.length > 0) {
-      loadImages();
-    } else if (!isLoaded) {
-      setIsLoaded(true);
+
+        setFiles(prev => prev.map(f => {
+          const loaded = loadedData.find(l => l.id === f.id);
+          if (loaded && loaded.previewUrl) {
+            return { ...f, file: loaded.file, previewUrl: loaded.previewUrl };
+          }
+          return f;
+        }));
+      };
+      
+      loadMissingImages();
     }
-  }, [isLoaded, files]);
+  }, [files, failedImageIds]);
+
+  // Persist files to localStorage whenever they change
+  useEffect(() => {
+    Object.entries(filesByDay).forEach(([day, filesList]) => {
+      const filesToSave = filesList.map(f => ({
+        ...f,
+        file: undefined, // Don't stringify File object
+        previewUrl: undefined // Don't stringify blob URL
+      }));
+      localStorage.setItem(`omr_files_${day}`, JSON.stringify(filesToSave));
+    });
+  }, [filesByDay]);
 
   const addDay = () => {
     const newDay = Math.max(...days, 0) + 1;
@@ -380,6 +410,11 @@ export default function App() {
   const removeFile = async (id: string) => {
     await deleteImage(id);
     setFiles(prev => prev.filter(f => f.id !== id));
+    setSelectedFileIds(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
+    });
   };
 
   const clearAllFiles = async () => {
@@ -390,6 +425,7 @@ export default function App() {
         await deleteImage(f.id);
       }
       setFiles([]);
+      setSelectedFileIds(new Set());
     }
   };
 
@@ -397,6 +433,45 @@ export default function App() {
     await saveImage(id, newFile);
     const newPreviewUrl = URL.createObjectURL(newFile);
     setFiles(prev => prev.map(f => f.id === id ? { ...f, file: newFile, previewUrl: newPreviewUrl } : f));
+  };
+
+  const rotateSelected = async () => {
+    if (selectedFileIds.size === 0 || isRotating) return;
+    setIsRotating(true);
+    
+    try {
+      for (const id of selectedFileIds) {
+        // Look up the current file directly to avoid stale state issues
+        const currentFiles = filesByDay[currentDay] || [];
+        const fileIndex = currentFiles.findIndex(f => f.id === id);
+        if (fileIndex === -1) continue;
+        
+        let fileObj = currentFiles[fileIndex].file;
+        if (!fileObj) {
+          fileObj = await getImage(id);
+        }
+        
+        if (fileObj) {
+          const rotatedFile = await rotateImageFile(fileObj, 90);
+          await saveImage(id, rotatedFile);
+          const newPreviewUrl = URL.createObjectURL(rotatedFile);
+          
+          setFiles(prev => prev.map(f => {
+            if (f.id === id) {
+              if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+              return { ...f, file: rotatedFile, previewUrl: newPreviewUrl };
+            }
+            return f;
+          }));
+        }
+      }
+      setSelectedFileIds(new Set());
+    } catch (e) {
+      console.error("Failed to rotate selected files", e);
+      alert("Failed to rotate some images.");
+    } finally {
+      setIsRotating(false);
+    }
   };
 
   const processFiles = async () => {
@@ -420,7 +495,7 @@ export default function App() {
 
       try {
         const loadedImagesPromises = chunkIds.map(async (id) => {
-          const currentFile = files.find(f => f.id === id);
+          const currentFile = filesByDay[currentDay]?.find(f => f.id === id) || files.find(f => f.id === id);
           if (!currentFile) return null;
           
           let fileObj = currentFile.file;
@@ -444,9 +519,8 @@ export default function App() {
               
               const { base64, mimeType } = await applyCropAndRotate(fileObj, cropData, finalRotation, imageResolution);
               
-              // Save the cropped image to database and update state so user can preview it as default
               const croppedDataUrl = `data:${mimeType};base64,${base64}`;
-              const croppedFile = dataURLtoFile(croppedDataUrl, fileObj.name);
+              const croppedFile = dataURLtoFile(croppedDataUrl, fileObj.name || 'image.jpg');
               await saveImage(id, croppedFile);
               const newPreviewUrl = URL.createObjectURL(croppedFile);
               
@@ -792,6 +866,44 @@ export default function App() {
     }));
   };
 
+  // Selection logic
+  const filteredFiles = files.filter(f => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return f.fileName.toLowerCase().includes(q) || (f.result?.name.toLowerCase().includes(q) ?? false);
+  });
+
+  const isAllSelected = filteredFiles.length > 0 && selectedFileIds.size === filteredFiles.length;
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedFileIds(new Set(filteredFiles.map(f => f.id)));
+    } else {
+      setSelectedFileIds(new Set());
+    }
+  };
+
+  const handleToggleSelect = (id: string, checked: boolean) => {
+    const newSet = new Set(selectedFileIds);
+    if (checked) newSet.add(id);
+    else newSet.delete(id);
+    setSelectedFileIds(newSet);
+  };
+
+  // Detail View Navigation Logic
+  const successfulResults = files.filter(f => f.status === 'success' && f.result).map(f => f.result!);
+  const sortedResults = [...successfulResults].sort((a, b) => ((b.right * 4) - b.wrong) - ((a.right * 4) - a.wrong));
+  const currentDetailIndex = selectedStudent ? sortedResults.findIndex(r => r.name === selectedStudent.name) : -1;
+  const hasNextDetail = currentDetailIndex >= 0 && currentDetailIndex < sortedResults.length - 1;
+  const hasPrevDetail = currentDetailIndex > 0;
+
+  const handleDetailNext = () => {
+    if (hasNextDetail) setSelectedStudent(sortedResults[currentDetailIndex + 1]);
+  };
+  const handleDetailPrev = () => {
+    if (hasPrevDetail) setSelectedStudent(sortedResults[currentDetailIndex - 1]);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans print:bg-white">
       <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
@@ -915,6 +1027,10 @@ export default function App() {
             topicMapping={topicMapping} 
             parsedTopicMapping={parsedTopicMapping}
             onBack={() => setView('ranklist')} 
+            onNext={handleDetailNext}
+            onPrev={handleDetailPrev}
+            hasNext={hasNextDetail}
+            hasPrev={hasPrevDetail}
           />
         )}
 
@@ -956,136 +1072,82 @@ export default function App() {
               </div>
             </section>
 
-            {files.length > 0 && (
-              <section className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b border-gray-200 flex flex-col gap-4 bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-medium">Processing Queue ({files.length} files)</h2>
-                    <div className="flex gap-2 items-center flex-wrap">
-                      <label className="flex items-center gap-2 text-sm text-gray-700 mr-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={correctNamesOnExport}
-                          onChange={(e) => setCorrectNamesOnExport(e.target.checked)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        Correct names on export
-                      </label>
-                      <button
-                        onClick={clearAllFiles}
-                        disabled={isProcessing || isExporting}
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-md font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            <section className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <QueueToolbar
+                filesLength={files.length}
+                hasErrors={files.some(f => f.status === 'error')}
+                hasSuccess={files.some(f => f.status === 'success')}
+                isProcessing={isProcessing}
+                isExporting={isExporting}
+                isRotating={isRotating}
+                autoCropEnabled={autoCropEnabled}
+                setAutoCropEnabled={setAutoCropEnabled}
+                correctNamesOnExport={correctNamesOnExport}
+                setCorrectNamesOnExport={setCorrectNamesOnExport}
+                onClearAll={clearAllFiles}
+                onRetryFailed={retryAllFailed}
+                onRecheckAll={recheckAll}
+                onProcess={processFiles}
+                onFixNames={fixNames}
+                onExportCSV={exportCSV}
+                onImportCSVClick={() => csvInputRef.current?.click()}
+                onViewRankList={() => setView('ranklist')}
+                allSuccess={files.length > 0 && files.every(f => f.status === 'success')}
+                selectedCount={selectedFileIds.size}
+                isAllSelected={isAllSelected}
+                onSelectAll={handleSelectAll}
+                onRotateSelected={rotateSelected}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+              />
+              <input 
+                type="file" 
+                accept=".csv" 
+                className="hidden" 
+                ref={csvInputRef}
+                onChange={handleImportCSV}
+              />
+              
+              {files.length > 0 && (
+                <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-600 font-medium">Sort by:</span>
+                    <select 
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 py-1"
+                    >
+                      <option value="default">Default (Upload Order)</option>
+                      <option value="name">Name</option>
+                      <option value="score">Score</option>
+                      <option value="verification_confidence">Verification Confidence</option>
+                      <option value="name_confidence">Name Confidence</option>
+                    </select>
+                    {sortBy !== 'default' && (
+                      <button 
+                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                        className="p-1.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 transition-colors"
+                        title={sortOrder === 'asc' ? "Ascending" : "Descending"}
                       >
-                        <Trash2 className="w-4 h-4" />
-                        Clear All
+                        {sortOrder === 'asc' ? '↑' : '↓'}
                       </button>
-                      {files.some(f => f.status === 'error') && (
-                        <button
-                          onClick={retryAllFailed}
-                          disabled={isProcessing || isExporting}
-                          className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-md font-medium hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          <RefreshCw className="w-4 h-4" />
-                          Retry Failed
-                        </button>
-                      )}
-                      {files.some(f => f.status === 'success') && (
-                        <button
-                          onClick={recheckAll}
-                          disabled={isProcessing || isExporting}
-                          className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-md font-medium hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          <RotateCcw className="w-4 h-4" />
-                          Recheck All
-                        </button>
-                      )}
-                      <button
-                        onClick={processFiles}
-                        disabled={isProcessing || isExporting || files.every(f => f.status === 'success')}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <Play className="w-4 h-4" />
-                        {isProcessing ? 'Processing...' : 'Start Processing'}
-                      </button>
-                      <button
-                        onClick={fixNames}
-                        disabled={!files.some(f => f.status === 'success') || isProcessing || isExporting}
-                        className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-md font-medium hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Fix Names
-                      </button>
-                      <button
-                        onClick={exportCSV}
-                        disabled={!files.some(f => f.status === 'success') || isExporting}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                        {isExporting ? 'Correcting...' : 'Export CSV'}
-                      </button>
-                      <input 
-                        type="file" 
-                        accept=".csv" 
-                        className="hidden" 
-                        ref={csvInputRef}
-                        onChange={handleImportCSV}
-                      />
-                      <button
-                        onClick={() => csvInputRef.current?.click()}
-                        className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-md font-medium hover:bg-teal-700 transition-colors"
-                      >
-                        <Upload className="w-4 h-4" />
-                        Import CSV
-                      </button>
-                      <button
-                        onClick={() => setView('ranklist')}
-                        disabled={!files.some(f => f.status === 'success')}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        <Trophy className="w-4 h-4" />
-                        Rank List
-                      </button>
-                    </div>
+                    )}
                   </div>
-                  
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="text-gray-600 font-medium">Sort by:</span>
-                      <select 
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
-                        className="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 py-1"
-                      >
-                        <option value="default">Default (Upload Order)</option>
-                        <option value="name">Name</option>
-                        <option value="score">Score</option>
-                        <option value="verification_confidence">Verification Confidence</option>
-                        <option value="name_confidence">Name Confidence</option>
-                      </select>
-                      {sortBy !== 'default' && (
-                        <button 
-                          onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                          className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded text-gray-600 transition-colors"
-                          title={sortOrder === 'asc' ? "Ascending" : "Descending"}
-                        >
-                          {sortOrder === 'asc' ? '↑' : '↓'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {isProcessing && progress.total > 0 && (
-                    <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 overflow-hidden">
-                      <div 
-                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out" 
-                        style={{ width: `${(progress.current / progress.total) * 100}%` }}
-                      ></div>
-                    </div>
-                  )}
                 </div>
-                
-                <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
-                  {[...files].sort((a, b) => {
+              )}
+              
+              {isProcessing && progress.total > 0 && (
+                <div className="w-full bg-gray-200 h-1.5 overflow-hidden">
+                  <div 
+                    className="bg-blue-600 h-1.5 transition-all duration-300 ease-out" 
+                    style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                  ></div>
+                </div>
+              )}
+              
+              <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
+                {filteredFiles.length > 0 ? (
+                  [...filteredFiles].sort((a, b) => {
                     if (sortBy === 'default') return 0;
                     
                     if (a.status !== 'success' && b.status === 'success') return 1;
@@ -1124,6 +1186,8 @@ export default function App() {
                       file={file}
                       isProcessing={isProcessing}
                       averageTime={averageTimeRef.current}
+                      isSelected={selectedFileIds.has(file.id)}
+                      onToggleSelect={handleToggleSelect}
                       onRemove={removeFile}
                       onRetry={retryFile}
                       onRecheck={recheckFile}
@@ -1133,10 +1197,14 @@ export default function App() {
                         }
                       }}
                     />
-                  ))}
-                </div>
-              </section>
-            )}
+                  ))
+                ) : (
+                  <div className="p-12 text-center text-gray-500">
+                    {files.length === 0 ? "No images in queue. Upload some to get started." : "No files matched your search."}
+                  </div>
+                )}
+              </div>
+            </section>
           </>
         )}
       </main>
@@ -1155,6 +1223,8 @@ export default function App() {
           isProcessing={isProcessing}
           onNext={handleNextReview}
           onPrev={handlePrevReview}
+          hasNext={hasNextReview}
+          hasPrev={hasPrevReview}
           onUpdateName={handleUpdateResultName}
           onUpdateScore={handleUpdateResultScore}
           onUpdateImage={handleUpdateFileImage}

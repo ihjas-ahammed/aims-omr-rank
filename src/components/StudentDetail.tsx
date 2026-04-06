@@ -2,16 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import { OMRResult } from '../services/geminiService';
 import { parseTopicMapping } from '../utils/topicParser';
 import { getStudentImage, saveStudentImage } from '../services/db';
-import { ArrowLeft, Camera, Image as ImageIcon, CheckCircle2, XCircle, Circle } from 'lucide-react';
+import { ArrowLeft, Camera, Image as ImageIcon, CheckCircle2, XCircle, Circle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface StudentDetailProps {
   student: OMRResult;
   topicMapping: string;
   parsedTopicMapping?: any;
   onBack: () => void;
+  onNext?: () => void;
+  onPrev?: () => void;
+  hasNext?: boolean;
+  hasPrev?: boolean;
 }
 
-export default function StudentDetail({ student, topicMapping, parsedTopicMapping, onBack }: StudentDetailProps) {
+export default function StudentDetail({ student, topicMapping, parsedTopicMapping, onBack, onNext, onPrev, hasNext, hasPrev }: StudentDetailProps) {
   const [image, setImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chapters = parsedTopicMapping || parseTopicMapping(topicMapping);
@@ -21,10 +25,21 @@ export default function StudentDetail({ student, topicMapping, parsedTopicMappin
       const file = await getStudentImage(student.name);
       if (file) {
         setImage(URL.createObjectURL(file));
+      } else {
+        setImage(null);
       }
     };
     loadImage();
   }, [student.name]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' && hasNext && onNext) onNext();
+      if (e.key === 'ArrowLeft' && hasPrev && onPrev) onPrev();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasNext, hasPrev, onNext, onPrev]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -43,11 +58,31 @@ export default function StudentDetail({ student, topicMapping, parsedTopicMappin
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
-      <div className="flex items-center gap-4">
-        <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h2 className="text-2xl font-bold">Detailed Report</h2>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h2 className="text-2xl font-bold">Detailed Report</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={onPrev} 
+            disabled={!hasPrev} 
+            className="p-2 bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-full transition-colors"
+            title="Previous Student (Left Arrow)"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button 
+            onClick={onNext} 
+            disabled={!hasNext} 
+            className="p-2 bg-white border border-gray-200 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-full transition-colors"
+            title="Next Student (Right Arrow)"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <input 

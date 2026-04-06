@@ -122,3 +122,44 @@ export const applyCropAndRotate = (
     reader.readAsDataURL(file);
   });
 };
+
+export const rotateImageFile = (file: File, degrees: number): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    
+    reader.onload = (e) => { 
+      img.src = e.target?.result as string; 
+    };
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error('Could not get canvas context'));
+
+      if (degrees === 90 || degrees === 270) {
+        canvas.width = img.height;
+        canvas.height = img.width;
+      } else {
+        canvas.width = img.width;
+        canvas.height = img.height;
+      }
+
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate((degrees * Math.PI) / 180);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2, img.width, img.height);
+
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(new File([blob], file.name, { type: file.type || 'image/jpeg' }));
+        } else {
+          reject(new Error('Canvas to Blob failed'));
+        }
+      }, file.type || 'image/jpeg', 0.95);
+    };
+    
+    img.onerror = reject;
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+};

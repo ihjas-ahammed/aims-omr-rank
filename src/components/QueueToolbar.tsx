@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, RefreshCw, RotateCcw, Play, CheckCircle, Download, Upload, Trophy, Loader2, RotateCw } from 'lucide-react';
+import { Trash2, RefreshCw, RotateCcw, Play, CheckCircle, Download, Upload, Trophy, Loader2, RotateCw, Search } from 'lucide-react';
 
 interface QueueToolbarProps {
   filesLength: number;
@@ -7,6 +7,7 @@ interface QueueToolbarProps {
   hasSuccess: boolean;
   isProcessing: boolean;
   isExporting: boolean;
+  isRotating: boolean;
   autoCropEnabled: boolean;
   setAutoCropEnabled: (v: boolean) => void;
   correctNamesOnExport: boolean;
@@ -22,38 +23,59 @@ interface QueueToolbarProps {
   allSuccess: boolean;
   selectedCount: number;
   isAllSelected: boolean;
-  onSelectAll: () => void;
+  onSelectAll: (checked: boolean) => void;
   onRotateSelected: () => void;
+  searchQuery: string;
+  onSearchChange: (val: string) => void;
 }
 
 export default function QueueToolbar({
-  filesLength, hasErrors, hasSuccess, isProcessing, isExporting,
+  filesLength, hasErrors, hasSuccess, isProcessing, isExporting, isRotating,
   autoCropEnabled, setAutoCropEnabled, correctNamesOnExport, setCorrectNamesOnExport,
   onClearAll, onRetryFailed, onRecheckAll, onProcess, onFixNames, onExportCSV, onImportCSVClick, onViewRankList, allSuccess,
-  selectedCount, isAllSelected, onSelectAll, onRotateSelected
+  selectedCount, isAllSelected, onSelectAll, onRotateSelected,
+  searchQuery, onSearchChange
 }: QueueToolbarProps) {
   return (
-    <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 w-full">
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-lg font-medium whitespace-nowrap">Queue ({filesLength})</h2>
-        {filesLength > 0 && (
+    <div className="flex flex-col gap-4 w-full bg-gray-50 p-4 border-b border-gray-200">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-lg font-medium whitespace-nowrap">Queue ({filesLength})</h2>
           <label className="flex items-center gap-2 text-sm text-gray-700 bg-white px-2.5 py-1.5 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
-            <input type="checkbox" checked={isAllSelected} onChange={onSelectAll} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" />
+            <input 
+              type="checkbox" 
+              checked={isAllSelected} 
+              onChange={(e) => onSelectAll(e.target.checked)} 
+              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" 
+              disabled={filesLength === 0}
+            />
             <span className="font-medium">All</span>
           </label>
-        )}
-        {selectedCount > 0 && (
           <button
             onClick={onRotateSelected}
-            disabled={isProcessing || isExporting}
+            disabled={isProcessing || isExporting || isRotating || selectedCount === 0}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-md font-bold hover:bg-indigo-200 disabled:opacity-50 transition-colors text-sm shadow-sm"
             title="Rotate Selected 90° Clockwise"
           >
-            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
+            {isRotating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCw className="w-4 h-4" />}
             <span>Rotate ({selectedCount})</span>
           </button>
-        )}
+        </div>
+        
+        <div className="w-full md:w-64">
+           <div className="relative">
+             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+             <input 
+               type="text" 
+               placeholder="Search names or files..." 
+               value={searchQuery} 
+               onChange={(e) => onSearchChange(e.target.value)} 
+               className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 shadow-sm" 
+             />
+           </div>
+        </div>
       </div>
+      
       <div className="flex flex-wrap gap-2 items-center">
         <label className="flex items-center gap-2 text-sm text-gray-700 bg-white px-3 py-2 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 transition-colors">
           <input
@@ -78,7 +100,7 @@ export default function QueueToolbar({
         
         <button
           onClick={onClearAll}
-          disabled={isProcessing || isExporting}
+          disabled={isProcessing || isExporting || filesLength === 0}
           className="flex items-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-md font-medium hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
           title="Clear All"
         >
@@ -109,7 +131,7 @@ export default function QueueToolbar({
         )}
         <button
           onClick={onProcess}
-          disabled={isProcessing || isExporting || allSuccess}
+          disabled={isProcessing || isExporting || allSuccess || filesLength === 0}
           className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
           title="Start Processing"
         >
@@ -136,7 +158,8 @@ export default function QueueToolbar({
         </button>
         <button
           onClick={onImportCSVClick}
-          className="flex items-center gap-2 px-3 py-2 bg-teal-600 text-white rounded-md font-medium hover:bg-teal-700 transition-colors text-sm"
+          disabled={isProcessing}
+          className="flex items-center gap-2 px-3 py-2 bg-teal-600 text-white rounded-md font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
           title="Import CSV"
         >
           <Upload className="w-4 h-4" />

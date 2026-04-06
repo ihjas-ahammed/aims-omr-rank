@@ -20,20 +20,32 @@ interface QueueItemProps {
   file: ProcessedFile;
   isProcessing: boolean;
   averageTime: number;
+  isSelected: boolean;
+  onToggleSelect: (id: string, checked: boolean) => void;
   onRemove: (id: string) => void;
   onRetry: (id: string) => void;
   onRecheck: (id: string) => void;
   onClick: () => void;
 }
 
-export default function QueueItem({ file, isProcessing, averageTime, onRemove, onRetry, onRecheck, onClick }: QueueItemProps) {
+export default function QueueItem({ file, isProcessing, averageTime, isSelected, onToggleSelect, onRemove, onRetry, onRecheck, onClick }: QueueItemProps) {
   return (
     <div 
-      className={`p-4 flex items-start gap-4 ${file.status === 'success' ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''}`}
+      className={`p-4 flex items-start gap-3 sm:gap-4 ${file.status === 'success' ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''} ${isSelected ? 'bg-blue-50/50' : ''}`}
       onClick={onClick}
     >
+      <div className="flex items-center h-24 pt-0">
+        <input 
+          type="checkbox" 
+          checked={isSelected}
+          onChange={(e) => onToggleSelect(file.id, e.target.checked)}
+          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+
       {file.previewUrl ? (
-        <img src={file.previewUrl} alt="Preview" className="w-24 h-24 object-cover rounded-lg border border-gray-200 shrink-0" />
+        <img src={file.previewUrl} alt="Preview" className="w-24 h-24 object-contain rounded-lg border border-gray-200 shrink-0 bg-white" />
       ) : (
         <div className="w-24 h-24 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center shrink-0 text-gray-400">
           <FileImage className="w-8 h-8" />
@@ -42,7 +54,7 @@ export default function QueueItem({ file, isProcessing, averageTime, onRemove, o
       
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium text-gray-900 truncate">
+          <h3 className="text-sm font-medium text-gray-900 truncate pr-2">
             {file.fileName || 'Camera Capture'}
           </h3>
           <button 
@@ -50,7 +62,7 @@ export default function QueueItem({ file, isProcessing, averageTime, onRemove, o
               e.stopPropagation();
               onRemove(file.id);
             }}
-            className="text-gray-400 hover:text-red-500"
+            className="text-gray-400 hover:text-red-500 shrink-0"
             disabled={file.status === 'processing'}
           >
             <Trash2 className="w-4 h-4" />
