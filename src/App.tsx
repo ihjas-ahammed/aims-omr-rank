@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Upload, Camera, Settings, Download, Trash2, CheckCircle, XCircle, AlertCircle, Play, RefreshCw, FileImage, Loader2, Plus, Minus, RotateCcw, Trophy } from 'lucide-react';
+import { Upload, Camera, Settings, Download, Trash2, CheckCircle, XCircle, AlertCircle, Play, RefreshCw, FileImage, Loader2, Plus, Minus, RotateCcw, Trophy, X } from 'lucide-react';
 import { evaluateOMR, evaluateOMRBatch, fetchAvailableModels, correctNamesBatch, parseTopicMappingWithAI, extractTextFromDocument, OMRResult } from './services/geminiService';
 import { saveImage, getImage, deleteImage, clearImages } from './services/db';
 import RankList from './components/RankList';
@@ -211,19 +211,55 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [view, setView] = useState<ViewState>('home');
   const [selectedStudent, setSelectedStudent] = useState<OMRResult | null>(null);
-  const [files, setFiles] = useState<ProcessedFile[]>(() => {
-    const saved = localStorage.getItem('omr_files');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as ProcessedFile[];
-        // Reset any stuck 'processing' files back to 'pending' on load
-        return parsed.map(f => f.status === 'processing' ? { ...f, status: 'pending', attempt: 0, stageName: undefined } : f);
-      } catch (e) {
-        return [];
-      }
-    }
-    return [];
+  const [days, setDays] = useState<number[]>(() => {
+    const saved = localStorage.getItem('omr_days');
+    return saved ? JSON.parse(saved) : [1];
   });
+  const [currentDay, setCurrentDay] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_currentDay');
+    return saved ? parseInt(saved, 10) : 1;
+  });
+  const [filesByDay, setFilesByDay] = useState<Record<number, ProcessedFile[]>>(() => {
+    const savedDays = localStorage.getItem('omr_days');
+    const daysList = savedDays ? JSON.parse(savedDays) : [1];
+    const initial: Record<number, ProcessedFile[]> = {};
+    
+    daysList.forEach((day: number) => {
+      const saved = localStorage.getItem(`omr_files_${day}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved) as ProcessedFile[];
+          initial[day] = parsed.map(f => f.status === 'processing' ? { ...f, status: 'pending', attempt: 0, stageName: undefined } : f);
+        } catch (e) {
+          initial[day] = [];
+        }
+      } else if (day === 1) {
+        const oldSaved = localStorage.getItem('omr_files');
+        if (oldSaved) {
+          try {
+            const parsed = JSON.parse(oldSaved) as ProcessedFile[];
+            initial[day] = parsed.map(f => f.status === 'processing' ? { ...f, status: 'pending', attempt: 0, stageName: undefined } : f);
+          } catch (e) {
+            initial[day] = [];
+          }
+        } else {
+          initial[day] = [];
+        }
+      } else {
+        initial[day] = [];
+      }
+    });
+    return initial;
+  });
+
+  const files = filesByDay[currentDay] || [];
+  const setFiles = (updater: React.SetStateAction<ProcessedFile[]>) => {
+    setFilesByDay(prev => {
+      const currentFiles = prev[currentDay] || [];
+      const newFiles = typeof updater === 'function' ? updater(currentFiles) : updater;
+      return { ...prev, [currentDay]: newFiles };
+    });
+  };
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
@@ -295,15 +331,25 @@ export default function App() {
   }, [parsedTopicMapping]);
 
   useEffect(() => {
-    const filesToSave = files.map(f => ({
-      id: f.id,
-      fileName: f.fileName,
-      status: f.status,
-      result: f.result,
-      error: f.error
-    }));
-    localStorage.setItem('omr_files', JSON.stringify(filesToSave));
-  }, [files]);
+    localStorage.setItem('omr_days', JSON.stringify(days));
+  }, [days]);
+
+  useEffect(() => {
+    localStorage.setItem('omr_currentDay', currentDay.toString());
+  }, [currentDay]);
+
+  useEffect(() => {
+    Object.entries(filesByDay).forEach(([day, dayFiles]) => {
+      const filesToSave = dayFiles.map(f => ({
+        id: f.id,
+        fileName: f.fileName,
+        status: f.status,
+        result: f.result,
+        error: f.error
+      }));
+      localStorage.setItem(`omr_files_${day}`, JSON.stringify(filesToSave));
+    });
+  }, [filesByDay]);
 
   useEffect(() => {
     const loadImages = async () => {
@@ -395,6 +441,38 @@ export default function App() {
     event.target.value = '';
   };
 
+  const addDay = () => {
+    const newDay = Math.max(...days, 0) + 1;
+    setDays(prev => [...prev, newDay]);
+    setFilesByDay(prev => ({ ...prev, [newDay]: [] }));
+    setCurrentDay(newDay);
+  };
+
+  const deleteDay = (dayToDelete: number) => {
+    if (days.length <= 1) return; // Don't delete the last day
+    
+    if (!window.confirm(`Are you sure you want to delete Day ${dayToDelete}? This will remove all files for this day.`)) return;
+    
+    // Delete images from indexedDB
+    const filesToDelete = filesByDay[dayToDelete] || [];
+    filesToDelete.forEach(f => {
+      if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+      deleteImage(f.id);
+    });
+    
+    setDays(prev => prev.filter(d => d !== dayToDelete));
+    setFilesByDay(prev => {
+      const next = { ...prev };
+      delete next[dayToDelete];
+      return next;
+    });
+    localStorage.removeItem(`omr_files_${dayToDelete}`);
+    
+    if (currentDay === dayToDelete) {
+      setCurrentDay(days.find(d => d !== dayToDelete) || 1);
+    }
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
       const newFiles = Array.from(event.target.files).map(file => ({
@@ -421,8 +499,12 @@ export default function App() {
   };
 
   const clearAllFiles = async () => {
-    if (window.confirm('Are you sure you want to clear all files and results?')) {
-      await clearImages();
+    if (window.confirm(`Are you sure you want to clear all files and results for Day ${currentDay}?`)) {
+      const filesToDelete = filesByDay[currentDay] || [];
+      for (const f of filesToDelete) {
+        if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+        await deleteImage(f.id);
+      }
       setFiles([]);
     }
   };
@@ -876,6 +958,34 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 print:p-0 print:m-0 print:max-w-none print:space-y-0">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 print:hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+          {days.map(day => (
+            <div key={day} className="flex items-center shrink-0">
+              <button
+                onClick={() => setCurrentDay(day)}
+                className={`px-4 py-2 rounded-l-md font-medium text-sm transition-colors ${currentDay === day ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
+              >
+                Day {day}
+              </button>
+              {days.length > 1 && (
+                <button
+                  onClick={() => deleteDay(day)}
+                  className={`px-2 py-2 rounded-r-md border-y border-r text-sm transition-colors ${currentDay === day ? 'bg-blue-700 text-white border-blue-700 hover:bg-blue-800' : 'bg-white text-gray-400 border-gray-200 hover:bg-red-50 hover:text-red-500'}`}
+                  title="Delete Day"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            onClick={addDay}
+            className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium shrink-0"
+          >
+            <Plus className="w-4 h-4" /> Add Day
+          </button>
+        </div>
+
         {showSettings && (
           <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
             <h2 className="text-lg font-medium">Settings</h2>
