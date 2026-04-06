@@ -234,6 +234,12 @@ export default function App() {
     const saved = localStorage.getItem('omr_concurrency');
     return saved ? parseInt(saved, 10) : 1;
   });
+  const [requestsPerKey, setRequestsPerKey] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_requestsPerKey');
+    return saved ? parseInt(saved, 10) : 1;
+  });
+  const [sortBy, setSortBy] = useState<'default' | 'name' | 'score' | 'verification_confidence' | 'name_confidence'>('default');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const answerKeyFileInputRef = useRef<HTMLInputElement>(null);
@@ -263,6 +269,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('omr_concurrency', concurrency.toString());
   }, [concurrency]);
+
+  useEffect(() => {
+    localStorage.setItem('omr_requestsPerKey', requestsPerKey.toString());
+  }, [requestsPerKey]);
 
   useEffect(() => {
     localStorage.setItem('omr_attendance', attendanceSheet);
@@ -485,7 +495,9 @@ export default function App() {
 
     const keys = apiKeys.filter(k => k.trim());
     const baseConcurrency = Math.max(1, concurrency);
-    const concurrencyLimit = keys.length > 0 ? baseConcurrency * keys.length : baseConcurrency;
+    const reqsPerKey = Math.max(1, requestsPerKey);
+    const totalConcurrentRequests = keys.length > 0 ? keys.length * reqsPerKey : 1;
+    const concurrencyLimit = totalConcurrentRequests * baseConcurrency;
     
     const pendingIds = files.filter(f => f.status === 'pending' || f.status === 'error').map(f => f.id);
     setProgress({ current: 0, total: pendingIds.length });
@@ -959,8 +971,8 @@ export default function App() {
                     />
                   </div>
                   <div className="w-32">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Concurrency
+                    <label className="block text-sm font-medium text-gray-700 mb-1" title="Number of images to process simultaneously per request">
+                      Images/Req
                     </label>
                     <input
                       type="number"
@@ -969,7 +981,21 @@ export default function App() {
                       value={concurrency}
                       onChange={(e) => setConcurrency(parseInt(e.target.value, 10) || 1)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
-                      title="Number of images to process simultaneously"
+                      title="Number of images to process simultaneously per request"
+                    />
+                  </div>
+                  <div className="w-32">
+                    <label className="block text-sm font-medium text-gray-700 mb-1" title="Number of concurrent requests to send per API key">
+                      Reqs/Key
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      value={requestsPerKey}
+                      onChange={(e) => setRequestsPerKey(parseInt(e.target.value, 10) || 1)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
+                      title="Number of concurrent requests to send per API key"
                     />
                   </div>
                   <button
@@ -1245,6 +1271,32 @@ export default function App() {
                 </div>
               </div>
               
+              <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-gray-600 font-medium">Sort by:</span>
+                  <select 
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 py-1"
+                  >
+                    <option value="default">Default (Upload Order)</option>
+                    <option value="name">Name</option>
+                    <option value="score">Score</option>
+                    <option value="verification_confidence">Verification Confidence</option>
+                    <option value="name_confidence">Name Confidence</option>
+                  </select>
+                  {sortBy !== 'default' && (
+                    <button 
+                      onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                      className="p-1.5 bg-gray-100 hover:bg-gray-200 rounded text-gray-600 transition-colors"
+                      title={sortOrder === 'asc' ? "Ascending" : "Descending"}
+                    >
+                      {sortOrder === 'asc' ? '↑' : '↓'}
+                    </button>
+                  )}
+                </div>
+              </div>
+              
               {isProcessing && progress.total > 0 && (
                 <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 overflow-hidden">
                   <div 
@@ -1256,7 +1308,40 @@ export default function App() {
             </div>
             
             <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
-              {files.map((file) => (
+              {[...files].sort((a, b) => {
+                if (sortBy === 'default') return 0;
+                
+                if (a.status !== 'success' && b.status === 'success') return 1;
+                if (a.status === 'success' && b.status !== 'success') return -1;
+                if (a.status !== 'success' && b.status !== 'success') return 0;
+                
+                const resA = a.result!;
+                const resB = b.result!;
+                
+                let comparison = 0;
+                switch (sortBy) {
+                  case 'name':
+                    comparison = resA.name.localeCompare(resB.name);
+                    break;
+                  case 'score':
+                    const scoreA = (resA.right * 4) - resA.wrong;
+                    const scoreB = (resB.right * 4) - resB.wrong;
+                    comparison = scoreA - scoreB;
+                    break;
+                  case 'verification_confidence':
+                    const confA = resA.confidence ?? 0;
+                    const confB = resB.confidence ?? 0;
+                    comparison = confA - confB;
+                    break;
+                  case 'name_confidence':
+                    const nameConfA = resA.nameConfidence ?? 0;
+                    const nameConfB = resB.nameConfidence ?? 0;
+                    comparison = nameConfA - nameConfB;
+                    break;
+                }
+                
+                return sortOrder === 'asc' ? comparison : -comparison;
+              }).map((file) => (
                 <div 
                   key={file.id} 
                   className={`p-4 flex items-start gap-4 ${file.status === 'success' ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''}`}
