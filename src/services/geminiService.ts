@@ -10,6 +10,14 @@ export interface OMRResult {
   nameConfidence?: number;
 }
 
+export interface AutoCropResult {
+  ymin: number;
+  xmin: number;
+  ymax: number;
+  xmax: number;
+  rotation: number;
+}
+
 let currentKeyIndex = 0;
 
 function getKeys(apiKeys: string[]) {
@@ -530,4 +538,73 @@ ${mappingText}
   }
 
   throw lastError || new Error('Failed to parse topic mapping with all provided keys.');
+}
+
+export async function autoCropAndRotate(
+  imageBase64: string,
+  mimeType: string,
+  apiKeys: string[],
+  model: string
+): Promise<AutoCropResult> {
+  const keysToTry = getKeys(apiKeys);
+
+  const prompt = `
+You are an image processing assistant. Identify the exact bounding box of the main OMR sheet document within the image, ignoring background surfaces.
+Return the coordinates of the bounding box normalized to a 0-1000 scale (ymin, xmin, ymax, xmax).
+
+CRITICAL: OMR sheets are PORTRAIT (taller than they are wide). 
+If the image shows the sheet lying sideways (landscape), you MUST return a rotation of 90 or 270 to make it upright.
+Determine the clockwise rotation needed (0, 90, 180, or 270) to make the text on the OMR sheet upright and readable in a portrait orientation.
+
+Output your response as a JSON object with this exact structure:
+{
+  "ymin": 100,
+  "xmin": 150,
+  "ymax": 900,
+  "xmax": 850,
+  "rotation": 0
+}
+`;
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const key = keysToTry[(currentKeyIndex + i) % keysToTry.length];
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-flash-lite-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: imageBase64, mimeType } }
+        ],
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              ymin: { type: Type.INTEGER },
+              xmin: { type: Type.INTEGER },
+              ymax: { type: Type.INTEGER },
+              xmax: { type: Type.INTEGER },
+              rotation: { type: Type.INTEGER }
+            },
+            required: ["ymin", "xmin", "ymax", "xmax", "rotation"]
+          }
+        }
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+      
+      const data = JSON.parse(text) as AutoCropResult;
+      currentKeyIndex = (currentKeyIndex + i) % keysToTry.length;
+      return data;
+    } catch (error) {
+      console.error('Error with API key in autoCropAndRotate:', error);
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('Failed to process image with all provided keys.');
 }

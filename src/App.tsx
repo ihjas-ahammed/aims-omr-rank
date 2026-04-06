@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { Upload, Camera, Settings, Download, Trash2, CheckCircle, XCircle, AlertCircle, Play, RefreshCw, FileImage, Loader2, Plus, Minus, RotateCcw, Trophy, X } from 'lucide-react';
+import { Upload, Camera, Settings, Download, Trash2, CheckCircle, XCircle, AlertCircle, Play, RefreshCw, FileImage, Loader2, Plus, Minus, RotateCcw, Trophy, X, Beaker } from 'lucide-react';
 import { evaluateOMR, evaluateOMRBatch, fetchAvailableModels, correctNamesBatch, parseTopicMappingWithAI, extractTextFromDocument, OMRResult } from './services/geminiService';
 import { saveImage, getImage, deleteImage, clearImages } from './services/db';
 import RankList from './components/RankList';
@@ -8,6 +8,8 @@ import PrintableRankList from './components/PrintableRankList';
 import TopicEditor from './components/TopicEditor';
 import ReviewModal from './components/ReviewModal';
 import PredictiveProgressBar from './components/PredictiveProgressBar';
+import Lab from './components/Lab';
+import AutoCropTool from './components/lab/AutoCropTool';
 
 interface ProcessedFile {
   id: string;
@@ -179,7 +181,7 @@ const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by ch
 *   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24
 *   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop';
 
 export default function App() {
   const [apiKeys, setApiKeys] = useState<string[]>(() => {
@@ -282,7 +284,7 @@ export default function App() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const answerKeyFileInputRef = useRef<HTMLInputElement>(null);
   const topicMappingFileInputRef = useRef<HTMLInputElement>(null);
-  const averageTimeRef = useRef<number>(8000); // Default 8 seconds per attempt
+  const averageTimeRef = useRef<number>(8000);
 
   useEffect(() => {
     localStorage.setItem('omr_apiKeysList', JSON.stringify(apiKeys));
@@ -437,7 +439,6 @@ export default function App() {
       setIsExtractingText(null);
     }
     
-    // Reset input
     event.target.value = '';
   };
 
@@ -449,11 +450,9 @@ export default function App() {
   };
 
   const deleteDay = (dayToDelete: number) => {
-    if (days.length <= 1) return; // Don't delete the last day
-    
+    if (days.length <= 1) return;
     if (!window.confirm(`Are you sure you want to delete Day ${dayToDelete}? This will remove all files for this day.`)) return;
     
-    // Delete images from indexedDB
     const filesToDelete = filesByDay[dayToDelete] || [];
     filesToDelete.forEach(f => {
       if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
@@ -566,7 +565,6 @@ export default function App() {
       reader.readAsDataURL(file);
       reader.onload = () => {
         const base64String = reader.result as string;
-        // Remove the data:image/jpeg;base64, part
         resolve(base64String.split(',')[1]);
       };
       reader.onerror = error => reject(error);
@@ -658,7 +656,6 @@ export default function App() {
                 const key = JSON.stringify(r.scores);
                 counts.set(key, (counts.get(key) || 0) + 1);
                 if (counts.get(key)! >= targetMatches) {
-                  // Use the first result that had these scores to keep its name
                   bestResult = resultsHistory[img.id].find(res => JSON.stringify(res.scores) === key) || r;
                   break;
                 }
@@ -766,7 +763,6 @@ export default function App() {
         const keys = apiKeys.filter(k => k.trim());
         const nameMap = await correctNamesBatch(uniqueNames, attendanceSheet, keys, proModel);
         
-        // Update the files in state so the UI reflects the corrected names too
         setFiles(prev => prev.map(f => {
           if (f.status === 'success' && f.result && nameMap[f.result.name]) {
             return {
@@ -781,7 +777,6 @@ export default function App() {
           return f;
         }));
 
-        // Update our local finalFiles array for the CSV generation
         finalFiles = finalFiles.map(f => {
           if (f.result && nameMap[f.result.name]) {
             return {
@@ -798,7 +793,7 @@ export default function App() {
       } catch (error: any) {
         alert('Failed to correct names: ' + error.message);
         setIsExporting(false);
-        return; // abort export if correction fails
+        return; 
       }
       setIsExporting(false);
     }
@@ -866,7 +861,7 @@ export default function App() {
         const scores: Record<string, number> = {};
         if (cells.length >= 4) {
           for (let q = 1; q <= 25; q++) {
-            const scoreIdx = 3 + q - 1; // Q1 is at index 3
+            const scoreIdx = 3 + q - 1; 
             scores[`q${q}`] = parseInt(cells[scoreIdx] || '0', 10) || 0;
           }
         }
@@ -946,16 +941,25 @@ export default function App() {
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans print:bg-white">
       <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
             <CheckCircle className="w-6 h-6 text-blue-600" />
             <h1 className="text-xl font-semibold tracking-tight">OMR Checker Pro</h1>
           </div>
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setView('lab')}
+              className={`flex items-center gap-2 p-2 rounded-md transition-colors ${view.startsWith('lab') ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+            >
+              <Beaker className="w-5 h-5" />
+              <span className="hidden sm:inline font-medium">Lab</span>
+            </button>
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -1222,6 +1226,14 @@ export default function App() {
               </div>
             </div>
           </section>
+        )}
+
+        {view === 'lab' && (
+          <Lab onNavigate={(v) => setView(v)} onBack={() => setView('home')} />
+        )}
+
+        {view === 'lab-crop' && (
+          <AutoCropTool apiKeys={apiKeys} liteModel={liteModel} onBack={() => setView('lab')} />
         )}
 
         {view === 'ranklist' && (
