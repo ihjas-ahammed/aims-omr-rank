@@ -1,8 +1,8 @@
 import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams') => void;
   onBack: () => void;
 }
 
@@ -20,7 +20,7 @@ export default function Lab({ onNavigate, onBack }: LabProps) {
       </div>
       
       <p className="text-gray-600">
-        Welcome to the Lab! Here you can test out new experimental features powered by Gemini Lite models before they are integrated into the main workflow.
+        Welcome to the Lab! Here you can test out new experimental features.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -37,6 +37,22 @@ export default function Lab({ onNavigate, onBack }: LabProps) {
           <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Auto-Crop & Rotate OMR</h3>
           <p className="text-sm text-gray-600">
             Use Gemini Lite to automatically detect the OMR sheet boundaries, crop out the background, and rotate the image upright.
+          </p>
+        </div>
+
+        <div 
+          onClick={() => onNavigate('lab-exams')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-100 transition-colors">
+              <MonitorPlay className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Online Exams</h3>
+          <p className="text-sm text-gray-600">
+            Setup online exams using images of a question paper. Generate a link, collect student responses with anti-cheat monitoring, and view results.
           </p>
         </div>
       </div>

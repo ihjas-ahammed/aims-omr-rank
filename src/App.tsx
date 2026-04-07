@@ -15,166 +15,25 @@ import AutoCropTool from './components/lab/AutoCropTool';
 import QueueItem, { ProcessedFile } from './components/QueueItem';
 import QueueToolbar from './components/QueueToolbar';
 
-const DEFAULT_ATTENDANCE = `ADIL MARZOOQUE
-ADISANKAR
-ADITHYA RAJ
-ADWAID
-AHAMED IRFAN K
-AHAMED JUNAID
-AHLAM HASAN K
-AMAL CHANDRA N
-ANJANA K
-ANSHIA P
-ANSILA KADOORAN
-APARNA C
-ARSHA FATHIMA M
-ARSHIN PC
-ASWATHY E
-ATHUL VB
-AVANI PS
-AYISHA DIYA
-AZAL MHD
-DIYA AK
-DIYA FATHIMA KP
-DIYA MEHRIN K
-DIYA V
-FAHMA VP
-FAIZ AHMED AN
-FARHA P
-FATHIMA DILFA P
-FATHIMA FIZA M
-FATHIMA HIBA PP
-FATHIMA HUDA N
-FATHIMA LIYA A
-FATHIMA MINHA PE
-FATHIMA MISBHA VA
-FATHIMA NASHA
-FATHIMA NASHA CP
-FATHIMA RIFNA A
-FATHIMA SHAHNA PK
-FIDA THASNIM
-GOURI NANDA C
-HAMNA FATHIMA
-HANIYA FATHIMA P
-HANIYYA V
-HASNA SHARI VP
-HIBA FATHIMA KP
-HISHAM MHD
-KRISHNA PRIYA PC
-KRISTHI MUNADHA T
-LASIN ABDULLAH
-LISNA K
-LIYA FATHIMA A
-MAJID A
-MAZIN MHD
-MHD ADNAN K
-MHD AHANN TK
-MHD ANAS P
-MHD ANFAS TK
-MHD ASHFAQUE
-MHD DANISH
-MHD DIYAN
-MHD FAIROOZ
-MHD FARHAN K
-MHD FATHIN ALI
-MHD LIYAN P
-MHD MAJID RAMZAN TP
-MHD MUFLIH A
-MHD NAJADH
-MHD RAZAL T
-MHD RISHAN P
-MHD SABITH P
-MHD SABITH TK
-MHD SADHIL V
-MHD SHAFEEQ KK
-MHD SHAHABAS K
-MHD SINAN A
-MILHA RAZACK A
-MINHA PK
-MISHAL AHAMED
-NAIRA ABDUL LATHEEF
-NAJIH AHAMED
-NAJIYA NASRIN C
-NAJVA
-NAJVA FATHIMA C
-NASHA FATHIMA P
-NIDHA FATHIMA K
-NIDHA SHIRIN N
-NITHIN RAJ
-RAJEEBA K
-RANA FATHIMA K
-REHAN ABDUL RAHEEM
-REVATHY K
-RIDHA K
-RIFA CP
-RIFA P
-RINSHA JALIDHA P
-RINSHA SHERIN T
-RIYA SUNEER
-SHABANA JASMIN
-SILNA FATHIMA
-SITHARA BASHEER P
-SIYA TP
-THANHA FATHIMA`;
+// Online Exams Imports
+import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
 
-const DEFAULT_ANSWER_KEY = `*   **Q1.** B
-*   **Q2.** A
-*   **Q3.** A
-*   **Q4.** B
-*   **Q5.** C
-*   **Q6.** A
-*   **Q7.** A
-*   **Q8.** B
-*   **Q9.** C
-*   **Q10.** D
-*   **Q11.** A
-*   **Q12.** C
-*   **Q13.** B
-*   **Q14.** A
-*   **Q15.** C
-*   **Q16.** A
-*   **Q17.** Cancelled (give mark to everyone)
-*   **Q18.** B
-*   **Q19.** A
-*   **Q20.** C
-*   **Q21.** A
-*   **Q22.** A
-*   **Q23.** A
-*   **Q24.** B
-*   **Q25.** A`;
+const DEFAULT_ATTENDANCE = `ADIL MARZOOQUE\nADISANKAR\nADITHYA RAJ\nADWAID\nAHAMED IRFAN K\nAHAMED JUNAID\nAHLAM HASAN K\nAMAL CHANDRA N\nANJANA K\nANSHIA P\nANSILA KADOORAN\nAPARNA C\nARSHA FATHIMA M\nARSHIN PC\nASWATHY E\nATHUL VB\nAVANI PS\nAYISHA DIYA\nAZAL MHD\nDIYA AK\nDIYA FATHIMA KP\nDIYA MEHRIN K\nDIYA V\nFAHMA VP\nFAIZ AHMED AN\nFARHA P\nFATHIMA DILFA P\nFATHIMA FIZA M\nFATHIMA HIBA PP\nFATHIMA HUDA N\nFATHIMA LIYA A\nFATHIMA MINHA PE\nFATHIMA MISBHA VA\nFATHIMA NASHA\nFATHIMA NASHA CP\nFATHIMA RIFNA A\nFATHIMA SHAHNA PK\nFIDA THASNIM\nGOURI NANDA C\nHAMNA FATHIMA\nHANIYA FATHIMA P\nHANIYYA V\nHASNA SHARI VP\nHIBA FATHIMA KP\nHISHAM MHD\nKRISHNA PRIYA PC\nKRISTHI MUNADHA T\nLASIN ABDULLAH\nLISNA K\nLIYA FATHIMA A\nMAJID A\nMAZIN MHD\nMHD ADNAN K\nMHD AHANN TK\nMHD ANAS P\nMHD ANFAS TK\nMHD ASHFAQUE\nMHD DANISH\nMHD DIYAN\nMHD FAIROOZ\nMHD FARHAN K\nMHD FATHIN ALI\nMHD LIYAN P\nMHD MAJID RAMZAN TP\nMHD MUFLIH A\nMHD NAJADH\nMHD RAZAL T\nMHD RISHAN P\nMHD SABITH P\nMHD SABITH TK\nMHD SADHIL V\nMHD SHAFEEQ KK\nMHD SHAHABAS K\nMHD SINAN A\nMILHA RAZACK A\nMINHA PK\nMISHAL AHAMED\nNAIRA ABDUL LATHEEF\nNAJIH AHAMED\nNAJIYA NASRIN C\nNAJVA\nNAJVA FATHIMA C\nNASHA FATHIMA P\nNIDHA FATHIMA K\nNIDHA SHIRIN N\nNITHIN RAJ\nRAJEEBA K\nRANA FATHIMA K\nREHAN ABDUL RAHEEM\nREVATHY K\nRIDHA K\nRIFA CP\nRIFA P\nRINSHA JALIDHA P\nRINSHA SHERIN T\nRIYA SUNEER\nSHABANA JASMIN\nSILNA FATHIMA\nSITHARA BASHEER P\nSIYA TP\nTHANHA FATHIMA`;
 
-const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:
+const DEFAULT_ANSWER_KEY = `*   **Q1.** B\n*   **Q2.** A\n*   **Q3.** A\n*   **Q4.** B\n*   **Q5.** C\n*   **Q6.** A\n*   **Q7.** A\n*   **Q8.** B\n*   **Q9.** C\n*   **Q10.** D\n*   **Q11.** A\n*   **Q12.** C\n*   **Q13.** B\n*   **Q14.** A\n*   **Q15.** C\n*   **Q16.** A\n*   **Q17.** Cancelled (give mark to everyone)\n*   **Q18.** B\n*   **Q19.** A\n*   **Q20.** C\n*   **Q21.** A\n*   **Q22.** A\n*   **Q23.** A\n*   **Q24.** B\n*   **Q25.** A`;
 
-### **Chapter 4: Moving Charges and Magnetism**
-*   **Magnetic Force on a Charge:** Q1, Q2
-*   **Biot-Savart Law:** Q3
-*   **Magnetic Field due to a Straight Wire:** Q4
-*   **Magnetic Field due to a Circular Current Loop:** Q5
-*   **The Solenoid (Ampere’s Circuital Law):** Q6
-*   **Force between Two Parallel Currents:** Q7
-*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8
+const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-### **Chapter 5: Magnetism and Matter**
-*   **The Magnetic Dipole (Magnetic Moment):** Q9
-*   **The Bar Magnet (Axial and Equatorial Fields):** Q10
-*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11
-*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13
-
-### **Chapter 6: Electromagnetic Induction (EMI)**
-*   **Magnetic Flux:** Q14, Q15
-*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17
-*   **Motional Electromotive Force:** Q18, Q19, Q20
-*   **Eddy Currents:** Q21
-*   **Mutual Induction:** Q22
-*   **AC Generator (Peak EMF):** Q23
-
-### **Chapter 7: Alternating Current**
-*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24
-*   **Transformers:** Q25`;
-
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take';
 
 export default function App() {
+  const [view, setView] = useState<ViewState>(() => {
+    if (new URLSearchParams(window.location.search).get('examId')) {
+      return 'exam-take';
+    }
+    return 'home';
+  });
+
   const [apiKeys, setApiKeys] = useState<string[]>(() => {
     const saved = localStorage.getItem('omr_apiKeysList');
     if (saved) {
@@ -218,9 +77,11 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [correctNamesOnExport, setCorrectNamesOnExport] = useState<boolean>(true);
   const [isExporting, setIsExporting] = useState(false);
-  const [view, setView] = useState<ViewState>('home');
   const [selectedStudent, setSelectedStudent] = useState<OMRResult | null>(null);
   
+  // Lab Exams State
+  const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+
   const [days, setDays] = useState<number[]>(() => {
     const saved = localStorage.getItem('omr_days');
     return saved ? JSON.parse(saved) : [1];
@@ -307,7 +168,6 @@ export default function App() {
   useEffect(() => { localStorage.setItem('omr_days', JSON.stringify(days)); }, [days]);
   useEffect(() => { localStorage.setItem('omr_currentDay', currentDay.toString()); }, [currentDay]);
 
-  // Handle restoring missing file previews after reloading from local storage
   useEffect(() => {
     const missingPreviewFiles = files.filter(f => !f.previewUrl && !failedImageIds.has(f.id));
     
@@ -345,13 +205,12 @@ export default function App() {
     }
   }, [files, failedImageIds]);
 
-  // Persist files to localStorage whenever they change
   useEffect(() => {
     Object.entries(filesByDay).forEach(([day, filesList]) => {
       const filesToSave = filesList.map(f => ({
         ...f,
-        file: undefined, // Don't stringify File object
-        previewUrl: undefined // Don't stringify blob URL
+        file: undefined, 
+        previewUrl: undefined 
       }));
       localStorage.setItem(`omr_files_${day}`, JSON.stringify(filesToSave));
     });
@@ -441,7 +300,6 @@ export default function App() {
     
     try {
       for (const id of selectedFileIds) {
-        // Look up the current file directly to avoid stale state issues
         const currentFiles = filesByDay[currentDay] || [];
         const fileIndex = currentFiles.findIndex(f => f.id === id);
         if (fileIndex === -1) continue;
@@ -866,7 +724,6 @@ export default function App() {
     }));
   };
 
-  // Selection logic
   const filteredFiles = files.filter(f => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -890,7 +747,6 @@ export default function App() {
     setSelectedFileIds(newSet);
   };
 
-  // Detail View Navigation Logic
   const successfulResults = files.filter(f => f.status === 'success' && f.result).map(f => f.result!);
   const sortedResults = [...successfulResults].sort((a, b) => ((b.right * 4) - b.wrong) - ((a.right * 4) - a.wrong));
   const currentDetailIndex = selectedStudent ? sortedResults.findIndex(r => r.name === selectedStudent.name) : -1;
@@ -904,6 +760,15 @@ export default function App() {
     if (hasPrevDetail) setSelectedStudent(sortedResults[currentDetailIndex - 1]);
   };
 
+  // Dedicated full-screen view for taking the exam
+  if (view === 'exam-take') {
+    const activeExamId = selectedExamId || new URLSearchParams(window.location.search).get('examId');
+    if (!activeExamId) {
+      return <div className="p-8 text-center text-red-500">Invalid Exam ID provided.</div>;
+    }
+    return <ExamTake examId={activeExamId} onFinish={() => setView('home')} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans print:bg-white">
       <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
@@ -915,7 +780,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setView('lab')}
-              className={`flex items-center gap-2 p-2 rounded-md transition-colors ${view.startsWith('lab') ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+              className={`flex items-center gap-2 p-2 rounded-md transition-colors ${view.startsWith('lab') || view.startsWith('exam') ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
             >
               <Beaker className="w-5 h-5" />
               <span className="hidden sm:inline font-medium">Lab</span>
@@ -931,33 +796,36 @@ export default function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 print:p-0 print:m-0 print:max-w-none print:space-y-0">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 print:hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-          {days.map(day => (
-            <div key={day} className="flex items-center shrink-0">
-              <button
-                onClick={() => setCurrentDay(day)}
-                className={`px-4 py-2 rounded-l-md font-medium text-sm transition-colors ${currentDay === day ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-              >
-                Day {day}
-              </button>
-              {days.length > 1 && (
+        
+        {view === 'home' && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 print:hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+            {days.map(day => (
+              <div key={day} className="flex items-center shrink-0">
                 <button
-                  onClick={() => deleteDay(day)}
-                  className={`px-2 py-2 rounded-r-md border-y border-r text-sm transition-colors ${currentDay === day ? 'bg-blue-700 text-white border-blue-700 hover:bg-blue-800' : 'bg-white text-gray-400 border-gray-200 hover:bg-red-50 hover:text-red-500'}`}
-                  title="Delete Day"
+                  onClick={() => setCurrentDay(day)}
+                  className={`px-4 py-2 rounded-l-md font-medium text-sm transition-colors ${currentDay === day ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
                 >
-                  <X className="w-4 h-4" />
+                  Day {day}
                 </button>
-              )}
-            </div>
-          ))}
-          <button
-            onClick={addDay}
-            className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium shrink-0"
-          >
-            <Plus className="w-4 h-4" /> Add Day
-          </button>
-        </div>
+                {days.length > 1 && (
+                  <button
+                    onClick={() => deleteDay(day)}
+                    className={`px-2 py-2 rounded-r-md border-y border-r text-sm transition-colors ${currentDay === day ? 'bg-blue-700 text-white border-blue-700 hover:bg-blue-800' : 'bg-white text-gray-400 border-gray-200 hover:bg-red-50 hover:text-red-500'}`}
+                    title="Delete Day"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={addDay}
+              className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium shrink-0"
+            >
+              <Plus className="w-4 h-4" /> Add Day
+            </button>
+          </div>
+        )}
 
         {showSettings && (
           <SettingsPanel
@@ -996,6 +864,24 @@ export default function App() {
 
         {view === 'lab-crop' && (
           <AutoCropTool apiKeys={apiKeys} liteModel={liteModel} onBack={() => setView('lab')} />
+        )}
+        
+        {view === 'lab-exams' && (
+          <ExamDashboard 
+            onNavigate={(v, id) => { 
+              if (id) setSelectedExamId(id); 
+              setView(v); 
+            }} 
+            onBack={() => setView('lab')} 
+          />
+        )}
+        
+        {view === 'exam-setup' && (
+          <ExamSetup onNavigate={(v) => setView(v)} />
+        )}
+
+        {view === 'exam-results' && selectedExamId && (
+          <ExamResults examId={selectedExamId} onBack={() => setView('lab-exams')} />
         )}
 
         {view === 'ranklist' && (
