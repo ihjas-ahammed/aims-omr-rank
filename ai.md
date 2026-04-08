@@ -1,7 +1,7 @@
 Make the following changes:
 
     - Course progress:
-            - Make it possible I can add more than one session log to each session of each chapter
+        - 
 
 
 Apply changes to both mobile view and desktop (movbile view is the priority)

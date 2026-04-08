@@ -26,3 +26,7 @@ export interface SubjectProgress {
   name: string;
   chapters: ChapterProgress[];
 }
+
+export type BatchName = 'B1' | 'B2' | 'B3';
+
+export type CourseProgressMap = Record<BatchName, SubjectProgress[]>;

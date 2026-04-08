@@ -1,16 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, BookOpen, Download, Loader2, RotateCcw, AlertTriangle } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { SubjectProgress, TaskData, TaskStatus } from './types';
+import { SubjectProgress, TaskData, TaskStatus, BatchName, CourseProgressMap } from './types';
 import { initialData } from './initialData';
 import SubjectView from './SubjectView';
 import { getCourseProgress, saveCourseProgress, isFirebaseConfigured } from '../../../services/firebaseService';
 
+const BATCHES: BatchName[] = ['B1', 'B2', 'B3'];
+
+const cloneProgress = (data: SubjectProgress[]) => JSON.parse(JSON.stringify(data)) as SubjectProgress[];
+
 export default function CourseProgress({ onBack }: { onBack: () => void }) {
-  const [data, setData] = useState<SubjectProgress[]>([]);
+  const [progressMap, setProgressMap] = useState<CourseProgressMap>({
+    B1: cloneProgress(initialData),
+    B2: cloneProgress(initialData),
+    B3: cloneProgress(initialData)
+  });
+  const [selectedBatch, setSelectedBatch] = useState<BatchName>('B1');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedSubjectIndex, setSelectedSubjectIndex] = useState<number | null>(null);
+
+  const data = progressMap[selectedBatch] || [];
 
   // Helper to migrate old fields to new TaskData format
   const migrateTask = (val: any): TaskData => {
@@ -55,122 +66,134 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
   };
 
   useEffect(() => {
-    document.title = "AIMS - Course Progress";
+    document.title = 'AIMS - Course Progress';
     fetchData();
-    return () => { document.title = "OMR Checker Pro"; };
+    return () => { document.title = 'OMR Checker Pro'; };
   }, []);
+
+  const migrateSubject = (sub: any): SubjectProgress => ({
+    ...sub,
+    chapters: sub.chapters.map((ch: any) => ({
+      ...ch,
+      tcr: migrateTask(ch.tcr),
+      entrance: migrateTask(ch.entrance),
+      revision: migrateTask(ch.revision)
+    }))
+  });
+
+  const createProgressMap = (subjects: SubjectProgress[]): CourseProgressMap => ({
+    B1: subjects,
+    B2: cloneProgress(subjects),
+    B3: cloneProgress(subjects)
+  });
+
+  const loadProgress = (raw: any): CourseProgressMap => {
+    if (Array.isArray(raw)) {
+      return createProgressMap(raw.map(migrateSubject));
+    }
+
+    if (raw && typeof raw === 'object') {
+      return {
+        B1: raw.B1 && Array.isArray(raw.B1) ? raw.B1.map(migrateSubject) : cloneProgress(initialData),
+        B2: raw.B2 && Array.isArray(raw.B2) ? raw.B2.map(migrateSubject) : cloneProgress(initialData),
+        B3: raw.B3 && Array.isArray(raw.B3) ? raw.B3.map(migrateSubject) : cloneProgress(initialData)
+      };
+    }
+
+    return {
+      B1: cloneProgress(initialData),
+      B2: cloneProgress(initialData),
+      B3: cloneProgress(initialData)
+    };
+  };
 
   const fetchData = async () => {
     try {
       const res = await getCourseProgress();
-      if (res && res.length > 0) {
-        const migratedData = res.map(sub => ({
-          ...sub,
-          chapters: sub.chapters.map((ch: any) => ({
-            ...ch,
-            tcr: migrateTask(ch.tcr),
-            entrance: migrateTask(ch.entrance),
-            revision: migrateTask(ch.revision)
-          }))
-        }));
-        setData(migratedData);
-      } else {
-        setData(initialData);
-        // Initialize global data for everyone else
-        if (isFirebaseConfigured) {
-          await saveCourseProgress(initialData);
-        }
+      const loadedProgress = loadProgress(res);
+      setProgressMap(loadedProgress);
+
+      if (isFirebaseConfigured) {
+        await saveCourseProgress(loadedProgress);
       }
     } catch (e) {
-      console.error("Failed to load from Firebase, falling back to local storage", e);
+      console.error('Failed to load from Firebase, falling back to local storage', e);
       const saved = localStorage.getItem('omr_course_progress');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          const migratedData = parsed.map((sub: any) => ({
-            ...sub,
-            chapters: sub.chapters.map((ch: any) => ({
-              ...ch,
-              tcr: migrateTask(ch.tcr),
-              entrance: migrateTask(ch.entrance),
-              revision: migrateTask(ch.revision)
-            }))
-          }));
-          setData(migratedData);
+          setProgressMap(loadProgress(parsed));
         } catch (err) {
-          setData(initialData);
+          setProgressMap(loadProgress(null));
         }
       } else {
-        setData(initialData);
+        setProgressMap(loadProgress(null));
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const updateChapter = async (subjectIdx: number, chapterIdx: number, field: 'tcr' | 'entrance' | 'revision', taskData: TaskData) => {
-    // Perform a deep immutable update so React re-renders correctly
-    const newData = [...data];
-    const newSubject = { ...newData[subjectIdx] };
-    const newChapters = [...newSubject.chapters];
-    const newChapter = { ...newChapters[chapterIdx] };
-    
-    newChapter[field] = taskData;
-    newChapters[chapterIdx] = newChapter;
-    newSubject.chapters = newChapters;
-    newData[subjectIdx] = newSubject;
-    
-    setData(newData);
-    
+  const saveMap = async (map: CourseProgressMap) => {
     setSaving(true);
     try {
-      await saveCourseProgress(newData);
-      localStorage.setItem('omr_course_progress', JSON.stringify(newData));
+      await saveCourseProgress(map);
+      localStorage.setItem('omr_course_progress', JSON.stringify(map));
     } catch (e) {
-      console.error("Failed to save to Firebase", e);
-      localStorage.setItem('omr_course_progress', JSON.stringify(newData));
+      console.error('Failed to save to Firebase', e);
+      localStorage.setItem('omr_course_progress', JSON.stringify(map));
     } finally {
       setSaving(false);
     }
   };
 
+  const updateChapter = async (subjectIdx: number, chapterIdx: number, field: 'tcr' | 'entrance' | 'revision', taskData: TaskData) => {
+    const currentBatch = data;
+    const newData = [...currentBatch];
+    const newSubject = { ...newData[subjectIdx] };
+    const newChapters = [...newSubject.chapters];
+    const newChapter = { ...newChapters[chapterIdx] };
+
+    newChapter[field] = taskData;
+    newChapters[chapterIdx] = newChapter;
+    newSubject.chapters = newChapters;
+    newData[subjectIdx] = newSubject;
+
+    const updatedMap = { ...progressMap, [selectedBatch]: newData };
+    setProgressMap(updatedMap);
+    await saveMap(updatedMap);
+  };
+
   const handleReset = async () => {
-    if (!window.confirm("Are you sure you want to reset ALL course progress for a new academic year? This cannot be undone.")) return;
-    
-    const resetData = data.map(sub => ({
+    if (!window.confirm(`Are you sure you want to reset course progress for ${selectedBatch}? This cannot be undone.`)) return;
+
+    const resetBatch = data.map((sub) => ({
       ...sub,
-      chapters: sub.chapters.map(ch => ({
+      chapters: sub.chapters.map((ch) => ({
         ...ch,
         tcr: { status: 'pending', sessions: [] } as TaskData,
         entrance: { status: 'pending', sessions: [] } as TaskData,
         revision: { status: 'pending', sessions: [] } as TaskData
       }))
     }));
-    
-    setData(resetData);
-    setSaving(true);
-    try {
-      await saveCourseProgress(resetData);
-      localStorage.setItem('omr_course_progress', JSON.stringify(resetData));
-    } catch (e) {
-      console.error("Failed to reset in Firebase", e);
-      localStorage.setItem('omr_course_progress', JSON.stringify(resetData));
-    } finally {
-      setSaving(false);
-    }
+
+    const resetMap = { ...progressMap, [selectedBatch]: resetBatch };
+    setProgressMap(resetMap);
+    await saveMap(resetMap);
   };
 
   const handleExport = () => {
-    const wsData = [['Subject', 'Chapter', 'TCR', 'Entrance', 'Revision']];
-    
+    const wsData = [['Class', 'Subject', 'Chapter', 'TCR', 'Entrance', 'Revision']];
+
     const formatTask = (task: TaskData) => {
-      const sessionStr = task.sessions.map(s => s.teacher || 'Unassigned').join(', ');
+      const sessionStr = task.sessions.map((s) => s.teacher || 'Unassigned').join(', ');
       return sessionStr ? `${sessionStr} [${task.status.toUpperCase()}]` : `[${task.status.toUpperCase()}]`;
     };
 
-    data.forEach(sub => {
-      sub.chapters.forEach(ch => {
+    data.forEach((sub) => {
+      sub.chapters.forEach((ch) => {
         wsData.push([
+          selectedBatch,
           sub.name,
           ch.name,
           formatTask(ch.tcr),
@@ -179,12 +202,12 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
         ]);
       });
     });
-    
+
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Course Progress");
-    ws['!cols'] = [{ wch: 20 }, { wch: 40 }, { wch: 30 }, { wch: 30 }, { wch: 30 }];
-    XLSX.writeFile(wb, "Course_Progress.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, `Course Progress ${selectedBatch}`);
+    ws['!cols'] = [{ wch: 10 }, { wch: 20 }, { wch: 40 }, { wch: 30 }, { wch: 30 }, { wch: 30 }];
+    XLSX.writeFile(wb, `Course_Progress_${selectedBatch}.xlsx`);
   };
 
   if (loading) {
@@ -208,14 +231,32 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-            <BookOpen className="w-6 h-6 text-green-600" />
-            <h2>Course Progress</h2>
-            {saving && <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-2" />}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+              <BookOpen className="w-6 h-6 text-green-600" />
+              <h2>Course Progress</h2>
+              {saving && <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-2" />}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {BATCHES.map((batch) => (
+              <button
+                key={batch}
+                type="button"
+                onClick={() => {
+                  setSelectedBatch(batch);
+                  setSelectedSubjectIndex(null);
+                }}
+                className={`px-4 py-2 rounded-full border text-sm font-semibold transition ${selectedBatch === batch ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+              >
+                {batch}
+              </button>
+            ))}
           </div>
         </div>
         
@@ -224,7 +265,7 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
             onClick={handleReset}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-md font-medium hover:bg-red-100 transition-colors shadow-sm border border-red-200 flex-1 md:flex-none"
           >
-            <RotateCcw className="w-4 h-4" /> Reset Year
+            <RotateCcw className="w-4 h-4" /> Reset Class
           </button>
           <button
             onClick={handleExport}

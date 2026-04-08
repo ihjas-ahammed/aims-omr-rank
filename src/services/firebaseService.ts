@@ -89,7 +89,7 @@ export async function getExamSubmissions(examId: string): Promise<ExamSubmission
   })) as ExamSubmission[];
 }
 
-export async function getCourseProgress(): Promise<any[]> {
+export async function getCourseProgress(): Promise<any> {
   if (!db) throw new Error("Firebase is not configured.");
   
   const docRef = doc(db, 'app_data', 'course_progress');
@@ -98,10 +98,10 @@ export async function getCourseProgress(): Promise<any[]> {
   if (docSnap.exists() && docSnap.data().subjects) {
     return docSnap.data().subjects;
   }
-  return [];
+  return null;
 }
 
-export async function saveCourseProgress(subjects: any[]): Promise<void> {
+export async function saveCourseProgress(subjects: any): Promise<void> {
   if (!db) throw new Error("Firebase is not configured.");
   
   const docRef = doc(db, 'app_data', 'course_progress');
