@@ -1,2126 +1,906 @@
-Here is the implementation of the new Online Exams feature within the Lab section. It utilizes Firebase to store the questions, answer keys, and student submissions. 
 
-I've also modularized the code by creating specific components for the exam setup, taking, and results views.
+--- START OF FILE src/components/lab/course-progress/types.ts ---
+export type TaskType = 'tcr' | 'entrance' | 'revision';
 
-### Bash Commands
-Run these commands to install Firebase in your project:
-```bash
-npm install firebase
-```
+export type TaskStatus = 'pending' | 'ongoing' | 'finished';
 
-### Project Files
+export interface SessionData {
+  id: string;
+  teacher: string | null;
+  date?: string;
+  startTime?: string;
+  endTime?: string;
+}
 
---- START OF FILE firebase-setup.md ---
-# Firebase Setup for Online Exams
+export interface TaskData {
+  status: TaskStatus;
+  sessions: SessionData[];
+}
 
-To use the Online Exams feature, you need to connect the app to a Firebase project.
+export interface ChapterProgress {
+  name: string;
+  tcr: TaskData;
+  entrance: TaskData;
+  revision: TaskData;
+}
 
-### 1. Create a Firebase Project
-1. Go to the [Firebase Console](https://console.firebase.google.com/).
-2. Click **Add project** and follow the steps.
+export interface SubjectProgress {
+  name: string;
+  chapters: ChapterProgress[];
+}
+--- END OF FILE src/components/lab/course-progress/types.ts ---
 
-### 2. Enable Firestore Database
-1. In your Firebase project, go to **Build > Firestore Database**.
-2. Click **Create database**.
-3. Start in **Test mode** (for initial development) or update your security rules to allow read/write access.
-   *(Recommended minimal rules for production: allow read for exams, allow create for submissions, require admin for reading submissions).*
+--- START OF FILE src/components/lab/course-progress/initialData.ts ---
+import { SubjectProgress, TaskData } from './types';
 
-### 3. Get Your Firebase Config
-1. Go to **Project Settings** (the gear icon on the top left).
-2. Under the "General" tab, scroll down to "Your apps".
-3. Click the **Web** icon (`</>`) to add a web app.
-4. Register the app and copy the `firebaseConfig` object values.
+const generateId = () => Math.random().toString(36).substring(7);
 
-### 4. Add Environment Variables
-Create a `.env.local` file in your project root (next to `package.json`) and add your Firebase config values:
-
-```env
-VITE_FIREBASE_API_KEY="your-api-key"
-VITE_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
-VITE_FIREBASE_PROJECT_ID="your-project-id"
-VITE_FIREBASE_STORAGE_BUCKET="your-project-id.appspot.com"
-VITE_FIREBASE_MESSAGING_SENDER_ID="your-sender-id"
-VITE_FIREBASE_APP_ID="your-app-id"
-```
-
-Restart your Vite development server for the variables to take effect (`npm run dev`).
---- END OF FILE firebase-setup.md ---
-
---- START OF FILE src/services/firebaseService.ts ---
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || ''
+const createSession = (teacher: string | null): TaskData => {
+  if (!teacher) return { status: 'pending', sessions: [] };
+  return {
+    status: 'finished',
+    sessions: [{
+      id: generateId(),
+      teacher
+    }]
+  };
 };
 
-export const isFirebaseConfigured = !!firebaseConfig.apiKey;
-
-// Initialize Firebase only if config exists and hasn't been initialized
-export const app = isFirebaseConfigured ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()) : null;
-export const db = isFirebaseConfigured ? getFirestore(app!) : null;
-
-export interface ExamIncident {
-  time: string;
-  reason: string;
-}
-
-export interface ExamSubmission {
-  id?: string;
-  studentName: string;
-  studentClass: string;
-  answers: Record<number, string>;
-  score: number;
-  totalRight: number;
-  totalWrong: number;
-  incidents: ExamIncident[];
-  submittedAt: any;
-}
-
-export interface ExamData {
-  id?: string;
-  title: string;
-  className: string;
-  totalQuestions: number;
-  answerKey: Record<number, string>; // e.g., { 1: 'A', 2: 'B' }
-  images: string[]; // Base64 compressed images
-  createdAt: any;
-}
-
-// Service Functions
-export async function createExam(examData: Omit<ExamData, 'id' | 'createdAt'>): Promise<string> {
-  if (!db) throw new Error("Firebase is not configured.");
-  
-  const docRef = await addDoc(collection(db, 'exams'), {
-    ...examData,
-    createdAt: serverTimestamp()
-  });
-  
-  return docRef.id;
-}
-
-export async function getExam(examId: string): Promise<ExamData> {
-  if (!db) throw new Error("Firebase is not configured.");
-  
-  const docRef = doc(db, 'exams', examId);
-  const docSnap = await getDoc(docRef);
-  
-  if (!docSnap.exists()) {
-    throw new Error("Exam not found!");
+export const initialData: SubjectProgress[] = [
+  {
+    name: "Physics",
+    chapters: [
+      { name: "Electric charges and fields", tcr: createSession("ABR"), entrance: createSession("ABR"), revision: createSession("ARJ") },
+      { name: "Electrostatic potential and capacitance", tcr: createSession("ABR"), entrance: createSession(null), revision: createSession("ARJ") },
+      { name: "Current electricity", tcr: createSession("ARJ"), entrance: createSession("ARJ"), revision: createSession("NSR") },
+      { name: "Moving charges and magnetism", tcr: createSession("ARJ"), entrance: createSession("ARJ"), revision: createSession("ARJ") },
+      { name: "Magnetism and matter", tcr: createSession("ARJ"), entrance: createSession(null), revision: createSession(null) },
+      { name: "Electromagnetic induction", tcr: createSession("JN"), entrance: createSession(null), revision: createSession("NSR") },
+      { name: "Alternating current", tcr: createSession("ARJ"), entrance: createSession(null), revision: createSession("NSR") },
+      { name: "Electromagnetic wave", tcr: createSession("JN"), entrance: createSession(null), revision: createSession(null) },
+      { name: "Ray optics", tcr: createSession("ARJ"), entrance: createSession(null), revision: createSession("NSR") },
+      { name: "Wave optics", tcr: createSession("ARJ"), entrance: createSession(null), revision: createSession("NSR") },
+      { name: "Dual nature ", tcr: createSession("ABR"), entrance: createSession(null), revision: createSession("NSR") },
+      { name: "Atoms", tcr: createSession("ABR"), entrance: createSession(null), revision: createSession("ARJ") },
+      { name: "Nuclei", tcr: createSession("ARJ"), entrance: createSession(null), revision: createSession("NSR") },
+      { name: "Semiconductors", tcr: createSession("ARJ"), entrance: createSession(null), revision: createSession(null) }
+    ]
+  },
+  {
+    name: "CHEMISTRY",
+    chapters: [
+      { name: "Solutions", tcr: createSession("CAZ"), entrance: createSession("CAZ"), revision: createSession("CAZ") },
+      { name: "Electrochemistry", tcr: createSession("CY"), entrance: createSession("CY"), revision: createSession("CY") },
+      { name: "Chemical kinetics", tcr: createSession("CY"), entrance: createSession("CY"), revision: createSession("CY") },
+      { name: "D and f block", tcr: createSession("CAZ"), entrance: createSession(null), revision: createSession("CY") },
+      { name: "Coordination compound", tcr: createSession("CAZ"), entrance: createSession(null), revision: createSession("CAZ") },
+      { name: "Haloalkanes and haloarenes", tcr: createSession("JSL"), entrance: createSession("need 2H"), revision: createSession("CY") },
+      { name: "Alcohols,phenols and ethers", tcr: createSession("CY"), entrance: createSession(null), revision: createSession("CY") },
+      { name: "Aldehydes, ketone and carboxylate acids", tcr: createSession("CY"), entrance: createSession(null), revision: createSession("CY") },
+      { name: "Amines", tcr: createSession("CAZ"), entrance: createSession(null), revision: createSession("CY") },
+      { name: "Bio molecules", tcr: createSession("CY"), entrance: createSession(null), revision: createSession("CY") }
+    ]
+  },
+  {
+    name: "Maths",
+    chapters: [
+      { name: "Relations and functions", tcr: createSession("SRJ"), entrance: createSession("MRS"), revision: createSession("MF") },
+      { name: "Inverse trignometry", tcr: createSession("SRJ"), entrance: createSession(null), revision: createSession("MRS") },
+      { name: "Matrices", tcr: createSession("MF"), entrance: createSession("MF"), revision: createSession(null) },
+      { name: "Determinants", tcr: createSession("MF"), entrance: createSession("MF"), revision: createSession(null) },
+      { name: "Continuity and differentiability", tcr: createSession("MF"), entrance: createSession("MRS"), revision: createSession("SRJ") },
+      { name: "Applications of derivatives", tcr: createSession("MRS"), entrance: createSession(null), revision: createSession("ADL") },
+      { name: "Integrals", tcr: createSession("MF"), entrance: createSession(null), revision: createSession("SRJ") },
+      { name: "Applications of integrals", tcr: createSession("MF"), entrance: createSession(null), revision: createSession("SRJ") },
+      { name: "Differential equations", tcr: createSession("MRS"), entrance: createSession(null), revision: createSession("MF") },
+      { name: "Vector algebra", tcr: createSession("ADL"), entrance: createSession(null), revision: createSession("MRS") },
+      { name: "Three dimensional geometry", tcr: createSession("ADL"), entrance: createSession(null), revision: createSession("MF") },
+      { name: "Linear programming", tcr: createSession("SRJ"), entrance: createSession(null), revision: createSession("MF") },
+      { name: "Probability", tcr: createSession("ADL"), entrance: createSession(null), revision: createSession("MRS") }
+    ]
+  },
+  {
+    name: "ZOOLOGY",
+    chapters: [
+      { name: "Human reproduction", tcr: createSession("AZ"), entrance: createSession(null), revision: createSession("IQ") },
+      { name: "Reproductive health", tcr: createSession("IQ"), entrance: createSession(null), revision: createSession("AZ") },
+      { name: "Principles of heredity and variation", tcr: createSession("AZ"), entrance: createSession(null), revision: createSession("IQ") },
+      { name: "Molecular basis of inheritance", tcr: createSession("AZ"), entrance: createSession(null), revision: createSession("IQ") },
+      { name: "Evolution", tcr: createSession("IQ"), entrance: createSession(null), revision: createSession("AZ") },
+      { name: "Human health and Diseases", tcr: createSession("IQ"), entrance: createSession(null), revision: createSession("AZ") },
+      { name: "Microbes in human welfare", tcr: createSession("AZ"), entrance: createSession(null), revision: createSession("AZ") },
+      { name: "Biodiversity and conservation", tcr: createSession("AZ"), entrance: createSession(null), revision: createSession("AZ") }
+    ]
+  },
+  {
+    name: "BOTANY",
+    chapters: [
+      { name: "Sexual reproduction in flowering plant", tcr: createSession("JS"), entrance: createSession("JS"), revision: createSession("JS") },
+      { name: "Biotechnology principles and processes", tcr: createSession("SHM"), entrance: createSession("SHM"), revision: createSession("JS") },
+      { name: "Biotechnology and its application", tcr: createSession("JS"), entrance: createSession(null), revision: createSession(null) },
+      { name: "Organism and population", tcr: createSession("SHM"), entrance: createSession(null), revision: createSession("JS") },
+      { name: "Ecosystem", tcr: createSession("JS"), entrance: createSession(null), revision: createSession(null) }
+    ]
   }
-  
-  return { id: docSnap.id, ...docSnap.data() } as ExamData;
-}
+];
+--- END OF FILE src/components/lab/course-progress/initialData.ts ---
 
-export async function submitExamResult(examId: string, submission: Omit<ExamSubmission, 'id' | 'submittedAt'>): Promise<void> {
-  if (!db) throw new Error("Firebase is not configured.");
-  
-  await addDoc(collection(db, `exams/${examId}/submissions`), {
-    ...submission,
-    submittedAt: serverTimestamp()
-  });
-}
-
-export async function getExamSubmissions(examId: string): Promise<ExamSubmission[]> {
-  if (!db) throw new Error("Firebase is not configured.");
-  
-  const q = query(collection(db, `exams/${examId}/submissions`), orderBy('score', 'desc'));
-  const querySnapshot = await getDocs(q);
-  
-  return querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  })) as ExamSubmission[];
-}
---- END OF FILE src/services/firebaseService.ts ---
-
---- START OF FILE src/components/lab/online-exams/ExamDashboard.tsx ---
+--- START OF FILE src/components/lab/course-progress/CourseProgress.tsx ---
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, ClipboardList, ExternalLink, Trophy } from 'lucide-react';
-import { isFirebaseConfigured } from '../../../services/firebaseService';
+import { ArrowLeft, BookOpen, Download, Loader2, RotateCcw, AlertTriangle } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { SubjectProgress, TaskData, TaskStatus } from './types';
+import { initialData } from './initialData';
+import SubjectView from './SubjectView';
+import { getCourseProgress, saveCourseProgress, isFirebaseConfigured } from '../../../services/firebaseService';
 
-interface ExamDashboardProps {
-  onNavigate: (view: any, examId?: string) => void;
-  onBack: () => void;
-}
+export default function CourseProgress({ onBack }: { onBack: () => void }) {
+  const [data, setData] = useState<SubjectProgress[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [selectedSubjectIndex, setSelectedSubjectIndex] = useState<number | null>(null);
 
-interface LocalExamRecord {
-  id: string;
-  title: string;
-  date: string;
-}
-
-export default function ExamDashboard({ onNavigate, onBack }: ExamDashboardProps) {
-  const [createdExams, setCreatedExams] = useState<LocalExamRecord[]>([]);
+  // Helper to migrate old fields to new TaskData format
+  const migrateTask = (val: any): TaskData => {
+    if (!val) return { status: 'pending', sessions: [] };
+    
+    // If it's already TaskData (has status and sessions array)
+    if (val.status && Array.isArray(val.sessions)) {
+      return val as TaskData;
+    }
+    
+    // If it was the previous SessionData[] format
+    if (Array.isArray(val)) {
+      const hasOngoing = val.some(v => v.status === 'ongoing');
+      const allFinished = val.length > 0 && val.every(v => v.status === 'finished');
+      const status: TaskStatus = allFinished ? 'finished' : (hasOngoing ? 'ongoing' : (val.length > 0 ? 'finished' : 'pending'));
+      
+      const cleanSessions = val.map(v => {
+        const { status, ...rest } = v; // Strip old status from sessions
+        return { ...rest, id: v.id || Math.random().toString(36).substring(7) };
+      });
+      return { status, sessions: cleanSessions };
+    }
+    
+    // If it was the old string format
+    if (typeof val === 'string') {
+      return { 
+        status: 'finished', 
+        sessions: [{ id: Math.random().toString(36).substring(7), teacher: val }] 
+      };
+    }
+    
+    // If it was the old single object format
+    if (typeof val === 'object' && val.status && val.teacher !== undefined) {
+      const { status, ...rest } = val;
+      return { 
+        status: status as TaskStatus, 
+        sessions: [{ id: Math.random().toString(36).substring(7), ...rest }] 
+      };
+    }
+    
+    return { status: 'pending', sessions: [] };
+  };
 
   useEffect(() => {
-    const saved = localStorage.getItem('omr_created_exams');
-    if (saved) {
-      try {
-        setCreatedExams(JSON.parse(saved));
-      } catch (e) { }
-    }
+    document.title = "AIMS - Course Progress";
+    fetchData();
+    return () => { document.title = "OMR Checker Pro"; };
   }, []);
 
-  if (!isFirebaseConfigured) {
-    return (
-      <div className="max-w-3xl mx-auto mt-12 bg-red-50 p-6 rounded-xl border border-red-200 text-center">
-        <h2 className="text-xl font-bold text-red-700 mb-2">Firebase Not Configured</h2>
-        <p className="text-red-600 mb-4">
-          Online Exams require a Firebase backend to store questions and student submissions.
-        </p>
-        <p className="text-sm text-red-500 mb-4">
-          Please check the <code className="bg-red-100 px-1 rounded">firebase-setup.md</code> file for instructions on how to set up your `.env.local` variables.
-        </p>
-        <button onClick={onBack} className="px-4 py-2 bg-red-600 text-white rounded font-medium hover:bg-red-700">
-          Go Back
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h2 className="text-2xl font-bold text-gray-900">Online Exams Dashboard</h2>
-        </div>
-        <button
-          onClick={() => onNavigate('exam-setup')}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Create New Exam
-        </button>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
-          <ClipboardList className="w-5 h-5 text-gray-500" />
-          <h3 className="font-semibold text-gray-800">Your Created Exams</h3>
-        </div>
-        
-        {createdExams.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">
-            You haven't created any online exams yet.
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {createdExams.map(exam => (
-              <div key={exam.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-gray-50 transition-colors">
-                <div>
-                  <h4 className="text-lg font-bold text-gray-900">{exam.title}</h4>
-                  <p className="text-sm text-gray-500 mt-1">Created on {new Date(exam.date).toLocaleDateString()}</p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    onClick={() => {
-                      const link = `${window.location.origin}/?examId=${exam.id}`;
-                      navigator.clipboard.writeText(link);
-                      alert('Exam link copied to clipboard!');
-                    }}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded text-sm font-medium hover:bg-gray-200 transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" /> Copy Link
-                  </button>
-                  <button
-                    onClick={() => onNavigate('exam-results', exam.id)}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-green-100 text-green-700 rounded text-sm font-medium hover:bg-green-200 transition-colors"
-                  >
-                    <Trophy className="w-4 h-4" /> View Results
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/lab/online-exams/ExamDashboard.tsx ---
-
---- START OF FILE src/components/lab/online-exams/ExamSetup.tsx ---
-import React, { useState, useRef } from 'react';
-import { ArrowLeft, Loader2, Upload, Trash2, Save } from 'lucide-react';
-import { processImage } from '../../../utils/imageProcessing';
-import { createExam } from '../../../services/firebaseService';
-
-interface ExamSetupProps {
-  onNavigate: (view: any) => void;
-}
-
-export default function ExamSetup({ onNavigate }: ExamSetupProps) {
-  const [title, setTitle] = useState('');
-  const [className, setClassName] = useState('');
-  const [totalQuestions, setTotalQuestions] = useState(25);
-  const [answerKeyInput, setAnswerKeyInput] = useState('');
-  const [images, setImages] = useState<{ url: string; base64: string }[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files) return;
-    setIsProcessing(true);
-    
+  const fetchData = async () => {
     try {
-      const newImages = [];
-      for (const file of Array.from(event.target.files)) {
-        // Compress image tightly so it easily fits within Firestore doc limits (1MB)
-        const { base64, mimeType } = await processImage(file, 800, 0); 
-        newImages.push({
-          url: URL.createObjectURL(file),
-          base64: `data:${mimeType};base64,${base64}`
-        });
-      }
-      setImages(prev => [...prev, ...newImages]);
-    } catch (error) {
-      alert("Error processing images. Ensure they are valid image files.");
-    } finally {
-      setIsProcessing(false);
-    }
-    
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const removeImage = (index: number) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const parseAnswerKey = () => {
-    const keyMap: Record<number, string> = {};
-    const lines = answerKeyInput.split('\n');
-    let qNum = 1;
-    
-    for (const line of lines) {
-      // Look for standard options like A, B, C, D in the line
-      const match = line.match(/\b([A-D])\b/i);
-      if (match && qNum <= totalQuestions) {
-        keyMap[qNum] = match[1].toUpperCase();
-        qNum++;
-      }
-    }
-    return keyMap;
-  };
-
-  const handleCreateExam = async () => {
-    if (!title || !className || images.length === 0 || !answerKeyInput) {
-      alert("Please fill in all fields, provide an answer key, and upload at least one image.");
-      return;
-    }
-
-    const keyMap = parseAnswerKey();
-    if (Object.keys(keyMap).length === 0) {
-      alert("Could not parse any valid answers (A, B, C, D) from the Answer Key input.");
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      const examId = await createExam({
-        title,
-        className,
-        totalQuestions,
-        answerKey: keyMap,
-        images: images.map(img => img.base64)
-      });
-
-      // Save locally to dashboard
-      const saved = localStorage.getItem('omr_created_exams');
-      const examsList = saved ? JSON.parse(saved) : [];
-      examsList.push({ id: examId, title, date: new Date().toISOString() });
-      localStorage.setItem('omr_created_exams', JSON.stringify(examsList));
-
-      alert("Exam Created Successfully!");
-      onNavigate('lab-exams');
-    } catch (error: any) {
-      alert("Failed to create exam: " + error.message);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-12">
-      <div className="flex items-center gap-4">
-        <button onClick={() => onNavigate('lab-exams')} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h2 className="text-2xl font-bold text-gray-900">Setup Online Exam</h2>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Exam Title</label>
-            <input 
-              type="text" 
-              value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
-              placeholder="e.g. Physics Chapter 4 Mock Test" 
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1">Target Class/Batch</label>
-            <input 
-              type="text" 
-              value={className} 
-              onChange={(e) => setClassName(e.target.value)} 
-              placeholder="e.g. Crash 2026" 
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">Total Questions</label>
-          <input 
-            type="number" 
-            min="1" 
-            max="100" 
-            value={totalQuestions} 
-            onChange={(e) => setTotalQuestions(Number(e.target.value))} 
-            className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">Question Paper Images</label>
-          <p className="text-xs text-gray-500 mb-3">Upload clear images of the question paper pages. They will be compressed and presented to the students.</p>
-          
-          <input 
-            type="file" 
-            multiple 
-            accept="image/*" 
-            className="hidden" 
-            ref={fileInputRef}
-            onChange={handleImageUpload}
-          />
-          
-          <div className="flex flex-wrap gap-4">
-            {images.map((img, i) => (
-              <div key={i} className="relative w-32 h-40 bg-gray-100 rounded-lg border border-gray-200 flex-shrink-0 group">
-                <img src={img.url} alt={`QP Page ${i + 1}`} className="w-full h-full object-cover rounded-lg opacity-90 group-hover:opacity-100" />
-                <button 
-                  onClick={() => removeImage(i)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] text-center py-1 rounded-b-lg">
-                  Page {i + 1}
-                </div>
-              </div>
-            ))}
-            <div 
-              onClick={() => fileInputRef.current?.click()}
-              className="w-32 h-40 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50 transition-colors cursor-pointer"
-            >
-              <Upload className="w-6 h-6 mb-2" />
-              <span className="text-xs font-medium">Add Pages</span>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">Answer Key</label>
-          <p className="text-xs text-gray-500 mb-2">Paste your answer key. The system will look for letters A, B, C, D to assign to questions 1 to {totalQuestions}.</p>
-          <textarea 
-            value={answerKeyInput} 
-            onChange={(e) => setAnswerKeyInput(e.target.value)} 
-            rows={10} 
-            placeholder="1. A&#10;2. B&#10;3. C&#10;..." 
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 font-mono text-sm"
-          />
-        </div>
-
-        <div className="pt-4 border-t border-gray-200">
-          <button
-            onClick={handleCreateExam}
-            disabled={isProcessing}
-            className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50"
-          >
-            {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-            {isProcessing ? 'Saving to Cloud...' : 'Create Exam & Generate Link'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/lab/online-exams/ExamSetup.tsx ---
-
---- START OF FILE src/components/lab/online-exams/ExamTake.tsx ---
-import React, { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, CheckCircle, Send, FileWarning, Eye } from 'lucide-react';
-import { getExam, submitExamResult, ExamData, ExamIncident } from '../../../services/firebaseService';
-
-interface ExamTakeProps {
-  examId: string;
-  onFinish: () => void;
-}
-
-export default function ExamTake({ examId, onFinish }: ExamTakeProps) {
-  const [exam, setExam] = useState<ExamData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  const [step, setStep] = useState<'details' | 'taking' | 'submitted'>('details');
-  const [studentName, setStudentName] = useState('');
-  const [studentClass, setStudentClass] = useState('');
-  
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [incidents, setIncidents] = useState<ExamIncident[]>([]);
-  
-  const [cheatPromptVisible, setCheatPromptVisible] = useState(false);
-  const [cheatReason, setCheatReason] = useState('');
-  const lastHiddenTime = useRef<string>('');
-  
-  const options = ['A', 'B', 'C', 'D'];
-
-  useEffect(() => {
-    async function fetchExam() {
-      try {
-        const data = await getExam(examId);
-        setExam(data);
-      } catch (err: any) {
-        setError("Could not load the exam. Please check the link.");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchExam();
-  }, [examId]);
-
-  // Anti-Cheat Mechanism
-  useEffect(() => {
-    if (step !== 'taking') return;
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        lastHiddenTime.current = new Date().toISOString();
+      const res = await getCourseProgress();
+      if (res && res.length > 0) {
+        const migratedData = res.map(sub => ({
+          ...sub,
+          chapters: sub.chapters.map((ch: any) => ({
+            ...ch,
+            tcr: migrateTask(ch.tcr),
+            entrance: migrateTask(ch.entrance),
+            revision: migrateTask(ch.revision)
+          }))
+        }));
+        setData(migratedData);
       } else {
-        setCheatPromptVisible(true);
+        setData(initialData);
+        // Initialize global data for everyone else
+        if (isFirebaseConfigured) {
+          await saveCourseProgress(initialData);
+        }
       }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [step]);
-
-  const handleCheatSubmit = () => {
-    if (!cheatReason.trim()) {
-      alert("Please provide a reason.");
-      return;
-    }
-    setIncidents(prev => [...prev, { time: lastHiddenTime.current, reason: cheatReason }]);
-    setCheatPromptVisible(false);
-    setCheatReason('');
-  };
-
-  const handleOptionSelect = (qNum: number, option: string) => {
-    setAnswers(prev => ({
-      ...prev,
-      [qNum]: prev[qNum] === option ? '' : option // toggle off if clicked again
-    }));
-  };
-
-  const submitExam = async () => {
-    if (!exam) return;
-    
-    if (!window.confirm("Are you sure you want to submit your exam? You cannot undo this.")) {
-      return;
-    }
-    
-    setLoading(true);
-    
-    let right = 0;
-    let wrong = 0;
-    
-    for (let i = 1; i <= exam.totalQuestions; i++) {
-      const studentAns = answers[i];
-      const correctAns = exam.answerKey[i];
-      
-      if (studentAns) {
-        if (studentAns === correctAns) right++;
-        else wrong++;
+    } catch (e) {
+      console.error("Failed to load from Firebase, falling back to local storage", e);
+      const saved = localStorage.getItem('omr_course_progress');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          const migratedData = parsed.map((sub: any) => ({
+            ...sub,
+            chapters: sub.chapters.map((ch: any) => ({
+              ...ch,
+              tcr: migrateTask(ch.tcr),
+              entrance: migrateTask(ch.entrance),
+              revision: migrateTask(ch.revision)
+            }))
+          }));
+          setData(migratedData);
+        } catch (err) {
+          setData(initialData);
+        }
+      } else {
+        setData(initialData);
       }
-    }
-    
-    const score = (right * 4) - wrong; // Standard scoring
-    
-    try {
-      await submitExamResult(examId, {
-        studentName,
-        studentClass,
-        answers,
-        score,
-        totalRight: right,
-        totalWrong: wrong,
-        incidents
-      });
-      setStep('submitted');
-    } catch (err) {
-      alert("Failed to submit exam. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading && step === 'details') {
-    return <div className="flex h-screen items-center justify-center text-indigo-600">Loading Exam...</div>;
-  }
-
-  if (error || !exam) {
-    return (
-      <div className="flex flex-col h-screen items-center justify-center text-center p-6">
-        <AlertTriangle className="w-16 h-16 text-red-500 mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">{error}</h1>
-        <button onClick={onFinish} className="mt-6 px-6 py-2 bg-indigo-600 text-white rounded font-medium">Return Home</button>
-      </div>
-    );
-  }
-
-  if (step === 'details') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white max-w-lg w-full rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <div className="bg-indigo-600 p-8 text-center text-white">
-            <h1 className="text-3xl font-black mb-2">{exam.title}</h1>
-            <p className="text-indigo-200 font-medium">{exam.className}</p>
-          </div>
-          <div className="p-8 space-y-6">
-            <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded-r-md flex gap-3">
-              <FileWarning className="w-6 h-6 text-orange-600 shrink-0" />
-              <div className="text-sm text-orange-800">
-                <strong>Warning:</strong> Once you start the exam, do not switch tabs or close the window. The system monitors activity and will log tab switches as potential violations.
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Full Name</label>
-                <input 
-                  type="text" 
-                  value={studentName} 
-                  onChange={e => setStudentName(e.target.value)} 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 font-medium" 
-                  placeholder="Enter your real name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">Class / Batch</label>
-                <input 
-                  type="text" 
-                  value={studentClass} 
-                  onChange={e => setStudentClass(e.target.value)} 
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 font-medium" 
-                  placeholder="e.g. 12A"
-                />
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                if (!studentName.trim() || !studentClass.trim()) {
-                  alert("Please enter your name and class.");
-                  return;
-                }
-                setStep('taking');
-              }}
-              className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold text-lg hover:bg-indigo-700 transition-colors shadow-md flex justify-center items-center gap-2"
-            >
-              Start Exam
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (step === 'submitted') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white max-w-md w-full rounded-2xl shadow-xl p-8 text-center border border-gray-100">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-green-600" />
-          </div>
-          <h2 className="text-3xl font-black text-gray-900 mb-2">Submitted!</h2>
-          <p className="text-gray-600 mb-8">Your exam has been successfully recorded. You may now close this window.</p>
-          <button onClick={onFinish} className="px-8 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors">
-            Exit
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden">
-      {/* Cheat Prompt Modal */}
-      {cheatPromptVisible && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-white p-6 rounded-xl max-w-lg w-full shadow-2xl">
-            <div className="flex items-center gap-3 mb-4 text-red-600">
-              <Eye className="w-8 h-8" />
-              <h2 className="text-2xl font-bold">Activity Logged</h2>
-            </div>
-            <p className="text-gray-700 mb-4 font-medium">
-              You left the exam screen. This incident has been logged. Please explain why you switched tabs or minimized the window:
-            </p>
-            <textarea
-              value={cheatReason}
-              onChange={e => setCheatReason(e.target.value)}
-              className="w-full px-4 py-3 border border-red-300 rounded-lg focus:ring-red-500 focus:border-red-500 mb-4 font-medium"
-              rows={3}
-              placeholder="Provide a valid reason..."
-            />
-            <button
-              onClick={handleCheatSubmit}
-              className="w-full py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700"
-            >
-              Resume Exam
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Left Side - Question Paper */}
-      <div className="md:w-1/2 h-[50vh] md:h-full bg-gray-900 overflow-y-auto p-4 flex flex-col items-center gap-4 custom-scrollbar">
-        {exam.images.map((img, i) => (
-          <img key={i} src={img} alt={`Question Paper Page ${i+1}`} className="w-full max-w-2xl rounded shadow-lg bg-white" />
-        ))}
-      </div>
-
-      {/* Right Side - OMR Bubbles */}
-      <div className="md:w-1/2 h-[50vh] md:h-full bg-white flex flex-col border-l border-gray-200">
-        <div className="p-4 bg-indigo-600 text-white flex items-center justify-between shadow-md z-10 shrink-0">
-          <div>
-            <h2 className="font-bold text-lg truncate max-w-[200px] md:max-w-xs">{exam.title}</h2>
-            <p className="text-indigo-200 text-xs font-medium">{studentName} • {studentClass}</p>
-          </div>
-          <button
-            onClick={submitExam}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-400 text-white font-bold rounded shadow-sm disabled:opacity-50 transition-colors"
-          >
-            {loading ? 'Submitting...' : <><Send className="w-4 h-4" /> Submit</>}
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50 custom-scrollbar">
-          <div className="max-w-md mx-auto grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-            {Array.from({ length: exam.totalQuestions }, (_, i) => i + 1).map(qNum => (
-              <div key={qNum} className="flex items-center gap-4 bg-white p-2 rounded border border-gray-200 shadow-sm">
-                <span className="w-6 font-bold text-gray-700 text-right">{qNum}.</span>
-                <div className="flex gap-2">
-                  {options.map(opt => {
-                    const isSelected = answers[qNum] === opt;
-                    return (
-                      <button
-                        key={opt}
-                        onClick={() => handleOptionSelect(qNum, opt)}
-                        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all ${
-                          isSelected 
-                            ? 'bg-indigo-600 border-indigo-600 text-white' 
-                            : 'bg-white border-gray-300 text-gray-500 hover:border-indigo-400 hover:bg-indigo-50'
-                        }`}
-                      >
-                        {opt}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="pb-12 pt-8 text-center text-sm text-gray-400">End of Questions</div>
-        </div>
-      </div>
-      
-      <style dangerouslySetInnerHTML={{__html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
-      `}} />
-    </div>
-  );
-}
---- END OF FILE src/components/lab/online-exams/ExamTake.tsx ---
-
---- START OF FILE src/components/lab/online-exams/ExamResults.tsx ---
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Loader2, Search, Download, AlertTriangle } from 'lucide-react';
-import { getExamSubmissions, ExamSubmission, getExam, ExamData } from '../../../services/firebaseService';
-
-interface ExamResultsProps {
-  examId: string;
-  onBack: () => void;
-}
-
-export default function ExamResults({ examId, onBack }: ExamResultsProps) {
-  const [exam, setExam] = useState<ExamData | null>(null);
-  const [submissions, setSubmissions] = useState<ExamSubmission[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const [examData, subs] = await Promise.all([
-          getExam(examId),
-          getExamSubmissions(examId)
-        ]);
-        setExam(examData);
-        setSubmissions(subs);
-      } catch (error) {
-        alert("Failed to load results.");
-      } finally {
-        setLoading(false);
-      }
+  const updateChapter = async (subjectIdx: number, chapterIdx: number, field: 'tcr' | 'entrance' | 'revision', taskData: TaskData) => {
+    // Perform a deep immutable update so React re-renders correctly
+    const newData = [...data];
+    const newSubject = { ...newData[subjectIdx] };
+    const newChapters = [...newSubject.chapters];
+    const newChapter = { ...newChapters[chapterIdx] };
+    
+    newChapter[field] = taskData;
+    newChapters[chapterIdx] = newChapter;
+    newSubject.chapters = newChapters;
+    newData[subjectIdx] = newSubject;
+    
+    setData(newData);
+    
+    setSaving(true);
+    try {
+      await saveCourseProgress(newData);
+      localStorage.setItem('omr_course_progress', JSON.stringify(newData));
+    } catch (e) {
+      console.error("Failed to save to Firebase", e);
+      localStorage.setItem('omr_course_progress', JSON.stringify(newData));
+    } finally {
+      setSaving(false);
     }
-    fetchData();
-  }, [examId]);
-
-  const exportCSV = () => {
-    if (!exam || submissions.length === 0) return;
-
-    let csv = 'NAME,CLASS,SCORE,RIGHT,WRONG,INCIDENTS,';
-    for (let i = 1; i <= exam.totalQuestions; i++) csv += `Q${i},`;
-    csv = csv.slice(0, -1) + '\n';
-
-    submissions.forEach(sub => {
-      let row = `"${sub.studentName}","${sub.studentClass}",${sub.score},${sub.totalRight},${sub.totalWrong},${sub.incidents.length},`;
-      for (let i = 1; i <= exam.totalQuestions; i++) {
-        const ans = sub.answers[i] || '';
-        const correct = exam.answerKey[i];
-        const mark = ans === correct ? 1 : ans ? -1 : 0;
-        row += `${mark},`;
-      }
-      csv += row.slice(0, -1) + '\n';
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `${exam.title.replace(/\s+/g, '_')}_Results.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
-  const filtered = submissions.filter(s => 
-    s.studentName.toLowerCase().includes(search.toLowerCase()) || 
-    s.studentClass.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleReset = async () => {
+    if (!window.confirm("Are you sure you want to reset ALL course progress for a new academic year? This cannot be undone.")) return;
+    
+    const resetData = data.map(sub => ({
+      ...sub,
+      chapters: sub.chapters.map(ch => ({
+        ...ch,
+        tcr: { status: 'pending', sessions: [] } as TaskData,
+        entrance: { status: 'pending', sessions: [] } as TaskData,
+        revision: { status: 'pending', sessions: [] } as TaskData
+      }))
+    }));
+    
+    setData(resetData);
+    setSaving(true);
+    try {
+      await saveCourseProgress(resetData);
+      localStorage.setItem('omr_course_progress', JSON.stringify(resetData));
+    } catch (e) {
+      console.error("Failed to reset in Firebase", e);
+      localStorage.setItem('omr_course_progress', JSON.stringify(resetData));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleExport = () => {
+    const wsData = [['Subject', 'Chapter', 'TCR', 'Entrance', 'Revision']];
+    
+    const formatTask = (task: TaskData) => {
+      const sessionStr = task.sessions.map(s => s.teacher || 'Unassigned').join(', ');
+      return sessionStr ? `${sessionStr} [${task.status.toUpperCase()}]` : `[${task.status.toUpperCase()}]`;
+    };
+
+    data.forEach(sub => {
+      sub.chapters.forEach(ch => {
+        wsData.push([
+          sub.name,
+          ch.name,
+          formatTask(ch.tcr),
+          formatTask(ch.entrance),
+          formatTask(ch.revision)
+        ]);
+      });
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Course Progress");
+    ws['!cols'] = [{ wch: 20 }, { wch: 40 }, { wch: 30 }, { wch: 30 }, { wch: 30 }];
+    XLSX.writeFile(wb, "Course_Progress.xlsx");
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+      </div>
+    );
+  }
+
+  if (selectedSubjectIndex !== null) {
+    return (
+      <SubjectView 
+        subject={data[selectedSubjectIndex]} 
+        onBack={() => setSelectedSubjectIndex(null)}
+        onUpdate={(cIdx, field, taskData) => updateChapter(selectedSubjectIndex, cIdx, field, taskData)}
+      />
+    );
+  }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Exam Results</h2>
-            {exam && <p className="text-gray-500 font-medium">{exam.title}</p>}
+          <div className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+            <BookOpen className="w-6 h-6 text-green-600" />
+            <h2>Course Progress</h2>
+            {saving && <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-2" />}
           </div>
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search students..." 
-              value={search} 
-              onChange={(e) => setSearch(e.target.value)} 
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" 
-            />
-          </div>
+        
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <button
-            onClick={exportCSV}
-            disabled={submissions.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 disabled:opacity-50 transition-colors shadow-sm shrink-0"
+            onClick={handleReset}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-md font-medium hover:bg-red-100 transition-colors shadow-sm border border-red-200 flex-1 md:flex-none"
           >
-            <Download className="w-4 h-4" /> Export
+            <RotateCcw className="w-4 h-4" /> Reset Year
+          </button>
+          <button
+            onClick={handleExport}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 transition-colors shadow-sm flex-1 md:flex-none"
+          >
+            <Download className="w-4 h-4" /> Export XLS
           </button>
         </div>
       </div>
 
-      {loading ? (
-        <div className="py-20 flex justify-center">
-          <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Rank</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Student Name</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Class</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Score</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Details</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Incidents</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500 font-medium">
-                      No submissions found.
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((sub, idx) => (
-                    <tr key={sub.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-500">#{idx + 1}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{sub.studentName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{sub.studentClass}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2.5 py-1 inline-flex text-sm leading-5 font-bold rounded-full bg-indigo-100 text-indigo-800">
-                          {sub.score} pts
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <span className="text-green-600 font-medium mr-2">{sub.totalRight} R</span>
-                        <span className="text-red-600 font-medium">{sub.totalWrong} W</span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {sub.incidents.length > 0 ? (
-                          <div className="flex flex-col gap-1">
-                            <span className="text-red-600 font-bold flex items-center gap-1">
-                              <AlertTriangle className="w-4 h-4" /> {sub.incidents.length} Warnings
-                            </span>
-                            {sub.incidents.map((inc, i) => (
-                              <div key={i} className="text-xs bg-red-50 text-red-800 p-1 rounded mt-1 border border-red-100">
-                                "{inc.reason}"
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <span className="text-green-600 font-medium">Clean</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+      {!isFirebaseConfigured && (
+        <div className="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-xl flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          <p className="text-sm font-medium"><strong>Firebase Not Configured:</strong> Course Progress data is only being saved locally to this browser and will not sync globally across devices.</p>
         </div>
       )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {data.map((subject, idx) => {
+          const totalTasks = subject.chapters.length * 3;
+          const completedTasks = subject.chapters.reduce((acc, ch) => {
+            return acc + (ch.tcr.status === 'finished' ? 1 : 0) 
+                       + (ch.entrance.status === 'finished' ? 1 : 0) 
+                       + (ch.revision.status === 'finished' ? 1 : 0);
+          }, 0);
+          const percent = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+
+          return (
+            <div 
+              key={subject.name}
+              onClick={() => setSelectedSubjectIndex(idx)}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md hover:border-green-300 transition-all"
+            >
+              <h3 className="text-xl font-bold text-gray-900 mb-4 uppercase">{subject.name}</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm font-medium text-gray-600">
+                  <span>Progress</span>
+                  <span>{percent}%</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div 
+                    className="bg-green-500 h-2 rounded-full transition-all"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-2">{completedTasks} of {totalTasks} tasks fully completed</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
---- END OF FILE src/components/lab/online-exams/ExamResults.tsx ---
+--- END OF FILE src/components/lab/course-progress/CourseProgress.tsx ---
 
---- START OF FILE src/components/lab/online-exams/index.ts ---
-export { default as ExamDashboard } from './ExamDashboard';
-export { default as ExamSetup } from './ExamSetup';
-export { default as ExamTake } from './ExamTake';
-export { default as ExamResults } from './ExamResults';
---- END OF FILE src/components/lab/online-exams/index.ts ---
+--- START OF FILE src/components/lab/course-progress/SubjectView.tsx ---
+import React, { useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { SubjectProgress, TaskType, TaskData } from './types';
+import SubjectTable from './SubjectTable';
+import SubjectMobileCards from './SubjectMobileCards';
+import SessionManagerModal from './SessionManagerModal';
 
---- START OF FILE src/components/Lab.tsx ---
-import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay } from 'lucide-react';
-
-interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams') => void;
+interface Props {
+  subject: SubjectProgress;
   onBack: () => void;
+  onUpdate: (chapterIdx: number, field: TaskType, taskData: TaskData) => void;
 }
 
-export default function Lab({ onNavigate, onBack }: LabProps) {
+export default function SubjectView({ subject, onBack, onUpdate }: Props) {
+  const [editing, setEditing] = useState<{ cIdx: number, field: TaskType, taskData: TaskData } | null>(null);
+
+  const openEdit = (cIdx: number, field: TaskType, taskData: TaskData) => {
+    setEditing({ cIdx, field, taskData });
+  };
+
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-6xl mx-auto pb-12">
       <div className="flex items-center gap-4">
         <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-          <Beaker className="w-6 h-6 text-purple-600" />
-          <h2>Lab (Experimental Features)</h2>
-        </div>
+        <h2 className="text-2xl font-bold text-gray-900 uppercase">{subject.name} Progress</h2>
       </div>
-      
-      <p className="text-gray-600">
-        Welcome to the Lab! Here you can test out new experimental features.
-      </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div 
-          onClick={() => onNavigate('lab-crop')}
-          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-purple-300 transition-all cursor-pointer group"
-        >
-          <div className="flex items-start justify-between">
-            <div className="p-3 bg-purple-50 text-purple-600 rounded-lg group-hover:bg-purple-100 transition-colors">
-              <Crop className="w-6 h-6" />
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Auto-Crop & Rotate OMR</h3>
-          <p className="text-sm text-gray-600">
-            Use Gemini Lite to automatically detect the OMR sheet boundaries, crop out the background, and rotate the image upright.
-          </p>
-        </div>
-
-        <div 
-          onClick={() => onNavigate('lab-exams')}
-          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group"
-        >
-          <div className="flex items-start justify-between">
-            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-100 transition-colors">
-              <MonitorPlay className="w-6 h-6" />
-            </div>
-            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Online Exams</h3>
-          <p className="text-sm text-gray-600">
-            Setup online exams using images of a question paper. Generate a link, collect student responses with anti-cheat monitoring, and view results.
-          </p>
-        </div>
+      {/* Desktop View */}
+      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <SubjectTable subject={subject} onOpenEdit={openEdit} />
       </div>
-    </div>
-  );
-}
---- END OF FILE src/components/Lab.tsx ---
 
---- START OF FILE src/App.tsx ---
-import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Camera, Settings, CheckCircle, Plus, X, Beaker } from 'lucide-react';
-import { evaluateOMRBatch, correctNamesBatch, autoCropAndRotate, OMRResult } from './services/geminiService';
-import { saveImage, getImage, deleteImage } from './services/db';
-import { processImage, fileToBase64, applyCropAndRotate, rotateImageFile } from './utils/imageProcessing';
-import { dataURLtoFile } from './utils/fileUtils';
-
-import SettingsPanel from './components/SettingsPanel';
-import RankList from './components/RankList';
-import StudentDetail from './components/StudentDetail';
-import PrintableRankList from './components/PrintableRankList';
-import ReviewModal from './components/ReviewModal';
-import Lab from './components/Lab';
-import AutoCropTool from './components/lab/AutoCropTool';
-import QueueItem, { ProcessedFile } from './components/QueueItem';
-import QueueToolbar from './components/QueueToolbar';
-
-// Online Exams Imports
-import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
-
-const DEFAULT_ATTENDANCE = `ADIL MARZOOQUE\nADISANKAR\nADITHYA RAJ\nADWAID\nAHAMED IRFAN K\nAHAMED JUNAID\nAHLAM HASAN K\nAMAL CHANDRA N\nANJANA K\nANSHIA P\nANSILA KADOORAN\nAPARNA C\nARSHA FATHIMA M\nARSHIN PC\nASWATHY E\nATHUL VB\nAVANI PS\nAYISHA DIYA\nAZAL MHD\nDIYA AK\nDIYA FATHIMA KP\nDIYA MEHRIN K\nDIYA V\nFAHMA VP\nFAIZ AHMED AN\nFARHA P\nFATHIMA DILFA P\nFATHIMA FIZA M\nFATHIMA HIBA PP\nFATHIMA HUDA N\nFATHIMA LIYA A\nFATHIMA MINHA PE\nFATHIMA MISBHA VA\nFATHIMA NASHA\nFATHIMA NASHA CP\nFATHIMA RIFNA A\nFATHIMA SHAHNA PK\nFIDA THASNIM\nGOURI NANDA C\nHAMNA FATHIMA\nHANIYA FATHIMA P\nHANIYYA V\nHASNA SHARI VP\nHIBA FATHIMA KP\nHISHAM MHD\nKRISHNA PRIYA PC\nKRISTHI MUNADHA T\nLASIN ABDULLAH\nLISNA K\nLIYA FATHIMA A\nMAJID A\nMAZIN MHD\nMHD ADNAN K\nMHD AHANN TK\nMHD ANAS P\nMHD ANFAS TK\nMHD ASHFAQUE\nMHD DANISH\nMHD DIYAN\nMHD FAIROOZ\nMHD FARHAN K\nMHD FATHIN ALI\nMHD LIYAN P\nMHD MAJID RAMZAN TP\nMHD MUFLIH A\nMHD NAJADH\nMHD RAZAL T\nMHD RISHAN P\nMHD SABITH P\nMHD SABITH TK\nMHD SADHIL V\nMHD SHAFEEQ KK\nMHD SHAHABAS K\nMHD SINAN A\nMILHA RAZACK A\nMINHA PK\nMISHAL AHAMED\nNAIRA ABDUL LATHEEF\nNAJIH AHAMED\nNAJIYA NASRIN C\nNAJVA\nNAJVA FATHIMA C\nNASHA FATHIMA P\nNIDHA FATHIMA K\nNIDHA SHIRIN N\nNITHIN RAJ\nRAJEEBA K\nRANA FATHIMA K\nREHAN ABDUL RAHEEM\nREVATHY K\nRIDHA K\nRIFA CP\nRIFA P\nRINSHA JALIDHA P\nRINSHA SHERIN T\nRIYA SUNEER\nSHABANA JASMIN\nSILNA FATHIMA\nSITHARA BASHEER P\nSIYA TP\nTHANHA FATHIMA`;
-
-const DEFAULT_ANSWER_KEY = `*   **Q1.** B\n*   **Q2.** A\n*   **Q3.** A\n*   **Q4.** B\n*   **Q5.** C\n*   **Q6.** A\n*   **Q7.** A\n*   **Q8.** B\n*   **Q9.** C\n*   **Q10.** D\n*   **Q11.** A\n*   **Q12.** C\n*   **Q13.** B\n*   **Q14.** A\n*   **Q15.** C\n*   **Q16.** A\n*   **Q17.** Cancelled (give mark to everyone)\n*   **Q18.** B\n*   **Q19.** A\n*   **Q20.** C\n*   **Q21.** A\n*   **Q22.** A\n*   **Q23.** A\n*   **Q24.** B\n*   **Q25.** A`;
-
-const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
-
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take';
-
-export default function App() {
-  const [view, setView] = useState<ViewState>(() => {
-    if (new URLSearchParams(window.location.search).get('examId')) {
-      return 'exam-take';
-    }
-    return 'home';
-  });
-
-  const [apiKeys, setApiKeys] = useState<string[]>(() => {
-    const saved = localStorage.getItem('omr_apiKeysList');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    const oldSaved = localStorage.getItem('omr_apiKeys');
-    if (oldSaved) return oldSaved.split(',').map(k => k.trim()).filter(Boolean);
-    return [''];
-  });
-  const [liteModel, setLiteModel] = useState<string>(() => localStorage.getItem('omr_liteModel') || 'gemini-3.1-flash-lite-preview');
-  const [proModel, setProModel] = useState<string>(() => localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview');
-  const [availableModels, setAvailableModels] = useState<string[]>(['gemini-3.1-flash-lite-preview', 'gemini-3.1-flash-preview', 'gemini-3.1-pro-preview', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemma-2-2b-it', 'gemma-2-9b-it', 'gemma-2-27b-it']);
-  const [imageResolution, setImageResolution] = useState<number>(() => parseInt(localStorage.getItem('omr_imageResolution') || '1024', 10));
-  const [sampling, setSampling] = useState<number>(() => {
-    const saved = localStorage.getItem('omr_sampling');
-    return saved ? parseInt(saved, 10) : 2;
-  });
-  const [concurrency, setConcurrency] = useState<number>(() => {
-    const saved = localStorage.getItem('omr_concurrency');
-    return saved ? parseInt(saved, 10) : 1;
-  });
-  const [requestsPerKey, setRequestsPerKey] = useState<number>(() => {
-    const saved = localStorage.getItem('omr_requestsPerKey');
-    return saved ? parseInt(saved, 10) : 1;
-  });
-  const [autoCropEnabled, setAutoCropEnabled] = useState<boolean>(() => {
-    return localStorage.getItem('omr_autoCrop') === 'true';
-  });
-
-  const [attendanceSheet, setAttendanceSheet] = useState<string>(() => localStorage.getItem('omr_attendance') || DEFAULT_ATTENDANCE);
-  const [answerKey, setAnswerKey] = useState<string>(() => localStorage.getItem('omr_answerKey') || DEFAULT_ANSWER_KEY);
-  const [topicMapping, setTopicMapping] = useState<string>(() => localStorage.getItem('omr_topicMapping') || DEFAULT_TOPIC_MAPPING);
-  const [parsedTopicMapping, setParsedTopicMapping] = useState<any>(() => {
-    const saved = localStorage.getItem('omr_parsedTopicMapping');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return null;
-  });
-
-  const [showSettings, setShowSettings] = useState(false);
-  const [correctNamesOnExport, setCorrectNamesOnExport] = useState<boolean>(true);
-  const [isExporting, setIsExporting] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState<OMRResult | null>(null);
-  
-  // Lab Exams State
-  const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
-
-  const [days, setDays] = useState<number[]>(() => {
-    const saved = localStorage.getItem('omr_days');
-    return saved ? JSON.parse(saved) : [1];
-  });
-  const [currentDay, setCurrentDay] = useState<number>(() => {
-    const saved = localStorage.getItem('omr_currentDay');
-    return saved ? parseInt(saved, 10) : 1;
-  });
-  const [filesByDay, setFilesByDay] = useState<Record<number, ProcessedFile[]>>(() => {
-    const savedDays = localStorage.getItem('omr_days');
-    const daysList = savedDays ? JSON.parse(savedDays) : [1];
-    const initial: Record<number, ProcessedFile[]> = {};
-    
-    daysList.forEach((day: number) => {
-      const saved = localStorage.getItem(`omr_files_${day}`);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved) as ProcessedFile[];
-          initial[day] = parsed.map(f => f.status === 'processing' ? { ...f, status: 'pending', attempt: 0, stageName: undefined } : f);
-        } catch (e) {
-          initial[day] = [];
-        }
-      } else if (day === 1) {
-        const oldSaved = localStorage.getItem('omr_files');
-        if (oldSaved) {
-          try {
-            const parsed = JSON.parse(oldSaved) as ProcessedFile[];
-            initial[day] = parsed.map(f => f.status === 'processing' ? { ...f, status: 'pending', attempt: 0, stageName: undefined } : f);
-          } catch (e) {
-            initial[day] = [];
-          }
-        } else {
-          initial[day] = [];
-        }
-      } else {
-        initial[day] = [];
-      }
-    });
-    return initial;
-  });
-
-  const files = filesByDay[currentDay] || [];
-  const setFiles = (updater: React.SetStateAction<ProcessedFile[]>) => {
-    setFilesByDay(prev => {
-      const currentFiles = prev[currentDay] || [];
-      const newFiles = typeof updater === 'function' ? updater(currentFiles) : updater;
-      return { ...prev, [currentDay]: newFiles };
-    });
-  };
-
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
-  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
-  const [reviewFileId, setReviewFileId] = useState<string | null>(null);
-  
-  const [sortBy, setSortBy] = useState<'default' | 'name' | 'score' | 'verification_confidence' | 'name_confidence'>('default');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
-  const [isRotating, setIsRotating] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const csvInputRef = useRef<HTMLInputElement>(null);
-  const averageTimeRef = useRef<number>(8000);
-
-  useEffect(() => { localStorage.setItem('omr_apiKeysList', JSON.stringify(apiKeys)); }, [apiKeys]);
-  useEffect(() => { localStorage.setItem('omr_liteModel', liteModel); }, [liteModel]);
-  useEffect(() => { localStorage.setItem('omr_proModel', proModel); }, [proModel]);
-  useEffect(() => { localStorage.setItem('omr_imageResolution', imageResolution.toString()); }, [imageResolution]);
-  useEffect(() => { localStorage.setItem('omr_sampling', sampling.toString()); }, [sampling]);
-  useEffect(() => { localStorage.setItem('omr_concurrency', concurrency.toString()); }, [concurrency]);
-  useEffect(() => { localStorage.setItem('omr_requestsPerKey', requestsPerKey.toString()); }, [requestsPerKey]);
-  useEffect(() => { localStorage.setItem('omr_autoCrop', autoCropEnabled.toString()); }, [autoCropEnabled]);
-  useEffect(() => { localStorage.setItem('omr_attendance', attendanceSheet); }, [attendanceSheet]);
-  useEffect(() => { localStorage.setItem('omr_answerKey', answerKey); }, [answerKey]);
-  useEffect(() => { localStorage.setItem('omr_topicMapping', topicMapping); }, [topicMapping]);
-  useEffect(() => {
-    if (parsedTopicMapping) {
-      localStorage.setItem('omr_parsedTopicMapping', JSON.stringify(parsedTopicMapping));
-    }
-  }, [parsedTopicMapping]);
-  useEffect(() => { localStorage.setItem('omr_days', JSON.stringify(days)); }, [days]);
-  useEffect(() => { localStorage.setItem('omr_currentDay', currentDay.toString()); }, [currentDay]);
-
-  useEffect(() => {
-    const missingPreviewFiles = files.filter(f => !f.previewUrl && !failedImageIds.has(f.id));
-    
-    if (missingPreviewFiles.length > 0) {
-      const loadMissingImages = async () => {
-        const loadedData = await Promise.all(
-          missingPreviewFiles.map(async (f) => {
-            try {
-              const file = await getImage(f.id);
-              if (file) {
-                return { id: f.id, file, previewUrl: URL.createObjectURL(file) };
-              }
-            } catch (e) {
-              console.error('Failed to load image from DB', e);
-            }
-            return { id: f.id, failed: true };
-          })
-        );
-
-        const newFailedIds = loadedData.filter(l => l.failed).map(l => l.id);
-        if (newFailedIds.length > 0) {
-          setFailedImageIds(prev => new Set([...prev, ...newFailedIds]));
-        }
-
-        setFiles(prev => prev.map(f => {
-          const loaded = loadedData.find(l => l.id === f.id);
-          if (loaded && loaded.previewUrl) {
-            return { ...f, file: loaded.file, previewUrl: loaded.previewUrl };
-          }
-          return f;
-        }));
-      };
-      
-      loadMissingImages();
-    }
-  }, [files, failedImageIds]);
-
-  useEffect(() => {
-    Object.entries(filesByDay).forEach(([day, filesList]) => {
-      const filesToSave = filesList.map(f => ({
-        ...f,
-        file: undefined, 
-        previewUrl: undefined 
-      }));
-      localStorage.setItem(`omr_files_${day}`, JSON.stringify(filesToSave));
-    });
-  }, [filesByDay]);
-
-  const addDay = () => {
-    const newDay = Math.max(...days, 0) + 1;
-    setDays(prev => [...prev, newDay]);
-    setFilesByDay(prev => ({ ...prev, [newDay]: [] }));
-    setCurrentDay(newDay);
-  };
-
-  const deleteDay = (dayToDelete: number) => {
-    if (days.length <= 1) return;
-    if (!window.confirm(`Are you sure you want to delete Day ${dayToDelete}? This will remove all files for this day.`)) return;
-    
-    const filesToDelete = filesByDay[dayToDelete] || [];
-    filesToDelete.forEach(f => {
-      if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
-      deleteImage(f.id);
-    });
-    
-    setDays(prev => prev.filter(d => d !== dayToDelete));
-    setFilesByDay(prev => {
-      const next = { ...prev };
-      delete next[dayToDelete];
-      return next;
-    });
-    localStorage.removeItem(`omr_files_${dayToDelete}`);
-    
-    if (currentDay === dayToDelete) {
-      setCurrentDay(days.find(d => d !== dayToDelete) || 1);
-    }
-  };
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files) {
-      const newFiles = Array.from(event.target.files).map(file => ({
-        id: Math.random().toString(36).substring(7),
-        fileName: file.name,
-        file,
-        previewUrl: URL.createObjectURL(file),
-        status: 'pending' as const,
-      }));
-      
-      for (const f of newFiles) {
-        await saveImage(f.id, f.file);
-      }
-      
-      setFiles(prev => [...prev, ...newFiles]);
-    }
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    if (cameraInputRef.current) cameraInputRef.current.value = '';
-  };
-
-  const removeFile = async (id: string) => {
-    await deleteImage(id);
-    setFiles(prev => prev.filter(f => f.id !== id));
-    setSelectedFileIds(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(id);
-      return newSet;
-    });
-  };
-
-  const clearAllFiles = async () => {
-    if (window.confirm(`Are you sure you want to clear all files and results for Day ${currentDay}?`)) {
-      const filesToDelete = filesByDay[currentDay] || [];
-      for (const f of filesToDelete) {
-        if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
-        await deleteImage(f.id);
-      }
-      setFiles([]);
-      setSelectedFileIds(new Set());
-    }
-  };
-
-  const handleUpdateFileImage = async (id: string, newFile: File) => {
-    await saveImage(id, newFile);
-    const newPreviewUrl = URL.createObjectURL(newFile);
-    setFiles(prev => prev.map(f => f.id === id ? { ...f, file: newFile, previewUrl: newPreviewUrl } : f));
-  };
-
-  const rotateSelected = async () => {
-    if (selectedFileIds.size === 0 || isRotating) return;
-    setIsRotating(true);
-    
-    try {
-      for (const id of selectedFileIds) {
-        const currentFiles = filesByDay[currentDay] || [];
-        const fileIndex = currentFiles.findIndex(f => f.id === id);
-        if (fileIndex === -1) continue;
-        
-        let fileObj = currentFiles[fileIndex].file;
-        if (!fileObj) {
-          fileObj = await getImage(id);
-        }
-        
-        if (fileObj) {
-          const rotatedFile = await rotateImageFile(fileObj, 90);
-          await saveImage(id, rotatedFile);
-          const newPreviewUrl = URL.createObjectURL(rotatedFile);
-          
-          setFiles(prev => prev.map(f => {
-            if (f.id === id) {
-              if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
-              return { ...f, file: rotatedFile, previewUrl: newPreviewUrl };
-            }
-            return f;
-          }));
-        }
-      }
-      setSelectedFileIds(new Set());
-    } catch (e) {
-      console.error("Failed to rotate selected files", e);
-      alert("Failed to rotate some images.");
-    } finally {
-      setIsRotating(false);
-    }
-  };
-
-  const processFiles = async () => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-
-    const keys = apiKeys.filter(k => k.trim());
-    const baseConcurrency = Math.max(1, concurrency);
-    const reqsPerKey = Math.max(1, requestsPerKey);
-    const totalConcurrentRequests = keys.length > 0 ? keys.length * reqsPerKey : 1;
-    const concurrencyLimit = totalConcurrentRequests * baseConcurrency;
-    
-    const pendingIds = files.filter(f => f.status === 'pending' || f.status === 'error').map(f => f.id);
-    setProgress({ current: 0, total: pendingIds.length });
-    let completedCount = 0;
-
-    for (let i = 0; i < pendingIds.length; i += concurrencyLimit) {
-      const chunkIds = pendingIds.slice(i, i + concurrencyLimit);
-      
-      setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'processing', error: undefined, attempt: 1, maxAttempts: sampling + 3, stageName: `Preparing Image...` } : f));
-
-      try {
-        const loadedImagesPromises = chunkIds.map(async (id) => {
-          const currentFile = filesByDay[currentDay]?.find(f => f.id === id) || files.find(f => f.id === id);
-          if (!currentFile) return null;
-          
-          let fileObj = currentFile.file;
-          if (!fileObj) {
-            fileObj = await getImage(id);
-            if (!fileObj) return null;
-          }
-
-          if (autoCropEnabled) {
-            setFiles(prev => prev.map(f => f.id === id ? { ...f, stageName: 'Auto-Cropping (Lite)...' } : f));
-            const rawBase64 = await fileToBase64(fileObj);
-            try {
-              const cropData = await autoCropAndRotate(rawBase64, fileObj.type, keys, liteModel);
-              const w = cropData.xmax - cropData.xmin;
-              const h = cropData.ymax - cropData.ymin;
-              let finalRotation = cropData.rotation;
-              
-              if (w > h && (finalRotation === 0 || finalRotation === 180)) {
-                finalRotation = (finalRotation + 90) % 360;
-              }
-              
-              const { base64, mimeType } = await applyCropAndRotate(fileObj, cropData, finalRotation, imageResolution);
-              
-              const croppedDataUrl = `data:${mimeType};base64,${base64}`;
-              const croppedFile = dataURLtoFile(croppedDataUrl, fileObj.name || 'image.jpg');
-              await saveImage(id, croppedFile);
-              const newPreviewUrl = URL.createObjectURL(croppedFile);
-              
-              setFiles(prev => prev.map(f => f.id === id ? { ...f, file: croppedFile, previewUrl: newPreviewUrl } : f));
-
-              return { id, base64, mimeType, fileObj: croppedFile };
-            } catch (error: any) {
-              console.error(`Auto-crop failed for ${id}, falling back to raw image.`, error);
-              const { base64, mimeType } = await processImage(fileObj, imageResolution, 0);
-              return { id, base64, mimeType, fileObj };
-            }
-          } else {
-            const { base64, mimeType } = await processImage(fileObj, imageResolution, 0);
-            return { id, base64, mimeType, fileObj };
-          }
-        });
-
-        const loadedResults = await Promise.all(loadedImagesPromises);
-        const imagesToProcess = loadedResults.filter(Boolean) as { id: string, base64: string, mimeType: string, fileObj: File }[];
-
-        if (imagesToProcess.length === 0) continue;
-
-        let resultsHistory: Record<string, OMRResult[]> = {};
-        for (const img of imagesToProcess) {
-          resultsHistory[img.id] = [];
-        }
-        
-        let targetMatches = sampling >= 2 ? 2 : 1;
-        let maxAttempts = sampling + 3;
-        let finalResults: Record<string, OMRResult> = {};
-        let completedIds = new Set<string>();
-
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          let stageName = attempt < sampling ? `Sampling ${attempt + 1}/${sampling}` : `Verification ${attempt - sampling + 1}`;
-          
-          const remainingImages = imagesToProcess.filter(img => !completedIds.has(img.id));
-          if (remainingImages.length === 0) break;
-          
-          setFiles(prev => prev.map(f => remainingImages.some(img => img.id === f.id) ? { ...f, attempt: attempt + 1, maxAttempts, stageName } : f));
-          
-          const attemptStartTime = Date.now();
-          
-          const chunkedPromises = [];
-          for (let k = 0; k < remainingImages.length; k += baseConcurrency) {
-            const chunk = remainingImages.slice(k, k + baseConcurrency);
-            chunkedPromises.push(evaluateOMRBatch(chunk, keys, proModel, liteModel, answerKey));
-          }
-          
-          const chunkResults = await Promise.all(chunkedPromises);
-          const batchResults = chunkResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
-          
-          const elapsed = Date.now() - attemptStartTime;
-          averageTimeRef.current = (averageTimeRef.current * 4 + elapsed) / 5;
-
-          for (const img of remainingImages) {
-            if (batchResults[img.id]) {
-              resultsHistory[img.id].push(batchResults[img.id]);
-            }
-            
-            if (attempt >= targetMatches - 1) {
-              const counts = new Map<string, number>();
-              let bestResult: OMRResult | null = null;
-              
-              for (const r of resultsHistory[img.id]) {
-                const key = JSON.stringify(r.scores);
-                counts.set(key, (counts.get(key) || 0) + 1);
-                if (counts.get(key)! >= targetMatches) {
-                  bestResult = resultsHistory[img.id].find(res => JSON.stringify(res.scores) === key) || r;
-                  break;
-                }
-              }
-              
-              if (bestResult) {
-                bestResult.confidences = resultsHistory[img.id].map(r => r.confidence);
-                finalResults[img.id] = bestResult;
-                completedIds.add(img.id);
-              } else if (attempt === maxAttempts - 1) {
-                const lastRes = resultsHistory[img.id][resultsHistory[img.id].length - 1];
-                if (lastRes) {
-                  lastRes.confidences = resultsHistory[img.id].map(r => r.confidence);
-                  finalResults[img.id] = lastRes;
-                }
-                completedIds.add(img.id);
-              }
-            }
-          }
-        }
-
-        setFiles(prev => prev.map(f => {
-          if (finalResults[f.id]) {
-            return { ...f, status: 'success', result: finalResults[f.id] };
-          }
-          if (chunkIds.includes(f.id) && !finalResults[f.id]) {
-            return { ...f, status: 'error', error: 'Failed to evaluate' };
-          }
-          return f;
-        }));
-
-      } catch (error: any) {
-        setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'error', error: error.message } : f));
-      } finally {
-        completedCount += chunkIds.length;
-        setProgress(p => ({ ...p, current: completedCount }));
-      }
-    }
-
-    setIsProcessing(false);
-  };
-
-  const retryAllFailed = () => {
-    setFiles(prev => prev.map(f => f.status === 'error' ? { ...f, status: 'pending', error: undefined } : f));
-  };
-
-  const retryFile = (id: string) => {
-    setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'pending', error: undefined } : f));
-  };
-
-  const recheckAll = () => {
-    setFiles(prev => prev.map(f => f.status === 'success' ? { ...f, status: 'pending', error: undefined, result: undefined } : f));
-  };
-
-  const recheckFile = (id: string) => {
-    setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'pending', error: undefined, result: undefined } : f));
-  };
-
-  const fixNames = async () => {
-    const successfulFiles = files.filter(f => f.status === 'success' && f.result);
-    if (successfulFiles.length === 0) return;
-    if (!attendanceSheet.trim()) {
-      alert('Please enter the attendance sheet first.');
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      const uniqueNames = Array.from(new Set(successfulFiles.map(f => f.result!.name)));
-      const keys = apiKeys.filter(k => k.trim());
-      const nameMap = await correctNamesBatch(uniqueNames, attendanceSheet, keys, proModel);
-      
-      setFiles(prev => prev.map(f => {
-        if (f.status === 'success' && f.result && nameMap[f.result.name]) {
-          return {
-            ...f,
-            result: {
-              ...f.result,
-              name: nameMap[f.result.name].correctedName,
-              nameConfidence: nameMap[f.result.name].confidence
-            }
-          };
-        }
-        return f;
-      }));
-    } catch (error) {
-      console.error("Failed to fix names:", error);
-      alert("Failed to fix names. Check console for details.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const exportCSV = async () => {
-    const successfulFiles = files.filter(f => f.status === 'success' && f.result);
-    if (successfulFiles.length === 0) return;
-
-    let finalFiles = [...successfulFiles];
-
-    if (correctNamesOnExport && attendanceSheet.trim()) {
-      setIsExporting(true);
-      try {
-        const uniqueNames = Array.from(new Set(successfulFiles.map(f => f.result!.name)));
-        const keys = apiKeys.filter(k => k.trim());
-        const nameMap = await correctNamesBatch(uniqueNames, attendanceSheet, keys, proModel);
-        
-        setFiles(prev => prev.map(f => {
-          if (f.status === 'success' && f.result && nameMap[f.result.name]) {
-            return {
-              ...f,
-              result: {
-                ...f.result,
-                name: nameMap[f.result.name].correctedName,
-                nameConfidence: nameMap[f.result.name].confidence
-              }
-            };
-          }
-          return f;
-        }));
-
-        finalFiles = finalFiles.map(f => {
-          if (f.result && nameMap[f.result.name]) {
-            return {
-              ...f,
-              result: {
-                ...f.result,
-                name: nameMap[f.result.name].correctedName,
-                nameConfidence: nameMap[f.result.name].confidence
-              }
-            };
-          }
-          return f;
-        });
-      } catch (error: any) {
-        alert('Failed to correct names: ' + error.message);
-        setIsExporting(false);
-        return; 
-      }
-      setIsExporting(false);
-    }
-
-    let csv = 'NAME,RIGHT,WRONG,';
-    for (let i = 1; i <= 25; i++) csv += `Q${i},`;
-    csv = csv.slice(0, -1) + '\n';
-
-    finalFiles.forEach(f => {
-      const r = f.result!;
-      let row = `"${r.name.replace(/"/g, '""')}",${r.right},${r.wrong},`;
-      for (let i = 1; i <= 25; i++) {
-        row += `${r.scores[`q${i}`]},`;
-      }
-      csv += row.slice(0, -1) + '\n';
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'omr_results.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-      if (lines.length < 2) return;
-
-      const importedFiles: ProcessedFile[] = [];
-      
-      for (let i = 1; i < lines.length; i++) {
-        let cells = [];
-        let inQuotes = false;
-        let currentCell = '';
-        for (let char of lines[i]) {
-          if (char === '"') {
-            inQuotes = !inQuotes;
-          } else if (char === ',' && !inQuotes) {
-            cells.push(currentCell.trim());
-            currentCell = '';
-          } else {
-            currentCell += char;
-          }
-        }
-        cells.push(currentCell.trim());
-        
-        if (cells.length < 3) continue;
-
-        const name = cells[0].replace(/^"|"$/g, '').replace(/""/g, '"');
-        const right = parseInt(cells[1], 10) || 0;
-        const wrong = parseInt(cells[2], 10) || 0;
-        
-        const scores: Record<string, number> = {};
-        if (cells.length >= 4) {
-          for (let q = 1; q <= 25; q++) {
-            const scoreIdx = 3 + q - 1; 
-            scores[`q${q}`] = parseInt(cells[scoreIdx] || '0', 10) || 0;
-          }
-        }
-
-        importedFiles.push({
-          id: `imported-${Date.now()}-${i}`,
-          file: new File([], 'imported.csv'),
-          fileName: `Imported: ${name}`,
-          status: 'success',
-          result: {
-            name,
-            right,
-            wrong,
-            scores
-          }
-        });
-      }
-
-      setFiles(prev => [...prev, ...importedFiles]);
-    };
-    reader.readAsText(file);
-    
-    if (csvInputRef.current) {
-      csvInputRef.current.value = '';
-    }
-  };
-
-  const reviewableFiles = files.filter(f => f.result);
-  const currentReviewIndex = reviewableFiles.findIndex(f => f.id === reviewFileId);
-  const hasNextReview = currentReviewIndex >= 0 && currentReviewIndex < reviewableFiles.length - 1;
-  const hasPrevReview = currentReviewIndex > 0;
-
-  const handleNextReview = () => {
-    if (hasNextReview) setReviewFileId(reviewableFiles[currentReviewIndex + 1].id);
-  };
-
-  const handlePrevReview = () => {
-    if (hasPrevReview) setReviewFileId(reviewableFiles[currentReviewIndex - 1].id);
-  };
-
-  const handleUpdateResultName = (id: string, newName: string) => {
-    setFiles(prev => prev.map(f => {
-      if (f.id === id && f.result) {
-        return { ...f, result: { ...f.result, name: newName } };
-      }
-      return f;
-    }));
-  };
-
-  const handleUpdateResultScore = (id: string, qNum: number, newScore: number) => {
-    setFiles(prev => prev.map(f => {
-      if (f.id === id && f.result) {
-        const newScores = { ...f.result.scores, [`q${qNum}`]: newScore };
-        
-        let right = 0;
-        let wrong = 0;
-        Object.values(newScores).forEach(score => {
-          if (score === 1) right++;
-          if (score === -1) wrong++;
-        });
-
-        return { 
-          ...f, 
-          result: { 
-            ...f.result, 
-            scores: newScores,
-            right,
-            wrong
-          } 
-        };
-      }
-      return f;
-    }));
-  };
-
-  const filteredFiles = files.filter(f => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return f.fileName.toLowerCase().includes(q) || (f.result?.name.toLowerCase().includes(q) ?? false);
-  });
-
-  const isAllSelected = filteredFiles.length > 0 && selectedFileIds.size === filteredFiles.length;
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedFileIds(new Set(filteredFiles.map(f => f.id)));
-    } else {
-      setSelectedFileIds(new Set());
-    }
-  };
-
-  const handleToggleSelect = (id: string, checked: boolean) => {
-    const newSet = new Set(selectedFileIds);
-    if (checked) newSet.add(id);
-    else newSet.delete(id);
-    setSelectedFileIds(newSet);
-  };
-
-  const successfulResults = files.filter(f => f.status === 'success' && f.result).map(f => f.result!);
-  const sortedResults = [...successfulResults].sort((a, b) => ((b.right * 4) - b.wrong) - ((a.right * 4) - a.wrong));
-  const currentDetailIndex = selectedStudent ? sortedResults.findIndex(r => r.name === selectedStudent.name) : -1;
-  const hasNextDetail = currentDetailIndex >= 0 && currentDetailIndex < sortedResults.length - 1;
-  const hasPrevDetail = currentDetailIndex > 0;
-
-  const handleDetailNext = () => {
-    if (hasNextDetail) setSelectedStudent(sortedResults[currentDetailIndex + 1]);
-  };
-  const handleDetailPrev = () => {
-    if (hasPrevDetail) setSelectedStudent(sortedResults[currentDetailIndex - 1]);
-  };
-
-  // Dedicated full-screen view for taking the exam
-  if (view === 'exam-take') {
-    const activeExamId = selectedExamId || new URLSearchParams(window.location.search).get('examId');
-    if (!activeExamId) {
-      return <div className="p-8 text-center text-red-500">Invalid Exam ID provided.</div>;
-    }
-    return <ExamTake examId={activeExamId} onFinish={() => setView('home')} />;
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans print:bg-white">
-      <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
-            <CheckCircle className="w-6 h-6 text-blue-600" />
-            <h1 className="text-xl font-semibold tracking-tight">OMR Checker Pro</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setView('lab')}
-              className={`flex items-center gap-2 p-2 rounded-md transition-colors ${view.startsWith('lab') || view.startsWith('exam') ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
-            >
-              <Beaker className="w-5 h-5" />
-              <span className="hidden sm:inline font-medium">Lab</span>
-            </button>
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 print:p-0 print:m-0 print:max-w-none print:space-y-0">
-        
-        {view === 'home' && (
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 print:hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-            {days.map(day => (
-              <div key={day} className="flex items-center shrink-0">
-                <button
-                  onClick={() => setCurrentDay(day)}
-                  className={`px-4 py-2 rounded-l-md font-medium text-sm transition-colors ${currentDay === day ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-                >
-                  Day {day}
-                </button>
-                {days.length > 1 && (
-                  <button
-                    onClick={() => deleteDay(day)}
-                    className={`px-2 py-2 rounded-r-md border-y border-r text-sm transition-colors ${currentDay === day ? 'bg-blue-700 text-white border-blue-700 hover:bg-blue-800' : 'bg-white text-gray-400 border-gray-200 hover:bg-red-50 hover:text-red-500'}`}
-                    title="Delete Day"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            ))}
-            <button
-              onClick={addDay}
-              className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium shrink-0"
-            >
-              <Plus className="w-4 h-4" /> Add Day
-            </button>
-          </div>
-        )}
-
-        {showSettings && (
-          <SettingsPanel
-            apiKeys={apiKeys}
-            setApiKeys={setApiKeys}
-            liteModel={liteModel}
-            setLiteModel={setLiteModel}
-            proModel={proModel}
-            setProModel={setProModel}
-            availableModels={availableModels}
-            setAvailableModels={setAvailableModels}
-            imageResolution={imageResolution}
-            setImageResolution={setImageResolution}
-            sampling={sampling}
-            setSampling={setSampling}
-            concurrency={concurrency}
-            setConcurrency={setConcurrency}
-            requestsPerKey={requestsPerKey}
-            setRequestsPerKey={setRequestsPerKey}
-            autoCropEnabled={autoCropEnabled}
-            setAutoCropEnabled={setAutoCropEnabled}
-            answerKey={answerKey}
-            setAnswerKey={setAnswerKey}
-            attendanceSheet={attendanceSheet}
-            setAttendanceSheet={setAttendanceSheet}
-            topicMapping={topicMapping}
-            setTopicMapping={setTopicMapping}
-            parsedTopicMapping={parsedTopicMapping}
-            setParsedTopicMapping={setParsedTopicMapping}
-          />
-        )}
-
-        {view === 'lab' && (
-          <Lab onNavigate={(v) => setView(v)} onBack={() => setView('home')} />
-        )}
-
-        {view === 'lab-crop' && (
-          <AutoCropTool apiKeys={apiKeys} liteModel={liteModel} onBack={() => setView('lab')} />
-        )}
-        
-        {view === 'lab-exams' && (
-          <ExamDashboard 
-            onNavigate={(v, id) => { 
-              if (id) setSelectedExamId(id); 
-              setView(v); 
-            }} 
-            onBack={() => setView('lab')} 
-          />
-        )}
-        
-        {view === 'exam-setup' && (
-          <ExamSetup onNavigate={(v) => setView(v)} />
-        )}
-
-        {view === 'exam-results' && selectedExamId && (
-          <ExamResults examId={selectedExamId} onBack={() => setView('lab-exams')} />
-        )}
-
-        {view === 'ranklist' && (
-          <RankList 
-            files={files} 
-            topicMapping={topicMapping} 
-            parsedTopicMapping={parsedTopicMapping}
-            onBack={() => setView('home')} 
-            onStudentClick={(student) => {
-              setSelectedStudent(student);
-              setView('detail');
-            }}
-            onPrintableClick={() => setView('printableRanklist')}
-          />
-        )}
-
-        {view === 'printableRanklist' && (
-          <PrintableRankList
-            files={files}
-            topicMapping={topicMapping}
-            parsedTopicMapping={parsedTopicMapping}
-            onBack={() => setView('ranklist')}
-          />
-        )}
-
-        {view === 'detail' && selectedStudent && (
-          <StudentDetail 
-            student={selectedStudent} 
-            topicMapping={topicMapping} 
-            parsedTopicMapping={parsedTopicMapping}
-            onBack={() => setView('ranklist')} 
-            onNext={handleDetailNext}
-            onPrev={handleDetailPrev}
-            hasNext={hasNextDetail}
-            hasPrev={hasPrevDetail}
-          />
-        )}
-
-        {view === 'home' && (
-          <>
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-gray-500 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-              >
-                <Upload className="w-8 h-8 mb-3" />
-                <span className="font-medium">Upload OMR Images</span>
-                <span className="text-sm mt-1">Supports bulk upload</span>
-                <input 
-                  type="file" 
-                  multiple 
-                  accept="image/*" 
-                  className="hidden" 
-                  ref={fileInputRef}
-                  onChange={handleFileUpload}
-                />
-              </div>
-              
-              <div 
-                onClick={() => cameraInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-gray-500 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
-              >
-                <Camera className="w-8 h-8 mb-3" />
-                <span className="font-medium">Take Picture</span>
-                <span className="text-sm mt-1">Use device camera</span>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  capture="environment"
-                  className="hidden" 
-                  ref={cameraInputRef}
-                  onChange={handleFileUpload}
-                />
-              </div>
-            </section>
-
-            <section className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <QueueToolbar
-                filesLength={files.length}
-                hasErrors={files.some(f => f.status === 'error')}
-                hasSuccess={files.some(f => f.status === 'success')}
-                isProcessing={isProcessing}
-                isExporting={isExporting}
-                isRotating={isRotating}
-                autoCropEnabled={autoCropEnabled}
-                setAutoCropEnabled={setAutoCropEnabled}
-                correctNamesOnExport={correctNamesOnExport}
-                setCorrectNamesOnExport={setCorrectNamesOnExport}
-                onClearAll={clearAllFiles}
-                onRetryFailed={retryAllFailed}
-                onRecheckAll={recheckAll}
-                onProcess={processFiles}
-                onFixNames={fixNames}
-                onExportCSV={exportCSV}
-                onImportCSVClick={() => csvInputRef.current?.click()}
-                onViewRankList={() => setView('ranklist')}
-                allSuccess={files.length > 0 && files.every(f => f.status === 'success')}
-                selectedCount={selectedFileIds.size}
-                isAllSelected={isAllSelected}
-                onSelectAll={handleSelectAll}
-                onRotateSelected={rotateSelected}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-              />
-              <input 
-                type="file" 
-                accept=".csv" 
-                className="hidden" 
-                ref={csvInputRef}
-                onChange={handleImportCSV}
-              />
-              
-              {files.length > 0 && (
-                <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-gray-600 font-medium">Sort by:</span>
-                    <select 
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as any)}
-                      className="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 py-1"
-                    >
-                      <option value="default">Default (Upload Order)</option>
-                      <option value="name">Name</option>
-                      <option value="score">Score</option>
-                      <option value="verification_confidence">Verification Confidence</option>
-                      <option value="name_confidence">Name Confidence</option>
-                    </select>
-                    {sortBy !== 'default' && (
-                      <button 
-                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                        className="p-1.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 transition-colors"
-                        title={sortOrder === 'asc' ? "Ascending" : "Descending"}
-                      >
-                        {sortOrder === 'asc' ? '↑' : '↓'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-              
-              {isProcessing && progress.total > 0 && (
-                <div className="w-full bg-gray-200 h-1.5 overflow-hidden">
-                  <div 
-                    className="bg-blue-600 h-1.5 transition-all duration-300 ease-out" 
-                    style={{ width: `${(progress.current / progress.total) * 100}%` }}
-                  ></div>
-                </div>
-              )}
-              
-              <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
-                {filteredFiles.length > 0 ? (
-                  [...filteredFiles].sort((a, b) => {
-                    if (sortBy === 'default') return 0;
-                    
-                    if (a.status !== 'success' && b.status === 'success') return 1;
-                    if (a.status === 'success' && b.status !== 'success') return -1;
-                    if (a.status !== 'success' && b.status !== 'success') return 0;
-                    
-                    const resA = a.result!;
-                    const resB = b.result!;
-                    
-                    let comparison = 0;
-                    switch (sortBy) {
-                      case 'name':
-                        comparison = resA.name.localeCompare(resB.name);
-                        break;
-                      case 'score':
-                        const scoreA = (resA.right * 4) - resA.wrong;
-                        const scoreB = (resB.right * 4) - resB.wrong;
-                        comparison = scoreA - scoreB;
-                        break;
-                      case 'verification_confidence':
-                        const confA = resA.confidence ?? 0;
-                        const confB = resB.confidence ?? 0;
-                        comparison = confA - confB;
-                        break;
-                      case 'name_confidence':
-                        const nameConfA = resA.nameConfidence ?? 0;
-                        const nameConfB = resB.nameConfidence ?? 0;
-                        comparison = nameConfA - nameConfB;
-                        break;
-                    }
-                    
-                    return sortOrder === 'asc' ? comparison : -comparison;
-                  }).map((file) => (
-                    <QueueItem
-                      key={file.id}
-                      file={file}
-                      isProcessing={isProcessing}
-                      averageTime={averageTimeRef.current}
-                      isSelected={selectedFileIds.has(file.id)}
-                      onToggleSelect={handleToggleSelect}
-                      onRemove={removeFile}
-                      onRetry={retryFile}
-                      onRecheck={recheckFile}
-                      onClick={() => {
-                        if (file.status === 'success') {
-                          setReviewFileId(file.id);
-                        }
-                      }}
-                    />
-                  ))
-                ) : (
-                  <div className="p-12 text-center text-gray-500">
-                    {files.length === 0 ? "No images in queue. Upload some to get started." : "No files matched your search."}
-                  </div>
-                )}
-              </div>
-            </section>
-          </>
-        )}
-      </main>
-
-      {reviewFileId && (
-        <ReviewModal
-          fileId={reviewFileId}
-          fileName={files.find(f => f.id === reviewFileId)?.fileName || ''}
-          previewUrl={files.find(f => f.id === reviewFileId)?.previewUrl}
-          result={files.find(f => f.id === reviewFileId)?.result}
-          answerKey={answerKey}
-          onClose={() => setReviewFileId(null)}
-          onRetry={(id) => {
-            recheckFile(id);
+      {/* Mobile View */}
+      <div className="block md:hidden">
+        <SubjectMobileCards subject={subject} onOpenEdit={openEdit} />
+      </div>
+
+      {editing && (
+        <SessionManagerModal
+          subjectName={subject.name}
+          chapterName={subject.chapters[editing.cIdx].name}
+          taskType={editing.field}
+          taskData={editing.taskData}
+          onSave={(updatedTaskData) => {
+            onUpdate(editing.cIdx, editing.field, updatedTaskData);
+            // Keep the parent state in sync so the modal sees the latest data
+            setEditing(prev => prev ? { ...prev, taskData: updatedTaskData } : null);
           }}
-          isProcessing={isProcessing}
-          onNext={handleNextReview}
-          onPrev={handlePrevReview}
-          hasNext={hasNextReview}
-          hasPrev={hasPrevReview}
-          onUpdateName={handleUpdateResultName}
-          onUpdateScore={handleUpdateResultScore}
-          onUpdateImage={handleUpdateFileImage}
+          onClose={() => setEditing(null)}
         />
       )}
     </div>
   );
 }
---- END OF FILE src/App.tsx ---
+--- END OF FILE src/components/lab/course-progress/SubjectView.tsx ---
+
+--- START OF FILE src/components/lab/course-progress/SubjectTable.tsx ---
+import React from 'react';
+import { SubjectProgress, TaskType, TaskData } from './types';
+import TaskBadge from './TaskBadge';
+
+interface Props {
+  subject: SubjectProgress;
+  onOpenEdit: (cIdx: number, field: TaskType, val: TaskData) => void;
+}
+
+export default function SubjectTable({ subject, onOpenEdit }: Props) {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-left border-collapse min-w-[700px]">
+        <thead>
+          <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-200">
+            <th className="p-4 font-semibold">Chapter</th>
+            <th className="p-4 font-semibold text-center w-48">TCR</th>
+            <th className="p-4 font-semibold text-center w-48">Entrance</th>
+            <th className="p-4 font-semibold text-center w-48">Revision</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {subject.chapters.map((chapter, cIdx) => (
+            <tr key={cIdx} className="hover:bg-gray-50 transition-colors">
+              <td className="p-4 text-sm font-medium text-gray-800">{chapter.name}</td>
+              {(['tcr', 'entrance', 'revision'] as TaskType[]).map(field => {
+                const taskData = chapter[field];
+                return (
+                  <td key={field} className="p-3 text-center align-top">
+                    <TaskBadge 
+                      task={taskData} 
+                      onClick={() => onOpenEdit(cIdx, field, taskData)} 
+                    />
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/course-progress/SubjectTable.tsx ---
+
+--- START OF FILE src/components/lab/course-progress/SubjectMobileCards.tsx ---
+import React from 'react';
+import { SubjectProgress, TaskType, TaskData } from './types';
+import TaskBadge from './TaskBadge';
+
+interface Props {
+  subject: SubjectProgress;
+  onOpenEdit: (cIdx: number, field: TaskType, taskData: TaskData) => void;
+}
+
+export default function SubjectMobileCards({ subject, onOpenEdit }: Props) {
+  return (
+    <div className="space-y-4">
+      {subject.chapters.map((chapter, cIdx) => (
+        <div key={cIdx} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <h3 className="font-bold text-gray-800 mb-3 leading-tight break-words">{chapter.name}</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {(['tcr', 'entrance', 'revision'] as TaskType[]).map(field => {
+              const taskData = chapter[field];
+              const label = field === 'tcr' ? 'TCR' : field === 'entrance' ? 'Entrance' : 'Revision';
+              return (
+                <TaskBadge 
+                  key={field}
+                  task={taskData} 
+                  label={label}
+                  onClick={() => onOpenEdit(cIdx, field, taskData)} 
+                />
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/course-progress/SubjectMobileCards.tsx ---
+
+--- START OF FILE src/components/lab/course-progress/TaskBadge.tsx ---
+import React from 'react';
+import { TaskData } from './types';
+import { CheckCircle2, Circle, Clock } from 'lucide-react';
+
+interface Props {
+  task: TaskData;
+  onClick: () => void;
+  label?: string; // used for mobile view
+}
+
+export default function TaskBadge({ task, onClick, label }: Props) {
+  const { status, sessions } = task;
+
+  let bgColor = 'bg-white border-gray-200 text-gray-400 hover:bg-gray-50 shadow-sm';
+  let headerIcon = <Circle className="w-4 h-4 shrink-0" />;
+  let statusText = 'Pending';
+
+  if (status === 'ongoing') {
+    bgColor = 'bg-orange-50 border-orange-200 text-orange-800 hover:bg-orange-100 shadow-sm';
+    headerIcon = <Clock className="w-4 h-4 shrink-0 text-orange-500" />;
+    statusText = 'Ongoing';
+  } else if (status === 'finished') {
+    bgColor = 'bg-green-50 border-green-200 text-green-800 hover:bg-green-100 shadow-sm';
+    headerIcon = <CheckCircle2 className="w-4 h-4 shrink-0 text-green-600" />;
+    statusText = 'Completed';
+  }
+
+  if (!sessions || sessions.length === 0) {
+    return (
+      <div 
+        onClick={onClick}
+        className={`flex flex-col items-center justify-center p-2 rounded-md cursor-pointer transition-colors border w-full h-full min-h-[4rem] ${bgColor}`}
+      >
+        {label && <span className="text-[10px] uppercase font-bold opacity-60 mb-1.5">{label}</span>}
+        <div className="flex items-center justify-center gap-1.5 w-full">
+          {headerIcon}
+          <span className="text-xs font-bold truncate">{statusText}</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      onClick={onClick}
+      className={`flex flex-col items-center justify-start p-2 rounded-md cursor-pointer transition-colors border w-full h-full min-h-[4rem] ${bgColor}`}
+    >
+      {label && <span className="text-[10px] uppercase font-bold opacity-60 mb-1.5">{label}</span>}
+      
+      {/* Visual Header indicating the Overall Task Status */}
+      <div className="flex items-center gap-1 mb-2 opacity-80">
+        {headerIcon}
+        <span className="text-[10px] font-bold uppercase">{statusText}</span>
+      </div>
+
+      <div className="flex flex-col w-full gap-1.5 items-center justify-center flex-1">
+        {sessions.map((s, idx) => (
+          <div key={s.id || idx} className="flex items-center gap-1.5 w-full justify-center bg-white/60 px-2 py-1.5 rounded border border-black/5">
+            <span className="text-[11px] sm:text-xs font-bold truncate text-gray-800" title={s.teacher || 'Unassigned'}>
+              {s.teacher || 'Unassigned'}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/course-progress/TaskBadge.tsx ---
+
+--- START OF FILE src/components/lab/course-progress/SessionManagerModal.tsx ---
+import React, { useState, useEffect } from 'react';
+import { TaskType, TaskData, SessionData, TaskStatus } from './types';
+import SessionEditForm from './SessionEditForm';
+import { Plus, X, Pencil, Trash2 } from 'lucide-react';
+
+interface Props {
+  subjectName: string;
+  chapterName: string;
+  taskType: TaskType;
+  taskData: TaskData;
+  onSave: (taskData: TaskData) => void;
+  onClose: () => void;
+}
+
+export default function SessionManagerModal({ subjectName, chapterName, taskType, taskData, onSave, onClose }: Props) {
+  const [localTaskData, setLocalTaskData] = useState<TaskData>(taskData);
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [isAdding, setIsAdding] = useState(false);
+
+  useEffect(() => {
+    if (localTaskData.sessions.length === 0 && !isAdding && !editingSessionId) {
+      setIsAdding(true);
+    }
+  }, [localTaskData.sessions.length, isAdding, editingSessionId]);
+
+  const getTaskLabel = (field: TaskType) => {
+    if (field === 'tcr') return 'TCR';
+    if (field === 'entrance') return 'Entrance';
+    return 'Revision';
+  };
+
+  const handleStatusChange = (status: TaskStatus) => {
+    const newTaskData = { ...localTaskData, status };
+    setLocalTaskData(newTaskData);
+    onSave(newTaskData);
+  };
+
+  const handleSaveSession = (session: SessionData) => {
+    let newSessions;
+    if (isAdding) {
+      newSessions = [...localTaskData.sessions, session];
+    } else {
+      newSessions = localTaskData.sessions.map(s => s.id === session.id ? session : s);
+    }
+    
+    // Automatically change status to 'ongoing' if adding first session and status is still pending
+    let newStatus = localTaskData.status;
+    if (isAdding && newStatus === 'pending') {
+      newStatus = 'ongoing';
+    }
+    
+    const newTaskData = { status: newStatus, sessions: newSessions };
+    setLocalTaskData(newTaskData);
+    setIsAdding(false);
+    setEditingSessionId(null);
+    onSave(newTaskData); // Auto-save on addition or edit
+  };
+
+  const handleDeleteSession = (id: string) => {
+    const newSessions = localTaskData.sessions.filter(s => s.id !== id);
+    const newTaskData = { ...localTaskData, sessions: newSessions };
+    setLocalTaskData(newTaskData);
+    setEditingSessionId(null);
+    setIsAdding(false);
+    onSave(newTaskData); // Auto-save on deletion
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4">
+      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[85vh]">
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-start justify-between shrink-0">
+          <div className="flex-1 pr-2">
+            <h3 className="font-bold text-gray-900 truncate" title={chapterName}>
+              {chapterName}
+            </h3>
+            <p className="text-xs text-gray-600 mt-1 font-medium">Task: {getTaskLabel(taskType)} ({subjectName})</p>
+          </div>
+          <button onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors shrink-0">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Global Task Status Selection */}
+        <div className="p-4 border-b border-gray-100 bg-white shrink-0">
+          <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Overall Task Status</label>
+          <div className="grid grid-cols-3 gap-2">
+            <button 
+              onClick={() => handleStatusChange('pending')}
+              className={`py-2 text-xs font-bold rounded-lg border transition-colors ${localTaskData.status === 'pending' ? 'bg-gray-100 border-gray-400 text-gray-800 shadow-inner' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+            >
+              Pending
+            </button>
+            <button 
+              onClick={() => handleStatusChange('ongoing')}
+              className={`py-2 text-xs font-bold rounded-lg border transition-colors ${localTaskData.status === 'ongoing' ? 'bg-orange-100 border-orange-400 text-orange-800 shadow-inner' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+            >
+              Ongoing
+            </button>
+            <button 
+              onClick={() => handleStatusChange('finished')}
+              className={`py-2 text-xs font-bold rounded-lg border transition-colors ${localTaskData.status === 'finished' ? 'bg-green-100 border-green-500 text-green-800 shadow-inner' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+            >
+              Completed
+            </button>
+          </div>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto bg-gray-50/50 flex flex-col">
+          <div className="p-4 space-y-3">
+            {localTaskData.sessions.length > 0 ? (
+              localTaskData.sessions.map((session) => (
+                <div key={session.id} className={`bg-white p-3 rounded-xl border ${editingSessionId === session.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'} shadow-sm flex items-center justify-between gap-3 transition-all`}>
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{session.teacher || 'Unassigned'}</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5 truncate font-medium">
+                        {session.date ? session.date : 'No date'}
+                        {session.startTime && ` • ${session.startTime}`}
+                        {session.endTime && ` - ${session.endTime}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button 
+                      onClick={() => { setEditingSessionId(session.id); setIsAdding(false); }}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                      title="Edit Session"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteSession(session.id)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                      title="Delete Session"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              !isAdding && (
+                <div className="text-center py-8 text-gray-500 text-sm">
+                  No sessions recorded yet.
+                </div>
+              )
+            )}
+            
+            {!(isAdding || editingSessionId) && (
+              <button
+                onClick={() => setIsAdding(true)}
+                className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all font-medium text-sm mt-2"
+              >
+                <Plus className="w-4 h-4" /> Add Session Record
+              </button>
+            )}
+          </div>
+
+          {(isAdding || editingSessionId) && (
+            <div className="mt-auto border-t border-gray-200 bg-white shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+              <SessionEditForm 
+                key={editingSessionId || 'new'}
+                initialSession={editingSessionId ? localTaskData.sessions.find(s => s.id === editingSessionId) : undefined}
+                onSave={handleSaveSession}
+                onCancel={() => {
+                  setIsAdding(false);
+                  setEditingSessionId(null);
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {!(isAdding || editingSessionId) && (
+          <div className="p-4 bg-white border-t border-gray-200 flex justify-end gap-3 shrink-0">
+            <button 
+              onClick={onClose}
+              className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm w-full sm:w-auto"
+            >
+              Done
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/course-progress/SessionManagerModal.tsx ---
+
+--- START OF FILE src/components/lab/course-progress/SessionEditForm.tsx ---
+import React, { useState } from 'react';
+import { SessionData } from './types';
+
+interface Props {
+  initialSession?: SessionData;
+  onSave: (session: SessionData) => void;
+  onCancel: () => void;
+}
+
+export default function SessionEditForm({ initialSession, onSave, onCancel }: Props) {
+  const [teacher, setTeacher] = useState(initialSession?.teacher || '');
+  const [date, setDate] = useState(initialSession?.date || new Date().toISOString().split('T')[0]);
+  const [startTime, setStartTime] = useState(initialSession?.startTime || '');
+  const [endTime, setEndTime] = useState(initialSession?.endTime || '');
+
+  const handleSave = () => {
+    onSave({
+      id: initialSession?.id || Math.random().toString(36).substring(7),
+      teacher: teacher.trim() || null,
+      date: date || undefined,
+      startTime: startTime || undefined,
+      endTime: endTime || undefined
+    });
+  };
+
+  return (
+    <div className="p-4 sm:p-6 space-y-5 bg-white">
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-bold text-gray-900 text-lg">{initialSession ? 'Edit Session Details' : 'New Session'}</h4>
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Teacher / Assignee</label>
+        <input 
+          type="text"
+          autoFocus
+          value={teacher}
+          onChange={e => setTeacher(e.target.value)}
+          placeholder="e.g. ABR"
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-medium text-gray-900 shadow-sm"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Date</label>
+        <input 
+          type="date"
+          value={date}
+          onChange={e => setDate(e.target.value)}
+          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm font-medium text-gray-700"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Start Time</label>
+          <input 
+            type="time"
+            value={startTime}
+            onChange={e => setStartTime(e.target.value)}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm font-medium text-gray-700"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">End Time</label>
+          <input 
+            type="time"
+            value={endTime}
+            onChange={e => setEndTime(e.target.value)}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm font-medium text-gray-700"
+          />
+        </div>
+      </div>
+
+      <div className="pt-4 mt-2 border-t border-gray-100 flex justify-end gap-3">
+        <button 
+          onClick={onCancel}
+          className="px-5 py-2.5 text-sm font-bold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-lg transition-colors w-full sm:w-auto"
+        >
+          Cancel
+        </button>
+        <button 
+          onClick={handleSave}
+          className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors w-full sm:w-auto shadow-sm"
+        >
+          {initialSession ? 'Update Session' : 'Confirm & Add'}
+        </button>
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/course-progress/SessionEditForm.tsx ---

@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy, setDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -87,4 +87,42 @@ export async function getExamSubmissions(examId: string): Promise<ExamSubmission
     id: doc.id,
     ...doc.data()
   })) as ExamSubmission[];
+}
+
+export async function getCourseProgress(): Promise<any[]> {
+  if (!db) throw new Error("Firebase is not configured.");
+  
+  const docRef = doc(db, 'app_data', 'course_progress');
+  const docSnap = await getDoc(docRef);
+  
+  if (docSnap.exists() && docSnap.data().subjects) {
+    return docSnap.data().subjects;
+  }
+  return [];
+}
+
+export async function saveCourseProgress(subjects: any[]): Promise<void> {
+  if (!db) throw new Error("Firebase is not configured.");
+  
+  const docRef = doc(db, 'app_data', 'course_progress');
+  await setDoc(docRef, { subjects, updatedAt: serverTimestamp() }, { merge: true });
+}
+
+export async function getTimetable(date: string): Promise<any> {
+  if (!db) throw new Error("Firebase is not configured.");
+  
+  const docRef = doc(db, 'app_data', `timetable_${date}`);
+  const docSnap = await getDoc(docRef);
+  
+  if (docSnap.exists() && docSnap.data().data) {
+    return docSnap.data().data;
+  }
+  return null;
+}
+
+export async function saveTimetable(date: string, data: any): Promise<void> {
+  if (!db) throw new Error("Firebase is not configured.");
+  
+  const docRef = doc(db, 'app_data', `timetable_${date}`);
+  await setDoc(docRef, { data, updatedAt: serverTimestamp() }, { merge: true });
 }

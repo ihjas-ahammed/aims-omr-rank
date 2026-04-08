@@ -1,10 +1,10 @@
 Make the following changes:
 
-    - Add a new lab element:
-        Online Exams:
-            Make it possible I can setup online exams by using a pdf or set of images of qp (and process)
-            Give me a link to exam, (ask for name, class), give warning they cant close screen once exam is started (if they do that prompt why they closed screen and an ok button to continue after typing), store all this to firebase db (give me instructions to setup with firebase cli)
-            also add a results place were I can see the results 
+    - Course progress:
+            - Make it possible I can add more than one session log to each session of each chapter
+
+
+Apply changes to both mobile view and desktop (movbile view is the priority)
 
 After applying the changes recreate project_snapshot.txt only for new files and files with changes, each time improve modularity of the program by introducing new component files (only on modified or new files), don't modify system files like pubspec, if we need new packages, or file path changes, removal etc, give the command for bash
 
