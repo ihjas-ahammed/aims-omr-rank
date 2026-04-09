@@ -16,12 +16,13 @@ export default function SessionManagerModal({ subjectName, chapterName, taskType
   const [localTaskData, setLocalTaskData] = useState<TaskData>(taskData);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [userCancelledAdd, setUserCancelledAdd] = useState(false);
 
   useEffect(() => {
-    if (localTaskData.sessions.length === 0 && !isAdding && !editingSessionId) {
+    if (localTaskData.sessions.length === 0 && !isAdding && !editingSessionId && !userCancelledAdd) {
       setIsAdding(true);
     }
-  }, [localTaskData.sessions.length, isAdding, editingSessionId]);
+  }, [localTaskData.sessions.length, isAdding, editingSessionId, userCancelledAdd]);
 
   const getTaskLabel = (field: TaskType) => {
     if (field === 'tcr') return 'TCR';
@@ -39,16 +40,17 @@ export default function SessionManagerModal({ subjectName, chapterName, taskType
     let newSessions;
     if (isAdding) {
       newSessions = [...localTaskData.sessions, session];
+      setUserCancelledAdd(false); // Reset cancel flag when a session is added
     } else {
       newSessions = localTaskData.sessions.map(s => s.id === session.id ? session : s);
     }
-    
+
     // Automatically change status to 'ongoing' if adding first session and status is still pending
     let newStatus = localTaskData.status;
     if (isAdding && newStatus === 'pending') {
       newStatus = 'ongoing';
     }
-    
+
     const newTaskData = { status: newStatus, sessions: newSessions };
     setLocalTaskData(newTaskData);
     setIsAdding(false);
@@ -57,6 +59,9 @@ export default function SessionManagerModal({ subjectName, chapterName, taskType
   };
 
   const handleDeleteSession = (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+      return;
+    }
     const newSessions = localTaskData.sessions.filter(s => s.id !== id);
     const newTaskData = { ...localTaskData, sessions: newSessions };
     setLocalTaskData(newTaskData);
@@ -158,13 +163,14 @@ export default function SessionManagerModal({ subjectName, chapterName, taskType
 
           {(isAdding || editingSessionId) && (
             <div className="mt-auto border-t border-gray-200 bg-white shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-              <SessionEditForm 
+              <SessionEditForm
                 key={editingSessionId || 'new'}
                 initialSession={editingSessionId ? localTaskData.sessions.find(s => s.id === editingSessionId) : undefined}
                 onSave={handleSaveSession}
                 onCancel={() => {
                   setIsAdding(false);
                   setEditingSessionId(null);
+                  setUserCancelledAdd(true);
                 }}
               />
             </div>

@@ -17,6 +17,7 @@ import QueueToolbar from './components/QueueToolbar';
 import CourseProgress from './components/lab/course-progress/CourseProgress';
 import TimetableDashboard from './components/lab/timetable/TimetableDashboard';
 import ATRList from './components/lab/atr-list/ATRList';
+import QPMaker from './components/lab/qp-maker/QPMaker';
 
 // Online Exams Imports
 import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
@@ -27,7 +28,7 @@ const DEFAULT_ANSWER_KEY = `*   **Q1.** B\n*   **Q2.** A\n*   **Q3.** A\n*   **Q
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker';
 
 export default function App() {
   const [view, setView] = useState<ViewState>(() => {
@@ -40,7 +41,7 @@ export default function App() {
     if (new URLSearchParams(window.location.search).get('examId')) {
       return 'exam-take';
     }
-    return 'home';
+    return 'lab';
   });
 
   const [apiKeys, setApiKeys] = useState<string[]>(() => {
@@ -796,17 +797,17 @@ export default function App() {
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans print:bg-white">
       <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { window.history.pushState({}, '', '/'); setView('home'); }}>
-            <CheckCircle className="w-6 h-6 text-blue-600" />
-            <h1 className="text-xl font-semibold tracking-tight">AIMS Plus</h1>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { window.history.pushState({}, '', '/'); setView('lab'); }}>
+            <Beaker className="w-6 h-6 text-purple-600" />
+            <h1 className="text-xl font-semibold tracking-tight">AIMS Plus Lab</h1>
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setView('lab')}
-              className={`flex items-center gap-2 p-2 rounded-md transition-colors ${view.startsWith('lab') || view.startsWith('exam') ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+              onClick={() => { window.history.pushState({}, '', '/'); setView('lab'); }}
+              className={`flex items-center gap-2 p-2 rounded-md transition-colors ${view === 'lab' || view.startsWith('lab-') || view.startsWith('exam') ? 'text-purple-600 bg-purple-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
             >
               <Beaker className="w-5 h-5" />
-              <span className="hidden sm:inline font-medium">Lab</span>
+              <span className="hidden sm:inline font-medium">Home</span>
             </button>
             <button
               onClick={() => setShowSettings(!showSettings)}
@@ -883,13 +884,19 @@ export default function App() {
 
         {view === 'lab' && (
           <Lab onNavigate={(v) => {
-            if (v === 'lab-course-progress') {
+            if (v === 'home') {
+              window.history.pushState({}, '', '/');
+              setView('home');
+            } else if (v === 'lab-course-progress') {
               window.history.pushState({}, '', '/course-progress');
+              setView('lab-course-progress');
             } else if (v === 'lab-timetable') {
               window.history.pushState({}, '', '/timetable');
+              setView('lab-timetable');
+            } else {
+              setView(v);
             }
-            setView(v);
-          }} onBack={() => { window.history.pushState({}, '', '/'); setView('home'); }} />
+          }} />
         )}
 
         {view === 'lab-crop' && (
@@ -930,6 +937,10 @@ export default function App() {
 
         {view === 'lab-atr-list' && (
           <ATRList onBack={() => setView('lab')} />
+        )}
+
+        {view === 'lab-qp-maker' && (
+          <QPMaker onBack={() => setView('lab')} />
         )}
 
         {view === 'ranklist' && (
