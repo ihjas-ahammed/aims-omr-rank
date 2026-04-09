@@ -65,7 +65,7 @@ export default function TopRankCard({ student, rank, score, chapters, imageUrl, 
           </div>
         </div>
         <div className="flex-1 pl-[0.3em] flex flex-col justify-center">
-          <ChapterProgressBars chapters={chapters} student={student} compact={false} showPercent={false} />
+          <ChapterProgressBars chapters={chapters} student={student} compact={false} showPercent={false} showNames={false} />
         </div>
       </div>  
     </div>

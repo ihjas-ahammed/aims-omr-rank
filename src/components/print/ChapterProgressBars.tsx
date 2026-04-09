@@ -7,9 +7,10 @@ interface Props {
   student: OMRResult;
   compact?: boolean;
   showPercent?: boolean;
+  showNames?: boolean;
 }
 
-export default function ChapterProgressBars({ chapters, student, compact = false, showPercent = true }: Props) {
+export default function ChapterProgressBars({ chapters, student, compact = false, showPercent = true, showNames = true }: Props) {
   // Only show chapters that actually have questions mapped to them
   const validChapters = chapters.filter(c => c.questions.length > 0);
   
@@ -26,7 +27,7 @@ export default function ChapterProgressBars({ chapters, student, compact = false
         
         return (
           <div key={c.name} className={`flex items-center gap-[0.2em] ${compact ? '' : 'w-full'}`}>
-            {!compact && (
+            {!compact && showNames && (
               <span 
                 className="text-[0.4em] text-gray-600 font-bold text-left uppercase tracking-wide truncate w-1/2" 
                 title={c.name}
