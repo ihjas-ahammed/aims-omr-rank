@@ -1,8 +1,8 @@
 import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays } from 'lucide-react';
+import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list') => void;
   onBack: () => void;
 }
 
@@ -75,7 +75,7 @@ export default function Lab({ onNavigate, onBack }: LabProps) {
           </p>
         </div>
 
-        <div 
+        <div
           onClick={() => {
             window.history.pushState({}, '', '/timetable');
             onNavigate('lab-timetable');
@@ -91,6 +91,22 @@ export default function Lab({ onNavigate, onBack }: LabProps) {
           <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Timetable</h3>
           <p className="text-sm text-gray-600 flex-1">
             Manage daily timetables, assign teachers to specific batches and time slots seamlessly.
+          </p>
+        </div>
+
+        <div
+          onClick={() => onNavigate('lab-atr-list')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-cyan-300 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-cyan-50 text-cyan-600 rounded-lg group-hover:bg-cyan-100 transition-colors">
+              <ListOrdered className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-cyan-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">ATR List</h3>
+          <p className="text-sm text-gray-600 flex-1">
+            Process exam Excel files, match student names, and generate ATR rankings with hat-trick tracking.
           </p>
         </div>
 
