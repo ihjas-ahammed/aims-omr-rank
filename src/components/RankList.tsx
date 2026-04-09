@@ -23,27 +23,45 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
   
   const calculateScore = (student: OMRResult) => (student.right * 4) - student.wrong;
 
-  const results = files
+  const sortedResults = files
     .filter(f => f.result)
     .map(f => f.result!)
-    .sort((a, b) => calculateScore(b) - calculateScore(a)); // Sort by highest score
+    .sort((a, b) => {
+      const scoreDiff = calculateScore(b) - calculateScore(a);
+      return scoreDiff !== 0 ? scoreDiff : a.name.localeCompare(b.name);
+    }); // Sort by highest score
 
-  const filteredResults = results.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const rankedResults = sortedResults.reduce(
+    (acc, student, index) => {
+      const score = calculateScore(student);
+      const previous = acc[index - 1];
+      const rank = previous
+        ? previous.score === score
+          ? previous.rank
+          : previous.rank + 1
+        : 1;
+      acc.push({ student, score, rank });
+      return acc;
+    },
+    [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
+  );
+
+  const filteredResults = rankedResults.filter(r => r.student.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   useEffect(() => {
     const loadImages = async () => {
-      const top3 = results.slice(0, 3);
+      const top3 = rankedResults.slice(0, 3);
       const images: Record<string, string> = {};
-      for (const student of top3) {
-        const file = await getStudentImage(student.name);
+      for (const item of top3) {
+        const file = await getStudentImage(item.student.name);
         if (file) {
-          images[student.name] = URL.createObjectURL(file);
+          images[item.student.name] = URL.createObjectURL(file);
         }
       }
       setStudentImages(images);
     };
     loadImages();
-  }, [results]);
+  }, [rankedResults]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0] && selectedStudentForImage) {
@@ -119,9 +137,9 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
             No students found matching your search.
           </div>
         ) : (
-          filteredResults.map((student, mapIndex) => {
+          filteredResults.map(({ student, rank }, mapIndex) => {
             // Find original global index for proper styling of top 3
-            const index = results.findIndex(r => r.name === student.name);
+            const index = rankedResults.findIndex(r => r.student.name === student.name);
             const isTop3 = index < 3;
             
             let cardBg = 'bg-white border-gray-200';
@@ -142,12 +160,12 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
 
             return (
               <div 
-                key={`${student.name}-${index}`}
+                key={`${student.name}-${rank}`}
                 onClick={() => onStudentClick(student)}
                 className={`relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${cardBg} ${spanClass}`}
               >
                 <div className={`absolute top-0 right-0 bg-black/5 px-4 py-1.5 rounded-bl-xl font-black text-lg ${rankColor}`}>
-                  #{index + 1}
+                  #{rank}
                 </div>
 
                 <div className={`flex items-center gap-4 mb-4 ${index === 0 ? 'md:flex-col md:items-start md:gap-6' : ''}`}>

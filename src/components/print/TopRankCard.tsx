@@ -16,24 +16,29 @@ interface TopRankCardProps {
 export default function TopRankCard({ student, rank, score, chapters, imageUrl, fontSizeScale }: TopRankCardProps) {
   let cardClasses = "flex flex-col items-center rounded-xl p-[0.8em] border shadow-md relative overflow-hidden break-inside-avoid ";
   let badgeClasses = "absolute -bottom-[0.5em] -right-[0.5em] w-[2.2em] h-[2.2em] rounded-full text-white flex items-center justify-center font-bold border-[0.15em] border-white z-20 text-[0.8em] shadow-sm ";
-  let scale = "scale-100";
-  
+  let scale = "";
+  let cardHeight = '18.5em';
+  let cardWidth = '14em';
+
   if (rank === 1) {
-    cardClasses += "bg-gradient-to-b from-yellow-50 to-white border-yellow-200 z-10 ";
-    badgeClasses += "bg-yellow-500";
-    scale = "scale-105 mx-2"; // Make 1st place stand out slightly
+    cardClasses += "bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 border-yellow-200 text-slate-900 z-10 ";
+    badgeClasses += "bg-yellow-600";
+    cardHeight = '22em';
+    cardWidth = '15.5em';
   } else if (rank === 2) {
-    cardClasses += "bg-gradient-to-b from-gray-50 to-white border-gray-200 ";
-    badgeClasses += "bg-gray-400";
+    cardClasses += "bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 border-slate-300 text-slate-900 ";
+    badgeClasses += "bg-slate-600";
+    cardHeight = '19em';
   } else {
-    cardClasses += "bg-gradient-to-b from-orange-50 to-white border-orange-200 ";
-    badgeClasses += "bg-orange-500";
+    cardClasses += "bg-gradient-to-br from-orange-100 via-orange-200 to-amber-100 border-orange-300 text-slate-900 ";
+    badgeClasses += "bg-orange-600";
+    cardHeight = '19em';
   }
 
   // Use the passed fontSizeScale to control internal scaling proportionately
   return (
-    <div className={`${cardClasses} ${scale}`} style={{ fontSize: `${fontSizeScale}px`, width: '14em' }}>
-      <div className="relative mb-[0.6em] mt-[0.2em]">
+    <div className={`${cardClasses} ${scale}`} style={{ fontSize: `${fontSizeScale}px`, width: cardWidth, minHeight: cardHeight, height: cardHeight }}>
+      <div className="relative mb-[0.5em] mt-[0.3em]">
         {imageUrl ? (
           <img src={imageUrl} alt={student.name} className="w-[4.5em] h-[4.5em] rounded-full object-cover border-[0.2em] border-white shadow-sm" />
         ) : (
@@ -53,14 +58,16 @@ export default function TopRankCard({ student, rank, score, chapters, imageUrl, 
         </span>
         <span className="text-[0.7em] font-bold text-red-700 bg-red-50 px-[0.5em] py-[0.2em] rounded border border-red-200">W:{student.wrong}</span>
       </div>
-      <div className="mt-auto flex flex-row items-center justify-between w-full z-10 pt-[0.4em] border-t border-gray-100">
-              <div className="border-r border-gray-100 pr-[0.4em] shrink mx-auto ">
-                <CosmicDotGrid scores={student.scores} />
-              </div>
-              <div className="flex-1 pl-[0.4em] flex flex-col justify-center">
-                <ChapterProgressBars chapters={chapters} student={student} compact={false} />
-              </div>
-            </div>  
+      <div className="mt-auto flex flex-row items-stretch w-full z-10 pt-[0.2em]">
+        <div className="w-1/3 max-w-[5.2em] border-r border-gray-100 pr-[0.3em] shrink-0 flex items-center justify-center">
+          <div className="aspect-square h-full max-h-[11.5em] flex items-center justify-center">
+            <CosmicDotGrid scores={student.scores} variant="top" />
+          </div>
+        </div>
+        <div className="flex-1 pl-[0.3em] flex flex-col justify-center">
+          <ChapterProgressBars chapters={chapters} student={student} compact={false} showPercent={false} />
+        </div>
+      </div>  
     </div>
   );
 }

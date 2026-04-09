@@ -6,17 +6,17 @@ import ChapterProgressBars from './ChapterProgressBars';
 
 interface StudentRankCardProps {
   student: OMRResult;
-  index: number;
+  rank: number;
   score: number;
   chapters: Chapter[];
 }
 
-export default function StudentRankCard({ student, index, score, chapters }: StudentRankCardProps) {
+export default function StudentRankCard({ student, rank, score, chapters }: StudentRankCardProps) {
   return (
     <div className="flex flex-col p-[0.4em] border border-gray-200 rounded-[0.6em] text-center bg-white shadow-sm relative overflow-hidden h-full break-inside-avoid">
       
       <div className="flex justify-between items-center mb-[0.2em] z-10">
-        <span className="text-[0.55em] font-bold text-gray-500 bg-gray-100 px-[0.4em] py-[0.1em] rounded border border-gray-200">#{index + 1}</span>
+        <span className="text-[0.55em] font-bold text-gray-500 bg-gray-100 px-[0.4em] py-[0.1em] rounded border border-gray-200">#{rank}</span>
       </div>
       
       <h4 className="text-[0.65em] font-bold break-words leading-tight mb-[0.4em] px-[0.1em] text-gray-900 z-10 tracking-tight" title={student.name}>
@@ -32,11 +32,11 @@ export default function StudentRankCard({ student, index, score, chapters }: Stu
       </div>
       
       {/* Container for Dots (Left) and Progress Bars (Right) side by side */}
-      <div className="mt-auto flex flex-row items-center justify-between w-full z-10 pt-[0.4em] border-t border-gray-100">
-        <div className="border-r border-gray-100 pr-[0.4em] shrink-0">
+      <div className="mt-auto flex flex-row items-start w-full z-10 pt-[0.4em] border-t border-gray-100">
+        <div className="w-1/2 border-r border-gray-100 pr-[0.4em] shrink-0">
           <CosmicDotGrid scores={student.scores} />
         </div>
-        <div className="flex-1 pl-[0.4em] flex flex-col justify-center">
+        <div className="w-1/2 pl-[0.4em] flex flex-col justify-center">
           <ChapterProgressBars chapters={chapters} student={student} compact={true} />
         </div>
       </div>

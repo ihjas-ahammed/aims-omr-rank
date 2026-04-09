@@ -28,33 +28,51 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
   
   const calculateScore = (student: OMRResult) => (student.right * 4) - student.wrong;
 
-  const results = files
+  const sortedResults = files
     .filter(f => f.result)
     .map(f => f.result!)
-    .sort((a, b) => calculateScore(b) - calculateScore(a));
+    .sort((a, b) => {
+      const scoreDiff = calculateScore(b) - calculateScore(a);
+      return scoreDiff !== 0 ? scoreDiff : a.name.localeCompare(b.name);
+    });
+
+  const rankedResults = sortedResults.reduce(
+    (acc, student, index) => {
+      const score = calculateScore(student);
+      const previous = acc[index - 1];
+      const rank = previous
+        ? previous.score === score
+          ? previous.rank
+          : previous.rank + 1
+        : 1;
+      acc.push({ student, score, rank });
+      return acc;
+    },
+    [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
+  );
 
   useEffect(() => {
     const loadImages = async () => {
-      const top3 = results.slice(0, 3);
+      const top3 = rankedResults.slice(0, 3);
       const images: Record<string, string> = {};
-      for (const student of top3) {
-        const file = await getStudentImage(student.name);
+      for (const item of top3) {
+        const file = await getStudentImage(item.student.name);
         if (file) {
-          images[student.name] = URL.createObjectURL(file);
+          images[item.student.name] = URL.createObjectURL(file);
         }
       }
       setStudentImages(images);
     };
     loadImages();
-  }, [results]);
+  }, [rankedResults]);
 
-  const top3 = results.slice(0, 3);
+  const top3 = rankedResults.slice(0, 3);
 
   // Reorder top 3 to put 1st place in the middle: [2nd, 1st, 3rd]
   const displayTop3 = [];
-  if (top3.length > 1) displayTop3.push({ student: top3[1], rank: 2 });
-  if (top3.length > 0) displayTop3.push({ student: top3[0], rank: 1 });
-  if (top3.length > 2) displayTop3.push({ student: top3[2], rank: 3 });
+  if (top3.length > 1) displayTop3.push({ student: top3[1].student, rank: top3[1].rank });
+  if (top3.length > 0) displayTop3.push({ student: top3[0].student, rank: top3[0].rank });
+  if (top3.length > 2) displayTop3.push({ student: top3[2].student, rank: top3[2].rank });
 
   // Generate the chapter/topic string
   const chapterTopicString = chapters.map(c => c.name).join(' · ');
@@ -127,12 +145,12 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
               fontSize: `${cardScale}px` 
             }}
           >
-            {results.map((student, index) => (
-              <div key={`${student.name}-${index}`} className="w-full h-full">
+            {rankedResults.map(({ student, rank, score }) => (
+              <div key={`${student.name}-${rank}`} className="w-full h-full">
                 <StudentRankCard 
                   student={student} 
-                  index={index} 
-                  score={calculateScore(student)}
+                  rank={rank} 
+                  score={score}
                   chapters={chapters} 
                 />
               </div>

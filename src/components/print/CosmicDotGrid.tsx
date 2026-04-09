@@ -2,11 +2,16 @@ import React from 'react';
 
 interface CosmicDotGridProps {
   scores: Record<string, number>;
+  variant?: 'default' | 'top';
 }
 
-export default function CosmicDotGrid({ scores }: CosmicDotGridProps) {
+export default function CosmicDotGrid({ scores, variant = 'default' }: CosmicDotGridProps) {
+  const dotSizeClass = variant === 'top' ? 'w-[0.55em] h-[0.55em]' : 'w-[0.45em] h-[0.45em]';
+  const gapClass = variant === 'top' ? 'gap-[0.05em]' : 'gap-[0.08em]';
+  const containerWidth = variant === 'top' ? 'w-fit' : 'w-fit';
+
   return (
-    <div className="grid grid-cols-5 gap-[0.12em] w-fit mx-auto">
+    <div className={`grid grid-cols-5 ${gapClass} ${containerWidth} mx-auto`}>
       {Array.from({ length: 25 }, (_, i) => i + 1).map(qNum => {
         const score = scores[`q${qNum}`] || 0;
         let bgClass = 'bg-gray-200'; // Blank / No Answer
@@ -20,7 +25,7 @@ export default function CosmicDotGrid({ scores }: CosmicDotGridProps) {
         return (
           <div
             key={qNum}
-            className={`w-[0.3em] h-[0.3em] rounded-full ${bgClass} transition-colors`}
+            className={`${dotSizeClass} rounded-sm ${bgClass} transition-colors`}
             title={`Q${qNum}: ${score === 1 ? 'Correct' : score === -1 ? 'Wrong' : 'Blank'}`}
           />
         );
