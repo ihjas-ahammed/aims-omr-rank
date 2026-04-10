@@ -454,7 +454,7 @@ Return only valid JSON without extra text.`;
         }
 
         const student = students[canonicalName];
-        student.scores.push(score);
+        student.scores.push({ examId: exam.id, examName: exam.name, score });
         student.totalExamsAttended++;
         student.lastAttendedExamIndex = examIndex;
       });
@@ -463,7 +463,7 @@ Return only valid JSON without extra text.`;
       const currentRankings: StudentState[] = Object.values(students)
         .filter(s => s.scores.length > 0) // Only rank students with active scores
         .map(s => {
-          const sum = s.scores.reduce((a, b) => a + b, 0);
+          const sum = s.scores.reduce((a, b) => a + b.score, 0);
           s.currentAverage = sum / s.scores.length;
           return s;
         })

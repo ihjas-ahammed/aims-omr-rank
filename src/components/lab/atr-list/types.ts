@@ -23,9 +23,15 @@ export interface ProcessedRecord {
   score: number;
 }
 
+export interface ScoreEntry {
+  examId: string;
+  examName: string;
+  score: number;
+}
+
 export interface StudentState {
   canonicalName: string;
-  scores: number[];
+  scores: ScoreEntry[];
   totalExamsAttended: number;
   lastAttendedExamIndex: number;
   hatTricks: number;

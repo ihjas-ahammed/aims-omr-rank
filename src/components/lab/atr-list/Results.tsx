@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DayResult, Top20Entry } from './types';
-import { Printer, Trophy, TrendingUp, TrendingDown, Minus, Award, Edit2, Check, Settings2 } from 'lucide-react';
+import { Printer, Trophy, TrendingUp, TrendingDown, Minus, Award, Edit2, Check, Settings2, X, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { AvatarCropper } from './AvatarCropper';
 import { getAvatar, saveAvatar, removeAvatar } from './lib/db';
@@ -14,10 +14,14 @@ export function Results({ results }: ResultsProps) {
   const [headerTitle, setHeaderTitle] = useState('AIMS PLUS Track Record');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState('');
-  
+
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState('');
   const [avatars, setAvatars] = useState<Record<string, string>>({});
+
+  // Student detail modal
+  const [detailStudent, setDetailStudent] = useState<Top20Entry | null>(null);
+  const [detailExamIdx, setDetailExamIdx] = useState(0);
 
   // Print settings
   const [printColumns, setPrintColumns] = useState(4);
@@ -258,12 +262,12 @@ export function Results({ results }: ResultsProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 print:gap-2 print-grid overflow-show">
             {currentResult.top20.map((student) => (
-              <div 
-                key={student.canonicalName}
+              <div
                 className={cn(
-                  "relative flex flex-col items-center p-6 print:p-2 rounded-2xl border transition-all duration-300",
+                  "relative flex flex-col items-center p-6 print:p-2 rounded-2xl border transition-all duration-300 cursor-pointer",
                   getRankStyle(student.rank, student.status)
                 )}
+                onClick={() => { setDetailStudent(student); setDetailExamIdx(0); }}
               >
                 <div className={cn(
                   "absolute -top-1 -left-1  w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm print:text-xs shadow-sm border-2 border-white",
@@ -368,7 +372,7 @@ export function Results({ results }: ResultsProps) {
         </div>
       </div>
 
-      <AvatarCropper 
+      <AvatarCropper
         isOpen={cropperOpen}
         onClose={() => setCropperOpen(false)}
         onSave={handleSaveAvatar}
@@ -376,6 +380,156 @@ export function Results({ results }: ResultsProps) {
         studentName={selectedStudent}
         hasAvatar={!!avatars[selectedStudent]}
       />
+
+      {detailStudent && (
+        <StudentDetailModal
+          student={detailStudent}
+          exams={results.map(r => ({ examId: r.examId, examName: r.examName }))}
+          initialExamIdx={detailExamIdx}
+          onClose={() => setDetailStudent(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+interface StudentDetailModalProps {
+  student: Top20Entry;
+  exams: { examId: string; examName: string }[];
+  initialExamIdx: number;
+  onClose: () => void;
+}
+
+function StudentDetailModal({ student, exams, initialExamIdx, onClose }: StudentDetailModalProps) {
+  const [activeExamIdx, setActiveExamIdx] = useState(initialExamIdx);
+
+  const scores = student.scores;
+  const totalScore = scores.reduce((sum, s) => sum + s.score, 0);
+  const avgScore = scores.length > 0 ? totalScore / scores.length : 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">{student.canonicalName}</h2>
+              <p className="text-blue-100 mt-1">Exam Score History</p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex gap-6 mt-4">
+            <div>
+              <div className="text-3xl font-black">{scores.length}</div>
+              <div className="text-xs text-blue-100 uppercase tracking-wider">Exams Attended</div>
+            </div>
+            <div>
+              <div className="text-3xl font-black">{avgScore.toFixed(1)}</div>
+              <div className="text-xs text-blue-100 uppercase tracking-wider">Average Score</div>
+            </div>
+            <div>
+              <div className="text-3xl font-black">{totalScore}</div>
+              <div className="text-xs text-blue-100 uppercase tracking-wider">Total Score</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 overflow-y-auto max-h-[60vh]">
+          {exams.length > 1 && (
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => setActiveExamIdx(Math.max(0, activeExamIdx - 1))}
+                disabled={activeExamIdx === 0}
+                className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-40 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="flex-1 text-center font-medium text-sm text-gray-700">
+                {exams[activeExamIdx].examName}
+              </div>
+              <button
+                onClick={() => setActiveExamIdx(Math.min(exams.length - 1, activeExamIdx + 1))}
+                disabled={activeExamIdx === exams.length - 1}
+                className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-40 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {scores.map((entry, idx) => {
+              const isInTop20 = exams.slice(0, activeExamIdx + 1).some((_, i) => {
+                // Check if student was in top 20 at each exam
+                return true; // simplified - we just show all scores
+              });
+              return (
+                <div key={entry.examId} className={cn(
+                  "flex items-center justify-between p-3 rounded-xl border",
+                  entry.examId === exams[activeExamIdx]?.examId
+                    ? "bg-blue-50 border-blue-200"
+                    : "bg-gray-50 border-gray-100 hover:border-gray-200"
+                )}>
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
+                      entry.examId === exams[activeExamIdx]?.examId
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-600"
+                    )}>
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{entry.examName}</div>
+                      <div className="text-xs text-gray-500">Exam #{idx + 1}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={cn(
+                      "text-xl font-black",
+                      entry.score >= 0 ? "text-green-600" : "text-red-600"
+                    )}>
+                      {entry.score >= 0 ? '+' : ''}{entry.score}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Rank #{idx + 1} in class
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+              <TrendingUp className="w-4 h-4" />
+              <span className="font-medium">Performance Trend</span>
+            </div>
+            <div className="flex items-end gap-1 h-16">
+              {scores.map((entry, idx) => {
+                const maxScore = Math.max(...scores.map(s => Math.abs(s.score)), 1);
+                const height = (Math.abs(entry.score) / maxScore) * 100;
+                return (
+                  <div key={entry.examId} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      className={cn(
+                        "w-full rounded-t transition-all",
+                        entry.examId === exams[activeExamIdx]?.examId
+                          ? "bg-blue-500"
+                          : entry.score >= 0 ? "bg-green-400" : "bg-red-400"
+                      )}
+                      style={{ height: `${height}%` }}
+                    />
+                    <span className="text-[8px] text-gray-400">{idx + 1}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
