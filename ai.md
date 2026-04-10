@@ -1,8 +1,7 @@
 Make the following changes:
 
-    - Course progress:
-        - 
-
+    - Update ranklist and printable:
+        if we have more than 3 peoplein #1 #2 #3, show their phot also, because thats fair (not just the  first 3 but go upto 5 if needed and set alignment based on that)
 
 Apply changes to both mobile view and desktop (movbile view is the priority)
 

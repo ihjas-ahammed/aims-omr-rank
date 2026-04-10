@@ -5,6 +5,7 @@ import { getStudentImage } from '../services/db';
 import StudentRankCard from './print/StudentRankCard';
 import TopRankCard from './print/TopRankCard';
 import PrintSettingsBar from './print/PrintSettingsBar';
+import PrintHeader from './print/PrintHeader';
 
 interface PrintableRankListProps {
   files: { result?: OMRResult }[];
@@ -51,11 +52,13 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
     [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
   );
 
+  // Take up to 5 students that occupy rank 1, 2, or 3
+  const podiumStudents = rankedResults.filter(r => r.rank <= 3).slice(0, 5);
+
   useEffect(() => {
     const loadImages = async () => {
-      const top3 = rankedResults.slice(0, 3);
       const images: Record<string, string> = {};
-      for (const item of top3) {
+      for (const item of podiumStudents) {
         const file = await getStudentImage(item.student.name);
         if (file) {
           images[item.student.name] = URL.createObjectURL(file);
@@ -66,20 +69,20 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
     loadImages();
   }, [rankedResults]);
 
-  const top3 = rankedResults.slice(0, 3);
+  // Reorder top podium to put highest ranks in the middle
+  const displayPodium: Array<{ student: OMRResult, rank: number }> = [];
+  [...podiumStudents].sort((a,b) => a.rank - b.rank).forEach((item, i) => {
+    if (i % 2 === 0) displayPodium.push({ student: item.student, rank: item.rank });
+    else displayPodium.unshift({ student: item.student, rank: item.rank });
+  });
 
-  // Reorder top 3 to put 1st place in the middle: [2nd, 1st, 3rd]
-  const displayTop3 = [];
-  if (top3.length > 1) displayTop3.push({ student: top3[1].student, rank: top3[1].rank });
-  if (top3.length > 0) displayTop3.push({ student: top3[0].student, rank: top3[0].rank });
-  if (top3.length > 2) displayTop3.push({ student: top3[2].student, rank: top3[2].rank });
-
-  // Generate the chapter/topic string
   const chapterTopicString = chapters.map(c => c.name).join(' · ');
+  
+  // Adjust podium sizing if there are more than 3 cards
+  const podiumScale = podiumStudents.length > 3 ? Math.max(cardScale * 0.75, 10) : Math.max(cardScale, 14);
 
   return (
     <div className="min-h-screen bg-white text-black">
-      {/* Non-printable controls */}
       <PrintSettingsBar
         subjectName={subjectName}
         setSubjectName={setSubjectName}
@@ -96,31 +99,19 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
         onBack={onBack}
       />
 
-      {/* Printable Content */}
       <div className="print:m-0 p-4 md:p-8 pt-0">
         {showHeader && (
-          <div className="mb-8 pt-4">
-            <div className="flex items-center justify-between mb-4">
-              <img src="/logo1.png" alt="Logo" className="h-12 md:h-16 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
-              <div className="text-center flex-1">
-                <h1 className="text-sm md:text-xl font-bold tracking-[0.4em] uppercase ml-[0.4em] text-gray-800">
-                  AIMS PLUS TEST SERIES · CRASH 2026
-                </h1>
-                <h2 className="text-xl md:text-2xl font-black mt-1">DAY {dayNumber} — RANK LIST</h2>
-              </div>
-              <img src="/logo2.png" alt="Logo" className="h-12 md:h-16 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
-            </div>
-            <div className="text-center text-xs md:text-sm font-medium max-w-4xl mx-auto uppercase text-gray-700">
-              <span className="font-bold text-gray-900">{subjectName}</span> | {chapterTopicString}
-            </div>
-          </div>
+          <PrintHeader 
+            subjectName={subjectName} 
+            dayNumber={dayNumber} 
+            chapterTopicString={chapterTopicString} 
+          />
         )}
 
-        {/* Top 3 Section */}
-        {showTop3 && displayTop3.length > 0 && (
+        {showTop3 && displayPodium.length > 0 && (
           <div className="mb-10">
             <div className="flex flex-wrap justify-center items-end gap-4 md:gap-8">
-              {displayTop3.map(({ student, rank }) => (
+              {displayPodium.map(({ student, rank }) => (
                 <TopRankCard 
                   key={`top-${student.name}-${rank}`}
                   student={student}
@@ -128,14 +119,13 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
                   score={calculateScore(student)}
                   chapters={chapters}
                   imageUrl={studentImages[student.name]}
-                  fontSizeScale={Math.max(cardScale, 14)} // Keep top cards slightly bigger
+                  fontSizeScale={podiumScale} 
                 />
               ))}
             </div>
           </div>
         )}
 
-        {/* All Students Grid */}
         <div>
           {showHeader && <h2 className="text-lg font-bold mb-4 border-b pb-2 border-gray-200">All Students</h2>}
           <div 

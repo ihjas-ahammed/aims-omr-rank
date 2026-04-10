@@ -149,7 +149,8 @@ Restart your Vite development server for the variables to take effect (`npm run 
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AIMS Plus</title>
+    <link rel="icon" type="image/png" href="/logo1.png" />
+    <title>AIMS Plus Lab</title>
   </head>
   <body>
     <div id="root"></div>
@@ -183,14 +184,18 @@ Restart your Vite development server for the variables to take effect (`npm run 
         "@google/genai": "^1.29.0",
         "@tailwindcss/vite": "^4.1.14",
         "@vitejs/plugin-react": "^5.0.4",
+        "clsx": "^2.1.1",
         "dotenv": "^17.2.3",
         "express": "^4.21.2",
         "firebase": "^12.11.0",
+        "idb-keyval": "^6.2.2",
         "lucide-react": "^0.546.0",
         "motion": "^12.23.24",
         "react": "^19.0.0",
         "react-dom": "^19.0.0",
+        "react-easy-crop": "^5.5.7",
         "react-image-crop": "^11.0.10",
+        "tailwind-merge": "^3.5.0",
         "vite": "^6.2.0",
         "xlsx": "^0.18.5"
       },
@@ -2756,6 +2761,15 @@ Restart your Vite development server for the variables to take effect (`npm run 
         "node": ">=12"
       }
     },
+    "node_modules/clsx": {
+      "version": "2.1.1",
+      "resolved": "https://registry.npmjs.org/clsx/-/clsx-2.1.1.tgz",
+      "integrity": "sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==",
+      "license": "MIT",
+      "engines": {
+        "node": ">=6"
+      }
+    },
     "node_modules/codepage": {
       "version": "1.15.0",
       "resolved": "https://registry.npmjs.org/codepage/-/codepage-1.15.0.tgz",
@@ -3581,6 +3595,12 @@ Restart your Vite development server for the variables to take effect (`npm run 
       "integrity": "sha512-gchesWBzyvGHRO9W8tzUWFDycow5gwjvFKfyV9FF32Y7F50yZMp7mP+T2mJIWFx49zicqyC4uefHM17o6xKIVQ==",
       "license": "ISC"
     },
+    "node_modules/idb-keyval": {
+      "version": "6.2.2",
+      "resolved": "https://registry.npmjs.org/idb-keyval/-/idb-keyval-6.2.2.tgz",
+      "integrity": "sha512-yjD9nARJ/jb1g+CvD0tlhUHOrJ9Sy0P8T9MF3YaLlHnSRpwPfpTX0XIvpmw3gAJUmEu3FiICLBDPXVwyEvrleg==",
+      "license": "Apache-2.0"
+    },
     "node_modules/inherits": {
       "version": "2.0.4",
       "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz",
@@ -4149,6 +4169,12 @@ Restart your Vite development server for the variables to take effect (`npm run 
       "integrity": "sha512-1h5gKZCF+pO/o3Iqt5Jp7wc9rH3eJJ0+nh/CIoiRwjRxde/hAHyLPXYN4V3CqKAbiZPSeJFSWHmJsbkicta0Eg==",
       "license": "MIT"
     },
+    "node_modules/normalize-wheel": {
+      "version": "1.0.1",
+      "resolved": "https://registry.npmjs.org/normalize-wheel/-/normalize-wheel-1.0.1.tgz",
+      "integrity": "sha512-1OnlAPZ3zgrk8B91HyRj+eVv+kS5u+Z0SCsak6Xil/kmgEia50ga7zfkumayonZrImffAxPU/5WcyGhzetHNPA==",
+      "license": "BSD-3-Clause"
+    },
     "node_modules/object-inspect": {
       "version": "1.13.4",
       "resolved": "https://registry.npmjs.org/object-inspect/-/object-inspect-1.13.4.tgz",
@@ -4349,6 +4375,20 @@ Restart your Vite development server for the variables to take effect (`npm run 
       },
       "peerDependencies": {
         "react": "^19.2.4"
+      }
+    },
+    "node_modules/react-easy-crop": {
+      "version": "5.5.7",
+      "resolved": "https://registry.npmjs.org/react-easy-crop/-/react-easy-crop-5.5.7.tgz",
+      "integrity": "sha512-kYo4NtMeXFQB7h1U+h5yhUkE46WQbQdq7if54uDlbMdZHdRgNehfvaFrXnFw5NR1PNoUOJIfTwLnWmEx/MaZnA==",
+      "license": "MIT",
+      "dependencies": {
+        "normalize-wheel": "^1.0.1",
+        "tslib": "^2.0.1"
+      },
+      "peerDependencies": {
+        "react": ">=16.4.0",
+        "react-dom": ">=16.4.0"
       }
     },
     "node_modules/react-image-crop": {
@@ -4668,6 +4708,16 @@ Restart your Vite development server for the variables to take effect (`npm run 
       },
       "engines": {
         "node": ">=8"
+      }
+    },
+    "node_modules/tailwind-merge": {
+      "version": "3.5.0",
+      "resolved": "https://registry.npmjs.org/tailwind-merge/-/tailwind-merge-3.5.0.tgz",
+      "integrity": "sha512-I8K9wewnVDkL1NTGoqWmVEIlUcB9gFriAEkXkfCjX5ib8ezGxtR3xD7iZIxrfArjEsH7F1CHD4RFUtxefdqV/A==",
+      "license": "MIT",
+      "funding": {
+        "type": "github",
+        "url": "https://github.com/sponsors/dcastil"
       }
     },
     "node_modules/tailwindcss": {
@@ -5525,7 +5575,7 @@ Restart your Vite development server for the variables to take effect (`npm run 
 
 --- START OF FILE package.json ---
 {
-  "name": "react-example",
+  "name": "aims-plus-lab",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -5540,14 +5590,18 @@ Restart your Vite development server for the variables to take effect (`npm run 
     "@google/genai": "^1.29.0",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
+    "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^12.11.0",
+    "idb-keyval": "^6.2.2",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-easy-crop": "^5.5.7",
     "react-image-crop": "^11.0.10",
+    "tailwind-merge": "^3.5.0",
     "vite": "^6.2.0",
     "xlsx": "^0.18.5"
   },
@@ -5648,12 +5702,23 @@ export default defineConfig(({mode}) => {
 
 --- END OF FILE vite.config.ts ---
 
+--- START OF FILE .claude/settings.local.json ---
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\aims-omr-rank\\\\public\\\\:*)"
+    ]
+  }
+}
+
+--- END OF FILE .claude/settings.local.json ---
+
 --- START OF FILE .firebase/hosting.ZGlzdA.cache ---
 logo2.png,1775390029907,ef4f5b4add3c8a95340db2ec4e6a5efb84d051ed119c762298defde1aa2067f3
 logo1.png,1775390029905,def463d27097d677effeb7dc6bc5c9d36f76919b30a370bd91fc43e633928ba8
-index.html,1775556302733,bd1edb801c689384b95217475f0d0e40fb03589aefd648d30184f2a3ca1db385
-assets/index-1OUtTQAD.css,1775556302733,fa7d9e698300db0e663eea1c44ba0bc71b34f2ceece32a0a29f1a550aacb14c7
-assets/index-0eqsMiz9.js,1775556302754,5636d091eee1ce5c007ced0e3fc64922541e0a445c9f981f0deb000b628d86cd
+index.html,1775733199310,a701dc10724a6a6988ad7dddfddff2bfe1d5c29ea7cde7d9ed445526f82d0533
+assets/index-CSJSTzpi.css,1775733199310,cc8d3c7cdf2b2ffc0fc0990dbd753adc988e2fdc648f5a42794481831fe6680d
+assets/index-BhJlgduX.js,1775733199310,2f9f35adc5f578b8cc92cb80d9d78294ed26aa5c342cddc8d6b439b4086075db
 
 --- END OF FILE .firebase/hosting.ZGlzdA.cache ---
 
@@ -6286,6 +6351,8 @@ import QueueItem, { ProcessedFile } from './components/QueueItem';
 import QueueToolbar from './components/QueueToolbar';
 import CourseProgress from './components/lab/course-progress/CourseProgress';
 import TimetableDashboard from './components/lab/timetable/TimetableDashboard';
+import ATRList from './components/lab/atr-list/ATRList';
+import QPMaker from './components/lab/qp-maker/QPMaker';
 
 // Online Exams Imports
 import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
@@ -6296,7 +6363,7 @@ const DEFAULT_ANSWER_KEY = `*   **Q1.** B\n*   **Q2.** A\n*   **Q3.** A\n*   **Q
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker';
 
 export default function App() {
   const [view, setView] = useState<ViewState>(() => {
@@ -6309,7 +6376,7 @@ export default function App() {
     if (new URLSearchParams(window.location.search).get('examId')) {
       return 'exam-take';
     }
-    return 'home';
+    return 'lab';
   });
 
   const [apiKeys, setApiKeys] = useState<string[]>(() => {
@@ -7065,17 +7132,17 @@ export default function App() {
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans print:bg-white">
       <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { window.history.pushState({}, '', '/'); setView('home'); }}>
-            <CheckCircle className="w-6 h-6 text-blue-600" />
-            <h1 className="text-xl font-semibold tracking-tight">AIMS Plus</h1>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { window.history.pushState({}, '', '/'); setView('lab'); }}>
+            <Beaker className="w-6 h-6 text-purple-600" />
+            <h1 className="text-xl font-semibold tracking-tight">AIMS Plus Lab</h1>
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setView('lab')}
-              className={`flex items-center gap-2 p-2 rounded-md transition-colors ${view.startsWith('lab') || view.startsWith('exam') ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+              onClick={() => { window.history.pushState({}, '', '/'); setView('lab'); }}
+              className={`flex items-center gap-2 p-2 rounded-md transition-colors ${view === 'lab' || view.startsWith('lab-') || view.startsWith('exam') ? 'text-purple-600 bg-purple-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
             >
               <Beaker className="w-5 h-5" />
-              <span className="hidden sm:inline font-medium">Lab</span>
+              <span className="hidden sm:inline font-medium">Home</span>
             </button>
             <button
               onClick={() => setShowSettings(!showSettings)}
@@ -7152,13 +7219,19 @@ export default function App() {
 
         {view === 'lab' && (
           <Lab onNavigate={(v) => {
-            if (v === 'lab-course-progress') {
+            if (v === 'home') {
+              window.history.pushState({}, '', '/');
+              setView('home');
+            } else if (v === 'lab-course-progress') {
               window.history.pushState({}, '', '/course-progress');
+              setView('lab-course-progress');
             } else if (v === 'lab-timetable') {
               window.history.pushState({}, '', '/timetable');
+              setView('lab-timetable');
+            } else {
+              setView(v);
             }
-            setView(v);
-          }} onBack={() => { window.history.pushState({}, '', '/'); setView('home'); }} />
+          }} />
         )}
 
         {view === 'lab-crop' && (
@@ -7195,6 +7268,14 @@ export default function App() {
             window.history.pushState({}, '', '/');
             setView('lab');
           }} />
+        )}
+
+        {view === 'lab-atr-list' && (
+          <ATRList onBack={() => setView('lab')} />
+        )}
+
+        {view === 'lab-qp-maker' && (
+          <QPMaker onBack={() => setView('lab')} />
         )}
 
         {view === 'ranklist' && (
@@ -7573,46 +7654,37 @@ export default function ImageCropper({ imageUrl, onSave, onCancel }: ImageCroppe
 
 --- START OF FILE src/components/Lab.tsx ---
 import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays } from 'lucide-react';
+import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable') => void;
-  onBack: () => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'home') => void;
 }
 
-export default function Lab({ onNavigate, onBack }: LabProps) {
+export default function Lab({ onNavigate }: LabProps) {
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center gap-4">
-        <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-          <Beaker className="w-6 h-6 text-purple-600" />
-          <h2>Lab (Experimental Features)</h2>
-        </div>
-      </div>
-      
+
       <p className="text-gray-600">
-        Welcome to the Lab! Here you can test out new experimental features.
+        Welcome to AIMS Plus Lab! Explore our suite of educational tools and experimental features.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div 
-          onClick={() => onNavigate('lab-crop')}
-          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-purple-300 transition-all cursor-pointer group"
+        <div
+          onClick={() => onNavigate('home')}
+          className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-blue-400 transition-all cursor-pointer group"
         >
           <div className="flex items-start justify-between">
-            <div className="p-3 bg-purple-50 text-purple-600 rounded-lg group-hover:bg-purple-100 transition-colors">
-              <Crop className="w-6 h-6" />
+            <div className="p-3 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-200 transition-colors">
+              <FileCheck className="w-6 h-6" />
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Auto-Crop & Rotate OMR</h3>
-          <p className="text-sm text-gray-600">
-            Use Gemini Lite to automatically detect the OMR sheet boundaries, crop out the background, and rotate the image upright.
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">OMR Sheet Grading</h3>
+          <p className="text-sm text-gray-700">
+            Upload OMR answer sheets, auto-evaluate responses using AI, and generate ranked results with topic-wise analysis.
           </p>
         </div>
+
 
         <div 
           onClick={() => onNavigate('lab-exams')}
@@ -7649,7 +7721,7 @@ export default function Lab({ onNavigate, onBack }: LabProps) {
           </p>
         </div>
 
-        <div 
+        <div
           onClick={() => {
             window.history.pushState({}, '', '/timetable');
             onNavigate('lab-timetable');
@@ -7665,6 +7737,38 @@ export default function Lab({ onNavigate, onBack }: LabProps) {
           <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Timetable</h3>
           <p className="text-sm text-gray-600 flex-1">
             Manage daily timetables, assign teachers to specific batches and time slots seamlessly.
+          </p>
+        </div>
+
+        <div
+          onClick={() => onNavigate('lab-atr-list')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-cyan-300 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-cyan-50 text-cyan-600 rounded-lg group-hover:bg-cyan-100 transition-colors">
+              <ListOrdered className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-cyan-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">ATR List</h3>
+          <p className="text-sm text-gray-600 flex-1">
+            Process exam Excel files, match student names, and generate ATR rankings with hat-trick tracking.
+          </p>
+        </div>
+
+        <div
+          onClick={() => onNavigate('lab-qp-maker')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-pink-300 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-pink-50 text-pink-600 rounded-lg group-hover:bg-pink-100 transition-colors">
+              <FileText className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-pink-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">QP Maker</h3>
+          <p className="text-sm text-gray-600 flex-1">
+            Create and manage question papers. Add questions with options, set correct answers, and export as JSON.
           </p>
         </div>
 
@@ -7764,33 +7868,51 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
   
   const calculateScore = (student: OMRResult) => (student.right * 4) - student.wrong;
 
-  const results = files
+  const sortedResults = files
     .filter(f => f.result)
     .map(f => f.result!)
-    .sort((a, b) => calculateScore(b) - calculateScore(a));
+    .sort((a, b) => {
+      const scoreDiff = calculateScore(b) - calculateScore(a);
+      return scoreDiff !== 0 ? scoreDiff : a.name.localeCompare(b.name);
+    });
+
+  const rankedResults = sortedResults.reduce(
+    (acc, student, index) => {
+      const score = calculateScore(student);
+      const previous = acc[index - 1];
+      const rank = previous
+        ? previous.score === score
+          ? previous.rank
+          : previous.rank + 1
+        : 1;
+      acc.push({ student, score, rank });
+      return acc;
+    },
+    [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
+  );
 
   useEffect(() => {
     const loadImages = async () => {
-      const top3 = results.slice(0, 3);
+      const top3 = rankedResults.slice(0, 3);
       const images: Record<string, string> = {};
-      for (const student of top3) {
-        const file = await getStudentImage(student.name);
+      for (const item of top3) {
+        const file = await getStudentImage(item.student.name);
         if (file) {
-          images[student.name] = URL.createObjectURL(file);
+          images[item.student.name] = URL.createObjectURL(file);
         }
       }
       setStudentImages(images);
     };
     loadImages();
-  }, [results]);
+  }, [rankedResults]);
 
-  const top3 = results.slice(0, 3);
+  const top3 = rankedResults.slice(0, 3);
 
   // Reorder top 3 to put 1st place in the middle: [2nd, 1st, 3rd]
   const displayTop3 = [];
-  if (top3.length > 1) displayTop3.push({ student: top3[1], rank: 2 });
-  if (top3.length > 0) displayTop3.push({ student: top3[0], rank: 1 });
-  if (top3.length > 2) displayTop3.push({ student: top3[2], rank: 3 });
+  if (top3.length > 1) displayTop3.push({ student: top3[1].student, rank: top3[1].rank });
+  if (top3.length > 0) displayTop3.push({ student: top3[0].student, rank: top3[0].rank });
+  if (top3.length > 2) displayTop3.push({ student: top3[2].student, rank: top3[2].rank });
 
   // Generate the chapter/topic string
   const chapterTopicString = chapters.map(c => c.name).join(' · ');
@@ -7863,12 +7985,12 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
               fontSize: `${cardScale}px` 
             }}
           >
-            {results.map((student, index) => (
-              <div key={`${student.name}-${index}`} className="w-full h-full">
+            {rankedResults.map(({ student, rank, score }) => (
+              <div key={`${student.name}-${rank}`} className="w-full h-full">
                 <StudentRankCard 
                   student={student} 
-                  index={index} 
-                  score={calculateScore(student)}
+                  rank={rank} 
+                  score={score}
                   chapters={chapters} 
                 />
               </div>
@@ -8271,27 +8393,45 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
   
   const calculateScore = (student: OMRResult) => (student.right * 4) - student.wrong;
 
-  const results = files
+  const sortedResults = files
     .filter(f => f.result)
     .map(f => f.result!)
-    .sort((a, b) => calculateScore(b) - calculateScore(a)); // Sort by highest score
+    .sort((a, b) => {
+      const scoreDiff = calculateScore(b) - calculateScore(a);
+      return scoreDiff !== 0 ? scoreDiff : a.name.localeCompare(b.name);
+    }); // Sort by highest score
 
-  const filteredResults = results.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const rankedResults = sortedResults.reduce(
+    (acc, student, index) => {
+      const score = calculateScore(student);
+      const previous = acc[index - 1];
+      const rank = previous
+        ? previous.score === score
+          ? previous.rank
+          : previous.rank + 1
+        : 1;
+      acc.push({ student, score, rank });
+      return acc;
+    },
+    [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
+  );
+
+  const filteredResults = rankedResults.filter(r => r.student.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
   useEffect(() => {
     const loadImages = async () => {
-      const top3 = results.slice(0, 3);
+      const top3 = rankedResults.slice(0, 3);
       const images: Record<string, string> = {};
-      for (const student of top3) {
-        const file = await getStudentImage(student.name);
+      for (const item of top3) {
+        const file = await getStudentImage(item.student.name);
         if (file) {
-          images[student.name] = URL.createObjectURL(file);
+          images[item.student.name] = URL.createObjectURL(file);
         }
       }
       setStudentImages(images);
     };
     loadImages();
-  }, [results]);
+  }, [rankedResults]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0] && selectedStudentForImage) {
@@ -8367,9 +8507,9 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
             No students found matching your search.
           </div>
         ) : (
-          filteredResults.map((student, mapIndex) => {
+          filteredResults.map(({ student, rank }, mapIndex) => {
             // Find original global index for proper styling of top 3
-            const index = results.findIndex(r => r.name === student.name);
+            const index = rankedResults.findIndex(r => r.student.name === student.name);
             const isTop3 = index < 3;
             
             let cardBg = 'bg-white border-gray-200';
@@ -8390,12 +8530,12 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
 
             return (
               <div 
-                key={`${student.name}-${index}`}
+                key={`${student.name}-${rank}`}
                 onClick={() => onStudentClick(student)}
                 className={`relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${cardBg} ${spanClass}`}
               >
                 <div className={`absolute top-0 right-0 bg-black/5 px-4 py-1.5 rounded-bl-xl font-black text-lg ${rankColor}`}>
-                  #{index + 1}
+                  #{rank}
                 </div>
 
                 <div className={`flex items-center gap-4 mb-4 ${index === 0 ? 'md:flex-col md:items-start md:gap-6' : ''}`}>
@@ -9573,20 +9713,2447 @@ export default function AutoCropTool({ apiKeys, liteModel, onBack }: AutoCropToo
 
 --- END OF FILE src/components/lab/AutoCropTool.tsx ---
 
+--- START OF FILE src/components/lab/atr-list/AIConfirmation.tsx ---
+import React, { useEffect, useMemo, useState } from 'react';
+import { X, CheckCircle2 } from 'lucide-react';
+
+interface AIConfirmationProps {
+  isOpen: boolean;
+  proposedResolutions: Record<string, string>;
+  officialNames: string[];
+  onClose: () => void;
+  onConfirm: (updatedResolutions: Record<string, string>) => void;
+}
+
+export function AIConfirmation({
+  isOpen,
+  proposedResolutions,
+  officialNames,
+  onClose,
+  onConfirm,
+}: AIConfirmationProps) {
+  const [workingResolutions, setWorkingResolutions] = useState<Record<string, string>>(proposedResolutions);
+
+  useEffect(() => {
+    setWorkingResolutions(proposedResolutions);
+  }, [proposedResolutions, isOpen]);
+
+  const availableNames = useMemo(() => {
+    return Array.from(new Set([...officialNames, ...Object.values(proposedResolutions)])).sort((a, b) => a.localeCompare(b));
+  }, [officialNames, proposedResolutions]);
+
+  if (!isOpen) return null;
+
+  const updateResolution = (rawName: string, canonicalName: string) => {
+    setWorkingResolutions(prev => ({ ...prev, [rawName]: canonicalName }));
+  };
+
+  const handleConfirm = () => {
+    onConfirm(workingResolutions);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Confirm AI Name Matches</h2>
+            <p className="text-sm text-gray-500 mt-1">Review and adjust the AI-suggested mappings before saving.</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto p-6 space-y-4 flex-1">
+          <div className="text-sm text-gray-600">
+            The AI has proposed matches for your raw names. Edit any suggestion by choosing a different official name or keeping the raw name.
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {Object.keys(workingResolutions).sort((a, b) => a.localeCompare(b)).map(rawName => (
+              <div key={rawName} className="rounded-2xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+                <div className="text-xs uppercase tracking-wide text-gray-500">Raw name</div>
+                <div className="font-semibold text-gray-900">{rawName}</div>
+                <div className="space-y-2">
+                  <label className="text-xs uppercase tracking-wide text-gray-500">Suggested match</label>
+                  <select
+                    value={workingResolutions[rawName] || rawName}
+                    onChange={e => updateResolution(rawName, e.target.value)}
+                    className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  >
+                    <option value={rawName}>{rawName}</option>
+                    {availableNames.map(name => (
+                      <option key={name} value={name}>{name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="border-t border-gray-100 p-6 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+          <div className="text-sm text-gray-500">
+            Tip: choose the official name that best matches the attendance list if the AI suggestion looks wrong.
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <button
+              onClick={onClose}
+              className="px-5 py-3 rounded-2xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirm}
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Confirm AI Matches
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/atr-list/AIConfirmation.tsx ---
+
+--- START OF FILE src/components/lab/atr-list/AISettings.tsx ---
+import React, { useState, useEffect } from 'react';
+import { X, Settings, RefreshCw, Save, Upload } from 'lucide-react';
+import { GoogleGenAI } from '@google/genai';
+import * as XLSX from 'xlsx';
+
+interface AISettingsProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const defaultNameList = `ADIL MARZOOQUE, ADISANKAR, ADITHYA RAJ, ADWAID, AHAMED IRFAN K, AHAMED JUNAID, AHLAM HASAN K, AMAL CHANDRA N, ANJANA K, ANSHIA P, ANSILA KADOORAN, APARNA C, ARSHA FATHIMA M, ARSHIN PC, ASWATHY E, ATHUL VB, AVANI PS, AZAL MHD, DIYA AK, DIYA MEHRIN K, DIYA V, FAHMA VP, FARHA P, FATHIMA FIZA M, FATHIMA HIBA PP, FATHIMA HUDA N, FATHIMA LIYA A, FATHIMA MINHA PE, FATHIMA MISBHA VA, FATHIMA NASHA, FATHIMA RIFNA A, FATHIMA SHAHNA PK, FIDA THASNIM, GOURI NANDA C, HAMNA FATHIMA, HANIYYA V, HASNA SHARI VP, HIBA FATHIMA KP, HIBA FATHIMA PA, HISHAM MHD, KRISHNA PRIYA PC, LASIN ABDULLA, LISNA K, LIYA FATHIMA A, MAJID A, MAZIN MHD, MHD ADNAN K, MHD AHANN TK, MHD ANAS P, MHD ANFAS TK, MHD ASHFAQUE, MHD DANISH, MHD DIYAN, MHD FAIROOZ, MHD FARHAN K, MHD FATHIN ALI, MHD LIYAN P, MHD MUFLIH A, MHD NAJADH, MHD RAZAL T, MHD RISHAN P, MHD SABITH P, MHD SABITH TK, MHD SADHIL V, MHD SHAFEEQ KK, MHD SHAHABAS K, MHD SINAN A, MILHA RAZACK A, MINHA PK, MISHAL AHAMED, NAIRA ABDUL LATHEEF, NAJIYA NASRIN C, NASHA FATHIMA P, NIDHA FATHIMA K, NIDHA SHIRIN N, NITHIN RAJ, RAJEEBA K, RANA FATHIMA K, REHAN ABDUL RAHEEM, REVATHY K, RIDHA K, RIFA CP, RIFA P, RINSHA JALIDHA P, RINSHA SHERIN T, RIYA SUNEER, SHABANA JASMIN, SILNA FATHIMA, SITHARA BASHEER P, SIYA TP, THANHA FATHIMA`;
+
+export function AISettings({ isOpen, onClose }: AISettingsProps) {
+  const [apiKey, setApiKey] = useState('');
+  const [modelName, setModelName] = useState('gemini-3.1-flash-preview');
+  const [nameList, setNameList] = useState(defaultNameList);
+  const [batchSize, setBatchSize] = useState(20);
+  const [models, setModels] = useState<string[]>([]);
+  const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  useEffect(() => {
+    const savedKey = localStorage.getItem('aims_ai_api_key') || '';
+    const savedModel = localStorage.getItem('aims_ai_model') || 'gemini-3.1-flash-preview';
+    const savedList = localStorage.getItem('aims_ai_name_list') || defaultNameList;
+    const savedBatch = parseInt(localStorage.getItem('aims_ai_batch_size') || '20', 10);
+    
+    setApiKey(savedKey);
+    setModelName(savedModel);
+    setNameList(savedList);
+    setBatchSize(Number.isNaN(savedBatch) || savedBatch < 1 ? 20 : savedBatch);
+  }, [isOpen]);
+
+  const fetchModels = async () => {
+    if (!apiKey) {
+      setError('Please enter an API key first.');
+      return;
+    }
+    setIsFetching(true);
+    setError('');
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'Failed to fetch models');
+      }
+
+      if (data.models) {
+        const modelNames = data.models
+          .filter((m: any) => m.name.includes('gemini'))
+          .map((m: any) => m.name.replace('models/', ''));
+        setModels(modelNames);
+        if (modelNames.length > 0 && !modelNames.includes(modelName)) {
+          setModelName(modelNames[0]);
+        }
+      } else {
+        throw new Error('No models found');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to fetch models');
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  const handleSave = () => {
+    localStorage.setItem('aims_ai_api_key', apiKey);
+    localStorage.setItem('aims_ai_model', modelName);
+    localStorage.setItem('aims_ai_name_list', nameList);
+    localStorage.setItem('aims_ai_batch_size', String(batchSize));
+    onClose();
+  };
+
+  const handleAttendanceSheetUpload = async (file: File) => {
+    setIsUploading(true);
+    setError('');
+    try {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json<any>(worksheet);
+          
+          // Try to find name column - common variations
+          const possibleColumns = ['NAME', 'STUDENT NAME', 'STUDENT_NAME', 'FULL NAME', 'FULL_NAME', 'NAME'];
+          let nameColumn = '';
+          
+          // Check headers
+          if (json.length > 0) {
+            const firstRow = json[0];
+            const headers = Object.keys(firstRow).map(k => k.trim().toUpperCase());
+            
+            for (const col of possibleColumns) {
+              if (headers.includes(col)) {
+                nameColumn = Object.keys(firstRow).find(k => k.trim().toUpperCase() === col) || '';
+                break;
+              }
+            }
+          }
+          
+          if (!nameColumn) {
+            // Try to find a column that looks like names
+            if (json.length > 0) {
+              const firstRow = json[0];
+              for (const [key, value] of Object.entries(firstRow)) {
+                if (typeof value === 'string' && value.trim().length > 0) {
+                  // Check if it looks like a name (contains spaces or is alphabetic)
+                  const val = value.trim();
+                  if (val.includes(' ') || /^[A-Z\s]+$/i.test(val)) {
+                    nameColumn = key;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+          
+          if (!nameColumn) {
+            throw new Error('Could not find a name column in the attendance sheet. Please ensure the file has a column with student names.');
+          }
+          
+          // Extract names
+          const names = json
+            .map((row: any) => row[nameColumn])
+            .filter((name: any) => name && typeof name === 'string')
+            .map((name: string) => name.trim().toUpperCase())
+            .filter((name: string) => name.length > 0);
+          
+          if (names.length === 0) {
+            throw new Error('No valid names found in the attendance sheet.');
+          }
+          
+          // Remove duplicates and sort
+          const uniqueNames = Array.from(new Set(names)).sort();
+          const nameListString = uniqueNames.join(', ');
+          
+          setNameList(nameListString);
+          setError(`Successfully imported ${uniqueNames.length} names from attendance sheet.`);
+        } catch (error: any) {
+          setError('Failed to parse attendance sheet: ' + error.message);
+        } finally {
+          setIsUploading(false);
+        }
+      };
+      reader.onerror = () => {
+        setError('Failed to read the file.');
+        setIsUploading(false);
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (error: any) {
+      setError('Failed to process file: ' + error.message);
+      setIsUploading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <Settings className="w-5 h-5 text-blue-600" />
+            <h2 className="text-xl font-bold text-gray-900">AI Matching Settings</h2>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+          {error && (
+            <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Gemini API Key</label>
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="AIzaSy..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-700">Model Name</label>
+              <button 
+                onClick={fetchModels}
+                disabled={isFetching}
+                className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+              >
+                <RefreshCw className={`w-3 h-3 ${isFetching ? 'animate-spin' : ''}`} />
+                Fetch Models
+              </button>
+            </div>
+            {models.length > 0 ? (
+              <select
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                {models.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">AI Batch Size</label>
+            <input
+              type="number"
+              min={1}
+              value={batchSize}
+              onChange={(e) => setBatchSize(Math.max(1, Number(e.target.value) || 1))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+            <p className="text-xs text-gray-500">Split raw names into smaller AI batches to reduce latency and improve reliability.</p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Master Name List (Attendance Sheet)</label>
+            <div className="flex gap-2">
+              <input
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    handleAttendanceSheetUpload(file);
+                  }
+                }}
+                className="hidden"
+                id="attendance-upload"
+                disabled={isUploading}
+              />
+              <label
+                htmlFor="attendance-upload"
+                className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 cursor-pointer transition-colors text-sm"
+              >
+                {isUploading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4" />
+                )}
+                {isUploading ? 'Importing...' : 'Import from Excel'}
+              </label>
+              <span className="text-xs text-gray-500 self-center">Upload attendance sheet to auto-populate names</span>
+            </div>
+            <textarea
+              value={nameList}
+              onChange={(e) => setNameList(e.target.value)}
+              rows={8}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm"
+              placeholder="Comma separated list of official names..."
+            />
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-gray-100 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg font-medium transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            <Save className="w-4 h-4" />
+            Save Settings
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/atr-list/AISettings.tsx ---
+
+--- START OF FILE src/components/lab/atr-list/ATRList.tsx ---
+import React, { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
+import { Setup } from './Setup';
+import { ManualMerge } from './ManualMerge';
+import { DuplicateResolver } from './DuplicateResolver';
+import { Results } from './Results';
+import { AISettings, defaultNameList } from './AISettings';
+import { AIConfirmation } from './AIConfirmation';
+import { AttendanceMatcher } from './AttendanceMatcher';
+import { ExamFile, SubjectType, RawRecord, ProcessedRecord, StudentState, DayResult, Top20Entry } from './types';
+import { GoogleGenAI, Type } from '@google/genai';
+import { Settings, Zap, FileText, ArrowLeft } from 'lucide-react';
+
+type Step = 'setup' | 'manual_merge' | 'resolve_duplicates' | 'results';
+
+interface ATRListProps {
+  onBack: () => void;
+}
+
+export default function ATRList({ onBack }: ATRListProps) {
+  const [step, setStep] = useState<Step>('setup');
+  const [exams, setExams] = useState<ExamFile[]>([]);
+  const [rightMarks, setRightMarks] = useState(4);
+  const [wrongMarks, setWrongMarks] = useState(1);
+
+  const [rawNames, setRawNames] = useState<string[]>([]);
+  const [pendingGroups, setPendingGroups] = useState<{ key: string; rawNames: string[] }[]>([]);
+  const [resolutions, setResolutions] = useState<Record<string, string>>({});
+  const [results, setResults] = useState<DayResult[]>([]);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isMatchingAI, setIsMatchingAI] = useState(false);
+  const [aiProposals, setAIProposals] = useState<Record<string, string> | null>(null);
+  const [isAIConfirmationOpen, setIsAIConfirmationOpen] = useState(false);
+  const [aiOfficialNames, setAIOfficialNames] = useState<string[]>([]);
+  const [isAttendanceMatcherOpen, setIsAttendanceMatcherOpen] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('aims_name_resolutions');
+    if (saved) {
+      try {
+        setResolutions(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to parse saved resolutions');
+      }
+    }
+  }, []);
+
+  const getCanonicalKey = (name: string) => {
+    const parts = name.trim().toUpperCase().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0]} ${parts[1]}`;
+    }
+    return parts[0];
+  };
+
+  const normalizeName = (name: string) =>
+    name
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9 ]+/g, '')
+      .replace(/\s+/g, ' ');
+
+  const getNameParts = (name: string) => normalizeName(name).split(' ').filter(Boolean);
+
+  const longestCommonSubstring = (a: string, b: string) => {
+    const n = a.length;
+    const m = b.length;
+    const dp: number[][] = Array.from({ length: n + 1 }, () => Array(m + 1).fill(0));
+    let best = 0;
+    for (let i = 1; i <= n; i += 1) {
+      for (let j = 1; j <= m; j += 1) {
+        if (a[i - 1] === b[j - 1]) {
+          dp[i][j] = dp[i - 1][j - 1] + 1;
+          best = Math.max(best, dp[i][j]);
+        }
+      }
+    }
+    return best;
+  };
+
+  const guessLogicMatch = (rawName: string, officialNames: string[]) => {
+    const rawNorm = normalizeName(rawName);
+    const rawParts = getNameParts(rawNorm);
+    if (rawParts.length === 0) return null;
+
+    const rawFirst = rawParts[0] || '';
+    const rawSecond = rawParts[1] || '';
+    const rawConcat = rawParts.join('');
+
+    let bestMatch: { name: string; score: number } | null = null;
+
+    for (const officialName of officialNames) {
+      const offNorm = normalizeName(officialName);
+      if (rawNorm === offNorm) continue;
+
+      const offParts = getNameParts(offNorm);
+      const offFirst = offParts[0] || '';
+      const offSecond = offParts[1] || '';
+      const offConcat = offParts.join('');
+
+      let score = 0;
+      if (rawSecond && offSecond && rawSecond === offSecond) score += 35;
+      if (rawFirst && offFirst && rawFirst === offFirst) score += 20;
+      if (rawFirst?.[0] && offFirst?.[0] && rawFirst[0] === offFirst[0]) score += 10;
+      if (rawSecond && offSecond && rawSecond[0] === offSecond[0]) score += 5;
+      if (rawFirst === offFirst && rawSecond && offSecond && rawSecond[0] === offSecond[0]) score += 15;
+      const lcs = longestCommonSubstring(rawConcat, offConcat);
+      if (lcs >= 4) score += lcs * 3;
+      if (offNorm.includes(rawNorm) || rawNorm.includes(offNorm)) score += 10;
+
+      if (!bestMatch || score > bestMatch.score || (score === bestMatch.score && offNorm.length < normalizeName(bestMatch.name).length)) {
+        bestMatch = { name: officialName, score };
+      }
+    }
+
+    return bestMatch && bestMatch.score >= 45 ? bestMatch.name : null;
+  };
+
+  const chunkArray = <T,>(items: T[], size: number): T[][] => {
+    const chunks: T[][] = [];
+    for (let i = 0; i < items.length; i += size) {
+      chunks.push(items.slice(i, i + size));
+    }
+    return chunks;
+  };
+
+  const handleProcess = async (selectedExams: ExamFile[], right: number, wrong: number) => {
+    setExams(selectedExams);
+    setRightMarks(right);
+    setWrongMarks(wrong);
+
+    // 1. Read all files
+    const parsedExams: ExamFile[] = [];
+    const allRawNames = new Set<string>();
+
+    for (const exam of selectedExams) {
+      const data = await readExcelFile(exam.file);
+      parsedExams.push({ ...exam, data });
+
+      data.forEach(row => {
+        if (row.NAME) {
+          allRawNames.add(row.NAME.trim().toUpperCase());
+        }
+      });
+    }
+
+    setExams(parsedExams);
+    setRawNames(Array.from(allRawNames));
+
+    // 2. Group names to find duplicates using current canonical names
+    const groups = new Map<string, Set<string>>();
+    allRawNames.forEach(rawName => {
+      const currentCanonical = resolutions[rawName] || rawName;
+      const key = getCanonicalKey(currentCanonical);
+      if (!groups.has(key)) {
+        groups.set(key, new Set());
+      }
+      groups.get(key)!.add(currentCanonical);
+    });
+
+    // 3. Find groups that need resolution
+    const needsResolution: { key: string; rawNames: string[] }[] = [];
+    groups.forEach((namesSet, key) => {
+      if (namesSet.size > 1) {
+        const names = Array.from(namesSet);
+        // Check if all names in this group are already resolved
+        const allResolved = names.every(name => resolutions[name] !== undefined);
+        if (!allResolved) {
+          needsResolution.push({ key, rawNames: names });
+        }
+      }
+    });
+
+    if (needsResolution.length > 0) {
+      setPendingGroups(needsResolution);
+      setStep('resolve_duplicates');
+    } else {
+      handleResolutionComplete({});
+    }
+  };
+
+  const handleResolutionComplete = (newResolutions: Record<string, string>) => {
+    const combinedResolutions = { ...resolutions, ...newResolutions };
+
+    // Auto-resolve singletons
+    rawNames.forEach(rawName => {
+      if (!combinedResolutions[rawName]) {
+        combinedResolutions[rawName] = rawName;
+      }
+    });
+
+    setResolutions(combinedResolutions);
+    localStorage.setItem('aims_name_resolutions', JSON.stringify(combinedResolutions));
+
+    // Move to manual merge step
+    setStep('manual_merge');
+  };
+
+  const handleManualMergeComplete = (mergedResolutions: Record<string, string>) => {
+    const combinedResolutions = { ...resolutions, ...mergedResolutions };
+    setResolutions(combinedResolutions);
+    localStorage.setItem('aims_name_resolutions', JSON.stringify(combinedResolutions));
+
+    calculateResults(exams, combinedResolutions, rightMarks, wrongMarks);
+  };
+
+  const handleAIMatch = async () => {
+    const apiKey = localStorage.getItem('aims_ai_api_key');
+    const modelName = localStorage.getItem('aims_ai_model') || 'gemini-3.1-flash-preview';
+    const nameList = localStorage.getItem('aims_ai_name_list') || defaultNameList;
+    const batchSize = Math.max(1, parseInt(localStorage.getItem('aims_ai_batch_size') || '20', 10));
+
+    if (!apiKey) {
+      alert("Please configure AI settings first by clicking the settings icon in the header.");
+      setIsSettingsOpen(true);
+      return;
+    }
+
+    if (rawNames.length === 0) {
+      alert('No raw names are available for AI matching. Process exam files first.');
+      return;
+    }
+
+    setIsMatchingAI(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const officialNames = Array.from(
+        new Set([
+          ...nameList.split(',').map(name => name.trim()).filter(Boolean),
+          ...rawNames
+        ])
+      ).sort((a, b) => a.localeCompare(b));
+
+      const batches = chunkArray(rawNames, batchSize);
+      const allChanged: Record<string, string> = {};
+
+      for (const batch of batches) {
+        const currentResolutions = batch.map(rawName => {
+          const resolved = resolutions[rawName] || rawName;
+          return `${rawName}: ${resolved}`;
+        }).join('\n');
+
+        const prompt = `You are an expert at matching student names.
+I have a master list of official student names:
+${nameList}
+
+I have a batch of raw names extracted from exam sheets:
+${batch.join(', ')}
+
+Current resolved names for this batch are:
+${currentResolutions}
+
+For each raw name in this batch, choose the best matching canonical name from the master list.
+Only return a JSON object containing entries for raw names where the final canonical name should be different from the raw name.
+Do not include unchanged names.
+Return only valid JSON without extra text.`;
+
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+              type: Type.OBJECT,
+              description: "A dictionary mapping only changed raw names to official names.",
+              additionalProperties: {
+                type: Type.STRING
+              }
+            }
+          }
+        });
+
+        if (response.text) {
+          const mapping = JSON.parse(response.text.trim());
+          Object.entries(mapping).forEach(([rawName, canonicalName]) => {
+            if (!rawName) return;
+            const normalized = String(canonicalName).trim();
+            if (normalized && normalized !== rawName) {
+              allChanged[rawName] = normalized;
+            }
+          });
+        }
+      }
+
+      if (Object.keys(allChanged).length === 0) {
+        setAIProposals(null);
+        alert('AI completed matching and found no changed mappings.');
+      } else {
+        setAIOfficialNames(officialNames);
+        setAIProposals(allChanged);
+        setIsAIConfirmationOpen(true);
+      }
+    } catch (error: any) {
+      console.error(error);
+      alert("AI Matching failed: " + error.message);
+    } finally {
+      setIsMatchingAI(false);
+    }
+  };
+
+  const handleLogicMatch = () => {
+    const nameList = localStorage.getItem('aims_ai_name_list') || defaultNameList;
+    const officialNames = Array.from(
+      new Set([
+        ...nameList.split(',').map(name => name.trim()).filter(Boolean),
+        ...Object.values(resolutions),
+        ...rawNames
+      ])
+    ).sort((a, b) => a.localeCompare(b));
+
+    const changedMatches: Record<string, string> = {};
+
+    rawNames.forEach(rawName => {
+      const currentCanonical = resolutions[rawName] || rawName;
+      const guess = guessLogicMatch(rawName, officialNames);
+      if (guess && guess !== currentCanonical) {
+        changedMatches[rawName] = guess;
+      }
+    });
+
+    if (Object.keys(changedMatches).length === 0) {
+      alert('Logic matching found no changed mappings.');
+      return;
+    }
+
+    setAIOfficialNames(officialNames);
+    setAIProposals(changedMatches);
+    setIsAIConfirmationOpen(true);
+  };
+
+  const handleFixWithAttendance = () => {
+    const nameList = localStorage.getItem('aims_ai_name_list') || defaultNameList;
+    if (!nameList.trim()) {
+      alert('Please configure the attendance sheet names in AI settings first.');
+      setIsSettingsOpen(true);
+      return;
+    }
+
+    const officialNames = nameList.split(',').map(name => name.trim()).filter(Boolean);
+    if (officialNames.length === 0) {
+      alert('No names found in attendance sheet. Please add names in AI settings.');
+      setIsSettingsOpen(true);
+      return;
+    }
+
+    setAIOfficialNames(officialNames);
+    setIsAttendanceMatcherOpen(true);
+  };
+
+  const handleConfirmAIMapping = (updatedMappings: Record<string, string>) => {
+    const combinedResolutions = { ...resolutions, ...updatedMappings };
+    setResolutions(combinedResolutions);
+    localStorage.setItem('aims_name_resolutions', JSON.stringify(combinedResolutions));
+    setAIProposals(null);
+    setIsAIConfirmationOpen(false);
+    alert('AI matches confirmed. You can continue reviewing or merge manually.');
+  };
+
+  const handleCancelAIMapping = () => {
+    setAIProposals(null);
+    setIsAIConfirmationOpen(false);
+  };
+
+  const handleAttendanceMatcherConfirm = (newResolutions: Record<string, string>) => {
+    const combinedResolutions = { ...resolutions, ...newResolutions };
+    setResolutions(combinedResolutions);
+    localStorage.setItem('aims_name_resolutions', JSON.stringify(combinedResolutions));
+    setIsAttendanceMatcherOpen(false);
+    alert(`Successfully matched ${Object.keys(newResolutions).length} names with attendance sheet.`);
+  };
+
+  const readExcelFile = (file: File): Promise<RawRecord[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const json = XLSX.utils.sheet_to_json<any>(worksheet);
+
+          // Normalize column names to uppercase and trim spaces
+          const normalized = json.map(row => {
+            const norm: any = {};
+            Object.keys(row).forEach(k => {
+              norm[k.trim().toUpperCase()] = row[k];
+            });
+            return norm as RawRecord;
+          });
+
+          resolve(normalized);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const calculateResults = (
+    parsedExams: ExamFile[],
+    currentResolutions: Record<string, string>,
+    rightM: number,
+    wrongM: number
+  ) => {
+    const students: Record<string, StudentState> = {};
+    const dayResults: DayResult[] = [];
+    let previousTop20: Set<string> = new Set();
+
+    parsedExams.forEach((exam, examIndex) => {
+      const isMZB = ['Maths', 'Zoology', 'Botany'].includes(exam.subject);
+
+      // Process current exam data
+      const currentExamScores = new Map<string, number>();
+
+      exam.data?.forEach(row => {
+        if (!row.NAME) return;
+        const rawName = row.NAME.trim().toUpperCase();
+        const canonicalName = currentResolutions[rawName] || rawName;
+
+        const right = Number(row.RIGHT) || 0;
+        const wrong = Number(row.WRONG) || 0;
+        const score = (right * rightM) - (wrong * wrongM);
+
+        currentExamScores.set(canonicalName, score);
+      });
+
+      // Update student states
+      Object.keys(students).forEach(canonicalName => {
+        const student = students[canonicalName];
+        const attendedToday = currentExamScores.has(canonicalName);
+        const wasAbsentYesterday = examIndex > 0 && student.lastAttendedExamIndex < examIndex - 1;
+
+        if (!isMZB && wasAbsentYesterday) {
+          // Reset score history if absent yesterday and today is not MZB
+          student.scores = [];
+        }
+      });
+
+      // Add new scores and update attendance
+      currentExamScores.forEach((score, canonicalName) => {
+        if (!students[canonicalName]) {
+          students[canonicalName] = {
+            canonicalName,
+            scores: [],
+            totalExamsAttended: 0,
+            lastAttendedExamIndex: -1,
+            hatTricks: 0,
+            consecutiveTop20: 0,
+            currentAverage: 0
+          };
+        }
+
+        const student = students[canonicalName];
+        student.scores.push(score);
+        student.totalExamsAttended++;
+        student.lastAttendedExamIndex = examIndex;
+      });
+
+      // Calculate averages
+      const currentRankings: StudentState[] = Object.values(students)
+        .filter(s => s.scores.length > 0) // Only rank students with active scores
+        .map(s => {
+          const sum = s.scores.reduce((a, b) => a + b, 0);
+          s.currentAverage = sum / s.scores.length;
+          return s;
+        })
+        .sort((a, b) => b.currentAverage - a.currentAverage);
+
+      // Take Top N (Day 1: Top 10, Day 2+: Top 20)
+      const limit = examIndex === 0 ? 10 : 20;
+      const topN = currentRankings.slice(0, limit);
+      const currentTopNSet = new Set(topN.map(s => s.canonicalName));
+
+      // Update Hat-tricks and Consecutive counts
+      Object.values(students).forEach(student => {
+        if (currentTopNSet.has(student.canonicalName)) {
+          student.consecutiveTop20++;
+          if (student.consecutiveTop20 > 0 && student.consecutiveTop20 % 3 === 0) {
+            student.hatTricks++;
+          }
+        } else {
+          student.consecutiveTop20 = 0;
+        }
+      });
+
+      // Determine Added/Removed status
+      const topNEntries: Top20Entry[] = topN.map((student, idx) => {
+        let status: 'added' | 'removed' | 'same' = 'same';
+        if (examIndex > 0 && !previousTop20.has(student.canonicalName)) {
+          status = 'added';
+        }
+        return { ...student, rank: idx + 1, status };
+      });
+
+      const removedEntries: Top20Entry[] = [];
+      if (examIndex > 0) {
+        previousTop20.forEach(canonicalName => {
+          if (!currentTopNSet.has(canonicalName)) {
+            const student = students[canonicalName];
+            if (student) {
+              removedEntries.push({ ...student, rank: 0, status: 'removed' });
+            }
+          }
+        });
+      }
+
+      dayResults.push({
+        examId: exam.id,
+        examName: exam.name,
+        top20: topNEntries,
+        removed: removedEntries.sort((a, b) => b.currentAverage - a.currentAverage)
+      });
+
+      previousTop20 = currentTopNSet;
+    });
+
+    setResults(dayResults);
+    setStep('results');
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10 print:hidden">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">A</span>
+            </div>
+            <span className="font-bold text-xl tracking-tight text-gray-900">ATR List</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+              title="AI Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+            {step !== 'setup' && (
+              <button
+                onClick={() => {
+                  setStep('setup');
+                  setExams([]);
+                  setResults([]);
+                  setPendingGroups([]);
+                  setRawNames([]);
+                }}
+                className="text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+              >
+                Start Over
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="py-8">
+        {step === 'setup' && (
+          <Setup onProcess={handleProcess} />
+        )}
+
+        {step === 'manual_merge' && (
+          <div className="space-y-4 max-w-4xl mx-auto">
+            <div className="flex flex-wrap justify-end gap-3 px-6">
+              <button
+                onClick={handleAIMatch}
+                disabled={isMatchingAI}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-purple-400 transition-colors font-medium shadow-sm"
+              >
+                {isMatchingAI ? (
+                  <span className="animate-pulse">Matching with AI...</span>
+                ) : (
+                  <>
+                    <Settings className="w-4 h-4" />
+                    Auto-Match with AI
+                  </>
+                )}
+              </button>
+              <button
+                onClick={handleLogicMatch}
+                disabled={isMatchingAI}
+                className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:bg-yellow-300 transition-colors font-medium shadow-sm"
+              >
+                <Zap className="w-4 h-4" />
+                Logic Match
+              </button>
+              <button
+                onClick={handleFixWithAttendance}
+                disabled={isMatchingAI}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-green-400 transition-colors font-medium shadow-sm"
+              >
+                <FileText className="w-4 h-4" />
+                Fix with Attendance
+              </button>
+            </div>
+            <ManualMerge
+              rawNames={rawNames}
+              initialResolutions={resolutions}
+              onComplete={handleManualMergeComplete}
+            />
+          </div>
+        )}
+
+        {step === 'resolve_duplicates' && (
+          <DuplicateResolver
+            groups={pendingGroups}
+            onResolve={handleResolutionComplete}
+          />
+        )}
+
+        {step === 'results' && (
+          <Results results={results} />
+        )}
+      </main>
+
+      {aiProposals && (
+        <AIConfirmation
+          isOpen={isAIConfirmationOpen}
+          proposedResolutions={aiProposals}
+          officialNames={aiOfficialNames}
+          onClose={handleCancelAIMapping}
+          onConfirm={handleConfirmAIMapping}
+        />
+      )}
+
+      <AISettings
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
+
+      <AttendanceMatcher
+        isOpen={isAttendanceMatcherOpen}
+        onClose={() => setIsAttendanceMatcherOpen(false)}
+        rawNames={rawNames}
+        attendanceNames={aiOfficialNames}
+        currentResolutions={resolutions}
+        onConfirm={handleAttendanceMatcherConfirm}
+      />
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/atr-list/ATRList.tsx ---
+
+--- START OF FILE src/components/lab/atr-list/AttendanceMatcher.tsx ---
+import React, { useState, useMemo } from 'react';
+import { X, Search, CheckCircle2, ArrowRight } from 'lucide-react';
+
+interface AttendanceMatcherProps {
+  isOpen: boolean;
+  onClose: () => void;
+  rawNames: string[];
+  attendanceNames: string[];
+  currentResolutions: Record<string, string>;
+  onConfirm: (newResolutions: Record<string, string>) => void;
+}
+
+export function AttendanceMatcher({
+  isOpen,
+  onClose,
+  rawNames,
+  attendanceNames,
+  currentResolutions,
+  onConfirm,
+}: AttendanceMatcherProps) {
+  const [selectedRawName, setSelectedRawName] = useState<string | null>(null);
+  const [searchRaw, setSearchRaw] = useState('');
+  const [searchAttendance, setSearchAttendance] = useState('');
+  const [tempResolutions, setTempResolutions] = useState<Record<string, string>>({});
+
+  // Find unmatched raw names (not in attendance sheet)
+  const unmatchedRawNames = useMemo(() => {
+    const attendanceSet = new Set(attendanceNames.map(name => name.toUpperCase()));
+    
+    return rawNames.filter(rawName => {
+      const currentCanonical = currentResolutions[rawName] || rawName;
+      return !attendanceSet.has(currentCanonical.toUpperCase());
+    }).sort((a, b) => a.localeCompare(b));
+  }, [rawNames, attendanceNames, currentResolutions]);
+
+  const filteredRawNames = unmatchedRawNames.filter(name =>
+    name.toLowerCase().includes(searchRaw.toLowerCase())
+  );
+
+  const filteredAttendanceNames = attendanceNames.filter(name =>
+    name.toLowerCase().includes(searchAttendance.toLowerCase())
+  );
+
+  const handleMatch = (attendanceName: string) => {
+    if (!selectedRawName) return;
+    
+    setTempResolutions(prev => ({
+      ...prev,
+      [selectedRawName]: attendanceName
+    }));
+    
+    // Move to next unmatched name
+    const currentIndex = filteredRawNames.indexOf(selectedRawName);
+    if (currentIndex < filteredRawNames.length - 1) {
+      setSelectedRawName(filteredRawNames[currentIndex + 1]);
+    } else {
+      setSelectedRawName(null);
+    }
+  };
+
+  const handleConfirm = () => {
+    onConfirm(tempResolutions);
+    onClose();
+  };
+
+  const getResolvedName = (rawName: string) => {
+    return tempResolutions[rawName] || currentResolutions[rawName] || rawName;
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Match Names with Attendance Sheet</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Select unmatched names on the left and match them with attendance sheet names on the right.
+              {unmatchedRawNames.length} unmatched names found.
+            </p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-hidden">
+          <div className="grid grid-cols-2 gap-6 p-6 h-full">
+            {/* Left side: Unmatched raw names */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Unmatched Names</h3>
+                <div className="relative">
+                  <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search unmatched names..."
+                    value={searchRaw}
+                    onChange={e => setSearchRaw(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="max-h-96 overflow-y-auto">
+                  {filteredRawNames.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">
+                      {unmatchedRawNames.length === 0 ? 'All names are matched!' : 'No names match your search.'}
+                    </div>
+                  ) : (
+                    filteredRawNames.map(rawName => {
+                      const isSelected = selectedRawName === rawName;
+                      const isMatched = tempResolutions[rawName];
+                      return (
+                        <div
+                          key={rawName}
+                          onClick={() => !isMatched && setSelectedRawName(rawName)}
+                          className={`flex items-center justify-between p-3 border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors ${
+                            isSelected ? 'bg-blue-50 border-blue-200' : 
+                            isMatched ? 'bg-green-50' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <span className={`text-sm ${isMatched ? 'text-green-700 font-medium' : 'text-gray-700'}`}>
+                            {rawName}
+                          </span>
+                          {isMatched && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {selectedRawName && (
+                <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                  <div className="text-sm text-blue-900">
+                    <strong>Selected:</strong> {selectedRawName}
+                  </div>
+                  <div className="text-sm text-blue-700 mt-1">
+                    Current resolution: {getResolvedName(selectedRawName)}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right side: Attendance sheet names */}
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Attendance Sheet Names</h3>
+                <div className="relative">
+                  <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search attendance names..."
+                    value={searchAttendance}
+                    onChange={e => setSearchAttendance(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <div className="max-h-96 overflow-y-auto">
+                  {filteredAttendanceNames.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">
+                      No names match your search.
+                    </div>
+                  ) : (
+                    filteredAttendanceNames.map(attendanceName => (
+                      <div
+                        key={attendanceName}
+                        onClick={() => selectedRawName && handleMatch(attendanceName)}
+                        className={`flex items-center justify-between p-3 border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors hover:bg-gray-50 ${
+                          selectedRawName ? 'hover:bg-blue-50' : 'opacity-50 cursor-not-allowed'
+                        }`}
+                      >
+                        <span className="text-sm text-gray-700">{attendanceName}</span>
+                        {selectedRawName && <ArrowRight className="w-4 h-4 text-blue-600" />}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {!selectedRawName && (
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                  <div className="text-sm text-gray-600">
+                    Select a name from the left side to start matching.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-100 p-6 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
+          <div className="text-sm text-gray-500">
+            {Object.keys(tempResolutions).length} names matched. Click names on the left to select, then click attendance names on the right to match.
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <button
+              onClick={onClose}
+              className="px-5 py-3 rounded-2xl border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={Object.keys(tempResolutions).length === 0}
+              className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Confirm {Object.keys(tempResolutions).length} Matches
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/atr-list/AttendanceMatcher.tsx ---
+
+--- START OF FILE src/components/lab/atr-list/AvatarCropper.tsx ---
+import React, { useState, useCallback } from 'react';
+import Cropper from 'react-easy-crop';
+import { X, Check, Upload, Trash2 } from 'lucide-react';
+
+interface AvatarCropperProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (base64Image: string) => void;
+  onRemove: () => void;
+  studentName: string;
+  hasAvatar: boolean;
+}
+
+export function AvatarCropper({ isOpen, onClose, onSave, onRemove, studentName, hasAvatar }: AvatarCropperProps) {
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+
+  // Reset state when opened
+  React.useEffect(() => {
+    if (isOpen) {
+      setImageSrc(null);
+      setZoom(1);
+      setCrop({ x: 0, y: 0 });
+    }
+  }, [isOpen]);
+
+  const onCropComplete = useCallback((croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        setImageSrc(reader.result?.toString() || null);
+      });
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const createImage = (url: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+      const image = new Image();
+      image.addEventListener('load', () => resolve(image));
+      image.addEventListener('error', (error) => reject(error));
+      image.src = url;
+    });
+
+  const getCroppedImg = async (
+    imageSrc: string,
+    pixelCrop: any
+  ): Promise<string> => {
+    const image = await createImage(imageSrc);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
+
+    canvas.width = 256;
+    canvas.height = 256;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      256,
+      256
+    );
+
+    return canvas.toDataURL('image/jpeg', 0.9);
+  };
+
+  const handleSave = async () => {
+    if (imageSrc && croppedAreaPixels) {
+      try {
+        const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
+        onSave(croppedImage);
+        onClose();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const handleRemove = () => {
+    onRemove();
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <h2 className="text-lg font-bold text-gray-900 truncate">Avatar for {studentName}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 flex-1 flex flex-col items-center justify-center min-h-[400px]">
+          {!imageSrc ? (
+            <label className="cursor-pointer flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
+              <Upload className="w-8 h-8 text-gray-400 mb-2" />
+              <span className="text-sm font-medium text-gray-600">Click to upload image</span>
+              <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            </label>
+          ) : (
+            <div className="relative w-full h-64 bg-black rounded-xl overflow-hidden">
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid={false}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            </div>
+          )}
+          
+          {imageSrc && (
+            <div className="w-full mt-6 space-y-2">
+              <label className="text-sm font-medium text-gray-700">Zoom</label>
+              <input
+                type="range"
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.1}
+                aria-labelledby="Zoom"
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-gray-100 flex justify-between gap-3 bg-gray-50">
+          <div className="flex gap-2">
+            {imageSrc ? (
+              <button
+                onClick={() => setImageSrc(null)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg font-medium transition-colors text-sm"
+              >
+                Change Image
+              </button>
+            ) : hasAvatar ? (
+              <button
+                onClick={handleRemove}
+                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors text-sm"
+              >
+                <Trash2 className="w-4 h-4" />
+                Remove Avatar
+              </button>
+            ) : (
+              <div></div>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg font-medium transition-colors text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!imageSrc}
+              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 transition-colors font-medium text-sm"
+            >
+              <Check className="w-4 h-4" />
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/atr-list/AvatarCropper.tsx ---
+
+--- START OF FILE src/components/lab/atr-list/DuplicateResolver.tsx ---
+import React, { useState } from 'react';
+import { Users, Check, AlertCircle } from 'lucide-react';
+
+interface DuplicateGroup {
+  key: string;
+  rawNames: string[];
+}
+
+interface DuplicateResolverProps {
+  groups: DuplicateGroup[];
+  onResolve: (resolutions: Record<string, string>) => void;
+}
+
+export function DuplicateResolver({ groups, onResolve }: DuplicateResolverProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [resolutions, setResolutions] = useState<Record<string, string>>({});
+
+  const currentGroup = groups[currentIndex];
+
+  const handleResolve = (isSame: boolean) => {
+    const newResolutions = { ...resolutions };
+    
+    if (isSame) {
+      // Group them all under the first name
+      const canonical = currentGroup.rawNames[0];
+      currentGroup.rawNames.forEach(name => {
+        newResolutions[name] = canonical;
+      });
+    } else {
+      // Keep them separate
+      currentGroup.rawNames.forEach(name => {
+        newResolutions[name] = name;
+      });
+    }
+
+    setResolutions(newResolutions);
+
+    if (currentIndex < groups.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+    } else {
+      onResolve(newResolutions);
+    }
+  };
+
+  if (!currentGroup) return null;
+
+  return (
+    <div className="max-w-2xl mx-auto p-6 mt-12">
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="bg-amber-50 p-6 border-b border-amber-100 flex items-start gap-4">
+          <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-amber-900">Similar Names Detected</h2>
+            <p className="text-amber-700 text-sm mt-1">
+              We found multiple students with similar names. Are these the same person?
+              ({currentIndex + 1} of {groups.length})
+            </p>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+            <div className="flex items-center gap-2 mb-3 text-sm font-medium text-gray-500 uppercase tracking-wider">
+              <Users className="w-4 h-4" />
+              Matched Key: {currentGroup.key}
+            </div>
+            <ul className="space-y-2">
+              {currentGroup.rawNames.map((name, idx) => (
+                <li key={idx} className="flex items-center gap-3 text-gray-900 font-medium bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm">
+                  <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs">
+                    {idx + 1}
+                  </div>
+                  {name}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <button
+              onClick={() => handleResolve(true)}
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors"
+            >
+              <Check className="w-5 h-5" />
+              Yes, they are the same person
+            </button>
+            <button
+              onClick={() => handleResolve(false)}
+              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 font-medium rounded-xl transition-colors"
+            >
+              No, keep them separate
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/atr-list/DuplicateResolver.tsx ---
+
+--- START OF FILE src/components/lab/atr-list/index.ts ---
+export { default as ATRList } from './ATRList';
+--- END OF FILE src/components/lab/atr-list/index.ts ---
+
+--- START OF FILE src/components/lab/atr-list/ManualMerge.tsx ---
+import React, { useEffect, useState, useMemo } from 'react';
+import { Search, Merge, ArrowRight, CheckSquare, Square } from 'lucide-react';
+
+interface ManualMergeProps {
+  rawNames: string[];
+  initialResolutions: Record<string, string>;
+  onComplete: (resolutions: Record<string, string>) => void;
+}
+
+export function ManualMerge({ rawNames, initialResolutions, onComplete }: ManualMergeProps) {
+  const [resolutions, setResolutions] = useState<Record<string, string>>(initialResolutions);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [primaryChoice, setPrimaryChoice] = useState<string>('');
+
+  React.useEffect(() => {
+    setResolutions(initialResolutions);
+  }, [initialResolutions]);
+
+  const availableNames = useMemo(() => {
+    const canonicals = new Set<string>();
+    rawNames.forEach(n => {
+      canonicals.add(resolutions[n] || n);
+    });
+    return Array.from(canonicals).sort((a, b) => a.localeCompare(b));
+  }, [rawNames, resolutions]);
+
+  const filtered = availableNames.filter(n => n.toLowerCase().includes(search.toLowerCase()));
+
+  const toggleSelect = (name: string) => {
+    const next = new Set(selected);
+    if (next.has(name)) {
+      next.delete(name);
+      if (primaryChoice === name) setPrimaryChoice('');
+    } else {
+      next.add(name);
+      if (next.size === 1) setPrimaryChoice(name);
+    }
+    setSelected(next);
+  };
+
+  const handleMerge = () => {
+    if (selected.size < 2 || !primaryChoice) return;
+    const newRes = { ...resolutions };
+    
+    rawNames.forEach(n => {
+      const currentCanonical = newRes[n] || n;
+      if (selected.has(currentCanonical)) {
+        newRes[n] = primaryChoice;
+      }
+    });
+    
+    setResolutions(newRes);
+    setSelected(new Set());
+    setPrimaryChoice('');
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Manual Name Merge</h2>
+            <p className="text-gray-500 text-sm">Select multiple names to merge them into one student record.</p>
+          </div>
+          <button
+            onClick={() => onComplete(resolutions)}
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            Continue <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex gap-4 mb-6">
+          <div className="flex-1 relative">
+            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search names..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            />
+          </div>
+        </div>
+
+        {selected.size >= 2 && (
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-blue-900">Primary Name:</span>
+              <select
+                value={primaryChoice}
+                onChange={e => setPrimaryChoice(e.target.value)}
+                className="px-3 py-1.5 border border-blue-200 rounded-md text-sm outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="" disabled>Select primary name</option>
+                {Array.from(selected).sort((a, b) => String(a).localeCompare(String(b))).map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={handleMerge}
+              disabled={!primaryChoice}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-300 transition-colors text-sm font-medium"
+            >
+              <Merge className="w-4 h-4" />
+              Merge {selected.size} Names
+            </button>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[500px] overflow-y-auto p-2 border border-gray-100 rounded-lg bg-gray-50">
+          {filtered.map(name => {
+            const isSelected = selected.has(name);
+            return (
+              <div
+                key={name}
+                onClick={() => toggleSelect(name)}
+                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors border ${
+                  isSelected ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                {isSelected ? (
+                  <CheckSquare className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                ) : (
+                  <Square className="w-5 h-5 text-gray-300 flex-shrink-0" />
+                )}
+                <span className={`text-sm truncate ${isSelected ? 'font-medium text-blue-900' : 'text-gray-700'}`}>
+                  {name}
+                </span>
+              </div>
+            );
+          })}
+          {filtered.length === 0 && (
+            <div className="col-span-full text-center py-8 text-gray-500">
+              No names found matching "{search}"
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/atr-list/ManualMerge.tsx ---
+
+--- START OF FILE src/components/lab/atr-list/Results.tsx ---
+import React, { useState, useEffect } from 'react';
+import { DayResult, Top20Entry } from './types';
+import { Printer, Trophy, TrendingUp, TrendingDown, Minus, Award, Edit2, Check, Settings2 } from 'lucide-react';
+import { cn } from './lib/utils';
+import { AvatarCropper } from './AvatarCropper';
+import { getAvatar, saveAvatar, removeAvatar } from './lib/db';
+
+interface ResultsProps {
+  results: DayResult[];
+}
+
+export function Results({ results }: ResultsProps) {
+  const [activeTab, setActiveTab] = useState(0);
+  const [headerTitle, setHeaderTitle] = useState('AIMS PLUS Track Record');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState('');
+  
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState('');
+  const [avatars, setAvatars] = useState<Record<string, string>>({});
+
+  // Print settings
+  const [printColumns, setPrintColumns] = useState(4);
+  const [showDroppedInPrint, setShowDroppedInPrint] = useState(true);
+  const [showPrintSettings, setShowPrintSettings] = useState(false);
+
+  useEffect(() => {
+    const savedTitle = localStorage.getItem('aims_header_title');
+    if (savedTitle) setHeaderTitle(savedTitle);
+    
+    const savedCols = localStorage.getItem('aims_print_cols');
+    if (savedCols) setPrintColumns(Number(savedCols));
+    
+    const savedShowDropped = localStorage.getItem('aims_print_dropped');
+    if (savedShowDropped !== null) setShowDroppedInPrint(savedShowDropped === 'true');
+  }, []);
+
+  useEffect(() => {
+    // Load avatars for current top 20
+    if (!results || results.length === 0) return;
+    const currentResult = results[activeTab];
+    
+    const loadAvatars = async () => {
+      const newAvatars: Record<string, string> = { ...avatars };
+      for (const student of currentResult.top20) {
+        if (!newAvatars[student.canonicalName]) {
+          const img = await getAvatar(student.canonicalName);
+          if (img) newAvatars[student.canonicalName] = img;
+        }
+      }
+      for (const student of currentResult.removed) {
+        if (!newAvatars[student.canonicalName]) {
+          const img = await getAvatar(student.canonicalName);
+          if (img) newAvatars[student.canonicalName] = img;
+        }
+      }
+      setAvatars(newAvatars);
+    };
+    loadAvatars();
+  }, [results, activeTab]);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const saveTitle = () => {
+    setHeaderTitle(tempTitle);
+    localStorage.setItem('aims_header_title', tempTitle);
+    setIsEditingTitle(false);
+  };
+
+  const handlePrintColsChange = (cols: number) => {
+    setPrintColumns(cols);
+    localStorage.setItem('aims_print_cols', cols.toString());
+  };
+
+  const handleShowDroppedChange = (show: boolean) => {
+    setShowDroppedInPrint(show);
+    localStorage.setItem('aims_print_dropped', show.toString());
+  };
+
+  const openCropper = (name: string) => {
+    setSelectedStudent(name);
+    setCropperOpen(true);
+  };
+
+  const handleSaveAvatar = async (base64Image: string) => {
+    await saveAvatar(selectedStudent, base64Image);
+    setAvatars(prev => ({ ...prev, [selectedStudent]: base64Image }));
+  };
+
+  const handleRemoveAvatar = async () => {
+    await removeAvatar(selectedStudent);
+    setAvatars(prev => {
+      const newAvatars = { ...prev };
+      delete newAvatars[selectedStudent];
+      return newAvatars;
+    });
+  };
+
+  if (!results || results.length === 0) return null;
+
+  const currentResult = results[activeTab];
+
+  const getRankStyle = (rank: number, status: string) => {
+    if (rank === 1) return "bg-gradient-to-br from-yellow-100 to-yellow-300 border-yellow-400 shadow-yellow-200/50 shadow-lg scale-105 z-10";
+    if (rank === 2) return "bg-gradient-to-br from-gray-100 to-gray-300 border-gray-400 shadow-gray-200/50 shadow-md scale-[1.02] z-10";
+    if (rank === 3) return "bg-gradient-to-br from-orange-100 to-orange-300 border-orange-400 shadow-orange-200/50 shadow-md scale-[1.02] z-10";
+    if (status === 'added') return "bg-green-50 border-green-200 shadow-green-100 shadow-sm";
+    return "bg-white border-gray-200 hover:border-blue-200 hover:shadow-md";
+  };
+
+  const getRankBadge = (rank: number) => {
+    if (rank === 1) return "bg-yellow-500 text-white";
+    if (rank === 2) return "bg-gray-400 text-white";
+    if (rank === 3) return "bg-orange-500 text-white";
+    return "bg-gray-100 text-gray-600";
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
+      <style>{`
+        @media print {
+          @page {
+            margin: 0.5cm;
+          }
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .print-grid {
+            grid-template-columns: repeat(${printColumns}, minmax(0, 1fr)) !important;
+          }
+          ${!showDroppedInPrint ? `
+          .print-dropped-section {
+            display: none !important;
+          }
+          ` : ''}
+        }
+      `}</style>
+
+      <div className="flex items-center justify-between print:hidden">
+        <div className="flex items-center gap-3 group">
+          {isEditingTitle ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={tempTitle}
+                onChange={(e) => setTempTitle(e.target.value)}
+                className="text-3xl font-bold tracking-tight text-gray-900 border-b-2 border-blue-500 outline-none bg-transparent px-1"
+                autoFocus
+                onKeyDown={(e) => e.key === 'Enter' && saveTitle()}
+              />
+              <button onClick={saveTitle} className="p-2 text-green-600 hover:bg-green-50 rounded-full">
+                <Check className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900">{headerTitle}</h1>
+              <button 
+                onClick={() => { setTempTitle(headerTitle); setIsEditingTitle(true); }}
+                className="p-2 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all"
+              >
+                <Edit2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-3 relative">
+          <button
+            onClick={() => setShowPrintSettings(!showPrintSettings)}
+            className={cn(
+              "p-2 rounded-lg transition-colors border",
+              showPrintSettings ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-white text-gray-500 border-gray-300 hover:bg-gray-50"
+            )}
+            title="Print Settings"
+          >
+            <Settings2 className="w-5 h-5" />
+          </button>
+          
+          {showPrintSettings && (
+            <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 p-4 z-50">
+              <h3 className="text-sm font-bold text-gray-900 mb-3">Print Settings</h3>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Grid Columns</label>
+                  <div className="flex gap-2">
+                    {[2, 3, 4, 5].map(cols => (
+                      <button
+                        key={cols}
+                        onClick={() => handlePrintColsChange(cols)}
+                        className={cn(
+                          "flex-1 py-1.5 rounded-md text-sm font-medium transition-colors border",
+                          printColumns === cols 
+                            ? "bg-blue-600 text-white border-blue-600" 
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                        )}
+                      >
+                        {cols}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showDroppedInPrint}
+                    onChange={(e) => handleShowDroppedChange(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Include Dropped List</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm"
+          >
+            <Printer className="w-4 h-4" />
+            Print Report
+          </button>
+        </div>
+      </div>
+
+      <div className="hidden print:block mb-8 text-center">
+        <h1 className="text-4xl font-bold text-gray-900">{headerTitle}</h1>
+        <p className="text-xl text-gray-600 mt-2">{currentResult.examName}</p>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden print:border-none print:shadow-none print:bg-transparent">
+        <div className="flex overflow-x-auto border-b border-gray-200 print:hidden hide-scrollbar">
+          {results.map((result, idx) => (
+            <button
+              key={result.examId}
+              onClick={() => setActiveTab(idx)}
+              className={cn(
+                "px-6 py-4 text-sm font-medium whitespace-nowrap transition-colors border-b-2",
+                activeTab === idx
+                  ? "border-blue-600 text-blue-600 bg-blue-50/50"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              )}
+            >
+              {result.examName}
+            </button>
+          ))}
+        </div>
+
+        <div className="p-6 print:p-0 bg-gray-50/50 print:bg-transparent overflow-show">
+          <div className="mb-6 print:hidden">
+            <h2 className="text-xl font-bold text-gray-900">{currentResult.examName} - Top {currentResult.top20.length}</h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 print:gap-2 print-grid overflow-show">
+            {currentResult.top20.map((student) => (
+              <div 
+                key={student.canonicalName}
+                className={cn(
+                  "relative flex flex-col items-center p-6 print:p-2 rounded-2xl border transition-all duration-300",
+                  getRankStyle(student.rank, student.status)
+                )}
+              >
+                <div className={cn(
+                  "absolute -top-1 -left-1  w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm print:text-xs shadow-sm border-2 border-white",
+                  getRankBadge(student.rank)
+                )}>
+                  {student.rank}
+                </div>
+                
+                {student.status === 'added' && (
+                  <div className="absolute top-3 right-3 print:top-1 print:right-1 flex items-center justify-center w-6 h-6 print:w-4 print:h-4 rounded-full bg-green-100 text-green-600 shadow-sm" title="New to List">
+                    <TrendingUp className="w-3 h-3 print:w-2 print:h-2" />
+                  </div>
+                )}
+
+                <div 
+                  className="w-24 h-24 print:w-12 print:h-12 rounded-full mb-4 print:mb-1 cursor-pointer relative group overflow-hidden border-4 print:border-2 border-white shadow-md bg-white"
+                  onClick={() => openCropper(student.canonicalName)}
+                >
+                  {avatars[student.canonicalName] ? (
+                    <img src={avatars[student.canonicalName]} alt={student.canonicalName} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center text-3xl print:text-xl font-bold text-blue-700">
+                      {student.canonicalName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
+                    <Edit2 className="w-6 h-6 text-white" />
+                  </div>
+                </div>
+
+                <h3 className="text-lg print:text-xs font-bold text-gray-900 text-center leading-tight mb-1 print:mb-0">
+                  {student.canonicalName}
+                </h3>
+                
+                <div className="text-2xl print:text-base font-black text-blue-600 mb-4 print:mb-1">
+                  {student.currentAverage.toFixed(2)}
+                </div>
+
+                <div className="w-full grid grid-cols-2 gap-2 print:gap-1 text-sm print:text-[10px] border-t border-black/5 pt-4 print:pt-1 mt-auto">
+                  <div className="flex flex-col items-center p-2 print:p-0.5 bg-black/5 rounded-lg">
+                    <span className="text-gray-500 text-xs print:text-[8px] font-medium uppercase tracking-wider mb-1 print:mb-0">Exams</span>
+                    <span className="font-bold text-gray-700">{student.totalExamsAttended}</span>
+                  </div>
+                  <div className="flex flex-col items-center p-2 print:p-0.5 bg-black/5 rounded-lg">
+                    <span className="text-gray-500 text-xs print:text-[8px] font-medium uppercase tracking-wider mb-1 print:mb-0">Hat-tricks</span>
+                    <span className="font-bold text-gray-700 flex items-center gap-1">
+                      {student.hatTricks > 0 ? (
+                        <>
+                          <Award className="w-3 h-3 print:w-2 print:h-2 text-amber-500" />
+                          {student.hatTricks}
+                        </>
+                      ) : (
+                        '-'
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {currentResult.top20.length === 0 && (
+              <div className="col-span-full py-12 text-center text-gray-500 bg-white rounded-xl border border-dashed border-gray-300">
+                No data available for this exam.
+              </div>
+            )}
+          </div>
+
+          {currentResult.removed.length > 0 && (
+            <div className="mt-12 print:mt-6 pt-8 print:pt-4 border-t border-gray-200 print-dropped-section">
+              <h3 className="text-sm print:text-xs font-bold text-red-600 uppercase tracking-wider mb-6 print:mb-3 flex items-center gap-2">
+                <TrendingDown className="w-5 h-5 print:w-4 print:h-4" />
+                Dropped from List
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 print:gap-2">
+                {currentResult.removed.map(student => (
+                  <div key={student.canonicalName} className="flex flex-col items-center p-4 print:p-2 rounded-xl bg-red-50/50 border border-red-100">
+                    <div 
+                      className="w-12 h-12 print:w-8 print:h-8 rounded-full mb-2 print:mb-1 overflow-hidden border-2 border-white shadow-sm cursor-pointer relative group"
+                      onClick={() => openCropper(student.canonicalName)}
+                    >
+                      {avatars[student.canonicalName] ? (
+                        <img src={avatars[student.canonicalName]} alt={student.canonicalName} className="w-full h-full object-cover grayscale opacity-80" />
+                      ) : (
+                        <div className="w-full h-full bg-red-100 flex items-center justify-center text-lg print:text-sm font-bold text-red-400">
+                          {student.canonicalName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
+                        <Edit2 className="w-4 h-4 text-white" />
+                      </div>
+                    </div>
+                    <span className="font-medium text-gray-900 text-sm print:text-xs text-center line-clamp-1 w-full" title={student.canonicalName}>
+                      {student.canonicalName}
+                    </span>
+                    <span className="text-xs print:text-[10px] font-bold text-red-500 mt-1 print:mt-0">
+                      Avg: {student.currentAverage.toFixed(2)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <AvatarCropper 
+        isOpen={cropperOpen}
+        onClose={() => setCropperOpen(false)}
+        onSave={handleSaveAvatar}
+        onRemove={handleRemoveAvatar}
+        studentName={selectedStudent}
+        hasAvatar={!!avatars[selectedStudent]}
+      />
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/atr-list/Results.tsx ---
+
+--- START OF FILE src/components/lab/atr-list/Setup.tsx ---
+import React, { useState, useCallback, useEffect } from 'react';
+import { Upload, X, FileSpreadsheet, Settings } from 'lucide-react';
+import { ExamFile, SubjectType } from './types';
+import { cn } from './lib/utils';
+import { getExams, saveExams } from './lib/db';
+
+interface SetupProps {
+  onProcess: (exams: ExamFile[], rightMarks: number, wrongMarks: number) => void;
+}
+
+export function Setup({ onProcess }: SetupProps) {
+  const [exams, setExams] = useState<ExamFile[]>([]);
+  const [rightMarks, setRightMarks] = useState<number>(4);
+  const [wrongMarks, setWrongMarks] = useState<number>(1);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadSavedExams = async () => {
+      try {
+        const savedExams = await getExams();
+        if (savedExams && savedExams.length > 0) {
+          setExams(savedExams);
+        }
+      } catch (error) {
+        console.error("Failed to load saved exams:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadSavedExams();
+  }, []);
+
+  const updateExamsAndSave = async (newExams: ExamFile[]) => {
+    setExams(newExams);
+    try {
+      await saveExams(newExams);
+    } catch (error) {
+      console.error("Failed to save exams:", error);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files).map((file: File) => ({
+        id: Math.random().toString(36).substring(7),
+        file,
+        name: file.name,
+        subject: 'General' as SubjectType,
+      }));
+      updateExamsAndSave([...exams, ...newFiles]);
+    }
+  };
+
+  const removeExam = (id: string) => {
+    updateExamsAndSave(exams.filter((e) => e.id !== id));
+  };
+
+  const updateSubject = (id: string, subject: SubjectType) => {
+    updateExamsAndSave(
+      exams.map((e) => (e.id === id ? { ...e, subject } : e))
+    );
+  };
+
+  const moveExam = (index: number, direction: 'up' | 'down') => {
+    if (
+      (direction === 'up' && index === 0) ||
+      (direction === 'down' && index === exams.length - 1)
+    ) {
+      return;
+    }
+    
+    const newExams = [...exams];
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    [newExams[index], newExams[swapIndex]] = [newExams[swapIndex], newExams[index]];
+    updateExamsAndSave(newExams);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 space-y-8">
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">AIMS PLUS ATR Setup</h1>
+        <p className="text-gray-500">Upload your rank lists to generate the Track Record.</p>
+      </div>
+
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-6">
+        <div className="flex items-center gap-2 pb-4 border-b border-gray-100">
+          <Settings className="w-5 h-5 text-blue-600" />
+          <h2 className="text-lg font-semibold text-gray-800">Marking Scheme</h2>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Marks for Right Answer</label>
+            <input
+              type="number"
+              value={rightMarks}
+              onChange={(e) => setRightMarks(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">Marks Deducted for Wrong Answer</label>
+            <input
+              type="number"
+              value={wrongMarks}
+              onChange={(e) => setWrongMarks(Number(e.target.value))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-6">
+        <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg font-semibold text-gray-800">Rank Lists</h2>
+          </div>
+          <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors font-medium text-sm">
+            <Upload className="w-4 h-4" />
+            Upload Excel Files
+            <input
+              type="file"
+              multiple
+              accept=".xlsx, .xls, .csv"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </label>
+        </div>
+
+        {exams.length === 0 ? (
+          <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+            <p className="text-gray-500">No files uploaded yet. Upload Day 1 to Day N rank lists.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {exams.map((exam, index) => (
+              <div key={exam.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-white rounded-md border border-gray-200 text-gray-500 font-medium text-sm">
+                  {index + 1}
+                </div>
+                <div className="flex-grow min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{exam.name}</p>
+                </div>
+                <div className="flex-shrink-0 w-48">
+                  <select
+                    value={exam.subject}
+                    onChange={(e) => updateSubject(exam.id, e.target.value as SubjectType)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  >
+                    <option value="General">General</option>
+                    <option value="Maths">Maths</option>
+                    <option value="Zoology">Zoology</option>
+                    <option value="Botany">Botany</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => moveExam(index, 'up')}
+                    disabled={index === 0}
+                    className="p-1.5 text-gray-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-gray-400 rounded-md transition-colors"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => moveExam(index, 'down')}
+                    disabled={index === exams.length - 1}
+                    className="p-1.5 text-gray-400 hover:text-blue-600 disabled:opacity-30 disabled:hover:text-gray-400 rounded-md transition-colors"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    onClick={() => removeExam(exam.id)}
+                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors ml-2"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          onClick={() => onProcess(exams, rightMarks, wrongMarks)}
+          disabled={exams.length === 0}
+          className={cn(
+            "px-6 py-3 rounded-xl font-medium text-white transition-all shadow-sm",
+            exams.length === 0
+              ? "bg-gray-300 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700 hover:shadow-md active:transform active:scale-95"
+          )}
+        >
+          Process Rank Lists
+        </button>
+      </div>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/atr-list/Setup.tsx ---
+
+--- START OF FILE src/components/lab/atr-list/types.ts ---
+export type SubjectType = 'General' | 'Maths' | 'Zoology' | 'Botany';
+
+export interface ExamFile {
+  id: string;
+  file: File;
+  name: string;
+  subject: SubjectType;
+  data?: any[];
+}
+
+export interface RawRecord {
+  NAME: string;
+  RIGHT: number;
+  WRONG: number;
+}
+
+export interface ProcessedRecord {
+  examId: string;
+  rawName: string;
+  canonicalName: string;
+  right: number;
+  wrong: number;
+  score: number;
+}
+
+export interface StudentState {
+  canonicalName: string;
+  scores: number[];
+  totalExamsAttended: number;
+  lastAttendedExamIndex: number;
+  hatTricks: number;
+  consecutiveTop20: number;
+  currentAverage: number;
+}
+
+export interface Top20Entry extends StudentState {
+  rank: number;
+  status: 'added' | 'removed' | 'same';
+}
+
+export interface DayResult {
+  examId: string;
+  examName: string;
+  top20: Top20Entry[];
+  removed: Top20Entry[]; // Students who were in top 20 yesterday but not today
+}
+
+--- END OF FILE src/components/lab/atr-list/types.ts ---
+
+--- START OF FILE src/components/lab/atr-list/lib/db.ts ---
+import { get, set, del } from 'idb-keyval';
+import { ExamFile } from '../types';
+
+export const saveAvatar = async (name: string, base64Image: string) => {
+  await set(`avatar_${name}`, base64Image);
+};
+
+export const getAvatar = async (name: string): Promise<string | undefined> => {
+  return await get(`avatar_${name}`);
+};
+
+export const removeAvatar = async (name: string) => {
+  await del(`avatar_${name}`);
+};
+
+export const saveExams = async (exams: ExamFile[]) => {
+  await set('aims_exams', exams);
+};
+
+export const getExams = async (): Promise<ExamFile[]> => {
+  return (await get('aims_exams')) || [];
+};
+
+--- END OF FILE src/components/lab/atr-list/lib/db.ts ---
+
+--- START OF FILE src/components/lab/atr-list/lib/utils.ts ---
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+--- END OF FILE src/components/lab/atr-list/lib/utils.ts ---
+
 --- START OF FILE src/components/lab/course-progress/CourseProgress.tsx ---
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, BookOpen, Download, Loader2, RotateCcw, AlertTriangle } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { SubjectProgress, TaskData, TaskStatus } from './types';
+import { SubjectProgress, TaskData, TaskStatus, BatchName, CourseProgressMap } from './types';
 import { initialData } from './initialData';
 import SubjectView from './SubjectView';
 import { getCourseProgress, saveCourseProgress, isFirebaseConfigured } from '../../../services/firebaseService';
 
+const BATCHES: BatchName[] = ['B1', 'B2', 'B3'];
+
+const cloneProgress = (data: SubjectProgress[]) => JSON.parse(JSON.stringify(data)) as SubjectProgress[];
+
 export default function CourseProgress({ onBack }: { onBack: () => void }) {
-  const [data, setData] = useState<SubjectProgress[]>([]);
+  const [progressMap, setProgressMap] = useState<CourseProgressMap>({
+    B1: cloneProgress(initialData),
+    B2: cloneProgress(initialData),
+    B3: cloneProgress(initialData)
+  });
+  const [selectedBatch, setSelectedBatch] = useState<BatchName>('B1');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedSubjectIndex, setSelectedSubjectIndex] = useState<number | null>(null);
+
+  const data = progressMap[selectedBatch] || [];
 
   // Helper to migrate old fields to new TaskData format
   const migrateTask = (val: any): TaskData => {
@@ -9631,122 +12198,134 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
   };
 
   useEffect(() => {
-    document.title = "AIMS - Course Progress";
+    document.title = 'AIMS - Course Progress';
     fetchData();
-    return () => { document.title = "OMR Checker Pro"; };
+    return () => { document.title = 'OMR Checker Pro'; };
   }, []);
+
+  const migrateSubject = (sub: any): SubjectProgress => ({
+    ...sub,
+    chapters: sub.chapters.map((ch: any) => ({
+      ...ch,
+      tcr: migrateTask(ch.tcr),
+      entrance: migrateTask(ch.entrance),
+      revision: migrateTask(ch.revision)
+    }))
+  });
+
+  const createProgressMap = (subjects: SubjectProgress[]): CourseProgressMap => ({
+    B1: subjects,
+    B2: cloneProgress(subjects),
+    B3: cloneProgress(subjects)
+  });
+
+  const loadProgress = (raw: any): CourseProgressMap => {
+    if (Array.isArray(raw)) {
+      return createProgressMap(raw.map(migrateSubject));
+    }
+
+    if (raw && typeof raw === 'object') {
+      return {
+        B1: raw.B1 && Array.isArray(raw.B1) ? raw.B1.map(migrateSubject) : cloneProgress(initialData),
+        B2: raw.B2 && Array.isArray(raw.B2) ? raw.B2.map(migrateSubject) : cloneProgress(initialData),
+        B3: raw.B3 && Array.isArray(raw.B3) ? raw.B3.map(migrateSubject) : cloneProgress(initialData)
+      };
+    }
+
+    return {
+      B1: cloneProgress(initialData),
+      B2: cloneProgress(initialData),
+      B3: cloneProgress(initialData)
+    };
+  };
 
   const fetchData = async () => {
     try {
       const res = await getCourseProgress();
-      if (res && res.length > 0) {
-        const migratedData = res.map(sub => ({
-          ...sub,
-          chapters: sub.chapters.map((ch: any) => ({
-            ...ch,
-            tcr: migrateTask(ch.tcr),
-            entrance: migrateTask(ch.entrance),
-            revision: migrateTask(ch.revision)
-          }))
-        }));
-        setData(migratedData);
-      } else {
-        setData(initialData);
-        // Initialize global data for everyone else
-        if (isFirebaseConfigured) {
-          await saveCourseProgress(initialData);
-        }
+      const loadedProgress = loadProgress(res);
+      setProgressMap(loadedProgress);
+
+      if (isFirebaseConfigured) {
+        await saveCourseProgress(loadedProgress);
       }
     } catch (e) {
-      console.error("Failed to load from Firebase, falling back to local storage", e);
+      console.error('Failed to load from Firebase, falling back to local storage', e);
       const saved = localStorage.getItem('omr_course_progress');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          const migratedData = parsed.map((sub: any) => ({
-            ...sub,
-            chapters: sub.chapters.map((ch: any) => ({
-              ...ch,
-              tcr: migrateTask(ch.tcr),
-              entrance: migrateTask(ch.entrance),
-              revision: migrateTask(ch.revision)
-            }))
-          }));
-          setData(migratedData);
+          setProgressMap(loadProgress(parsed));
         } catch (err) {
-          setData(initialData);
+          setProgressMap(loadProgress(null));
         }
       } else {
-        setData(initialData);
+        setProgressMap(loadProgress(null));
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const updateChapter = async (subjectIdx: number, chapterIdx: number, field: 'tcr' | 'entrance' | 'revision', taskData: TaskData) => {
-    // Perform a deep immutable update so React re-renders correctly
-    const newData = [...data];
-    const newSubject = { ...newData[subjectIdx] };
-    const newChapters = [...newSubject.chapters];
-    const newChapter = { ...newChapters[chapterIdx] };
-    
-    newChapter[field] = taskData;
-    newChapters[chapterIdx] = newChapter;
-    newSubject.chapters = newChapters;
-    newData[subjectIdx] = newSubject;
-    
-    setData(newData);
-    
+  const saveMap = async (map: CourseProgressMap) => {
     setSaving(true);
     try {
-      await saveCourseProgress(newData);
-      localStorage.setItem('omr_course_progress', JSON.stringify(newData));
+      await saveCourseProgress(map);
+      localStorage.setItem('omr_course_progress', JSON.stringify(map));
     } catch (e) {
-      console.error("Failed to save to Firebase", e);
-      localStorage.setItem('omr_course_progress', JSON.stringify(newData));
+      console.error('Failed to save to Firebase', e);
+      localStorage.setItem('omr_course_progress', JSON.stringify(map));
     } finally {
       setSaving(false);
     }
   };
 
+  const updateChapter = async (subjectIdx: number, chapterIdx: number, field: 'tcr' | 'entrance' | 'revision', taskData: TaskData) => {
+    const currentBatch = data;
+    const newData = [...currentBatch];
+    const newSubject = { ...newData[subjectIdx] };
+    const newChapters = [...newSubject.chapters];
+    const newChapter = { ...newChapters[chapterIdx] };
+
+    newChapter[field] = taskData;
+    newChapters[chapterIdx] = newChapter;
+    newSubject.chapters = newChapters;
+    newData[subjectIdx] = newSubject;
+
+    const updatedMap = { ...progressMap, [selectedBatch]: newData };
+    setProgressMap(updatedMap);
+    await saveMap(updatedMap);
+  };
+
   const handleReset = async () => {
-    if (!window.confirm("Are you sure you want to reset ALL course progress for a new academic year? This cannot be undone.")) return;
-    
-    const resetData = data.map(sub => ({
+    if (!window.confirm(`Are you sure you want to reset course progress for ${selectedBatch}? This cannot be undone.`)) return;
+
+    const resetBatch = data.map((sub) => ({
       ...sub,
-      chapters: sub.chapters.map(ch => ({
+      chapters: sub.chapters.map((ch) => ({
         ...ch,
         tcr: { status: 'pending', sessions: [] } as TaskData,
         entrance: { status: 'pending', sessions: [] } as TaskData,
         revision: { status: 'pending', sessions: [] } as TaskData
       }))
     }));
-    
-    setData(resetData);
-    setSaving(true);
-    try {
-      await saveCourseProgress(resetData);
-      localStorage.setItem('omr_course_progress', JSON.stringify(resetData));
-    } catch (e) {
-      console.error("Failed to reset in Firebase", e);
-      localStorage.setItem('omr_course_progress', JSON.stringify(resetData));
-    } finally {
-      setSaving(false);
-    }
+
+    const resetMap = { ...progressMap, [selectedBatch]: resetBatch };
+    setProgressMap(resetMap);
+    await saveMap(resetMap);
   };
 
   const handleExport = () => {
-    const wsData = [['Subject', 'Chapter', 'TCR', 'Entrance', 'Revision']];
-    
+    const wsData = [['Class', 'Subject', 'Chapter', 'TCR', 'Entrance', 'Revision']];
+
     const formatTask = (task: TaskData) => {
-      const sessionStr = task.sessions.map(s => s.teacher || 'Unassigned').join(', ');
+      const sessionStr = task.sessions.map((s) => s.teacher || 'Unassigned').join(', ');
       return sessionStr ? `${sessionStr} [${task.status.toUpperCase()}]` : `[${task.status.toUpperCase()}]`;
     };
 
-    data.forEach(sub => {
-      sub.chapters.forEach(ch => {
+    data.forEach((sub) => {
+      sub.chapters.forEach((ch) => {
         wsData.push([
+          selectedBatch,
           sub.name,
           ch.name,
           formatTask(ch.tcr),
@@ -9755,12 +12334,12 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
         ]);
       });
     });
-    
+
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Course Progress");
-    ws['!cols'] = [{ wch: 20 }, { wch: 40 }, { wch: 30 }, { wch: 30 }, { wch: 30 }];
-    XLSX.writeFile(wb, "Course_Progress.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, `Course Progress ${selectedBatch}`);
+    ws['!cols'] = [{ wch: 10 }, { wch: 20 }, { wch: 40 }, { wch: 30 }, { wch: 30 }, { wch: 30 }];
+    XLSX.writeFile(wb, `Course_Progress_${selectedBatch}.xlsx`);
   };
 
   if (loading) {
@@ -9784,14 +12363,32 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-            <BookOpen className="w-6 h-6 text-green-600" />
-            <h2>Course Progress</h2>
-            {saving && <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-2" />}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div className="flex items-center gap-2 text-2xl font-bold text-gray-900">
+              <BookOpen className="w-6 h-6 text-green-600" />
+              <h2>Course Progress</h2>
+              {saving && <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-2" />}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {BATCHES.map((batch) => (
+              <button
+                key={batch}
+                type="button"
+                onClick={() => {
+                  setSelectedBatch(batch);
+                  setSelectedSubjectIndex(null);
+                }}
+                className={`px-4 py-2 rounded-full border text-sm font-semibold transition ${selectedBatch === batch ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+              >
+                {batch}
+              </button>
+            ))}
           </div>
         </div>
         
@@ -9800,7 +12397,7 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
             onClick={handleReset}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-md font-medium hover:bg-red-100 transition-colors shadow-sm border border-red-200 flex-1 md:flex-none"
           >
-            <RotateCcw className="w-4 h-4" /> Reset Year
+            <RotateCcw className="w-4 h-4" /> Reset Class
           </button>
           <button
             onClick={handleExport}
@@ -10212,12 +12809,13 @@ export default function SessionManagerModal({ subjectName, chapterName, taskType
   const [localTaskData, setLocalTaskData] = useState<TaskData>(taskData);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
+  const [userCancelledAdd, setUserCancelledAdd] = useState(false);
 
   useEffect(() => {
-    if (localTaskData.sessions.length === 0 && !isAdding && !editingSessionId) {
+    if (localTaskData.sessions.length === 0 && !isAdding && !editingSessionId && !userCancelledAdd) {
       setIsAdding(true);
     }
-  }, [localTaskData.sessions.length, isAdding, editingSessionId]);
+  }, [localTaskData.sessions.length, isAdding, editingSessionId, userCancelledAdd]);
 
   const getTaskLabel = (field: TaskType) => {
     if (field === 'tcr') return 'TCR';
@@ -10235,16 +12833,17 @@ export default function SessionManagerModal({ subjectName, chapterName, taskType
     let newSessions;
     if (isAdding) {
       newSessions = [...localTaskData.sessions, session];
+      setUserCancelledAdd(false); // Reset cancel flag when a session is added
     } else {
       newSessions = localTaskData.sessions.map(s => s.id === session.id ? session : s);
     }
-    
+
     // Automatically change status to 'ongoing' if adding first session and status is still pending
     let newStatus = localTaskData.status;
     if (isAdding && newStatus === 'pending') {
       newStatus = 'ongoing';
     }
-    
+
     const newTaskData = { status: newStatus, sessions: newSessions };
     setLocalTaskData(newTaskData);
     setIsAdding(false);
@@ -10253,6 +12852,9 @@ export default function SessionManagerModal({ subjectName, chapterName, taskType
   };
 
   const handleDeleteSession = (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+      return;
+    }
     const newSessions = localTaskData.sessions.filter(s => s.id !== id);
     const newTaskData = { ...localTaskData, sessions: newSessions };
     setLocalTaskData(newTaskData);
@@ -10354,13 +12956,14 @@ export default function SessionManagerModal({ subjectName, chapterName, taskType
 
           {(isAdding || editingSessionId) && (
             <div className="mt-auto border-t border-gray-200 bg-white shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-              <SessionEditForm 
+              <SessionEditForm
                 key={editingSessionId || 'new'}
                 initialSession={editingSessionId ? localTaskData.sessions.find(s => s.id === editingSessionId) : undefined}
                 onSave={handleSaveSession}
                 onCancel={() => {
                   setIsAdding(false);
                   setEditingSessionId(null);
+                  setUserCancelledAdd(true);
                 }}
               />
             </div>
@@ -10624,6 +13227,11 @@ export interface SubjectProgress {
   name: string;
   chapters: ChapterProgress[];
 }
+
+export type BatchName = 'B1' | 'B2' | 'B3';
+
+export type CourseProgressMap = Record<BatchName, SubjectProgress[]>;
+
 --- END OF FILE src/components/lab/course-progress/types.ts ---
 
 --- START OF FILE src/components/lab/online-exams/ExamDashboard.tsx ---
@@ -11424,6 +14032,543 @@ export { default as ExamTake } from './ExamTake';
 export { default as ExamResults } from './ExamResults';
 --- END OF FILE src/components/lab/online-exams/index.ts ---
 
+--- START OF FILE src/components/lab/qp-maker/QPMaker.tsx ---
+import React, { useState } from 'react';
+import { ArrowLeft, FileText, Plus, X, Save, Download, Upload, Eye, Edit3, Trash2 } from 'lucide-react';
+
+interface Question {
+  id: string;
+  questionText: string;
+  marks: number;
+}
+
+interface QPMakerProps {
+  onBack: () => void;
+}
+
+export default function QPMaker({ onBack }: QPMakerProps) {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [currentQuestion, setCurrentQuestion] = useState<Partial<Question>>({
+    questionText: '',
+    marks: 5
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [examTitle, setExamTitle] = useState('');
+  const [duration, setDuration] = useState('60');
+  const [totalMarks, setTotalMarks] = useState('100');
+  const [instructions, setInstructions] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+
+  const handleAddQuestion = () => {
+    if (!currentQuestion.questionText?.trim()) {
+      alert('Please enter a question');
+      return;
+    }
+
+    const newQuestion: Question = {
+      id: Math.random().toString(36).substring(7),
+      questionText: currentQuestion.questionText,
+      marks: currentQuestion.marks || 5
+    };
+
+    if (editingIndex !== null) {
+      const updated = [...questions];
+      updated[editingIndex] = newQuestion;
+      setQuestions(updated);
+      setEditingIndex(null);
+    } else {
+      setQuestions([...questions, newQuestion]);
+    }
+
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setCurrentQuestion({
+      questionText: '',
+      marks: 5
+    });
+    setIsEditing(false);
+  };
+
+  const handleEditQuestion = (index: number) => {
+    setCurrentQuestion(questions[index]);
+    setEditingIndex(index);
+    setIsEditing(true);
+  };
+
+  const handleDeleteQuestion = (index: number) => {
+    if (window.confirm('Delete this question?')) {
+      setQuestions(questions.filter((_, i) => i !== index));
+      if (editingIndex === index) {
+        resetForm();
+      }
+    }
+  };
+
+  const handleCancelEdit = () => {
+    resetForm();
+  };
+
+  const exportQP = (format: 'html' | 'json' | 'md') => {
+    let content = '';
+    let mimeType = '';
+    let extension = '';
+
+    if (format === 'json') {
+      const qpData = {
+        title: examTitle || 'Question Paper',
+        duration,
+        totalMarks,
+        instructions,
+        questions
+      };
+      content = JSON.stringify(qpData, null, 2);
+      mimeType = 'application/json';
+      extension = 'json';
+    } else if (format === 'html') {
+      content = generateHTML();
+      mimeType = 'text/html';
+      extension = 'html';
+    } else if (format === 'md') {
+      content = generateMarkdown();
+      mimeType = 'text/markdown';
+      extension = 'md';
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${examTitle || 'question-paper'}.${extension}`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const generateHTML = () => {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${examTitle || 'Question Paper'}</title>
+  <style>
+    body { font-family: Georgia, serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+    .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .logo { margin-bottom: 15px; }
+    .meta { display: flex; justify-content: space-between; margin-top: 15px; font-weight: bold; }
+    .instructions { background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    .questions { list-style: none; padding: 0; }
+    .question { margin-bottom: 25px; page-break-inside: avoid; }
+    .question-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px; }
+    .question-text { white-space: pre-wrap; }
+    .marks { color: #666; }
+    @media print { body { margin: 20px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="logo1.png" alt="AIMS Plus Lab" class="logo" style="max-height: 60px;" />
+    <h1>${examTitle || 'Question Paper'}</h1>
+    <div class="meta">
+      <span>Duration: ${duration} minutes</span>
+      <span>Maximum Marks: ${totalMarks}</span>
+    </div>
+  </div>
+  ${instructions ? `<div class="instructions"><strong>Instructions:</strong><br>${instructions.replace(/\n/g, '<br>')}</div>` : ''}
+  <ol class="questions">
+    ${questions.map((q, i) => `
+    <li class="question">
+      <div class="question-header">
+        <span>Question ${i + 1}</span>
+        <span class="marks">[${q.marks} marks]</span>
+      </div>
+      <div class="question-text">${q.questionText}</div>
+    </li>`).join('')}
+  </ol>
+</body>
+</html>`;
+  };
+
+  const generateMarkdown = () => {
+    let md = `# ${examTitle || 'Question Paper'}\n\n`;
+    md += `**Duration:** ${duration} minutes  \n`;
+    md += `**Maximum Marks:** ${totalMarks}\n\n`;
+
+    if (instructions) {
+      md += `## Instructions\n\n${instructions}\n\n`;
+    }
+
+    md += `## Questions\n\n`;
+    questions.forEach((q, i) => {
+      md += `### Q${i + 1} [${q.marks} marks]\n\n`;
+      md += `${q.questionText}\n\n`;
+    });
+    return md;
+  };
+
+  const importQP = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target?.result as string);
+        if (data.title) setExamTitle(data.title);
+        if (data.duration) setDuration(data.duration);
+        if (data.totalMarks) setTotalMarks(data.totalMarks);
+        if (data.instructions) setInstructions(data.instructions);
+        if (data.questions) setQuestions(data.questions);
+      } catch (err) {
+        alert('Invalid question paper file');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const totalQuestionsMarks = questions.reduce((sum, q) => sum + q.marks, 0);
+
+  const handlePrint = () => {
+    const printContent = document.getElementById('qp-preview-content');
+    if (printContent) {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>${examTitle || 'Question Paper'}</title>
+            <style>
+              body { font-family: Georgia, serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+              .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+              .logo { max-height: 60px; margin-bottom: 15px; }
+              .header h1 { margin: 0; font-size: 24px; }
+              .meta { display: flex; justify-content: center; gap: 40px; margin-top: 15px; font-weight: bold; }
+              .instructions { background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+              .questions { list-style: none; padding: 0; }
+              .question { margin-bottom: 25px; page-break-inside: avoid; }
+              .question-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px; }
+              .question-text { white-space: pre-wrap; }
+              .marks { color: #666; }
+              @media print { body { margin: 20px; } }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <img src="${window.location.origin}/logo1.png" alt="AIMS Plus Lab" class="logo" />
+              <h1>${examTitle || 'Question Paper'}</h1>
+              <div class="meta">
+                <span>Duration: ${duration} minutes</span>
+                <span>Maximum Marks: ${totalMarks}</span>
+              </div>
+            </div>
+            ${instructions ? `<div class="instructions"><strong>Instructions:</strong><br>${instructions.replace(/\n/g, '<br>')}</div>` : ''}
+            <ol class="questions">
+              ${questions.map((q, i) => `
+                <li class="question">
+                  <div class="question-header">
+                    <span>Question ${i + 1}</span>
+                    <span class="marks">[${q.marks} marks]</span>
+                  </div>
+                  <div class="question-text">${q.questionText}</div>
+                </li>`).join('')}
+            </ol>
+          </body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => printWindow.print(), 250);
+      }
+    }
+  };
+
+  return (
+    <div className="space-y-6 max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-3">
+            <img src="/logo1.png" alt="AIMS Plus Lab" className="h-10 w-auto object-contain" />
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">QP Maker</h2>
+              <p className="text-sm text-gray-500">Create descriptive question papers</p>
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => setShowPreview(!showPreview)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+            showPreview ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          <Eye className="w-4 h-4" />
+          {showPreview ? 'Edit' : 'Preview'}
+        </button>
+      </div>
+
+      {showPreview ? (
+        /* Preview Mode */
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+            <h3 className="font-bold text-gray-800">Question Paper Preview</h3>
+            <div className="flex gap-2">
+              <button
+                onClick={handlePrint}
+                className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Print
+              </button>
+              <button
+                onClick={() => exportQP('html')}
+                className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm font-medium"
+              >
+                <Download className="w-4 h-4" />
+                Export HTML
+              </button>
+              <button
+                onClick={() => exportQP('md')}
+                className="flex items-center gap-1 px-3 py-1.5 bg-gray-700 text-white rounded-md hover:bg-gray-800 transition-colors text-sm font-medium"
+              >
+                <Download className="w-4 h-4" />
+                Export MD
+              </button>
+              <button
+                onClick={() => exportQP('json')}
+                className="flex items-center gap-1 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors text-sm font-medium"
+              >
+                <Download className="w-4 h-4" />
+                Export JSON
+              </button>
+            </div>
+          </div>
+          <div className="p-8" id="qp-preview-content">
+            <div className="max-w-3xl mx-auto">
+              <div className="text-center border-b-2 border-gray-800 pb-4 mb-6">
+                <img src="/logo1.png" alt="AIMS Plus Lab" className="h-16 mx-auto mb-3 object-contain" />
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">{examTitle || 'Question Paper'}</h1>
+                <div className="flex justify-between text-sm font-bold mt-3 max-w-md mx-auto">
+                  <span>Duration: {duration} minutes</span>
+                  <span>Maximum Marks: {totalMarks}</span>
+                </div>
+              </div>
+
+              {instructions && (
+                <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                  <p className="font-bold text-gray-800 mb-2">Instructions:</p>
+                  <div className="text-gray-600 whitespace-pre-wrap">{instructions}</div>
+                </div>
+              )}
+
+              <ol className="space-y-6">
+                {questions.map((q, i) => (
+                  <li key={q.id} className="break-inside-avoid">
+                    <div className="flex justify-between items-baseline mb-2">
+                      <span className="font-bold text-gray-800">Question {i + 1}</span>
+                      <span className="text-sm text-gray-500 font-medium">[{q.marks} marks]</span>
+                    </div>
+                    <div className="text-gray-700 whitespace-pre-wrap leading-relaxed">{q.questionText}</div>
+                  </li>
+                ))}
+              </ol>
+
+              {questions.length === 0 && (
+                <p className="text-center text-gray-500 py-8">No questions added yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Edit Mode */
+        <>
+          {/* Exam Settings */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
+              <Save className="w-4 h-4" />
+              Exam Settings
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Exam Title</label>
+                <input
+                  type="text"
+                  value={examTitle}
+                  onChange={(e) => setExamTitle(e.target.value)}
+                  placeholder="e.g., Physics - Chapter 1 Test"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Duration (minutes)</label>
+                <input
+                  type="number"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Total Marks</label>
+                <input
+                  type="number"
+                  value={totalMarks}
+                  onChange={(e) => setTotalMarks(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Instructions (optional)</label>
+              <textarea
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                placeholder="e.g., All questions are compulsory. Show all steps in calculations..."
+                rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Add/Edit Question Form */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+            <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
+              {isEditing ? <><Edit3 className="w-4 h-4" /> Edit Question</> : <><Plus className="w-4 h-4" /> Add Question</>}
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Question (supports Markdown)</label>
+                <textarea
+                  value={currentQuestion.questionText}
+                  onChange={(e) => setCurrentQuestion({ ...currentQuestion, questionText: e.target.value })}
+                  placeholder="Enter your descriptive question here...
+
+You can use:
+- **bold** for emphasis
+- *italics* for terms
+- Equations like E = mc²
+- Lists and more..."
+                  rows={6}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm resize-none font-serif"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Marks</label>
+                <input
+                  type="number"
+                  value={currentQuestion.marks}
+                  onChange={(e) => setCurrentQuestion({ ...currentQuestion, marks: parseInt(e.target.value) || 5 })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={handleAddQuestion}
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 transition-colors text-sm"
+                >
+                  {isEditing ? 'Update Question' : 'Add Question'}
+                </button>
+                {isEditing && (
+                  <button
+                    onClick={handleCancelEdit}
+                    className="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-md hover:bg-gray-300 transition-colors text-sm"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Questions List */}
+          {questions.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="font-bold text-gray-700">
+                  Questions ({questions.length}) — Total: {totalQuestionsMarks} marks
+                  {totalMarks && totalQuestionsMarks !== parseInt(totalMarks) && (
+                    <span className={`ml-2 text-xs ${totalQuestionsMarks > parseInt(totalMarks) ? 'text-red-600' : 'text-amber-600'}`}>
+                      (Expected: {totalMarks})
+                    </span>
+                  )}
+                </h3>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => document.getElementById('qp-import')?.click()}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm font-medium"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Import
+                  </button>
+                  <input
+                    id="qp-import"
+                    type="file"
+                    accept=".json"
+                    onChange={importQP}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                {questions.map((q, index) => (
+                  <div key={q.id} className="p-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Q{index + 1}</span>
+                          <span className="text-xs font-medium text-green-600">{q.marks} marks</span>
+                        </div>
+                        <p className="text-sm text-gray-800 whitespace-pre-wrap font-serif">{q.questionText}</p>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <button
+                          onClick={() => handleEditQuestion(index)}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          title="Edit"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteQuestion(index)}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {questions.length === 0 && (
+            <div className="text-center py-12 text-gray-500">
+              <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>No questions added yet. Start building your question paper!</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/qp-maker/QPMaker.tsx ---
+
 --- START OF FILE src/components/lab/timetable/EditSlotModal.tsx ---
 import React, { useState } from 'react';
 import { Batch, TimetableSession } from './types';
@@ -11913,16 +15058,18 @@ interface Props {
   chapters: Chapter[];
   student: OMRResult;
   compact?: boolean;
+  showPercent?: boolean;
+  showNames?: boolean;
 }
 
-export default function ChapterProgressBars({ chapters, student, compact = false }: Props) {
+export default function ChapterProgressBars({ chapters, student, compact = false, showPercent = true, showNames = true }: Props) {
   // Only show chapters that actually have questions mapped to them
   const validChapters = chapters.filter(c => c.questions.length > 0);
   
   if (validChapters.length === 0) return null;
 
   return (
-    <div className={`flex flex-col gap-[0.15em] w-full ${compact ? '' : 'mt-[0.3em] px-[0.2em] border-t border-gray-100 pt-[0.4em]'}`}>
+    <div className={`flex flex-col gap-[0.15em] w-full ${compact ? '' : 'mt-[0.3em] '}`}>
       {validChapters.map((c, idx) => {
         let correct = 0;
         c.questions.forEach(q => {
@@ -11931,20 +15078,22 @@ export default function ChapterProgressBars({ chapters, student, compact = false
         const progress = (correct / c.questions.length) * 100;
         
         return (
-          <div key={c.name} className="flex items-center justify-between gap-[0.2em]">
-            <span 
-              className={`text-[0.45em] text-gray-600 font-bold text-left uppercase tracking-wide truncate ${compact ? 'w-[1.2em]' : 'w-[7em]'}`} 
-              title={c.name}
-            >
-              {compact ? `${idx + 1}` : c.name}
-            </span>
-            <div className={`flex-1 ${compact ? 'h-[0.2em]' : 'h-[0.25em]'} bg-gray-200 rounded-full overflow-hidden`}>
+          <div key={c.name} className={`flex items-center gap-[0.2em] ${compact ? '' : 'w-full'}`}>
+            {!compact && showNames && (
+              <span 
+                className="text-[0.4em] text-gray-600 font-bold text-left uppercase tracking-wide truncate w-1/2" 
+                title={c.name}
+              >
+                {c.name}
+              </span>
+            )}
+            <div className={`flex-1 ${compact ? 'h-[0.25em]' : 'h-[0.25em]'} bg-gray-200 rounded-full overflow-hidden`}>
               <div 
                 className="h-full bg-indigo-500 rounded-full" 
                 style={{ width: `${progress}%` }} 
               />
             </div>
-            {!compact && (
+            {!compact && showPercent && (
               <span className="text-[0.4em] text-gray-500 font-medium w-[1.5em] text-right">
                 {Math.round(progress)}%
               </span>
@@ -11963,11 +15112,16 @@ import React from 'react';
 
 interface CosmicDotGridProps {
   scores: Record<string, number>;
+  variant?: 'default' | 'top';
 }
 
-export default function CosmicDotGrid({ scores }: CosmicDotGridProps) {
+export default function CosmicDotGrid({ scores, variant = 'default' }: CosmicDotGridProps) {
+  const dotSizeClass = variant === 'top' ? 'w-[0.55em] h-[0.55em]' : 'w-[0.45em] h-[0.45em]';
+  const gapClass = variant === 'top' ? 'gap-[0.05em]' : 'gap-[0.08em]';
+  const containerWidth = variant === 'top' ? 'w-fit' : 'w-fit';
+
   return (
-    <div className="grid grid-cols-5 gap-[0.12em] w-fit mx-auto">
+    <div className={`grid grid-cols-5 ${gapClass} ${containerWidth} mx-auto`}>
       {Array.from({ length: 25 }, (_, i) => i + 1).map(qNum => {
         const score = scores[`q${qNum}`] || 0;
         let bgClass = 'bg-gray-200'; // Blank / No Answer
@@ -11981,7 +15135,7 @@ export default function CosmicDotGrid({ scores }: CosmicDotGridProps) {
         return (
           <div
             key={qNum}
-            className={`w-[0.3em] h-[0.3em] rounded-full ${bgClass} transition-colors`}
+            className={`${dotSizeClass} rounded-sm ${bgClass} transition-colors`}
             title={`Q${qNum}: ${score === 1 ? 'Correct' : score === -1 ? 'Wrong' : 'Blank'}`}
           />
         );
@@ -12141,17 +15295,17 @@ import ChapterProgressBars from './ChapterProgressBars';
 
 interface StudentRankCardProps {
   student: OMRResult;
-  index: number;
+  rank: number;
   score: number;
   chapters: Chapter[];
 }
 
-export default function StudentRankCard({ student, index, score, chapters }: StudentRankCardProps) {
+export default function StudentRankCard({ student, rank, score, chapters }: StudentRankCardProps) {
   return (
     <div className="flex flex-col p-[0.4em] border border-gray-200 rounded-[0.6em] text-center bg-white shadow-sm relative overflow-hidden h-full break-inside-avoid">
       
       <div className="flex justify-between items-center mb-[0.2em] z-10">
-        <span className="text-[0.55em] font-bold text-gray-500 bg-gray-100 px-[0.4em] py-[0.1em] rounded border border-gray-200">#{index + 1}</span>
+        <span className="text-[0.55em] font-bold text-gray-500 bg-gray-100 px-[0.4em] py-[0.1em] rounded border border-gray-200">#{rank}</span>
       </div>
       
       <h4 className="text-[0.65em] font-bold break-words leading-tight mb-[0.4em] px-[0.1em] text-gray-900 z-10 tracking-tight" title={student.name}>
@@ -12167,11 +15321,11 @@ export default function StudentRankCard({ student, index, score, chapters }: Stu
       </div>
       
       {/* Container for Dots (Left) and Progress Bars (Right) side by side */}
-      <div className="mt-auto flex flex-row items-center justify-between w-full z-10 pt-[0.4em] border-t border-gray-100">
-        <div className="border-r border-gray-100 pr-[0.4em] shrink-0">
+      <div className="mt-auto flex flex-row items-start w-full z-10 pt-[0.4em] border-t border-gray-100">
+        <div className="w-1/2 border-r border-gray-100 pr-[0.4em] shrink-0">
           <CosmicDotGrid scores={student.scores} />
         </div>
-        <div className="flex-1 pl-[0.4em] flex flex-col justify-center">
+        <div className="w-1/2 pl-[0.4em] flex flex-col justify-center">
           <ChapterProgressBars chapters={chapters} student={student} compact={true} />
         </div>
       </div>
@@ -12200,24 +15354,29 @@ interface TopRankCardProps {
 export default function TopRankCard({ student, rank, score, chapters, imageUrl, fontSizeScale }: TopRankCardProps) {
   let cardClasses = "flex flex-col items-center rounded-xl p-[0.8em] border shadow-md relative overflow-hidden break-inside-avoid ";
   let badgeClasses = "absolute -bottom-[0.5em] -right-[0.5em] w-[2.2em] h-[2.2em] rounded-full text-white flex items-center justify-center font-bold border-[0.15em] border-white z-20 text-[0.8em] shadow-sm ";
-  let scale = "scale-100";
-  
+  let scale = "";
+  let cardHeight = '18.5em';
+  let cardWidth = '14em';
+
   if (rank === 1) {
-    cardClasses += "bg-gradient-to-b from-yellow-50 to-white border-yellow-200 z-10 ";
-    badgeClasses += "bg-yellow-500";
-    scale = "scale-105 mx-2"; // Make 1st place stand out slightly
+    cardClasses += "bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 border-yellow-200 text-slate-900 z-10 ";
+    badgeClasses += "bg-yellow-600";
+    cardHeight = '22em';
+    cardWidth = '15.5em';
   } else if (rank === 2) {
-    cardClasses += "bg-gradient-to-b from-gray-50 to-white border-gray-200 ";
-    badgeClasses += "bg-gray-400";
+    cardClasses += "bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 border-slate-300 text-slate-900 ";
+    badgeClasses += "bg-slate-600";
+    cardHeight = '19em';
   } else {
-    cardClasses += "bg-gradient-to-b from-orange-50 to-white border-orange-200 ";
-    badgeClasses += "bg-orange-500";
+    cardClasses += "bg-gradient-to-br from-orange-100 via-orange-200 to-amber-100 border-orange-300 text-slate-900 ";
+    badgeClasses += "bg-orange-600";
+    cardHeight = '19em';
   }
 
   // Use the passed fontSizeScale to control internal scaling proportionately
   return (
-    <div className={`${cardClasses} ${scale}`} style={{ fontSize: `${fontSizeScale}px`, width: '14em' }}>
-      <div className="relative mb-[0.6em] mt-[0.2em]">
+    <div className={`${cardClasses} ${scale}`} style={{ fontSize: `${fontSizeScale}px`, width: cardWidth, minHeight: cardHeight, height: cardHeight }}>
+      <div className="relative mb-[0.5em] mt-[0.3em]">
         {imageUrl ? (
           <img src={imageUrl} alt={student.name} className="w-[4.5em] h-[4.5em] rounded-full object-cover border-[0.2em] border-white shadow-sm" />
         ) : (
@@ -12237,14 +15396,16 @@ export default function TopRankCard({ student, rank, score, chapters, imageUrl, 
         </span>
         <span className="text-[0.7em] font-bold text-red-700 bg-red-50 px-[0.5em] py-[0.2em] rounded border border-red-200">W:{student.wrong}</span>
       </div>
-      <div className="mt-auto flex flex-row items-center justify-between w-full z-10 pt-[0.4em] border-t border-gray-100">
-              <div className="border-r border-gray-100 pr-[0.4em] shrink mx-auto ">
-                <CosmicDotGrid scores={student.scores} />
-              </div>
-              <div className="flex-1 pl-[0.4em] flex flex-col justify-center">
-                <ChapterProgressBars chapters={chapters} student={student} compact={false} />
-              </div>
-            </div>  
+      <div className="mt-auto flex flex-row items-stretch w-full z-10 pt-[0.2em]">
+        <div className="w-1/3 max-w-[5.2em] border-r border-gray-100 pr-[0.3em] shrink-0 flex items-center justify-center">
+          <div className="aspect-square h-full max-h-[11.5em] flex items-center justify-center">
+            <CosmicDotGrid scores={student.scores} variant="top" />
+          </div>
+        </div>
+        <div className="flex-1 pl-[0.3em] flex flex-col justify-center">
+          <ChapterProgressBars chapters={chapters} student={student} compact={false} showPercent={false} showNames={false} />
+        </div>
+      </div>  
     </div>
   );
 }
@@ -12434,7 +15595,7 @@ export async function getExamSubmissions(examId: string): Promise<ExamSubmission
   })) as ExamSubmission[];
 }
 
-export async function getCourseProgress(): Promise<any[]> {
+export async function getCourseProgress(): Promise<any> {
   if (!db) throw new Error("Firebase is not configured.");
   
   const docRef = doc(db, 'app_data', 'course_progress');
@@ -12443,10 +15604,10 @@ export async function getCourseProgress(): Promise<any[]> {
   if (docSnap.exists() && docSnap.data().subjects) {
     return docSnap.data().subjects;
   }
-  return [];
+  return null;
 }
 
-export async function saveCourseProgress(subjects: any[]): Promise<void> {
+export async function saveCourseProgress(subjects: any): Promise<void> {
   if (!db) throw new Error("Firebase is not configured.");
   
   const docRef = doc(db, 'app_data', 'course_progress');

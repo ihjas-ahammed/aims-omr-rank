@@ -1,404 +1,118 @@
 
---- START OF FILE src/components/lab/course-progress/types.ts ---
-export type TaskType = 'tcr' | 'entrance' | 'revision';
 
-export type TaskStatus = 'pending' | 'ongoing' | 'finished';
+--- START OF FILE src/components/ranklist/AppTopRankCard.tsx ---
+import React from 'react';
+import { Camera, Image as ImageIcon } from 'lucide-react';
+import { OMRResult } from '../../services/geminiService';
+import { Chapter } from '../../utils/topicParser';
 
-export interface SessionData {
-  id: string;
-  teacher: string | null;
-  date?: string;
-  startTime?: string;
-  endTime?: string;
+interface AppTopRankCardProps {
+  student: OMRResult;
+  rank: number;
+  score: number;
+  chapters: Chapter[];
+  imageUrl?: string;
+  onImageClick: (e: React.MouseEvent, name: string) => void;
+  onClick: () => void;
+  orderClass: string;
 }
 
-export interface TaskData {
-  status: TaskStatus;
-  sessions: SessionData[];
-}
-
-export interface ChapterProgress {
-  name: string;
-  tcr: TaskData;
-  entrance: TaskData;
-  revision: TaskData;
-}
-
-export interface SubjectProgress {
-  name: string;
-  chapters: ChapterProgress[];
-}
---- END OF FILE src/components/lab/course-progress/types.ts ---
-
---- START OF FILE src/components/lab/course-progress/initialData.ts ---
-import { SubjectProgress, TaskData } from './types';
-
-const generateId = () => Math.random().toString(36).substring(7);
-
-const createSession = (teacher: string | null): TaskData => {
-  if (!teacher) return { status: 'pending', sessions: [] };
-  return {
-    status: 'finished',
-    sessions: [{
-      id: generateId(),
-      teacher
-    }]
-  };
-};
-
-export const initialData: SubjectProgress[] = [
-  {
-    name: "Physics",
-    chapters: [
-      { name: "Electric charges and fields", tcr: createSession("ABR"), entrance: createSession("ABR"), revision: createSession("ARJ") },
-      { name: "Electrostatic potential and capacitance", tcr: createSession("ABR"), entrance: createSession(null), revision: createSession("ARJ") },
-      { name: "Current electricity", tcr: createSession("ARJ"), entrance: createSession("ARJ"), revision: createSession("NSR") },
-      { name: "Moving charges and magnetism", tcr: createSession("ARJ"), entrance: createSession("ARJ"), revision: createSession("ARJ") },
-      { name: "Magnetism and matter", tcr: createSession("ARJ"), entrance: createSession(null), revision: createSession(null) },
-      { name: "Electromagnetic induction", tcr: createSession("JN"), entrance: createSession(null), revision: createSession("NSR") },
-      { name: "Alternating current", tcr: createSession("ARJ"), entrance: createSession(null), revision: createSession("NSR") },
-      { name: "Electromagnetic wave", tcr: createSession("JN"), entrance: createSession(null), revision: createSession(null) },
-      { name: "Ray optics", tcr: createSession("ARJ"), entrance: createSession(null), revision: createSession("NSR") },
-      { name: "Wave optics", tcr: createSession("ARJ"), entrance: createSession(null), revision: createSession("NSR") },
-      { name: "Dual nature ", tcr: createSession("ABR"), entrance: createSession(null), revision: createSession("NSR") },
-      { name: "Atoms", tcr: createSession("ABR"), entrance: createSession(null), revision: createSession("ARJ") },
-      { name: "Nuclei", tcr: createSession("ARJ"), entrance: createSession(null), revision: createSession("NSR") },
-      { name: "Semiconductors", tcr: createSession("ARJ"), entrance: createSession(null), revision: createSession(null) }
-    ]
-  },
-  {
-    name: "CHEMISTRY",
-    chapters: [
-      { name: "Solutions", tcr: createSession("CAZ"), entrance: createSession("CAZ"), revision: createSession("CAZ") },
-      { name: "Electrochemistry", tcr: createSession("CY"), entrance: createSession("CY"), revision: createSession("CY") },
-      { name: "Chemical kinetics", tcr: createSession("CY"), entrance: createSession("CY"), revision: createSession("CY") },
-      { name: "D and f block", tcr: createSession("CAZ"), entrance: createSession(null), revision: createSession("CY") },
-      { name: "Coordination compound", tcr: createSession("CAZ"), entrance: createSession(null), revision: createSession("CAZ") },
-      { name: "Haloalkanes and haloarenes", tcr: createSession("JSL"), entrance: createSession("need 2H"), revision: createSession("CY") },
-      { name: "Alcohols,phenols and ethers", tcr: createSession("CY"), entrance: createSession(null), revision: createSession("CY") },
-      { name: "Aldehydes, ketone and carboxylate acids", tcr: createSession("CY"), entrance: createSession(null), revision: createSession("CY") },
-      { name: "Amines", tcr: createSession("CAZ"), entrance: createSession(null), revision: createSession("CY") },
-      { name: "Bio molecules", tcr: createSession("CY"), entrance: createSession(null), revision: createSession("CY") }
-    ]
-  },
-  {
-    name: "Maths",
-    chapters: [
-      { name: "Relations and functions", tcr: createSession("SRJ"), entrance: createSession("MRS"), revision: createSession("MF") },
-      { name: "Inverse trignometry", tcr: createSession("SRJ"), entrance: createSession(null), revision: createSession("MRS") },
-      { name: "Matrices", tcr: createSession("MF"), entrance: createSession("MF"), revision: createSession(null) },
-      { name: "Determinants", tcr: createSession("MF"), entrance: createSession("MF"), revision: createSession(null) },
-      { name: "Continuity and differentiability", tcr: createSession("MF"), entrance: createSession("MRS"), revision: createSession("SRJ") },
-      { name: "Applications of derivatives", tcr: createSession("MRS"), entrance: createSession(null), revision: createSession("ADL") },
-      { name: "Integrals", tcr: createSession("MF"), entrance: createSession(null), revision: createSession("SRJ") },
-      { name: "Applications of integrals", tcr: createSession("MF"), entrance: createSession(null), revision: createSession("SRJ") },
-      { name: "Differential equations", tcr: createSession("MRS"), entrance: createSession(null), revision: createSession("MF") },
-      { name: "Vector algebra", tcr: createSession("ADL"), entrance: createSession(null), revision: createSession("MRS") },
-      { name: "Three dimensional geometry", tcr: createSession("ADL"), entrance: createSession(null), revision: createSession("MF") },
-      { name: "Linear programming", tcr: createSession("SRJ"), entrance: createSession(null), revision: createSession("MF") },
-      { name: "Probability", tcr: createSession("ADL"), entrance: createSession(null), revision: createSession("MRS") }
-    ]
-  },
-  {
-    name: "ZOOLOGY",
-    chapters: [
-      { name: "Human reproduction", tcr: createSession("AZ"), entrance: createSession(null), revision: createSession("IQ") },
-      { name: "Reproductive health", tcr: createSession("IQ"), entrance: createSession(null), revision: createSession("AZ") },
-      { name: "Principles of heredity and variation", tcr: createSession("AZ"), entrance: createSession(null), revision: createSession("IQ") },
-      { name: "Molecular basis of inheritance", tcr: createSession("AZ"), entrance: createSession(null), revision: createSession("IQ") },
-      { name: "Evolution", tcr: createSession("IQ"), entrance: createSession(null), revision: createSession("AZ") },
-      { name: "Human health and Diseases", tcr: createSession("IQ"), entrance: createSession(null), revision: createSession("AZ") },
-      { name: "Microbes in human welfare", tcr: createSession("AZ"), entrance: createSession(null), revision: createSession("AZ") },
-      { name: "Biodiversity and conservation", tcr: createSession("AZ"), entrance: createSession(null), revision: createSession("AZ") }
-    ]
-  },
-  {
-    name: "BOTANY",
-    chapters: [
-      { name: "Sexual reproduction in flowering plant", tcr: createSession("JS"), entrance: createSession("JS"), revision: createSession("JS") },
-      { name: "Biotechnology principles and processes", tcr: createSession("SHM"), entrance: createSession("SHM"), revision: createSession("JS") },
-      { name: "Biotechnology and its application", tcr: createSession("JS"), entrance: createSession(null), revision: createSession(null) },
-      { name: "Organism and population", tcr: createSession("SHM"), entrance: createSession(null), revision: createSession("JS") },
-      { name: "Ecosystem", tcr: createSession("JS"), entrance: createSession(null), revision: createSession(null) }
-    ]
-  }
-];
---- END OF FILE src/components/lab/course-progress/initialData.ts ---
-
---- START OF FILE src/components/lab/course-progress/CourseProgress.tsx ---
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, BookOpen, Download, Loader2, RotateCcw, AlertTriangle } from 'lucide-react';
-import * as XLSX from 'xlsx';
-import { SubjectProgress, TaskData, TaskStatus } from './types';
-import { initialData } from './initialData';
-import SubjectView from './SubjectView';
-import { getCourseProgress, saveCourseProgress, isFirebaseConfigured } from '../../../services/firebaseService';
-
-export default function CourseProgress({ onBack }: { onBack: () => void }) {
-  const [data, setData] = useState<SubjectProgress[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [selectedSubjectIndex, setSelectedSubjectIndex] = useState<number | null>(null);
-
-  // Helper to migrate old fields to new TaskData format
-  const migrateTask = (val: any): TaskData => {
-    if (!val) return { status: 'pending', sessions: [] };
-    
-    // If it's already TaskData (has status and sessions array)
-    if (val.status && Array.isArray(val.sessions)) {
-      return val as TaskData;
-    }
-    
-    // If it was the previous SessionData[] format
-    if (Array.isArray(val)) {
-      const hasOngoing = val.some(v => v.status === 'ongoing');
-      const allFinished = val.length > 0 && val.every(v => v.status === 'finished');
-      const status: TaskStatus = allFinished ? 'finished' : (hasOngoing ? 'ongoing' : (val.length > 0 ? 'finished' : 'pending'));
-      
-      const cleanSessions = val.map(v => {
-        const { status, ...rest } = v; // Strip old status from sessions
-        return { ...rest, id: v.id || Math.random().toString(36).substring(7) };
-      });
-      return { status, sessions: cleanSessions };
-    }
-    
-    // If it was the old string format
-    if (typeof val === 'string') {
-      return { 
-        status: 'finished', 
-        sessions: [{ id: Math.random().toString(36).substring(7), teacher: val }] 
-      };
-    }
-    
-    // If it was the old single object format
-    if (typeof val === 'object' && val.status && val.teacher !== undefined) {
-      const { status, ...rest } = val;
-      return { 
-        status: status as TaskStatus, 
-        sessions: [{ id: Math.random().toString(36).substring(7), ...rest }] 
-      };
-    }
-    
-    return { status: 'pending', sessions: [] };
-  };
-
-  useEffect(() => {
-    document.title = "AIMS - Course Progress";
-    fetchData();
-    return () => { document.title = "OMR Checker Pro"; };
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const res = await getCourseProgress();
-      if (res && res.length > 0) {
-        const migratedData = res.map(sub => ({
-          ...sub,
-          chapters: sub.chapters.map((ch: any) => ({
-            ...ch,
-            tcr: migrateTask(ch.tcr),
-            entrance: migrateTask(ch.entrance),
-            revision: migrateTask(ch.revision)
-          }))
-        }));
-        setData(migratedData);
-      } else {
-        setData(initialData);
-        // Initialize global data for everyone else
-        if (isFirebaseConfigured) {
-          await saveCourseProgress(initialData);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load from Firebase, falling back to local storage", e);
-      const saved = localStorage.getItem('omr_course_progress');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          const migratedData = parsed.map((sub: any) => ({
-            ...sub,
-            chapters: sub.chapters.map((ch: any) => ({
-              ...ch,
-              tcr: migrateTask(ch.tcr),
-              entrance: migrateTask(ch.entrance),
-              revision: migrateTask(ch.revision)
-            }))
-          }));
-          setData(migratedData);
-        } catch (err) {
-          setData(initialData);
-        }
-      } else {
-        setData(initialData);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateChapter = async (subjectIdx: number, chapterIdx: number, field: 'tcr' | 'entrance' | 'revision', taskData: TaskData) => {
-    // Perform a deep immutable update so React re-renders correctly
-    const newData = [...data];
-    const newSubject = { ...newData[subjectIdx] };
-    const newChapters = [...newSubject.chapters];
-    const newChapter = { ...newChapters[chapterIdx] };
-    
-    newChapter[field] = taskData;
-    newChapters[chapterIdx] = newChapter;
-    newSubject.chapters = newChapters;
-    newData[subjectIdx] = newSubject;
-    
-    setData(newData);
-    
-    setSaving(true);
-    try {
-      await saveCourseProgress(newData);
-      localStorage.setItem('omr_course_progress', JSON.stringify(newData));
-    } catch (e) {
-      console.error("Failed to save to Firebase", e);
-      localStorage.setItem('omr_course_progress', JSON.stringify(newData));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleReset = async () => {
-    if (!window.confirm("Are you sure you want to reset ALL course progress for a new academic year? This cannot be undone.")) return;
-    
-    const resetData = data.map(sub => ({
-      ...sub,
-      chapters: sub.chapters.map(ch => ({
-        ...ch,
-        tcr: { status: 'pending', sessions: [] } as TaskData,
-        entrance: { status: 'pending', sessions: [] } as TaskData,
-        revision: { status: 'pending', sessions: [] } as TaskData
-      }))
-    }));
-    
-    setData(resetData);
-    setSaving(true);
-    try {
-      await saveCourseProgress(resetData);
-      localStorage.setItem('omr_course_progress', JSON.stringify(resetData));
-    } catch (e) {
-      console.error("Failed to reset in Firebase", e);
-      localStorage.setItem('omr_course_progress', JSON.stringify(resetData));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleExport = () => {
-    const wsData = [['Subject', 'Chapter', 'TCR', 'Entrance', 'Revision']];
-    
-    const formatTask = (task: TaskData) => {
-      const sessionStr = task.sessions.map(s => s.teacher || 'Unassigned').join(', ');
-      return sessionStr ? `${sessionStr} [${task.status.toUpperCase()}]` : `[${task.status.toUpperCase()}]`;
-    };
-
-    data.forEach(sub => {
-      sub.chapters.forEach(ch => {
-        wsData.push([
-          sub.name,
-          ch.name,
-          formatTask(ch.tcr),
-          formatTask(ch.entrance),
-          formatTask(ch.revision)
-        ]);
-      });
+export default function AppTopRankCard({ 
+  student, rank, score, chapters, imageUrl, onImageClick, onClick, orderClass 
+}: AppTopRankCardProps) {
+  
+  const calculateChapterProgress = (studentData: OMRResult, chapter: Chapter) => {
+    if (chapter.questions.length === 0) return 0;
+    let correct = 0;
+    chapter.questions.forEach(q => {
+      if (studentData.scores[`q${q}`] === 1) correct++;
     });
-    
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Course Progress");
-    ws['!cols'] = [{ wch: 20 }, { wch: 40 }, { wch: 30 }, { wch: 30 }, { wch: 30 }];
-    XLSX.writeFile(wb, "Course_Progress.xlsx");
+    return (correct / chapter.questions.length) * 100;
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-      </div>
-    );
+  let cardBg = 'bg-white border-gray-200';
+  let rankColor = 'text-gray-500';
+  let progressBg = 'bg-blue-500';
+  let sizeClass = 'w-full md:w-[280px]'; // Standard podium size
+  
+  if (rank === 1) {
+    cardBg = 'bg-gradient-to-br from-yellow-100 to-yellow-200 border-yellow-400 shadow-yellow-100';
+    rankColor = 'text-yellow-700';
+    progressBg = 'bg-yellow-500';
+    sizeClass = 'w-full md:w-[320px] md:scale-105 z-10'; // Make Rank 1 slightly larger on desktop
+  } else if (rank === 2) {
+    cardBg = 'bg-gradient-to-br from-gray-100 to-gray-200 border-gray-400 shadow-gray-100';
+    rankColor = 'text-gray-700';
+    progressBg = 'bg-gray-500';
+  } else if (rank === 3) {
+    cardBg = 'bg-gradient-to-br from-orange-100 to-orange-200 border-orange-400 shadow-orange-100';
+    rankColor = 'text-orange-700';
+    progressBg = 'bg-orange-500';
   }
 
-  if (selectedSubjectIndex !== null) {
-    return (
-      <SubjectView 
-        subject={data[selectedSubjectIndex]} 
-        onBack={() => setSelectedSubjectIndex(null)}
-        onUpdate={(cIdx, field, taskData) => updateChapter(selectedSubjectIndex, cIdx, field, taskData)}
-      />
-    );
-  }
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onImageClick(e, student.name);
+  };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-            <BookOpen className="w-6 h-6 text-green-600" />
-            <h2>Course Progress</h2>
-            {saving && <Loader2 className="w-4 h-4 animate-spin text-gray-400 ml-2" />}
-          </div>
+    <div 
+      onClick={onClick}
+      className={`relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col ${cardBg} ${sizeClass} ${orderClass}`}
+    >
+      <div className={`absolute top-0 right-0 bg-black/5 px-4 py-1.5 rounded-bl-xl font-black text-lg ${rankColor}`}>
+        #{rank}
+      </div>
+
+      <div className="flex flex-col items-center gap-4 mb-4 mt-2">
+        <div 
+          className={`relative rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center overflow-hidden group shrink-0 ${rank === 1 ? 'w-28 h-28' : 'w-24 h-24'}`}
+          onClick={handleImageClick}
+        >
+          {imageUrl ? (
+            <>
+              <img src={imageUrl} alt={student.name} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="w-6 h-6 text-white" />
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center w-full h-full bg-gray-100 group-hover:bg-gray-200 transition-colors">
+              <ImageIcon className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
+            </div>
+          )}
         </div>
         
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <button
-            onClick={handleReset}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-md font-medium hover:bg-red-100 transition-colors shadow-sm border border-red-200 flex-1 md:flex-none"
-          >
-            <RotateCcw className="w-4 h-4" /> Reset Year
-          </button>
-          <button
-            onClick={handleExport}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md font-medium hover:bg-green-700 transition-colors shadow-sm flex-1 md:flex-none"
-          >
-            <Download className="w-4 h-4" /> Export XLS
-          </button>
+        <div className="text-center w-full">
+          <h3 className={`${rank === 1 ? 'text-2xl' : 'text-xl'} font-bold text-gray-900 truncate px-2`} title={student.name}>
+            {student.name}
+          </h3>
+          <div className="flex items-center justify-center gap-3 mt-2 text-sm">
+            <span className="font-medium text-green-700 bg-green-100/80 px-2 py-0.5 rounded border border-green-200/50">C: {student.right}</span>
+            <span className="font-medium text-red-700 bg-red-100/80 px-2 py-0.5 rounded border border-red-200/50">W: {student.wrong}</span>
+          </div>
+          <div className={`${rank === 1 ? 'text-4xl' : 'text-3xl'} font-black mt-3 text-gray-800`}>
+            {score} <span className="text-sm font-medium text-gray-500">pts</span>
+          </div>
         </div>
       </div>
 
-      {!isFirebaseConfigured && (
-        <div className="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-xl flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 shrink-0" />
-          <p className="text-sm font-medium"><strong>Firebase Not Configured:</strong> Course Progress data is only being saved locally to this browser and will not sync globally across devices.</p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {data.map((subject, idx) => {
-          const totalTasks = subject.chapters.length * 3;
-          const completedTasks = subject.chapters.reduce((acc, ch) => {
-            return acc + (ch.tcr.status === 'finished' ? 1 : 0) 
-                       + (ch.entrance.status === 'finished' ? 1 : 0) 
-                       + (ch.revision.status === 'finished' ? 1 : 0);
-          }, 0);
-          const percent = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-
+      <div className={`space-y-3 mt-auto pt-4 border-t ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Chapter Progress</h4>
+        {chapters.map(chapter => {
+          if (chapter.questions.length === 0) return null;
+          const progress = calculateChapterProgress(student, chapter);
           return (
-            <div 
-              key={subject.name}
-              onClick={() => setSelectedSubjectIndex(idx)}
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md hover:border-green-300 transition-all"
-            >
-              <h3 className="text-xl font-bold text-gray-900 mb-4 uppercase">{subject.name}</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm font-medium text-gray-600">
-                  <span>Progress</span>
-                  <span>{percent}%</span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2">
-                  <div 
-                    className="bg-green-500 h-2 rounded-full transition-all"
-                    style={{ width: `${percent}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-2">{completedTasks} of {totalTasks} tasks fully completed</p>
+            <div key={chapter.name} className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-700 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
+                <span className="font-bold text-gray-900">{Math.round(progress)}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all duration-500 ${progressBg}`}
+                  style={{ width: `${progress}%` }}
+                />
               </div>
             </div>
           );
@@ -407,500 +121,509 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
     </div>
   );
 }
---- END OF FILE src/components/lab/course-progress/CourseProgress.tsx ---
+--- END OF FILE src/components/ranklist/AppTopRankCard.tsx ---
 
---- START OF FILE src/components/lab/course-progress/SubjectView.tsx ---
-import React, { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { SubjectProgress, TaskType, TaskData } from './types';
-import SubjectTable from './SubjectTable';
-import SubjectMobileCards from './SubjectMobileCards';
-import SessionManagerModal from './SessionManagerModal';
-
-interface Props {
-  subject: SubjectProgress;
-  onBack: () => void;
-  onUpdate: (chapterIdx: number, field: TaskType, taskData: TaskData) => void;
-}
-
-export default function SubjectView({ subject, onBack, onUpdate }: Props) {
-  const [editing, setEditing] = useState<{ cIdx: number, field: TaskType, taskData: TaskData } | null>(null);
-
-  const openEdit = (cIdx: number, field: TaskType, taskData: TaskData) => {
-    setEditing({ cIdx, field, taskData });
-  };
-
-  return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
-      <div className="flex items-center gap-4">
-        <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <h2 className="text-2xl font-bold text-gray-900 uppercase">{subject.name} Progress</h2>
-      </div>
-
-      {/* Desktop View */}
-      <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <SubjectTable subject={subject} onOpenEdit={openEdit} />
-      </div>
-
-      {/* Mobile View */}
-      <div className="block md:hidden">
-        <SubjectMobileCards subject={subject} onOpenEdit={openEdit} />
-      </div>
-
-      {editing && (
-        <SessionManagerModal
-          subjectName={subject.name}
-          chapterName={subject.chapters[editing.cIdx].name}
-          taskType={editing.field}
-          taskData={editing.taskData}
-          onSave={(updatedTaskData) => {
-            onUpdate(editing.cIdx, editing.field, updatedTaskData);
-            // Keep the parent state in sync so the modal sees the latest data
-            setEditing(prev => prev ? { ...prev, taskData: updatedTaskData } : null);
-          }}
-          onClose={() => setEditing(null)}
-        />
-      )}
-    </div>
-  );
-}
---- END OF FILE src/components/lab/course-progress/SubjectView.tsx ---
-
---- START OF FILE src/components/lab/course-progress/SubjectTable.tsx ---
+--- START OF FILE src/components/ranklist/AppStandardRankCard.tsx ---
 import React from 'react';
-import { SubjectProgress, TaskType, TaskData } from './types';
-import TaskBadge from './TaskBadge';
+import { OMRResult } from '../../services/geminiService';
+import { Chapter } from '../../utils/topicParser';
 
-interface Props {
-  subject: SubjectProgress;
-  onOpenEdit: (cIdx: number, field: TaskType, val: TaskData) => void;
-}
-
-export default function SubjectTable({ subject, onOpenEdit }: Props) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left border-collapse min-w-[700px]">
-        <thead>
-          <tr className="bg-gray-50 text-gray-600 text-sm border-b border-gray-200">
-            <th className="p-4 font-semibold">Chapter</th>
-            <th className="p-4 font-semibold text-center w-48">TCR</th>
-            <th className="p-4 font-semibold text-center w-48">Entrance</th>
-            <th className="p-4 font-semibold text-center w-48">Revision</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {subject.chapters.map((chapter, cIdx) => (
-            <tr key={cIdx} className="hover:bg-gray-50 transition-colors">
-              <td className="p-4 text-sm font-medium text-gray-800">{chapter.name}</td>
-              {(['tcr', 'entrance', 'revision'] as TaskType[]).map(field => {
-                const taskData = chapter[field];
-                return (
-                  <td key={field} className="p-3 text-center align-top">
-                    <TaskBadge 
-                      task={taskData} 
-                      onClick={() => onOpenEdit(cIdx, field, taskData)} 
-                    />
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
---- END OF FILE src/components/lab/course-progress/SubjectTable.tsx ---
-
---- START OF FILE src/components/lab/course-progress/SubjectMobileCards.tsx ---
-import React from 'react';
-import { SubjectProgress, TaskType, TaskData } from './types';
-import TaskBadge from './TaskBadge';
-
-interface Props {
-  subject: SubjectProgress;
-  onOpenEdit: (cIdx: number, field: TaskType, taskData: TaskData) => void;
-}
-
-export default function SubjectMobileCards({ subject, onOpenEdit }: Props) {
-  return (
-    <div className="space-y-4">
-      {subject.chapters.map((chapter, cIdx) => (
-        <div key={cIdx} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <h3 className="font-bold text-gray-800 mb-3 leading-tight break-words">{chapter.name}</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {(['tcr', 'entrance', 'revision'] as TaskType[]).map(field => {
-              const taskData = chapter[field];
-              const label = field === 'tcr' ? 'TCR' : field === 'entrance' ? 'Entrance' : 'Revision';
-              return (
-                <TaskBadge 
-                  key={field}
-                  task={taskData} 
-                  label={label}
-                  onClick={() => onOpenEdit(cIdx, field, taskData)} 
-                />
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
---- END OF FILE src/components/lab/course-progress/SubjectMobileCards.tsx ---
-
---- START OF FILE src/components/lab/course-progress/TaskBadge.tsx ---
-import React from 'react';
-import { TaskData } from './types';
-import { CheckCircle2, Circle, Clock } from 'lucide-react';
-
-interface Props {
-  task: TaskData;
+interface AppStandardRankCardProps {
+  student: OMRResult;
+  rank: number;
+  score: number;
+  chapters: Chapter[];
   onClick: () => void;
-  label?: string; // used for mobile view
 }
 
-export default function TaskBadge({ task, onClick, label }: Props) {
-  const { status, sessions } = task;
+export default function AppStandardRankCard({ 
+  student, rank, score, chapters, onClick 
+}: AppStandardRankCardProps) {
 
-  let bgColor = 'bg-white border-gray-200 text-gray-400 hover:bg-gray-50 shadow-sm';
-  let headerIcon = <Circle className="w-4 h-4 shrink-0" />;
-  let statusText = 'Pending';
-
-  if (status === 'ongoing') {
-    bgColor = 'bg-orange-50 border-orange-200 text-orange-800 hover:bg-orange-100 shadow-sm';
-    headerIcon = <Clock className="w-4 h-4 shrink-0 text-orange-500" />;
-    statusText = 'Ongoing';
-  } else if (status === 'finished') {
-    bgColor = 'bg-green-50 border-green-200 text-green-800 hover:bg-green-100 shadow-sm';
-    headerIcon = <CheckCircle2 className="w-4 h-4 shrink-0 text-green-600" />;
-    statusText = 'Completed';
-  }
-
-  if (!sessions || sessions.length === 0) {
-    return (
-      <div 
-        onClick={onClick}
-        className={`flex flex-col items-center justify-center p-2 rounded-md cursor-pointer transition-colors border w-full h-full min-h-[4rem] ${bgColor}`}
-      >
-        {label && <span className="text-[10px] uppercase font-bold opacity-60 mb-1.5">{label}</span>}
-        <div className="flex items-center justify-center gap-1.5 w-full">
-          {headerIcon}
-          <span className="text-xs font-bold truncate">{statusText}</span>
-        </div>
-      </div>
-    );
-  }
+  const calculateChapterProgress = (studentData: OMRResult, chapter: Chapter) => {
+    if (chapter.questions.length === 0) return 0;
+    let correct = 0;
+    chapter.questions.forEach(q => {
+      if (studentData.scores[`q${q}`] === 1) correct++;
+    });
+    return (correct / chapter.questions.length) * 100;
+  };
 
   return (
     <div 
       onClick={onClick}
-      className={`flex flex-col items-center justify-start p-2 rounded-md cursor-pointer transition-colors border w-full h-full min-h-[4rem] ${bgColor}`}
+      className="relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden bg-white border-gray-200 flex flex-col h-full"
     >
-      {label && <span className="text-[10px] uppercase font-bold opacity-60 mb-1.5">{label}</span>}
-      
-      {/* Visual Header indicating the Overall Task Status */}
-      <div className="flex items-center gap-1 mb-2 opacity-80">
-        {headerIcon}
-        <span className="text-[10px] font-bold uppercase">{statusText}</span>
+      <div className="absolute top-0 right-0 bg-black/5 px-4 py-1.5 rounded-bl-xl font-black text-lg text-gray-500">
+        #{rank}
       </div>
 
-      <div className="flex flex-col w-full gap-1.5 items-center justify-center flex-1">
-        {sessions.map((s, idx) => (
-          <div key={s.id || idx} className="flex items-center gap-1.5 w-full justify-center bg-white/60 px-2 py-1.5 rounded border border-black/5">
-            <span className="text-[11px] sm:text-xs font-bold truncate text-gray-800" title={s.teacher || 'Unassigned'}>
-              {s.teacher || 'Unassigned'}
-            </span>
+      <div className="flex items-center gap-4 mb-4">
+        <div className="flex-1 min-w-0 pr-8">
+          <h3 className="text-lg font-bold text-gray-900 truncate" title={student.name}>
+            {student.name}
+          </h3>
+          <div className="flex items-center gap-3 mt-2 text-sm">
+            <span className="font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-100">C: {student.right}</span>
+            <span className="font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-100">W: {student.wrong}</span>
           </div>
-        ))}
+          <div className="text-2xl font-black mt-2 text-gray-800">
+            {score} <span className="text-sm font-medium text-gray-500">pts</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3 mt-auto pt-4 border-t border-gray-100">
+        <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Chapter Progress</h4>
+        {chapters.map(chapter => {
+          if (chapter.questions.length === 0) return null;
+          const progress = calculateChapterProgress(student, chapter);
+          return (
+            <div key={chapter.name} className="space-y-1">
+              <div className="flex justify-between text-[11px]">
+                <span className="text-gray-600 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
+                <span className="font-bold text-gray-700">{Math.round(progress)}%</span>
+              </div>
+              <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-indigo-400 rounded-full transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
---- END OF FILE src/components/lab/course-progress/TaskBadge.tsx ---
+--- END OF FILE src/components/ranklist/AppStandardRankCard.tsx ---
 
---- START OF FILE src/components/lab/course-progress/SessionManagerModal.tsx ---
-import React, { useState, useEffect } from 'react';
-import { TaskType, TaskData, SessionData, TaskStatus } from './types';
-import SessionEditForm from './SessionEditForm';
-import { Plus, X, Pencil, Trash2 } from 'lucide-react';
+--- START OF FILE src/components/RankList.tsx ---
+import React, { useState, useEffect, useRef } from 'react';
+import { OMRResult } from '../services/geminiService';
+import { parseTopicMapping, Chapter } from '../utils/topicParser';
+import { getStudentImage, saveStudentImage } from '../services/db';
+import { ArrowLeft, Printer, Search } from 'lucide-react';
+import AppTopRankCard from './ranklist/AppTopRankCard';
+import AppStandardRankCard from './ranklist/AppStandardRankCard';
 
-interface Props {
-  subjectName: string;
-  chapterName: string;
-  taskType: TaskType;
-  taskData: TaskData;
-  onSave: (taskData: TaskData) => void;
-  onClose: () => void;
+interface RankListProps {
+  files: { result?: OMRResult }[];
+  topicMapping: string;
+  parsedTopicMapping?: any;
+  onBack: () => void;
+  onStudentClick: (student: OMRResult) => void;
+  onPrintableClick: () => void;
 }
 
-export default function SessionManagerModal({ subjectName, chapterName, taskType, taskData, onSave, onClose }: Props) {
-  const [localTaskData, setLocalTaskData] = useState<TaskData>(taskData);
-  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
-  const [isAdding, setIsAdding] = useState(false);
+export default function RankList({ files, topicMapping, parsedTopicMapping, onBack, onStudentClick, onPrintableClick }: RankListProps) {
+  const [studentImages, setStudentImages] = useState<Record<string, string>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedStudentForImage, setSelectedStudentForImage] = useState<string | null>(null);
+
+  const chapters: Chapter[] = parsedTopicMapping || parseTopicMapping(topicMapping);
+  
+  const calculateScore = (student: OMRResult) => (student.right * 4) - student.wrong;
+
+  const sortedResults = files
+    .filter(f => f.result)
+    .map(f => f.result!)
+    .sort((a, b) => {
+      const scoreDiff = calculateScore(b) - calculateScore(a);
+      return scoreDiff !== 0 ? scoreDiff : a.name.localeCompare(b.name);
+    });
+
+  const rankedResults = sortedResults.reduce(
+    (acc, student, index) => {
+      const score = calculateScore(student);
+      const previous = acc[index - 1];
+      const rank = previous
+        ? previous.score === score
+          ? previous.rank
+          : previous.rank + 1
+        : 1;
+      acc.push({ student, score, rank });
+      return acc;
+    },
+    [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
+  );
+
+  const filteredResults = rankedResults.filter(r => r.student.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  // Podium contains all students with rank 1, 2, or 3 (up to 5 max)
+  const podiumStudents = filteredResults.filter(r => r.rank <= 3).slice(0, 5);
+  // The rest go into the standard grid
+  const standardStudents = filteredResults.slice(podiumStudents.length);
 
   useEffect(() => {
-    if (localTaskData.sessions.length === 0 && !isAdding && !editingSessionId) {
-      setIsAdding(true);
-    }
-  }, [localTaskData.sessions.length, isAdding, editingSessionId]);
+    const loadImages = async () => {
+      const images: Record<string, string> = {};
+      // Only load images for those who actually appear in the podium
+      for (const item of podiumStudents) {
+        const file = await getStudentImage(item.student.name);
+        if (file) {
+          images[item.student.name] = URL.createObjectURL(file);
+        }
+      }
+      setStudentImages(images);
+    };
+    loadImages();
+  }, [rankedResults, searchQuery]); 
 
-  const getTaskLabel = (field: TaskType) => {
-    if (field === 'tcr') return 'TCR';
-    if (field === 'entrance') return 'Entrance';
-    return 'Revision';
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0] && selectedStudentForImage) {
+      const file = event.target.files[0];
+      await saveStudentImage(selectedStudentForImage, file);
+      setStudentImages(prev => ({
+        ...prev,
+        [selectedStudentForImage]: URL.createObjectURL(file)
+      }));
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setSelectedStudentForImage(null);
   };
 
-  const handleStatusChange = (status: TaskStatus) => {
-    const newTaskData = { ...localTaskData, status };
-    setLocalTaskData(newTaskData);
-    onSave(newTaskData);
+  const triggerImageUpload = (e: React.MouseEvent, studentName: string) => {
+    e.stopPropagation();
+    setSelectedStudentForImage(studentName);
+    fileInputRef.current?.click();
   };
 
-  const handleSaveSession = (session: SessionData) => {
-    let newSessions;
-    if (isAdding) {
-      newSessions = [...localTaskData.sessions, session];
-    } else {
-      newSessions = localTaskData.sessions.map(s => s.id === session.id ? session : s);
-    }
-    
-    // Automatically change status to 'ongoing' if adding first session and status is still pending
-    let newStatus = localTaskData.status;
-    if (isAdding && newStatus === 'pending') {
-      newStatus = 'ongoing';
-    }
-    
-    const newTaskData = { status: newStatus, sessions: newSessions };
-    setLocalTaskData(newTaskData);
-    setIsAdding(false);
-    setEditingSessionId(null);
-    onSave(newTaskData); // Auto-save on addition or edit
-  };
-
-  const handleDeleteSession = (id: string) => {
-    const newSessions = localTaskData.sessions.filter(s => s.id !== id);
-    const newTaskData = { ...localTaskData, sessions: newSessions };
-    setLocalTaskData(newTaskData);
-    setEditingSessionId(null);
-    setIsAdding(false);
-    onSave(newTaskData); // Auto-save on deletion
+  // Helper to visually arrange podium so highest ranks are in the center on desktop
+  const getDesktopOrderClass = (index: number, total: number) => {
+    const orders: Record<number, number[]> = {
+      1: [1],
+      2: [2, 1],
+      3: [2, 1, 3],
+      4: [3, 2, 4, 1],
+      5: [3, 2, 4, 1, 5]
+    };
+    const order = orders[total]?.[index] || index + 1;
+    const map: Record<number, string> = {
+      1: 'md:order-1',
+      2: 'md:order-2',
+      3: 'md:order-3',
+      4: 'md:order-4',
+      5: 'md:order-5'
+    };
+    return map[order] || '';
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4">
-      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[85vh]">
-        <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-start justify-between shrink-0">
-          <div className="flex-1 pr-2">
-            <h3 className="font-bold text-gray-900 truncate" title={chapterName}>
-              {chapterName}
-            </h3>
-            <p className="text-xs text-gray-600 mt-1 font-medium">Task: {getTaskLabel(taskType)} ({subjectName})</p>
-          </div>
-          <button onClick={onClose} className="p-2 -mr-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-full transition-colors shrink-0">
-            <X className="w-5 h-5" />
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+            <ArrowLeft className="w-5 h-5" />
           </button>
-        </div>
-
-        {/* Global Task Status Selection */}
-        <div className="p-4 border-b border-gray-100 bg-white shrink-0">
-          <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Overall Task Status</label>
-          <div className="grid grid-cols-3 gap-2">
-            <button 
-              onClick={() => handleStatusChange('pending')}
-              className={`py-2 text-xs font-bold rounded-lg border transition-colors ${localTaskData.status === 'pending' ? 'bg-gray-100 border-gray-400 text-gray-800 shadow-inner' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-            >
-              Pending
-            </button>
-            <button 
-              onClick={() => handleStatusChange('ongoing')}
-              className={`py-2 text-xs font-bold rounded-lg border transition-colors ${localTaskData.status === 'ongoing' ? 'bg-orange-100 border-orange-400 text-orange-800 shadow-inner' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-            >
-              Ongoing
-            </button>
-            <button 
-              onClick={() => handleStatusChange('finished')}
-              className={`py-2 text-xs font-bold rounded-lg border transition-colors ${localTaskData.status === 'finished' ? 'bg-green-100 border-green-500 text-green-800 shadow-inner' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-            >
-              Completed
-            </button>
-          </div>
+          <h2 className="text-2xl font-bold">Rank List</h2>
         </div>
         
-        <div className="flex-1 overflow-y-auto bg-gray-50/50 flex flex-col">
-          <div className="p-4 space-y-3">
-            {localTaskData.sessions.length > 0 ? (
-              localTaskData.sessions.map((session) => (
-                <div key={session.id} className={`bg-white p-3 rounded-xl border ${editingSessionId === session.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'} shadow-sm flex items-center justify-between gap-3 transition-all`}>
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate">{session.teacher || 'Unassigned'}</p>
-                      <p className="text-[10px] text-gray-500 mt-0.5 truncate font-medium">
-                        {session.date ? session.date : 'No date'}
-                        {session.startTime && ` • ${session.startTime}`}
-                        {session.endTime && ` - ${session.endTime}`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button 
-                      onClick={() => { setEditingSessionId(session.id); setIsAdding(false); }}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                      title="Edit Session"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDeleteSession(session.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                      title="Delete Session"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : (
-              !isAdding && (
-                <div className="text-center py-8 text-gray-500 text-sm">
-                  No sessions recorded yet.
-                </div>
-              )
-            )}
-            
-            {!(isAdding || editingSessionId) && (
-              <button
-                onClick={() => setIsAdding(true)}
-                className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all font-medium text-sm mt-2"
-              >
-                <Plus className="w-4 h-4" /> Add Session Record
-              </button>
-            )}
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Search students..." 
+              value={searchQuery} 
+              onChange={(e) => setSearchQuery(e.target.value)} 
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" 
+            />
           </div>
+          <button
+            onClick={onPrintableClick}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-colors shrink-0"
+          >
+            <Printer className="w-4 h-4" />
+            <span className="hidden sm:inline">Printable List</span>
+            <span className="sm:hidden">Print</span>
+          </button>
+        </div>
+      </div>
 
-          {(isAdding || editingSessionId) && (
-            <div className="mt-auto border-t border-gray-200 bg-white shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-              <SessionEditForm 
-                key={editingSessionId || 'new'}
-                initialSession={editingSessionId ? localTaskData.sessions.find(s => s.id === editingSessionId) : undefined}
-                onSave={handleSaveSession}
-                onCancel={() => {
-                  setIsAdding(false);
-                  setEditingSessionId(null);
-                }}
-              />
+      <input 
+        type="file" 
+        accept="image/*" 
+        className="hidden" 
+        ref={fileInputRef}
+        onChange={handleImageUpload}
+      />
+
+      {podiumStudents.length === 0 && standardStudents.length === 0 ? (
+        <div className="py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm">
+          No students found matching your search.
+        </div>
+      ) : (
+        <>
+          {podiumStudents.length > 0 && (
+            <div className="flex flex-col md:flex-row flex-wrap justify-center items-center md:items-end gap-6 mb-12 mt-4">
+              {podiumStudents.map((item, index) => (
+                <AppTopRankCard
+                  key={`${item.student.name}-${item.rank}`}
+                  student={item.student}
+                  rank={item.rank}
+                  score={item.score}
+                  chapters={chapters}
+                  imageUrl={studentImages[item.student.name]}
+                  onImageClick={triggerImageUpload}
+                  onClick={() => onStudentClick(item.student)}
+                  orderClass={getDesktopOrderClass(index, podiumStudents.length)}
+                />
+              ))}
             </div>
           )}
-        </div>
 
-        {!(isAdding || editingSessionId) && (
-          <div className="p-4 bg-white border-t border-gray-200 flex justify-end gap-3 shrink-0">
-            <button 
-              onClick={onClose}
-              className="px-6 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-sm w-full sm:w-auto"
-            >
-              Done
-            </button>
-          </div>
-        )}
-      </div>
+          {standardStudents.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {standardStudents.map(item => (
+                <AppStandardRankCard
+                  key={`${item.student.name}-${item.rank}`}
+                  student={item.student}
+                  rank={item.rank}
+                  score={item.score}
+                  chapters={chapters}
+                  onClick={() => onStudentClick(item.student)}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
---- END OF FILE src/components/lab/course-progress/SessionManagerModal.tsx ---
+--- END OF FILE src/components/RankList.tsx ---
 
---- START OF FILE src/components/lab/course-progress/SessionEditForm.tsx ---
-import React, { useState } from 'react';
-import { SessionData } from './types';
+--- START OF FILE src/components/PrintableRankList.tsx ---
+import React, { useState, useEffect } from 'react';
+import { OMRResult } from '../services/geminiService';
+import { parseTopicMapping, Chapter } from '../utils/topicParser';
+import { getStudentImage } from '../services/db';
+import StudentRankCard from './print/StudentRankCard';
+import TopRankCard from './print/TopRankCard';
+import PrintSettingsBar from './print/PrintSettingsBar';
+import PrintHeader from './print/PrintHeader';
 
-interface Props {
-  initialSession?: SessionData;
-  onSave: (session: SessionData) => void;
-  onCancel: () => void;
+interface PrintableRankListProps {
+  files: { result?: OMRResult }[];
+  topicMapping: string;
+  parsedTopicMapping?: any;
+  onBack: () => void;
 }
 
-export default function SessionEditForm({ initialSession, onSave, onCancel }: Props) {
-  const [teacher, setTeacher] = useState(initialSession?.teacher || '');
-  const [date, setDate] = useState(initialSession?.date || new Date().toISOString().split('T')[0]);
-  const [startTime, setStartTime] = useState(initialSession?.startTime || '');
-  const [endTime, setEndTime] = useState(initialSession?.endTime || '');
+export default function PrintableRankList({ files, topicMapping, parsedTopicMapping, onBack }: PrintableRankListProps) {
+  const [subjectName, setSubjectName] = useState('PHYSICS');
+  const [dayNumber, setDayNumber] = useState('4');
+  const [studentImages, setStudentImages] = useState<Record<string, string>>({});
+  
+  // Print Customization Settings
+  const [columnsPerPage, setColumnsPerPage] = useState<number>(10);
+  const [cardScale, setCardScale] = useState<number>(11); // base font size in px
+  const [showTop3, setShowTop3] = useState<boolean>(true);
+  const [showHeader, setShowHeader] = useState<boolean>(true);
 
-  const handleSave = () => {
-    onSave({
-      id: initialSession?.id || Math.random().toString(36).substring(7),
-      teacher: teacher.trim() || null,
-      date: date || undefined,
-      startTime: startTime || undefined,
-      endTime: endTime || undefined
+  const chapters: Chapter[] = parsedTopicMapping || parseTopicMapping(topicMapping);
+  
+  const calculateScore = (student: OMRResult) => (student.right * 4) - student.wrong;
+
+  const sortedResults = files
+    .filter(f => f.result)
+    .map(f => f.result!)
+    .sort((a, b) => {
+      const scoreDiff = calculateScore(b) - calculateScore(a);
+      return scoreDiff !== 0 ? scoreDiff : a.name.localeCompare(b.name);
     });
-  };
+
+  const rankedResults = sortedResults.reduce(
+    (acc, student, index) => {
+      const score = calculateScore(student);
+      const previous = acc[index - 1];
+      const rank = previous
+        ? previous.score === score
+          ? previous.rank
+          : previous.rank + 1
+        : 1;
+      acc.push({ student, score, rank });
+      return acc;
+    },
+    [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
+  );
+
+  // Take up to 5 students that occupy rank 1, 2, or 3
+  const podiumStudents = rankedResults.filter(r => r.rank <= 3).slice(0, 5);
+
+  useEffect(() => {
+    const loadImages = async () => {
+      const images: Record<string, string> = {};
+      for (const item of podiumStudents) {
+        const file = await getStudentImage(item.student.name);
+        if (file) {
+          images[item.student.name] = URL.createObjectURL(file);
+        }
+      }
+      setStudentImages(images);
+    };
+    loadImages();
+  }, [rankedResults]);
+
+  // Reorder top podium to put highest ranks in the middle
+  const displayPodium: Array<{ student: OMRResult, rank: number }> = [];
+  [...podiumStudents].sort((a,b) => a.rank - b.rank).forEach((item, i) => {
+    if (i % 2 === 0) displayPodium.push({ student: item.student, rank: item.rank });
+    else displayPodium.unshift({ student: item.student, rank: item.rank });
+  });
+
+  const chapterTopicString = chapters.map(c => c.name).join(' · ');
+  
+  // Adjust podium sizing if there are more than 3 cards
+  const podiumScale = podiumStudents.length > 3 ? Math.max(cardScale * 0.75, 10) : Math.max(cardScale, 14);
 
   return (
-    <div className="p-4 sm:p-6 space-y-5 bg-white">
-      <div className="flex items-center justify-between mb-2">
-        <h4 className="font-bold text-gray-900 text-lg">{initialSession ? 'Edit Session Details' : 'New Session'}</h4>
-      </div>
+    <div className="min-h-screen bg-white text-black">
+      <PrintSettingsBar
+        subjectName={subjectName}
+        setSubjectName={setSubjectName}
+        dayNumber={dayNumber}
+        setDayNumber={setDayNumber}
+        columnsPerPage={columnsPerPage}
+        setColumnsPerPage={setColumnsPerPage}
+        cardScale={cardScale}
+        setCardScale={setCardScale}
+        showTop3={showTop3}
+        setShowTop3={setShowTop3}
+        showHeader={showHeader}
+        setShowHeader={setShowHeader}
+        onBack={onBack}
+      />
 
-      <div>
-        <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Teacher / Assignee</label>
-        <input 
-          type="text"
-          autoFocus
-          value={teacher}
-          onChange={e => setTeacher(e.target.value)}
-          placeholder="e.g. ABR"
-          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-medium text-gray-900 shadow-sm"
-        />
-      </div>
-
-      <div>
-        <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Date</label>
-        <input 
-          type="date"
-          value={date}
-          onChange={e => setDate(e.target.value)}
-          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm font-medium text-gray-700"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Start Time</label>
-          <input 
-            type="time"
-            value={startTime}
-            onChange={e => setStartTime(e.target.value)}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm font-medium text-gray-700"
+      <div className="print:m-0 p-4 md:p-8 pt-0">
+        {showHeader && (
+          <PrintHeader 
+            subjectName={subjectName} 
+            dayNumber={dayNumber} 
+            chapterTopicString={chapterTopicString} 
           />
-        </div>
-        <div>
-          <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">End Time</label>
-          <input 
-            type="time"
-            value={endTime}
-            onChange={e => setEndTime(e.target.value)}
-            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 shadow-sm font-medium text-gray-700"
-          />
-        </div>
-      </div>
+        )}
 
-      <div className="pt-4 mt-2 border-t border-gray-100 flex justify-end gap-3">
-        <button 
-          onClick={onCancel}
-          className="px-5 py-2.5 text-sm font-bold text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-lg transition-colors w-full sm:w-auto"
-        >
-          Cancel
-        </button>
-        <button 
-          onClick={handleSave}
-          className="px-5 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors w-full sm:w-auto shadow-sm"
-        >
-          {initialSession ? 'Update Session' : 'Confirm & Add'}
-        </button>
+        {showTop3 && displayPodium.length > 0 && (
+          <div className="mb-10">
+            <div className="flex flex-wrap justify-center items-end gap-4 md:gap-8">
+              {displayPodium.map(({ student, rank }) => (
+                <TopRankCard 
+                  key={`top-${student.name}-${rank}`}
+                  student={student}
+                  rank={rank}
+                  score={calculateScore(student)}
+                  chapters={chapters}
+                  imageUrl={studentImages[student.name]}
+                  fontSizeScale={podiumScale} 
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div>
+          {showHeader && <h2 className="text-lg font-bold mb-4 border-b pb-2 border-gray-200">All Students</h2>}
+          <div 
+            className="grid gap-[0.2em] print:gap-[0.2em] items-stretch justify-items-center"
+            style={{ 
+              gridTemplateColumns: `repeat(${columnsPerPage}, minmax(0, 1fr))`,
+              fontSize: `${cardScale}px` 
+            }}
+          >
+            {rankedResults.map(({ student, rank, score }) => (
+              <div key={`${student.name}-${rank}`} className="w-full h-full">
+                <StudentRankCard 
+                  student={student} 
+                  rank={rank} 
+                  score={score}
+                  chapters={chapters} 
+                />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
---- END OF FILE src/components/lab/course-progress/SessionEditForm.tsx ---
+--- END OF FILE src/components/PrintableRankList.tsx ---
+
+--- START OF FILE src/components/print/TopRankCard.tsx ---
+import React from 'react';
+import { OMRResult } from '../../services/geminiService';
+import { Chapter } from '../../utils/topicParser';
+import CosmicDotGrid from './CosmicDotGrid';
+import ChapterProgressBars from './ChapterProgressBars';
+
+interface TopRankCardProps {
+  student: OMRResult;
+  rank: number;
+  score: number;
+  chapters: Chapter[];
+  imageUrl?: string;
+  fontSizeScale: number;
+}
+
+export default function TopRankCard({ student, rank, score, chapters, imageUrl, fontSizeScale }: TopRankCardProps) {
+  let cardClasses = "flex flex-col items-center rounded-xl p-[0.8em] border shadow-md relative overflow-hidden break-inside-avoid ";
+  let badgeClasses = "absolute -bottom-[0.5em] -right-[0.5em] w-[2.2em] h-[2.2em] rounded-full text-white flex items-center justify-center font-bold border-[0.15em] border-white z-20 text-[0.8em] shadow-sm ";
+  let cardHeight = '18.5em';
+  let cardWidth = '14em';
+
+  if (rank === 1) {
+    cardClasses += "bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 border-yellow-200 text-slate-900 z-10 ";
+    badgeClasses += "bg-yellow-600";
+    cardHeight = '20em';
+    cardWidth = '15em';
+  } else if (rank === 2) {
+    cardClasses += "bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 border-slate-300 text-slate-900 ";
+    badgeClasses += "bg-slate-600";
+    cardHeight = '18.5em';
+    cardWidth = '14em';
+  } else {
+    cardClasses += "bg-gradient-to-br from-orange-100 via-orange-200 to-amber-100 border-orange-300 text-slate-900 ";
+    badgeClasses += "bg-orange-600";
+    cardHeight = '18.5em';
+    cardWidth = '14em';
+  }
+
+  return (
+    <div className={`${cardClasses}`} style={{ fontSize: `${fontSizeScale}px`, width: cardWidth, minHeight: cardHeight, height: cardHeight }}>
+      <div className="relative mb-[0.5em] mt-[0.3em]">
+        {imageUrl ? (
+          <img src={imageUrl} alt={student.name} className="w-[4.5em] h-[4.5em] rounded-full object-cover border-[0.2em] border-white shadow-sm" />
+        ) : (
+          <div className="w-[4.5em] h-[4.5em] rounded-full bg-gray-100 flex items-center justify-center border-[0.2em] border-white shadow-sm text-gray-500 font-bold text-[1.8em]">
+            {student.name.charAt(0)}
+          </div>
+        )}
+        <div className={badgeClasses}>#{rank}</div>
+      </div>
+      
+      <h3 className="text-[1.1em] font-bold text-center break-words leading-tight w-full px-[0.2em] text-gray-900 tracking-tight">{student.name}</h3>
+      
+      <div className="flex items-center justify-center gap-[0.6em] mt-[0.6em] mb-[0.6em] w-full">
+        <span className="text-[0.7em] font-bold text-green-700 bg-green-50 px-[0.5em] py-[0.2em] rounded border border-green-200">C:{student.right}</span>
+        <span className="text-[1.8em] font-black text-indigo-600 leading-none drop-shadow-sm">
+          {score}<span className="text-[0.35em] ml-[0.1em] text-indigo-400 uppercase align-middle">pts</span>
+        </span>
+        <span className="text-[0.7em] font-bold text-red-700 bg-red-50 px-[0.5em] py-[0.2em] rounded border border-red-200">W:{student.wrong}</span>
+      </div>
+      <div className="mt-auto flex flex-row items-stretch w-full z-10 pt-[0.2em]">
+        <div className="w-1/3 max-w-[5.2em] border-r border-gray-100 pr-[0.3em] shrink-0 flex items-center justify-center">
+          <div className="aspect-square h-full max-h-[11.5em] flex items-center justify-center">
+            <CosmicDotGrid scores={student.scores} variant="top" />
+          </div>
+        </div>
+        <div className="flex-1 pl-[0.3em] flex flex-col justify-center">
+          <ChapterProgressBars chapters={chapters} student={student} compact={false} showPercent={false} showNames={false} />
+        </div>
+      </div>  
+    </div>
+  );
+}
+--- END OF FILE src/components/print/TopRankCard.tsx ---

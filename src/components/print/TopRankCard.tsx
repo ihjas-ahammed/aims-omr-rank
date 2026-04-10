@@ -16,28 +16,28 @@ interface TopRankCardProps {
 export default function TopRankCard({ student, rank, score, chapters, imageUrl, fontSizeScale }: TopRankCardProps) {
   let cardClasses = "flex flex-col items-center rounded-xl p-[0.8em] border shadow-md relative overflow-hidden break-inside-avoid ";
   let badgeClasses = "absolute -bottom-[0.5em] -right-[0.5em] w-[2.2em] h-[2.2em] rounded-full text-white flex items-center justify-center font-bold border-[0.15em] border-white z-20 text-[0.8em] shadow-sm ";
-  let scale = "";
   let cardHeight = '18.5em';
   let cardWidth = '14em';
 
   if (rank === 1) {
     cardClasses += "bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 border-yellow-200 text-slate-900 z-10 ";
     badgeClasses += "bg-yellow-600";
-    cardHeight = '22em';
-    cardWidth = '15.5em';
+    cardHeight = '20em';
+    cardWidth = '15em';
   } else if (rank === 2) {
     cardClasses += "bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 border-slate-300 text-slate-900 ";
     badgeClasses += "bg-slate-600";
-    cardHeight = '19em';
+    cardHeight = '18.5em';
+    cardWidth = '14em';
   } else {
     cardClasses += "bg-gradient-to-br from-orange-100 via-orange-200 to-amber-100 border-orange-300 text-slate-900 ";
     badgeClasses += "bg-orange-600";
-    cardHeight = '19em';
+    cardHeight = '18.5em';
+    cardWidth = '14em';
   }
 
-  // Use the passed fontSizeScale to control internal scaling proportionately
   return (
-    <div className={`${cardClasses} ${scale}`} style={{ fontSize: `${fontSizeScale}px`, width: cardWidth, minHeight: cardHeight, height: cardHeight }}>
+    <div className={`${cardClasses}`} style={{ fontSize: `${fontSizeScale}px`, width: cardWidth, minHeight: cardHeight, height: cardHeight }}>
       <div className="relative mb-[0.5em] mt-[0.3em]">
         {imageUrl ? (
           <img src={imageUrl} alt={student.name} className="w-[4.5em] h-[4.5em] rounded-full object-cover border-[0.2em] border-white shadow-sm" />
