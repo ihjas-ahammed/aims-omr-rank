@@ -6,6 +6,7 @@ import { processImage, fileToBase64, applyCropAndRotate, rotateImageFile } from 
 import { dataURLtoFile } from './utils/fileUtils';
 
 import SettingsPanel from './components/SettingsPanel';
+import TopicMappingPanel from './components/lab/TopicMappingPanel';
 import RankList from './components/RankList';
 import StudentDetail from './components/StudentDetail';
 import PrintableRankList from './components/PrintableRankList';
@@ -87,6 +88,20 @@ export default function App() {
       try { return JSON.parse(saved); } catch (e) {}
     }
     return null;
+  });
+  const [topicMappingByDay, setTopicMappingByDay] = useState<Record<number, string>>(() => {
+    const saved = localStorage.getItem('omr_topicMappingByDay');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return { 1: DEFAULT_TOPIC_MAPPING };
+  });
+  const [parsedTopicMappingByDay, setParsedTopicMappingByDay] = useState<Record<number, any>>(() => {
+    const saved = localStorage.getItem('omr_parsedTopicMappingByDay');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return { 1: null };
   });
 
   const [showSettings, setShowSettings] = useState(false);
@@ -192,6 +207,8 @@ export default function App() {
       localStorage.setItem('omr_parsedTopicMapping', JSON.stringify(parsedTopicMapping));
     }
   }, [parsedTopicMapping]);
+  useEffect(() => { localStorage.setItem('omr_topicMappingByDay', JSON.stringify(topicMappingByDay)); }, [topicMappingByDay]);
+  useEffect(() => { localStorage.setItem('omr_parsedTopicMappingByDay', JSON.stringify(parsedTopicMappingByDay)); }, [parsedTopicMappingByDay]);
   useEffect(() => { localStorage.setItem('omr_days', JSON.stringify(days)); }, [days]);
   useEffect(() => { localStorage.setItem('omr_currentDay', currentDay.toString()); }, [currentDay]);
 
@@ -642,6 +659,62 @@ export default function App() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const isXlsx = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+
+    if (isXlsx) {
+      importFromXlsx(file);
+    } else {
+      importFromCsv(file);
+    }
+
+    if (csvInputRef.current) {
+      csvInputRef.current.value = '';
+    }
+  };
+
+  const importFromXlsx = async (file: File) => {
+    try {
+      const XLSX = await import('xlsx');
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+      const importedFiles: ProcessedFile[] = [];
+
+      for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        if (!row || row.length < 3) continue;
+
+        const name = String(row[0] || '').trim();
+        const right = parseInt(row[1], 10) || 0;
+        const wrong = parseInt(row[2], 10) || 0;
+
+        const scores: Record<string, number> = {};
+        if (row.length >= 4) {
+          for (let q = 1; q <= 25; q++) {
+            scores[`q${q}`] = parseInt(row[3 + q - 1], 10) || 0;
+          }
+        }
+
+        importedFiles.push({
+          id: `imported-${Date.now()}-${i}`,
+          file: new File([], file.name),
+          fileName: `Imported: ${name}`,
+          status: 'success',
+          result: { name, right, wrong, scores }
+        });
+      }
+
+      setFiles(prev => [...prev, ...importedFiles]);
+    } catch (error) {
+      console.error('Failed to import xlsx:', error);
+      alert('Failed to import xlsx file. Please ensure it is a valid Excel file.');
+    }
+  };
+
+  const importFromCsv = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
@@ -649,7 +722,7 @@ export default function App() {
       if (lines.length < 2) return;
 
       const importedFiles: ProcessedFile[] = [];
-      
+
       for (let i = 1; i < lines.length; i++) {
         let cells = [];
         let inQuotes = false;
@@ -665,17 +738,17 @@ export default function App() {
           }
         }
         cells.push(currentCell.trim());
-        
+
         if (cells.length < 3) continue;
 
         const name = cells[0].replace(/^"|"$/g, '').replace(/""/g, '"');
         const right = parseInt(cells[1], 10) || 0;
         const wrong = parseInt(cells[2], 10) || 0;
-        
+
         const scores: Record<string, number> = {};
         if (cells.length >= 4) {
           for (let q = 1; q <= 25; q++) {
-            const scoreIdx = 3 + q - 1; 
+            const scoreIdx = 3 + q - 1;
             scores[`q${q}`] = parseInt(cells[scoreIdx] || '0', 10) || 0;
           }
         }
@@ -697,10 +770,6 @@ export default function App() {
       setFiles(prev => [...prev, ...importedFiles]);
     };
     reader.readAsText(file);
-    
-    if (csvInputRef.current) {
-      csvInputRef.current.value = '';
-    }
   };
 
   const reviewableFiles = files.filter(f => f.result);
@@ -883,10 +952,6 @@ export default function App() {
             setAnswerKey={setAnswerKey}
             attendanceSheet={attendanceSheet}
             setAttendanceSheet={setAttendanceSheet}
-            topicMapping={topicMapping}
-            setTopicMapping={setTopicMapping}
-            parsedTopicMapping={parsedTopicMapping}
-            setParsedTopicMapping={setParsedTopicMapping}
           />
         )}
 
@@ -962,10 +1027,10 @@ export default function App() {
         )}
 
         {view === 'ranklist' && (
-          <RankList 
-            files={files} 
-            topicMapping={topicMapping} 
-            parsedTopicMapping={parsedTopicMapping}
+          <RankList
+            files={files}
+            topicMapping={topicMappingByDay[currentDay] || ''}
+            parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
             onBack={() => setView('home')} 
             onStudentClick={(student) => {
               setSelectedStudent(student);
@@ -978,17 +1043,17 @@ export default function App() {
         {view === 'printableRanklist' && (
           <PrintableRankList
             files={files}
-            topicMapping={topicMapping}
-            parsedTopicMapping={parsedTopicMapping}
+            topicMapping={topicMappingByDay[currentDay] || ''}
+            parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
             onBack={() => setView('ranklist')}
           />
         )}
 
         {view === 'detail' && selectedStudent && (
-          <StudentDetail 
-            student={selectedStudent} 
-            topicMapping={topicMapping} 
-            parsedTopicMapping={parsedTopicMapping}
+          <StudentDetail
+            student={selectedStudent}
+            topicMapping={topicMappingByDay[currentDay] || ''}
+            parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
             onBack={() => setView('ranklist')} 
             onNext={handleDetailNext}
             onPrev={handleDetailPrev}
@@ -1063,14 +1128,24 @@ export default function App() {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
               />
-              <input 
-                type="file" 
-                accept=".csv" 
-                className="hidden" 
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                className="hidden"
                 ref={csvInputRef}
                 onChange={handleImportCSV}
               />
-              
+
+              <TopicMappingPanel
+                apiKeys={apiKeys}
+                proModel={proModel}
+                topicMapping={topicMappingByDay[currentDay] || ''}
+                setTopicMapping={(val) => setTopicMappingByDay(prev => ({ ...prev, [currentDay]: val }))}
+                parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
+                setParsedTopicMapping={(val) => setParsedTopicMappingByDay(prev => ({ ...prev, [currentDay]: val }))}
+                dayLabel={days.length > 1 ? String(currentDay) : undefined}
+              />
+
               {files.length > 0 && (
                 <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm">

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dir C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\aims-omr-rank\\\\public\\\\:*)"
+      "Bash(dir C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\aims-omr-rank\\\\public\\\\:*)",
+      "Bash(npm run:*)"
     ]
   }
 }
