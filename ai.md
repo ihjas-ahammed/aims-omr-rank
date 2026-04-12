@@ -1,6 +1,8 @@
 Make the following changes:
 
-    - In the rank list, add a dashboard on top to see class    summary, like avg score per topic, most wrong          questions (top4 and their topics) 
+    * Cloude Data Sessions:
+        Add this tool to lab:
+            this tool will backup the entire cookies, localstorage into firebase as a snapshot which I can load from any other device
 
 Apply changes to both mobile view and desktop (movbile view is the priority)
 

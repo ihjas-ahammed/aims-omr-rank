@@ -1139,6 +1139,7 @@ export default function App() {
               <TopicMappingPanel
                 apiKeys={apiKeys}
                 proModel={proModel}
+                liteModel={liteModel}
                 topicMapping={topicMappingByDay[currentDay] || ''}
                 setTopicMapping={(val) => setTopicMappingByDay(prev => ({ ...prev, [currentDay]: val }))}
                 parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
