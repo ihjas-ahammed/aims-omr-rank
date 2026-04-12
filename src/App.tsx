@@ -21,6 +21,7 @@ import ATRList from './components/lab/atr-list/ATRList';
 import QPMaker from './components/lab/qp-maker/QPMaker';
 import FeeLogger from './components/lab/fee-logger/FeeLogger';
 import CloudSessions from './components/lab/cloud-sessions/CloudSessions';
+import { ScoreAnalysisDashboard } from './components/lab/score-analysis';
 
 // Online Exams Imports
 import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
@@ -31,7 +32,7 @@ const DEFAULT_ANSWER_KEY = `*   **Q1.** B\n*   **Q2.** A\n*   **Q3.** A\n*   **Q
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis';
 
 export default function App() {
   const [view, setView] = useState<ViewState>(() => {
@@ -1029,6 +1030,10 @@ export default function App() {
 
         {view === 'lab-cloud-sessions' && (
           <CloudSessions onBack={() => setView('lab')} />
+        )}
+
+        {view === 'lab-score-analysis' && (
+          <ScoreAnalysisDashboard onBack={() => setView('lab')} />
         )}
 
         {view === 'ranklist' && (

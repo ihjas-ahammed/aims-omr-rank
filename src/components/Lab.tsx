@@ -1,8 +1,8 @@
 import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload } from 'lucide-react';
+import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2 } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'home') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'home') => void;
 }
 
 export default function Lab({ onNavigate }: LabProps) {
@@ -98,6 +98,22 @@ export default function Lab({ onNavigate }: LabProps) {
           <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">ATR List</h3>
           <p className="text-sm text-gray-600 flex-1">
             Process exam Excel files, match student names, and generate ATR rankings with hat-trick tracking.
+          </p>
+        </div>
+
+        <div
+          onClick={() => onNavigate('lab-score-analysis')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-teal-300 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-teal-50 text-teal-600 rounded-lg group-hover:bg-teal-100 transition-colors">
+              <BarChart2 className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-teal-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Score Data Analysis</h3>
+          <p className="text-sm text-gray-600 flex-1">
+            Import CSV score sheets to view dashboards and generate physical printed records of student scores.
           </p>
         </div>
 
