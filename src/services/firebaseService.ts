@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy, setDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy, setDoc, deleteDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -54,6 +54,13 @@ export interface FeeLogData {
   isGPay: boolean;
   date: string;
   createdAt: string;
+}
+
+export interface CloudSnapshot {
+  id: string;
+  name: string;
+  createdAt: string;
+  data: string;
 }
 
 // Service Functions
@@ -154,4 +161,30 @@ export async function saveFeeLogs(logs: FeeLogData[]): Promise<void> {
   if (!db) throw new Error("Firebase is not configured.");
   const docRef = doc(db, 'app_data', 'fee_logs');
   await setDoc(docRef, { logs, updatedAt: serverTimestamp() }, { merge: true });
+}
+
+export async function saveCloudSnapshot(name: string, data: string): Promise<string> {
+  if (!db) throw new Error("Firebase is not configured.");
+  const docRef = await addDoc(collection(db, 'cloud_sessions'), {
+    name,
+    data,
+    createdAt: new Date().toISOString(),
+    timestamp: serverTimestamp()
+  });
+  return docRef.id;
+}
+
+export async function getCloudSnapshots(): Promise<CloudSnapshot[]> {
+  if (!db) throw new Error("Firebase is not configured.");
+  const q = query(collection(db, 'cloud_sessions'), orderBy('timestamp', 'desc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  })) as CloudSnapshot[];
+}
+
+export async function deleteCloudSnapshot(id: string): Promise<void> {
+  if (!db) throw new Error("Firebase is not configured.");
+  await deleteDoc(doc(db, 'cloud_sessions', id));
 }

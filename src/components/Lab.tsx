@@ -1,8 +1,8 @@
 import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt } from 'lucide-react';
+import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'home') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'home') => void;
 }
 
 export default function Lab({ onNavigate }: LabProps) {
@@ -130,6 +130,22 @@ export default function Lab({ onNavigate }: LabProps) {
           <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Fee Logger</h3>
           <p className="text-sm text-gray-600 flex-1">
             Log and track student fee payments. Manually enter data or scan handwritten ledgers using AI.
+          </p>
+        </div>
+
+        <div
+          onClick={() => onNavigate('lab-cloud-sessions')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-sky-300 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-sky-50 text-sky-600 rounded-lg group-hover:bg-sky-100 transition-colors">
+              <CloudUpload className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-sky-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Cloud Data Sessions</h3>
+          <p className="text-sm text-gray-600 flex-1">
+            Backup and restore your local settings, keys, and configurations to Firebase. Seamlessly sync between devices.
           </p>
         </div>
 
