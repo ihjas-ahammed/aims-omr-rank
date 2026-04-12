@@ -5,6 +5,7 @@ import { getStudentImage, saveStudentImage } from '../services/db';
 import { ArrowLeft, Printer, Search } from 'lucide-react';
 import AppTopRankCard from './ranklist/AppTopRankCard';
 import AppStandardRankCard from './ranklist/AppStandardRankCard';
+import ClassDashboard from './ranklist/ClassDashboard';
 
 interface RankListProps {
   files: { result?: OMRResult }[];
@@ -155,6 +156,8 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
         </div>
       ) : (
         <>
+          <ClassDashboard results={sortedResults} chapters={chapters} />
+
           {podiumStudents.length > 0 && (
             <div className="flex flex-col md:flex-row flex-wrap justify-center items-center md:items-end gap-6 mb-12 mt-4">
               {podiumStudents.map((item, index) => (

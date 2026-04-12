@@ -1,9 +1,6 @@
 Make the following changes:
 
-    - in fee logger dashboard, 
-        add an option to import max  value from csv:
-            in which I upload a csv with 3rd column as admission number and maximum fee value at column 13
-            this is needed because some students have scholership and their maximum fee value may vary and also add an option in the cards in which I can manually set maximum fee value (for each cardsa)
+    - In the rank list, add a dashboard on top to see class    summary, like avg score per topic, most wrong          questions (top4 and their topics) 
 
 Apply changes to both mobile view and desktop (movbile view is the priority)
 
