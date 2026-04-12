@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy, setDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -15,6 +16,7 @@ export const isFirebaseConfigured = !!firebaseConfig.apiKey;
 // Initialize Firebase only if config exists and hasn't been initialized
 export const app = isFirebaseConfigured ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()) : null;
 export const db = isFirebaseConfigured ? getFirestore(app!) : null;
+export const auth = isFirebaseConfigured ? getAuth(app!) : null;
 
 export interface ExamIncident {
   time: string;
@@ -41,6 +43,17 @@ export interface ExamData {
   answerKey: Record<number, string>; // e.g., { 1: 'A', 2: 'B' }
   images: string[]; // Base64 compressed images
   createdAt: any;
+}
+
+export interface FeeLogData {
+  id: string;
+  admissionNo: string;
+  studentClass: string;
+  studentName: string;
+  feeAmount: number;
+  isGPay: boolean;
+  date: string;
+  createdAt: string;
 }
 
 // Service Functions
@@ -125,4 +138,20 @@ export async function saveTimetable(date: string, data: any): Promise<void> {
   
   const docRef = doc(db, 'app_data', `timetable_${date}`);
   await setDoc(docRef, { data, updatedAt: serverTimestamp() }, { merge: true });
+}
+
+export async function getFeeLogs(): Promise<FeeLogData[]> {
+  if (!db) throw new Error("Firebase is not configured.");
+  const docRef = doc(db, 'app_data', 'fee_logs');
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists() && docSnap.data().logs) {
+    return docSnap.data().logs;
+  }
+  return [];
+}
+
+export async function saveFeeLogs(logs: FeeLogData[]): Promise<void> {
+  if (!db) throw new Error("Firebase is not configured.");
+  const docRef = doc(db, 'app_data', 'fee_logs');
+  await setDoc(docRef, { logs, updatedAt: serverTimestamp() }, { merge: true });
 }

@@ -1,629 +1,679 @@
+Here are the updates. I've broken down the dashboard into smaller, more modular files by creating `EditableTargetFee.tsx` and `FeeTargetCSVImport.tsx`. I also updated the existing cards and tables to support displaying and editing individual target fees, and added CSV parsing to map admission numbers to custom target fees automatically.
 
+--- START OF FILE src/components/lab/fee-logger/index.ts ---
+export { default as FeeLogForm } from './FeeLogForm';
+export { default as FeeLogList } from './FeeLogList';
+export { default as ImageScanner } from './ImageScanner';
+export { default as FeeLogger } from './FeeLogger';
+export { default as FeeLogCard } from './FeeLogCard';
+export { default as FeeDashboard } from './FeeDashboard';
+export { default as StudentFeeCard } from './StudentFeeCard';
+export { default as StudentFeeTable } from './StudentFeeTable';
+export { default as StudentProgressCard } from './StudentProgressCard';
+export { default as FeeStatsRow } from './FeeStatsRow';
+export { default as ImageScannerResults } from './ImageScannerResults';
+export { default as EditableTargetFee } from './EditableTargetFee';
+export { default as FeeTargetCSVImport } from './FeeTargetCSVImport';
 
---- START OF FILE src/components/ranklist/AppTopRankCard.tsx ---
-import React from 'react';
-import { Camera, Image as ImageIcon } from 'lucide-react';
-import { OMRResult } from '../../services/geminiService';
-import { Chapter } from '../../utils/topicParser';
-
-interface AppTopRankCardProps {
-  student: OMRResult;
-  rank: number;
-  score: number;
-  chapters: Chapter[];
-  imageUrl?: string;
-  onImageClick: (e: React.MouseEvent, name: string) => void;
-  onClick: () => void;
-  orderClass: string;
+export interface PaymentEntry {
+  amount: number;
+  isGPay: boolean;
+  date: string;
 }
 
-export default function AppTopRankCard({ 
-  student, rank, score, chapters, imageUrl, onImageClick, onClick, orderClass 
-}: AppTopRankCardProps) {
-  
-  const calculateChapterProgress = (studentData: OMRResult, chapter: Chapter) => {
-    if (chapter.questions.length === 0) return 0;
-    let correct = 0;
-    chapter.questions.forEach(q => {
-      if (studentData.scores[`q${q}`] === 1) correct++;
-    });
-    return (correct / chapter.questions.length) * 100;
-  };
-
-  let cardBg = 'bg-white border-gray-200';
-  let rankColor = 'text-gray-500';
-  let progressBg = 'bg-blue-500';
-  let sizeClass = 'w-full md:w-[280px]'; // Standard podium size
-  
-  if (rank === 1) {
-    cardBg = 'bg-gradient-to-br from-yellow-100 to-yellow-200 border-yellow-400 shadow-yellow-100';
-    rankColor = 'text-yellow-700';
-    progressBg = 'bg-yellow-500';
-    sizeClass = 'w-full md:w-[320px] md:scale-105 z-10'; // Make Rank 1 slightly larger on desktop
-  } else if (rank === 2) {
-    cardBg = 'bg-gradient-to-br from-gray-100 to-gray-200 border-gray-400 shadow-gray-100';
-    rankColor = 'text-gray-700';
-    progressBg = 'bg-gray-500';
-  } else if (rank === 3) {
-    cardBg = 'bg-gradient-to-br from-orange-100 to-orange-200 border-orange-400 shadow-orange-100';
-    rankColor = 'text-orange-700';
-    progressBg = 'bg-orange-500';
-  }
-
-  const handleImageClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onImageClick(e, student.name);
-  };
-
-  return (
-    <div 
-      onClick={onClick}
-      className={`relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col ${cardBg} ${sizeClass} ${orderClass}`}
-    >
-      <div className={`absolute top-0 right-0 bg-black/5 px-4 py-1.5 rounded-bl-xl font-black text-lg ${rankColor}`}>
-        #{rank}
-      </div>
-
-      <div className="flex flex-col items-center gap-4 mb-4 mt-2">
-        <div 
-          className={`relative rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center overflow-hidden group shrink-0 ${rank === 1 ? 'w-28 h-28' : 'w-24 h-24'}`}
-          onClick={handleImageClick}
-        >
-          {imageUrl ? (
-            <>
-              <img src={imageUrl} alt={student.name} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <Camera className="w-6 h-6 text-white" />
-              </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center w-full h-full bg-gray-100 group-hover:bg-gray-200 transition-colors">
-              <ImageIcon className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
-            </div>
-          )}
-        </div>
-        
-        <div className="text-center w-full">
-          <h3 className={`${rank === 1 ? 'text-2xl' : 'text-xl'} font-bold text-gray-900 truncate px-2`} title={student.name}>
-            {student.name}
-          </h3>
-          <div className="flex items-center justify-center gap-3 mt-2 text-sm">
-            <span className="font-medium text-green-700 bg-green-100/80 px-2 py-0.5 rounded border border-green-200/50">C: {student.right}</span>
-            <span className="font-medium text-red-700 bg-red-100/80 px-2 py-0.5 rounded border border-red-200/50">W: {student.wrong}</span>
-          </div>
-          <div className={`${rank === 1 ? 'text-4xl' : 'text-3xl'} font-black mt-3 text-gray-800`}>
-            {score} <span className="text-sm font-medium text-gray-500">pts</span>
-          </div>
-        </div>
-      </div>
-
-      <div className={`space-y-3 mt-auto pt-4 border-t ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Chapter Progress</h4>
-        {chapters.map(chapter => {
-          if (chapter.questions.length === 0) return null;
-          const progress = calculateChapterProgress(student, chapter);
-          return (
-            <div key={chapter.name} className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-700 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
-                <span className="font-bold text-gray-900">{Math.round(progress)}%</span>
-              </div>
-              <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-500 ${progressBg}`}
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/ranklist/AppTopRankCard.tsx ---
-
---- START OF FILE src/components/ranklist/AppStandardRankCard.tsx ---
-import React from 'react';
-import { OMRResult } from '../../services/geminiService';
-import { Chapter } from '../../utils/topicParser';
-
-interface AppStandardRankCardProps {
-  student: OMRResult;
-  rank: number;
-  score: number;
-  chapters: Chapter[];
-  onClick: () => void;
+export interface StudentSummary {
+  id: string;
+  admissionNo: string;
+  studentName: string;
+  studentClass: string;
+  monthlyPayments: Record<number, PaymentEntry[]>; // month index (0-11) -> array of payments
+  totalPaid: number;
+  targetFee: number;
 }
 
-export default function AppStandardRankCard({ 
-  student, rank, score, chapters, onClick 
-}: AppStandardRankCardProps) {
-
-  const calculateChapterProgress = (studentData: OMRResult, chapter: Chapter) => {
-    if (chapter.questions.length === 0) return 0;
-    let correct = 0;
-    chapter.questions.forEach(q => {
-      if (studentData.scores[`q${q}`] === 1) correct++;
-    });
-    return (correct / chapter.questions.length) * 100;
-  };
-
-  return (
-    <div 
-      onClick={onClick}
-      className="relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden bg-white border-gray-200 flex flex-col h-full"
-    >
-      <div className="absolute top-0 right-0 bg-black/5 px-4 py-1.5 rounded-bl-xl font-black text-lg text-gray-500">
-        #{rank}
-      </div>
-
-      <div className="flex items-center gap-4 mb-4">
-        <div className="flex-1 min-w-0 pr-8">
-          <h3 className="text-lg font-bold text-gray-900 truncate" title={student.name}>
-            {student.name}
-          </h3>
-          <div className="flex items-center gap-3 mt-2 text-sm">
-            <span className="font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-100">C: {student.right}</span>
-            <span className="font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-100">W: {student.wrong}</span>
-          </div>
-          <div className="text-2xl font-black mt-2 text-gray-800">
-            {score} <span className="text-sm font-medium text-gray-500">pts</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-3 mt-auto pt-4 border-t border-gray-100">
-        <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Chapter Progress</h4>
-        {chapters.map(chapter => {
-          if (chapter.questions.length === 0) return null;
-          const progress = calculateChapterProgress(student, chapter);
-          return (
-            <div key={chapter.name} className="space-y-1">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-gray-600 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
-                <span className="font-bold text-gray-700">{Math.round(progress)}%</span>
-              </div>
-              <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-indigo-400 rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/ranklist/AppStandardRankCard.tsx ---
-
---- START OF FILE src/components/RankList.tsx ---
-import React, { useState, useEffect, useRef } from 'react';
-import { OMRResult } from '../services/geminiService';
-import { parseTopicMapping, Chapter } from '../utils/topicParser';
-import { getStudentImage, saveStudentImage } from '../services/db';
-import { ArrowLeft, Printer, Search } from 'lucide-react';
-import AppTopRankCard from './ranklist/AppTopRankCard';
-import AppStandardRankCard from './ranklist/AppStandardRankCard';
-
-interface RankListProps {
-  files: { result?: OMRResult }[];
-  topicMapping: string;
-  parsedTopicMapping?: any;
-  onBack: () => void;
-  onStudentClick: (student: OMRResult) => void;
-  onPrintableClick: () => void;
+export interface ExtractedRecord {
+  admissionNo: string;
+  studentClass: string;
+  studentName: string;
+  feeAmount: number;
+  isGPay: boolean;
+  date: string;
 }
 
-export default function RankList({ files, topicMapping, parsedTopicMapping, onBack, onStudentClick, onPrintableClick }: RankListProps) {
-  const [studentImages, setStudentImages] = useState<Record<string, string>>({});
-  const [searchQuery, setSearchQuery] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedStudentForImage, setSelectedStudentForImage] = useState<string | null>(null);
+--- END OF FILE src/components/lab/fee-logger/index.ts ---
 
-  const chapters: Chapter[] = parsedTopicMapping || parseTopicMapping(topicMapping);
-  
-  const calculateScore = (student: OMRResult) => (student.right * 4) - student.wrong;
+--- START OF FILE src/components/lab/fee-logger/EditableTargetFee.tsx ---
+import React, { useState, useRef, useEffect } from 'react';
+import { Edit2, Check, X } from 'lucide-react';
 
-  const sortedResults = files
-    .filter(f => f.result)
-    .map(f => f.result!)
-    .sort((a, b) => {
-      const scoreDiff = calculateScore(b) - calculateScore(a);
-      return scoreDiff !== 0 ? scoreDiff : a.name.localeCompare(b.name);
-    });
+interface EditableTargetFeeProps {
+  value: number;
+  onSave: (val: number) => void;
+}
 
-  const rankedResults = sortedResults.reduce(
-    (acc, student, index) => {
-      const score = calculateScore(student);
-      const previous = acc[index - 1];
-      const rank = previous
-        ? previous.score === score
-          ? previous.rank
-          : previous.rank + 1
-        : 1;
-      acc.push({ student, score, rank });
-      return acc;
-    },
-    [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
-  );
-
-  const filteredResults = rankedResults.filter(r => r.student.name.toLowerCase().includes(searchQuery.toLowerCase()));
-
-  // Podium contains all students with rank 1, 2, or 3 (up to 5 max)
-  const podiumStudents = filteredResults.filter(r => r.rank <= 3).slice(0, 5);
-  // The rest go into the standard grid
-  const standardStudents = filteredResults.slice(podiumStudents.length);
+export default function EditableTargetFee({ value, onSave }: EditableTargetFeeProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempVal, setTempVal] = useState(value.toString());
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const loadImages = async () => {
-      const images: Record<string, string> = {};
-      // Only load images for those who actually appear in the podium
-      for (const item of podiumStudents) {
-        const file = await getStudentImage(item.student.name);
-        if (file) {
-          images[item.student.name] = URL.createObjectURL(file);
-        }
-      }
-      setStudentImages(images);
-    };
-    loadImages();
-  }, [rankedResults, searchQuery]); 
-
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0] && selectedStudentForImage) {
-      const file = event.target.files[0];
-      await saveStudentImage(selectedStudentForImage, file);
-      setStudentImages(prev => ({
-        ...prev,
-        [selectedStudentForImage]: URL.createObjectURL(file)
-      }));
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
     }
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    setSelectedStudentForImage(null);
+  }, [isEditing]);
+
+  const handleSave = () => {
+    const num = Number(tempVal);
+    if (!isNaN(num) && num >= 0) {
+      onSave(num);
+    } else {
+      setTempVal(value.toString());
+    }
+    setIsEditing(false);
   };
 
-  const triggerImageUpload = (e: React.MouseEvent, studentName: string) => {
-    e.stopPropagation();
-    setSelectedStudentForImage(studentName);
-    fileInputRef.current?.click();
+  const handleCancel = () => {
+    setIsEditing(false);
+    setTempVal(value.toString());
   };
 
-  // Helper to visually arrange podium so highest ranks are in the center on desktop
-  const getDesktopOrderClass = (index: number, total: number) => {
-    const orders: Record<number, number[]> = {
-      1: [1],
-      2: [2, 1],
-      3: [2, 1, 3],
-      4: [3, 2, 4, 1],
-      5: [3, 2, 4, 1, 5]
-    };
-    const order = orders[total]?.[index] || index + 1;
-    const map: Record<number, string> = {
-      1: 'md:order-1',
-      2: 'md:order-2',
-      3: 'md:order-3',
-      4: 'md:order-4',
-      5: 'md:order-5'
-    };
-    return map[order] || '';
+  if (isEditing) {
+    return (
+      <div className="flex items-center gap-1 bg-white border border-blue-300 rounded px-1.5 py-0.5 shadow-sm">
+        <span className="text-gray-500 text-xs font-bold">$</span>
+        <input
+          ref={inputRef}
+          type="number"
+          min="0"
+          value={tempVal}
+          onChange={(e) => setTempVal(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+          style={{ appearance: 'textfield', WebkitAppearance: 'none' }}
+          className="w-14 text-xs font-bold outline-none bg-transparent text-gray-900"
+        />
+        <button onClick={handleSave} className="text-green-600 hover:bg-green-50 rounded p-0.5 transition-colors">
+          <Check className="w-3.5 h-3.5" />
+        </button>
+        <button onClick={handleCancel} className="text-red-500 hover:bg-red-50 rounded p-0.5 transition-colors">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div 
+      onClick={() => setIsEditing(true)}
+      className="flex items-center gap-1 cursor-pointer group text-xs text-gray-500 hover:text-blue-600 transition-colors"
+      title="Click to edit maximum fee"
+    >
+      <span className="font-bold border-b border-dashed border-gray-400 group-hover:border-blue-400 transition-colors">
+        Target: ${value}
+      </span>
+      <Edit2 className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/fee-logger/EditableTargetFee.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/FeeTargetCSVImport.tsx ---
+import React, { useRef, useState } from 'react';
+import { Upload, Loader2 } from 'lucide-react';
+import * as XLSX from 'xlsx';
+
+interface FeeTargetCSVImportProps {
+  onImport: (targets: Record<string, number>) => void;
+}
+
+export default function FeeTargetCSVImport({ onImport }: FeeTargetCSVImportProps) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessing(true);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      // header: 1 reads sheet as a 2D array
+      const data = XLSX.utils.sheet_to_json<any[]>(sheet, { header: 1 });
+
+      const newTargets: Record<string, number> = {};
+      let count = 0;
+
+      data.forEach(row => {
+        // Ensure row has enough columns. 13th column is index 12.
+        if (Array.isArray(row) && row.length >= 13) {
+          // 3rd Column is Adm No (Index 2)
+          const admNo = String(row[2] || '').trim();
+          // 13th Column is Max Fee (Index 12)
+          const targetFee = Number(row[12]);
+          
+          if (admNo && !isNaN(targetFee) && admNo !== 'Admission No' && admNo !== 'Adm No' && admNo !== '-') {
+            newTargets[admNo] = targetFee;
+            count++;
+          }
+        }
+      });
+
+      if (count > 0) {
+        onImport(newTargets);
+        alert(`Successfully imported/updated target fees for ${count} students.`);
+      } else {
+        alert('No valid data found. Ensure Admission No is in the 3rd column (C) and Max Fee is in the 13th column (M).');
+      }
+
+    } catch (error) {
+      console.error("Error reading CSV:", error);
+      alert('Failed to parse the file. Please check the format.');
+    } finally {
+      setIsProcessing(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
+
+  return (
+    <div>
+      <input 
+        type="file" 
+        accept=".csv, .xls, .xlsx" 
+        className="hidden" 
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+      />
+      <button
+        onClick={() => fileInputRef.current?.click()}
+        disabled={isProcessing}
+        className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-md font-medium transition-colors text-sm shadow-sm border border-indigo-200 disabled:opacity-50"
+        title="Upload CSV (Col C: Adm No, Col M: Max Fee)"
+      >
+        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+        <span className="hidden sm:inline">Import Max Fees</span>
+        <span className="sm:hidden">Import Targets</span>
+      </button>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/fee-logger/FeeTargetCSVImport.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/FeeDashboard.tsx ---
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, Calendar } from 'lucide-react';
+import { FeeLogData } from '../../../services/firebaseService';
+import { StudentSummary, StudentFeeCard, StudentFeeTable, FeeStatsRow, StudentProgressCard, FeeTargetCSVImport } from './index';
+
+interface FeeDashboardProps {
+  logs: FeeLogData[];
+  loading: boolean;
+}
+
+type ViewMode = 'tracker' | 'progress';
+
+export default function FeeDashboard({ logs, loading }: FeeDashboardProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('progress');
+  
+  const [targetFee, setTargetFee] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_target_fee');
+    return saved ? Number(saved) : 24000;
+  });
+
+  // Store individual student target fees (supports overriding globally configured fee)
+  const [individualTargets, setIndividualTargets] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem('omr_individual_targets');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  useEffect(() => {
+    localStorage.setItem('omr_target_fee', targetFee.toString());
+  }, [targetFee]);
+
+  useEffect(() => {
+    localStorage.setItem('omr_individual_targets', JSON.stringify(individualTargets));
+  }, [individualTargets]);
+
+  const handleUpdateTarget = (id: string, val: number) => {
+    setIndividualTargets(prev => ({ ...prev, [id]: val }));
+  };
+
+  const handleImportTargets = (newTargets: Record<string, number>) => {
+    setIndividualTargets(prev => ({ ...prev, ...newTargets }));
+  };
+
+  const studentSummaries = useMemo(() => {
+    const map = new Map<string, StudentSummary>();
+    
+    logs.forEach(log => {
+      let dateObj;
+      try {
+        dateObj = new Date(log.date + 'T12:00:00');
+      } catch {
+        return;
+      }
+      
+      const month = dateObj.getMonth(); // 0 to 11
+      
+      // Combine records with the same admission number (if valid)
+      const adm = log.admissionNo ? String(log.admissionNo).trim().toUpperCase() : '';
+      const key = (adm && adm !== '-' && adm !== 'UNKNOWN') ? adm : `NAME-${log.studentName.trim().toUpperCase()}`;
+      
+      if (!map.has(key)) {
+        map.set(key, {
+          id: key,
+          admissionNo: log.admissionNo || '-',
+          studentName: log.studentName, // Takes the first encountered name
+          studentClass: log.studentClass || '-',
+          monthlyPayments: {},
+          totalPaid: 0,
+          targetFee: 0 // Will be populated after aggregation
+        });
+      }
+      
+      const summary = map.get(key)!;
+      if (!summary.monthlyPayments[month]) {
+        summary.monthlyPayments[month] = [];
+      }
+      
+      summary.monthlyPayments[month].push({
+        amount: Number(log.feeAmount),
+        isGPay: log.isGPay,
+        date: log.date
+      });
+      
+      // Sort payments within the month by date
+      summary.monthlyPayments[month].sort((a, b) => a.date.localeCompare(b.date));
+      
+      summary.totalPaid += Number(log.feeAmount);
+    });
+    
+    return Array.from(map.values()).map(summary => {
+      // Priority: admissionNo specific target -> id specific target -> global target
+      const tFee = individualTargets[summary.admissionNo] ?? individualTargets[summary.id] ?? targetFee;
+      return { ...summary, targetFee: tFee };
+    }).sort((a, b) => a.studentName.localeCompare(b.studentName));
+  }, [logs, individualTargets, targetFee]);
+
+  const filteredStudents = useMemo(() => {
+    if (!searchQuery.trim()) return studentSummaries;
+    const query = searchQuery.toLowerCase();
+    return studentSummaries.filter(s => 
+      s.studentName.toLowerCase().includes(query) || 
+      s.admissionNo.toLowerCase().includes(query) ||
+      s.studentClass.toLowerCase().includes(query)
+    );
+  }, [studentSummaries, searchQuery]);
+
+  const totalRevenue = studentSummaries.reduce((sum, s) => sum + s.totalPaid, 0);
+
+  if (loading) {
+    return (
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-center items-center h-64">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-8 w-8 bg-gray-200 rounded-full mb-4"></div>
+          <div className="h-4 w-24 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (logs.length === 0) {
+    return (
+      <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+        <Calendar className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+        <h3 className="text-lg font-bold text-gray-900 mb-1">No data available</h3>
+        <p className="text-gray-500 text-sm">Add or scan fee logs to see the dashboard.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <h2 className="text-2xl font-bold">Rank List</h2>
+      {/* Stats Row */}
+      <FeeStatsRow 
+        studentCount={studentSummaries.length}
+        totalRevenue={totalRevenue}
+        targetFee={targetFee}
+        onTargetFeeChange={setTargetFee}
+      />
+
+      {/* Toolbar */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-between sm:justify-start">
+          <div className="flex items-center bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
+            <button
+              onClick={() => setViewMode('progress')}
+              className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${
+                viewMode === 'progress' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Target Progress
+            </button>
+            <button
+              onClick={() => setViewMode('tracker')}
+              className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${
+                viewMode === 'tracker' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              12-Month Tracker
+            </button>
+          </div>
+          <FeeTargetCSVImport onImport={handleImportTargets} />
         </div>
         
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search students..." 
-              value={searchQuery} 
-              onChange={(e) => setSearchQuery(e.target.value)} 
-              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" 
-            />
-          </div>
-          <button
-            onClick={onPrintableClick}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-colors shrink-0"
-          >
-            <Printer className="w-4 h-4" />
-            <span className="hidden sm:inline">Printable List</span>
-            <span className="sm:hidden">Print</span>
-          </button>
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by name, class, adm no..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+          />
         </div>
       </div>
 
-      <input 
-        type="file" 
-        accept="image/*" 
-        className="hidden" 
-        ref={fileInputRef}
-        onChange={handleImageUpload}
-      />
-
-      {podiumStudents.length === 0 && standardStudents.length === 0 ? (
-        <div className="py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm">
-          No students found matching your search.
+      {/* Main Content */}
+      {filteredStudents.length === 0 ? (
+        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+          <p className="text-gray-500 font-medium">No students match your search.</p>
+        </div>
+      ) : viewMode === 'progress' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredStudents.map(student => (
+            <StudentProgressCard 
+              key={student.id} 
+              student={student} 
+              onUpdateTarget={handleUpdateTarget}
+            />
+          ))}
         </div>
       ) : (
         <>
-          {podiumStudents.length > 0 && (
-            <div className="flex flex-col md:flex-row flex-wrap justify-center items-center md:items-end gap-6 mb-12 mt-4">
-              {podiumStudents.map((item, index) => (
-                <AppTopRankCard
-                  key={`${item.student.name}-${item.rank}`}
-                  student={item.student}
-                  rank={item.rank}
-                  score={item.score}
-                  chapters={chapters}
-                  imageUrl={studentImages[item.student.name]}
-                  onImageClick={triggerImageUpload}
-                  onClick={() => onStudentClick(item.student)}
-                  orderClass={getDesktopOrderClass(index, podiumStudents.length)}
-                />
-              ))}
-            </div>
-          )}
+          {/* Mobile view for 12-month tracker */}
+          <div className="block lg:hidden space-y-4">
+            {filteredStudents.map(student => (
+              <StudentFeeCard key={student.id} student={student} onUpdateTarget={handleUpdateTarget} />
+            ))}
+          </div>
 
-          {standardStudents.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {standardStudents.map(item => (
-                <AppStandardRankCard
-                  key={`${item.student.name}-${item.rank}`}
-                  student={item.student}
-                  rank={item.rank}
-                  score={item.score}
-                  chapters={chapters}
-                  onClick={() => onStudentClick(item.student)}
-                />
-              ))}
-            </div>
-          )}
+          {/* Desktop view for 12-month tracker */}
+          <div className="hidden lg:block">
+            <StudentFeeTable students={filteredStudents} onUpdateTarget={handleUpdateTarget} />
+          </div>
         </>
       )}
     </div>
   );
 }
---- END OF FILE src/components/RankList.tsx ---
 
---- START OF FILE src/components/PrintableRankList.tsx ---
-import React, { useState, useEffect } from 'react';
-import { OMRResult } from '../services/geminiService';
-import { parseTopicMapping, Chapter } from '../utils/topicParser';
-import { getStudentImage } from '../services/db';
-import StudentRankCard from './print/StudentRankCard';
-import TopRankCard from './print/TopRankCard';
-import PrintSettingsBar from './print/PrintSettingsBar';
-import PrintHeader from './print/PrintHeader';
+--- END OF FILE src/components/lab/fee-logger/FeeDashboard.tsx ---
 
-interface PrintableRankListProps {
-  files: { result?: OMRResult }[];
-  topicMapping: string;
-  parsedTopicMapping?: any;
-  onBack: () => void;
+--- START OF FILE src/components/lab/fee-logger/StudentProgressCard.tsx ---
+import React, { useState } from 'react';
+import { StudentSummary, EditableTargetFee } from './index';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
+interface StudentProgressCardProps {
+  student: StudentSummary;
+  onUpdateTarget: (id: string, target: number) => void;
 }
 
-export default function PrintableRankList({ files, topicMapping, parsedTopicMapping, onBack }: PrintableRankListProps) {
-  const [subjectName, setSubjectName] = useState('PHYSICS');
-  const [dayNumber, setDayNumber] = useState('4');
-  const [studentImages, setStudentImages] = useState<Record<string, string>>({});
+export default function StudentProgressCard({ student, onUpdateTarget }: StudentProgressCardProps) {
+  const [expanded, setExpanded] = useState(false);
   
-  // Print Customization Settings
-  const [columnsPerPage, setColumnsPerPage] = useState<number>(10);
-  const [cardScale, setCardScale] = useState<number>(11); // base font size in px
-  const [showTop3, setShowTop3] = useState<boolean>(true);
-  const [showHeader, setShowHeader] = useState<boolean>(true);
-
-  const chapters: Chapter[] = parsedTopicMapping || parseTopicMapping(topicMapping);
+  // Calculate progress percentage (cap at 100% for the bar visual)
+  const currentTarget = student.targetFee;
+  const rawProgress = currentTarget > 0 ? (student.totalPaid / currentTarget) * 100 : 0;
+  const progress = Math.min(100, Math.round(rawProgress));
   
-  const calculateScore = (student: OMRResult) => (student.right * 4) - student.wrong;
-
-  const sortedResults = files
-    .filter(f => f.result)
-    .map(f => f.result!)
-    .sort((a, b) => {
-      const scoreDiff = calculateScore(b) - calculateScore(a);
-      return scoreDiff !== 0 ? scoreDiff : a.name.localeCompare(b.name);
-    });
-
-  const rankedResults = sortedResults.reduce(
-    (acc, student, index) => {
-      const score = calculateScore(student);
-      const previous = acc[index - 1];
-      const rank = previous
-        ? previous.score === score
-          ? previous.rank
-          : previous.rank + 1
-        : 1;
-      acc.push({ student, score, rank });
-      return acc;
-    },
-    [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
-  );
-
-  // Take up to 5 students that occupy rank 1, 2, or 3
-  const podiumStudents = rankedResults.filter(r => r.rank <= 3).slice(0, 5);
-
-  useEffect(() => {
-    const loadImages = async () => {
-      const images: Record<string, string> = {};
-      for (const item of podiumStudents) {
-        const file = await getStudentImage(item.student.name);
-        if (file) {
-          images[item.student.name] = URL.createObjectURL(file);
-        }
-      }
-      setStudentImages(images);
-    };
-    loadImages();
-  }, [rankedResults]);
-
-  // Reorder top podium to put highest ranks in the middle
-  const displayPodium: Array<{ student: OMRResult, rank: number }> = [];
-  [...podiumStudents].sort((a,b) => a.rank - b.rank).forEach((item, i) => {
-    if (i % 2 === 0) displayPodium.push({ student: item.student, rank: item.rank });
-    else displayPodium.unshift({ student: item.student, rank: item.rank });
-  });
-
-  const chapterTopicString = chapters.map(c => c.name).join(' · ');
+  let colorClass = 'bg-red-500';
+  let bgClass = 'bg-red-50 text-red-700 border-red-200';
   
-  // Adjust podium sizing if there are more than 3 cards
-  const podiumScale = podiumStudents.length > 3 ? Math.max(cardScale * 0.75, 10) : Math.max(cardScale, 14);
-
-  return (
-    <div className="min-h-screen bg-white text-black">
-      <PrintSettingsBar
-        subjectName={subjectName}
-        setSubjectName={setSubjectName}
-        dayNumber={dayNumber}
-        setDayNumber={setDayNumber}
-        columnsPerPage={columnsPerPage}
-        setColumnsPerPage={setColumnsPerPage}
-        cardScale={cardScale}
-        setCardScale={setCardScale}
-        showTop3={showTop3}
-        setShowTop3={setShowTop3}
-        showHeader={showHeader}
-        setShowHeader={setShowHeader}
-        onBack={onBack}
-      />
-
-      <div className="print:m-0 p-4 md:p-8 pt-0">
-        {showHeader && (
-          <PrintHeader 
-            subjectName={subjectName} 
-            dayNumber={dayNumber} 
-            chapterTopicString={chapterTopicString} 
-          />
-        )}
-
-        {showTop3 && displayPodium.length > 0 && (
-          <div className="mb-10">
-            <div className="flex flex-wrap justify-center items-end gap-4 md:gap-8">
-              {displayPodium.map(({ student, rank }) => (
-                <TopRankCard 
-                  key={`top-${student.name}-${rank}`}
-                  student={student}
-                  rank={rank}
-                  score={calculateScore(student)}
-                  chapters={chapters}
-                  imageUrl={studentImages[student.name]}
-                  fontSizeScale={podiumScale} 
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div>
-          {showHeader && <h2 className="text-lg font-bold mb-4 border-b pb-2 border-gray-200">All Students</h2>}
-          <div 
-            className="grid gap-[0.2em] print:gap-[0.2em] items-stretch justify-items-center"
-            style={{ 
-              gridTemplateColumns: `repeat(${columnsPerPage}, minmax(0, 1fr))`,
-              fontSize: `${cardScale}px` 
-            }}
-          >
-            {rankedResults.map(({ student, rank, score }) => (
-              <div key={`${student.name}-${rank}`} className="w-full h-full">
-                <StudentRankCard 
-                  student={student} 
-                  rank={rank} 
-                  score={score}
-                  chapters={chapters} 
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/PrintableRankList.tsx ---
-
---- START OF FILE src/components/print/TopRankCard.tsx ---
-import React from 'react';
-import { OMRResult } from '../../services/geminiService';
-import { Chapter } from '../../utils/topicParser';
-import CosmicDotGrid from './CosmicDotGrid';
-import ChapterProgressBars from './ChapterProgressBars';
-
-interface TopRankCardProps {
-  student: OMRResult;
-  rank: number;
-  score: number;
-  chapters: Chapter[];
-  imageUrl?: string;
-  fontSizeScale: number;
-}
-
-export default function TopRankCard({ student, rank, score, chapters, imageUrl, fontSizeScale }: TopRankCardProps) {
-  let cardClasses = "flex flex-col items-center rounded-xl p-[0.8em] border shadow-md relative overflow-hidden break-inside-avoid ";
-  let badgeClasses = "absolute -bottom-[0.5em] -right-[0.5em] w-[2.2em] h-[2.2em] rounded-full text-white flex items-center justify-center font-bold border-[0.15em] border-white z-20 text-[0.8em] shadow-sm ";
-  let cardHeight = '18.5em';
-  let cardWidth = '14em';
-
-  if (rank === 1) {
-    cardClasses += "bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 border-yellow-200 text-slate-900 z-10 ";
-    badgeClasses += "bg-yellow-600";
-    cardHeight = '20em';
-    cardWidth = '15em';
-  } else if (rank === 2) {
-    cardClasses += "bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 border-slate-300 text-slate-900 ";
-    badgeClasses += "bg-slate-600";
-    cardHeight = '18.5em';
-    cardWidth = '14em';
-  } else {
-    cardClasses += "bg-gradient-to-br from-orange-100 via-orange-200 to-amber-100 border-orange-300 text-slate-900 ";
-    badgeClasses += "bg-orange-600";
-    cardHeight = '18.5em';
-    cardWidth = '14em';
+  if (progress >= 100) {
+    colorClass = 'bg-green-500';
+    bgClass = 'bg-green-50 text-green-700 border-green-200';
+  } else if (progress >= 50) {
+    colorClass = 'bg-yellow-400';
+    bgClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
   }
 
+  // Flatten all payments for the expanded view
+  const allPayments = Object.values(student.monthlyPayments)
+    .flat()
+    .sort((a, b) => a.date.localeCompare(b.date));
+
   return (
-    <div className={`${cardClasses}`} style={{ fontSize: `${fontSizeScale}px`, width: cardWidth, minHeight: cardHeight, height: cardHeight }}>
-      <div className="relative mb-[0.5em] mt-[0.3em]">
-        {imageUrl ? (
-          <img src={imageUrl} alt={student.name} className="w-[4.5em] h-[4.5em] rounded-full object-cover border-[0.2em] border-white shadow-sm" />
-        ) : (
-          <div className="w-[4.5em] h-[4.5em] rounded-full bg-gray-100 flex items-center justify-center border-[0.2em] border-white shadow-sm text-gray-500 font-bold text-[1.8em]">
-            {student.name.charAt(0)}
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md">
+      <div className="p-4 flex flex-col gap-3">
+        <div className="flex justify-between items-start gap-2">
+          <div className="min-w-0" onClick={() => setExpanded(!expanded)}>
+            <h3 className="font-bold text-gray-900 truncate cursor-pointer hover:text-blue-600" title={student.studentName}>
+              {student.studentName}
+            </h3>
+            <div className="text-xs text-gray-500 mt-0.5 truncate cursor-pointer">
+              Adm: {student.admissionNo} • Class: {student.studentClass}
+            </div>
           </div>
-        )}
-        <div className={badgeClasses}>#{rank}</div>
-      </div>
-      
-      <h3 className="text-[1.1em] font-bold text-center break-words leading-tight w-full px-[0.2em] text-gray-900 tracking-tight">{student.name}</h3>
-      
-      <div className="flex items-center justify-center gap-[0.6em] mt-[0.6em] mb-[0.6em] w-full">
-        <span className="text-[0.7em] font-bold text-green-700 bg-green-50 px-[0.5em] py-[0.2em] rounded border border-green-200">C:{student.right}</span>
-        <span className="text-[1.8em] font-black text-indigo-600 leading-none drop-shadow-sm">
-          {score}<span className="text-[0.35em] ml-[0.1em] text-indigo-400 uppercase align-middle">pts</span>
-        </span>
-        <span className="text-[0.7em] font-bold text-red-700 bg-red-50 px-[0.5em] py-[0.2em] rounded border border-red-200">W:{student.wrong}</span>
-      </div>
-      <div className="mt-auto flex flex-row items-stretch w-full z-10 pt-[0.2em]">
-        <div className="w-1/3 max-w-[5.2em] border-r border-gray-100 pr-[0.3em] shrink-0 flex items-center justify-center">
-          <div className="aspect-square h-full max-h-[11.5em] flex items-center justify-center">
-            <CosmicDotGrid scores={student.scores} variant="top" />
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <div className={`px-2.5 py-1 rounded-lg text-xs font-bold border shrink-0 ${bgClass}`}>
+              Paid: ${student.totalPaid}
+            </div>
+            <EditableTargetFee 
+              value={student.targetFee} 
+              onSave={(val) => onUpdateTarget(student.id, val)} 
+            />
           </div>
         </div>
-        <div className="flex-1 pl-[0.3em] flex flex-col justify-center">
-          <ChapterProgressBars chapters={chapters} student={student} compact={false} showPercent={false} showNames={false} />
+        
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpanded(!expanded)}>
+          <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div 
+              className={`h-full ${colorClass} transition-all duration-500`} 
+              style={{ width: `${progress}%` }} 
+            />
+          </div>
+          <span className="text-xs font-bold text-gray-600 w-9 text-right">{Math.round(rawProgress)}%</span>
+          {expanded ? (
+            <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+          )}
         </div>
-      </div>  
+      </div>
+
+      {expanded && (
+        <div className="p-4 bg-gray-50 border-t border-gray-100">
+          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Payment History</h4>
+          {allPayments.length > 0 ? (
+            <div className="space-y-2">
+              {allPayments.map((p, i) => (
+                <div key={i} className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-gray-200 text-sm shadow-sm">
+                  <div className="font-medium text-gray-700">{p.date}</div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      p.isGPay ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-gray-100 text-gray-600 border border-gray-200'
+                    }`}>
+                      {p.isGPay ? 'GPay' : 'Cash'}
+                    </span>
+                    <span className="font-black text-gray-900">${p.amount}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500 text-center py-4 bg-white rounded-lg border border-dashed border-gray-200">
+              No payments logged.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
---- END OF FILE src/components/print/TopRankCard.tsx ---
+
+--- END OF FILE src/components/lab/fee-logger/StudentProgressCard.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/StudentFeeCard.tsx ---
+import React from 'react';
+import { StudentSummary, EditableTargetFee } from './index';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+interface StudentFeeCardProps {
+  student: StudentSummary;
+  onUpdateTarget: (id: string, target: number) => void;
+}
+
+export default function StudentFeeCard({ student, onUpdateTarget }: StudentFeeCardProps) {
+  return (
+    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start mb-4">
+        <div className="pr-2 min-w-0">
+          <h3 className="font-bold text-gray-900 text-base leading-tight mb-1 truncate" title={student.studentName}>{student.studentName}</h3>
+          <div className="flex flex-wrap gap-2 text-xs font-medium text-gray-500">
+            <span className="bg-gray-100 px-2 py-0.5 rounded border border-gray-200">Adm: {student.admissionNo}</span>
+            <span className="bg-gray-100 px-2 py-0.5 rounded border border-gray-200">Class: {student.studentClass}</span>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-black border border-blue-200 shrink-0">
+            ${student.totalPaid.toFixed(2)}
+          </div>
+          <EditableTargetFee 
+            value={student.targetFee} 
+            onSave={(val) => onUpdateTarget(student.id, val)} 
+          />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+        {MONTHS.map((month, index) => {
+          const payments = student.monthlyPayments[index] || [];
+          const hasPayments = payments.length > 0;
+          
+          return (
+            <div 
+              key={month} 
+              className={`flex flex-col items-center py-1.5 rounded-md border transition-colors ${
+                hasPayments ? 'bg-white border-gray-300 shadow-sm' : 'bg-gray-50 border-gray-100'
+              }`}
+            >
+              <span className={`text-[10px] font-bold ${hasPayments ? 'text-gray-800' : 'text-gray-400'}`}>
+                {month}
+              </span>
+              <div className="flex flex-col items-center justify-center gap-0.5 mt-1 min-h-[12px]">
+                {hasPayments ? (
+                  payments.map((p, idx) => (
+                    <span 
+                      key={idx} 
+                      className={`text-[9px] font-bold px-1 rounded ${
+                        p.isGPay ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-green-50 text-green-700 border border-green-100'
+                      }`}
+                      title={`$${p.amount.toFixed(2)} on ${p.date}`}
+                    >
+                      ${p.amount}
+                    </span>
+                  ))
+                ) : (
+                  <div className={`w-1.5 h-1.5 rounded-full bg-gray-200 mt-0.5`} />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/fee-logger/StudentFeeCard.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/StudentFeeTable.tsx ---
+import React from 'react';
+import { StudentSummary, EditableTargetFee } from './index';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+interface StudentFeeTableProps {
+  students: StudentSummary[];
+  onUpdateTarget: (id: string, target: number) => void;
+}
+
+export default function StudentFeeTable({ students, onUpdateTarget }: StudentFeeTableProps) {
+  return (
+    <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
+      <table className="w-full text-left border-collapse min-w-[1000px]">
+        <thead className="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 shadow-[1px_0_0_0_#e5e7eb]">Student Details</th>
+            {MONTHS.map(m => (
+              <th key={m} className="p-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-center min-w-[70px]">{m}</th>
+            ))}
+            <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Target Fee</th>
+            <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Total Paid</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {students.map(student => (
+            <tr key={student.id} className="hover:bg-blue-50/30 transition-colors group">
+              <td className="p-4 sticky left-0 bg-white group-hover:bg-blue-50/30 z-10 shadow-[1px_0_0_0_#f3f4f6]">
+                <div className="font-bold text-sm text-gray-900">{student.studentName}</div>
+                <div className="text-xs text-gray-500 font-medium mt-0.5">Adm: {student.admissionNo} • Class: {student.studentClass}</div>
+              </td>
+              
+              {MONTHS.map((m, i) => {
+                const payments = student.monthlyPayments[i] || [];
+                const hasPayments = payments.length > 0;
+                
+                return (
+                  <td key={i} className="p-2 text-center align-top">
+                    <div className="flex flex-col items-center gap-1 mt-1">
+                      {hasPayments ? (
+                        payments.map((p, idx) => (
+                          <div
+                            key={idx}
+                            className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded text-xs font-bold border shadow-sm ${
+                              p.isGPay 
+                                ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                : 'bg-green-50 text-green-700 border-green-200'
+                            }`}
+                            title={`Paid $${p.amount.toFixed(2)} on ${p.date} (${p.isGPay ? 'GPay' : 'Cash'})`}
+                          >
+                            ${p.amount.toFixed(0)}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="inline-block w-2 h-2 bg-gray-200 rounded-full mx-auto mt-1" title={`Unpaid in ${m}`} />
+                      )}
+                    </div>
+                  </td>
+                );
+              })}
+              
+              <td className="p-4 text-sm text-right align-middle">
+                <div className="flex justify-end">
+                  <EditableTargetFee 
+                    value={student.targetFee} 
+                    onSave={(val) => onUpdateTarget(student.id, val)} 
+                  />
+                </div>
+              </td>
+
+              <td className="p-4 text-sm font-black text-blue-600 text-right align-middle">
+                ${student.totalPaid.toFixed(2)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/fee-logger/StudentFeeTable.tsx ---

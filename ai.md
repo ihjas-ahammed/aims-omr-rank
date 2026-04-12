@@ -1,7 +1,9 @@
 Make the following changes:
 
-    - Update ranklist and printable:
-        if we have more than 3 peoplein #1 #2 #3, show their phot also, because thats fair (not just the  first 3 but go upto 5 if needed and set alignment based on that)
+    - in fee logger dashboard, 
+        add an option to import max  value from csv:
+            in which I upload a csv with 3rd column as admission number and maximum fee value at column 13
+            this is needed because some students have scholership and their maximum fee value may vary and also add an option in the cards in which I can manually set maximum fee value (for each cardsa)
 
 Apply changes to both mobile view and desktop (movbile view is the priority)
 

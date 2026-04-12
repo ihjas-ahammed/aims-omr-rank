@@ -590,3 +590,113 @@ Output your response as a JSON object with this exact structure:
   }
   throw lastError || new Error('Failed to process image with all provided keys.');
 }
+
+export interface FeeRecord {
+  admissionNo: string;
+  studentClass: string;
+  studentName: string;
+  feeAmount: number;
+  isGPay: boolean;
+  date: string;
+}
+
+export async function extractFeeRecordsBatch(
+  images: { id: string, base64: string, mimeType: string }[],
+  apiKeys: string[],
+  model: string
+): Promise<Record<string, FeeRecord[]>> {
+  const keysToTry = getKeys(apiKeys);
+
+  const prompt = `
+You are an expert data extraction assistant.
+Extract the fee log records from the provided handwritten ledger images.
+The columns are typically: Admission No, Class, Student Name, Fee Amount, Payment Method (GP means Google Pay), and Date.
+
+Rules:
+1. Handle ditto marks (") or blank dates by inferring the date from the previous row.
+2. Convert dates to YYYY-MM-DD format. Assume the year is 2025 if not fully specified.
+3. If 'GP' is written in the payment method column, set isGPay to true, otherwise false.
+4. If a field is completely unreadable, leave it as an empty string (or 0 for numbers).
+
+Output your response as a JSON object mapping each image ID to an array of records with this structure:
+{
+  "image_id_1": [
+    {
+      "admissionNo": "1024",
+      "studentClass": "10A",
+      "studentName": "John Doe",
+      "feeAmount": 500,
+      "isGPay": true,
+      "date": "2025-04-10"
+    }
+  ],
+  "image_id_2": [...]
+}
+`;
+
+  const schemaConfig = {
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: images.reduce((acc, img) => {
+        acc[img.id] = {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              admissionNo: { type: Type.STRING },
+              studentClass: { type: Type.STRING },
+              studentName: { type: Type.STRING },
+              feeAmount: { type: Type.NUMBER },
+              isGPay: { type: Type.BOOLEAN },
+              date: { type: Type.STRING, description: "YYYY-MM-DD format" }
+            },
+            required: ["admissionNo", "studentClass", "studentName", "feeAmount", "isGPay", "date"]
+          }
+        };
+        return acc;
+      }, {} as any),
+      required: images.map(img => img.id)
+    }
+  };
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const { key } = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+
+      const contentsParts: any[] = [{ text: prompt }];
+      images.forEach((img) => {
+        contentsParts.push({ text: `Image ID: ${img.id}` });
+        contentsParts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } });
+      });
+
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-pro-preview',
+        contents: contentsParts,
+        config: schemaConfig as any
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+
+      let data;
+      try {
+        const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+        data = JSON.parse(cleanedText) as Record<string, FeeRecord[]>;
+      } catch (parseError) {
+        console.error("Parse Error:", parseError);
+        throw new Error("Failed to parse JSON from AI response.");
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('Error with API key in extractFeeRecordsBatch:', error);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Failed to extract fee records with all provided keys.');
+}

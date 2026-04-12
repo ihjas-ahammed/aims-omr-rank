@@ -83,6 +83,65 @@ coverage/
 
 --- END OF FILE .gitignore ---
 
+--- START OF FILE CLAUDE.md ---
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+AIMS Plus Lab is a React application for evaluating OMR (Optical Mark Recognition) sheets using Google's Gemini AI. It processes exam answer sheets, extracts student names and answers, calculates scores, and generates ranklists with topic-wise analysis.
+
+## Commands
+
+```bash
+npm install        # Install dependencies
+npm run dev        # Start dev server on port 3000
+npm run build      # Build for production
+npm run preview    # Preview production build
+npm run lint       # TypeScript type checking
+```
+
+**Environment:** Requires `GEMINI_API_KEY` in `.env.local` for AI features.
+
+## Architecture
+
+### State Management
+App.tsx is the central state hub. All application state lives here and is passed down to child components. Settings are persisted to localStorage.
+
+### View Routing
+The app uses a `ViewState` type to manage navigation between different views (home, lab, ranklist, detail, lab-course-progress, lab-timetable, lab-atr-list, lab-qp-maker, exam-*, etc.). URL paths are synced via `window.history.pushState`.
+
+### Services Layer
+- `src/services/geminiService.ts` - All Gemini API interactions: OMR evaluation (`evaluateOMR`/`evaluateOMRBatch`), name correction (`correctNamesBatch`), text extraction, auto-crop
+- `src/services/db.ts` - IndexedDB wrapper for image persistence across two stores: `images` (OMR sheets) and `student-images`
+- `src/services/firebaseService.ts` - Firebase integration for exams
+
+### Utils
+- `src/utils/topicParser.ts` - Parses markdown-formatted topic mapping into `Chapter[]`/`Topic[]` structures
+- `src/utils/imageProcessing.ts` - Image manipulation: base64 encoding, cropping, rotation
+- `src/utils/fileUtils.ts` - File ↔ dataURL conversions
+- `src/utils/cropUtils.ts` - Crop coordinate utilities
+
+### Components
+Key components include `Lab`, `RankList`, `StudentDetail`, `ReviewModal`, and feature-specific components under `src/components/lab/` (course-progress, timetable, atr-list, qp-maker, online-exams).
+
+### OMR Processing Flow
+1. Images uploaded and stored in IndexedDB
+2. Optional auto-crop via Gemini lite model
+3. Batch evaluation via Gemini with configurable sampling (multiple attempts for consensus)
+4. Names corrected against attendance sheet
+5. Results exported as CSV or reviewed in modal
+
+### Multi-Key Concurrency
+The app supports multiple API keys with rotation (`getNextKey`). Concurrency is configurable: `baseConcurrency × requestsPerKey × numKeys` total parallel requests. Sampling runs verification passes beyond the initial attempts.
+
+### Key Types
+- `OMRResult` - Evaluation output: `{ name, right, wrong, scores: q1-q25, confidence, confidences[], nameConfidence? }`
+- `AutoCropResult` - Crop coordinates and rotation: `{ ymin, xmin, ymax, xmax, rotation }`
+
+--- END OF FILE CLAUDE.md ---
+
 --- START OF FILE firebase-setup.md ---
 # Firebase Setup for Online Exams
 
@@ -172,19 +231,21 @@ Restart your Vite development server for the variables to take effect (`npm run 
 
 --- START OF FILE package-lock.json ---
 {
-  "name": "react-example",
+  "name": "aims-plus-lab",
   "version": "0.0.0",
   "lockfileVersion": 3,
   "requires": true,
   "packages": {
     "": {
-      "name": "react-example",
+      "name": "aims-plus-lab",
       "version": "0.0.0",
       "dependencies": {
         "@google/genai": "^1.29.0",
         "@tailwindcss/vite": "^4.1.14",
         "@vitejs/plugin-react": "^5.0.4",
         "clsx": "^2.1.1",
+        "data-fns": "^1.1.0",
+        "date-fns": "^4.1.0",
         "dotenv": "^17.2.3",
         "express": "^4.21.2",
         "firebase": "^12.11.0",
@@ -2858,6 +2919,18 @@ Restart your Vite development server for the variables to take effect (`npm run 
       "dev": true,
       "license": "MIT"
     },
+    "node_modules/data-fns": {
+      "version": "1.1.0",
+      "resolved": "https://registry.npmjs.org/data-fns/-/data-fns-1.1.0.tgz",
+      "integrity": "sha512-/rJzdbnuY3DVgzqsfEfc+tJLuAKYaHzkUxSMRIU3dxKFeWGD/MGhrgAfuwSOmgfJ8enygztp9DeuvoSxauppIg==",
+      "license": "MIT",
+      "dependencies": {
+        "unit-fns": "^0.1.6"
+      },
+      "engines": {
+        "node": ">=10"
+      }
+    },
     "node_modules/data-uri-to-buffer": {
       "version": "4.0.1",
       "resolved": "https://registry.npmjs.org/data-uri-to-buffer/-/data-uri-to-buffer-4.0.1.tgz",
@@ -2865,6 +2938,16 @@ Restart your Vite development server for the variables to take effect (`npm run 
       "license": "MIT",
       "engines": {
         "node": ">= 12"
+      }
+    },
+    "node_modules/date-fns": {
+      "version": "4.1.0",
+      "resolved": "https://registry.npmjs.org/date-fns/-/date-fns-4.1.0.tgz",
+      "integrity": "sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==",
+      "license": "MIT",
+      "funding": {
+        "type": "github",
+        "url": "https://github.com/sponsors/kossnocorp"
       }
     },
     "node_modules/debug": {
@@ -4823,6 +4906,15 @@ Restart your Vite development server for the variables to take effect (`npm run 
       "integrity": "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==",
       "license": "MIT"
     },
+    "node_modules/unit-fns": {
+      "version": "0.1.9",
+      "resolved": "https://registry.npmjs.org/unit-fns/-/unit-fns-0.1.9.tgz",
+      "integrity": "sha512-bxceIkc7n2icQmgQx8u3vX98ZBIcpL2YJDKIsWDFK7ZX1TTuLvtNWVNd9/oARCDHd7QQRzwc+zxabO0HSK8X0w==",
+      "license": "MIT",
+      "engines": {
+        "node": ">=10"
+      }
+    },
     "node_modules/unpipe": {
       "version": "1.0.0",
       "resolved": "https://registry.npmjs.org/unpipe/-/unpipe-1.0.0.tgz",
@@ -5591,6 +5683,8 @@ Restart your Vite development server for the variables to take effect (`npm run 
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
     "clsx": "^2.1.1",
+    "data-fns": "^1.1.0",
+    "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "firebase": "^12.11.0",
@@ -5716,621 +5810,11 @@ export default defineConfig(({mode}) => {
 --- START OF FILE .firebase/hosting.ZGlzdA.cache ---
 logo2.png,1775390029907,ef4f5b4add3c8a95340db2ec4e6a5efb84d051ed119c762298defde1aa2067f3
 logo1.png,1775390029905,def463d27097d677effeb7dc6bc5c9d36f76919b30a370bd91fc43e633928ba8
-index.html,1775733199310,a701dc10724a6a6988ad7dddfddff2bfe1d5c29ea7cde7d9ed445526f82d0533
-assets/index-CSJSTzpi.css,1775733199310,cc8d3c7cdf2b2ffc0fc0990dbd753adc988e2fdc648f5a42794481831fe6680d
-assets/index-BhJlgduX.js,1775733199310,2f9f35adc5f578b8cc92cb80d9d78294ed26aa5c342cddc8d6b439b4086075db
+index.html,1775816776944,081ad8d21c05babda0a9fb5f01295ddcd14b1946d82305d8f3c21340876ff6d2
+assets/index-QUbnU5Ti.css,1775816776964,6ce954287396c8551d3380394fb1e18e181c4fd6cdbc2f34360a7da0b5edc9fa
+assets/index-DI5wHl8K.js,1775816776988,9c2f4e936ae46e2a537b3ac269dae9f6aa0bb3bfa04ca4b0d01fba99174e3ee6
 
 --- END OF FILE .firebase/hosting.ZGlzdA.cache ---
-
---- START OF FILE lib/models/rank_model.dart ---
-class RankUser {
-  final String id;
-  final String name;
-  final String? photoUrl;
-
-  RankUser({required this.id, required this.name, this.photoUrl});
-}
-
-class RankEntry {
-  final int rank;
-  final int xp;
-  final List<RankUser> users;
-
-  RankEntry({required this.rank, required this.xp, required this.users});
-}
---- END OF FILE lib/models/rank_model.dart ---
-
---- START OF FILE lib/screens/home_screen.dart ---
-import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import '../models/app_models.dart';
-import '../services/database_service.dart';
-import '../services/progress_service.dart';
-import '../services/generation_manager.dart';
-import '../theme/app_theme.dart';
-import '../widgets/compact_book_card.dart';
-import '../widgets/community_book_card.dart';
-import '../widgets/generating_book_card.dart';
-import 'main_layout_screen.dart';
-import 'settings_screen.dart';
-import 'generate_book_screen.dart';
-import 'pdf_split_preview_screen.dart';
-import 'leaderboard_screen.dart';
-
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  final DatabaseService _db = DatabaseService();
-  List<Book> books = [];
-  List<Book> globalBooks = [];
-  Map<String, double> progressMap = {};
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAllData();
-    GenerationManager.instance.onBookGenerated = () => _loadAllData(force: true);
-  }
-
-  Future<void> _loadAllData({bool force = false}) async {
-    final fetched = await _db.fetchBooks(forceRefresh: force);
-    final globals = await _db.fetchGlobalBooks();
-    
-    Map<String, double> prog = {};
-    for (var b in fetched) {
-      prog[b.id] = await ProgressService.getBookProgress(b);
-    }
-
-    if (mounted) {
-      setState(() {
-        books = fetched;
-        globalBooks = globals;
-        progressMap = prog;
-        isLoading = false;
-      });
-    }
-  }
-
-  void _downloadGlobalBook(Book globalBook) async {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Downloading ${globalBook.title}...')));
-    
-    final newBook = globalBook.copyWith(
-      id: 'dl_${DateTime.now().millisecondsSinceEpoch}',
-      isGlobal: false,
-    );
-    
-    await _db.saveGeneratedBook(newBook);
-    await _loadAllData(force: true);
-    
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved to your library!')));
-  }
-
-  void _deleteLocalBook(Book book) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppTheme.surface,
-        title: const Text('Delete Course?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: const Text('Are you sure you want to delete this course from your local library?', style: TextStyle(color: Colors.white70)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.white54))),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await _db.deleteBook(book.id);
-              _loadAllData(force: true);
-            }, 
-            child: const Text('Delete', style: TextStyle(color: AppTheme.duoRed, fontWeight: FontWeight.bold))
-          ),
-        ]
-      )
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: GenerationManager.instance,
-      builder: (context, child) {
-        final activeTasks = GenerationManager.instance.activeTasks;
-
-        return Scaffold(
-          backgroundColor: AppTheme.background,
-          body: isLoading
-            ? const Center(child: CircularProgressIndicator(color: AppTheme.duoBlue))
-            : RefreshIndicator(
-                color: AppTheme.duoBlue,
-                onRefresh: () => _loadAllData(force: true),
-                child: CustomScrollView(
-                  physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                  slivers:[
-                    SliverAppBar(
-                      expandedHeight: 120,
-                      floating: true,
-                      backgroundColor: AppTheme.background,
-                      flexibleSpace: const FlexibleSpaceBar(
-                        titlePadding: EdgeInsets.only(left: 24, bottom: 16),
-                        title: Text('Discover', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 28, color: Colors.white)),
-                      ),
-                      actions:[
-                        IconButton(
-                          padding: const EdgeInsets.only(right: 8),
-                          icon: const Icon(LucideIcons.trophy, size: 28, color: Colors.amber),
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const LeaderboardScreen()));
-                          },
-                        ),
-                        IconButton(
-                          padding: const EdgeInsets.only(right: 16),
-                          icon: const Icon(LucideIcons.userCircle, size: 28),
-                          onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
-                          },
-                        )
-                      ],
-                    ),
-                    
-                    // Generating Tasks Section
-                    if (activeTasks.isNotEmpty)
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final task = activeTasks[index];
-                              return GeneratingBookCard(
-                                task: task,
-                                onTap: () {
-                                  if (task.state == BookGenState.review && task.skeletonBook != null) {
-                                    Navigator.push(context, MaterialPageRoute(
-                                      builder: (_) => PdfSplitPreviewScreen(
-                                        taskId: task.id,
-                                        originalPdf: task.sourceFiles,
-                                        skeletonBook: task.skeletonBook!,
-                                      )
-                                    ));
-                                  } else if (task.state == BookGenState.error) {
-                                    GenerationManager.instance.dismissTask(task.id);
-                                  }
-                                }
-                              );
-                            },
-                            childCount: activeTasks.length,
-                          ),
-                        ),
-                      ),
-                    
-                    // User's Library Section (Horizontal Scroll)
-                    SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.fromLTRB(24, 16, 24, 16),
-                            child: Text('Your Library', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white)),
-                          ),
-                          if (books.isEmpty && activeTasks.isEmpty)
-                             Container(
-                               height: 180,
-                               margin: const EdgeInsets.symmetric(horizontal: 24),
-                               decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(24)),
-                               alignment: Alignment.center,
-                               child: const Text('No courses found.\nTap + to create one!', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold)),
-                             )
-                          else if (books.isNotEmpty)
-                             SizedBox(
-                               height: 220,
-                               child: ListView.builder(
-                                 scrollDirection: Axis.horizontal,
-                                 physics: const BouncingScrollPhysics(),
-                                 padding: const EdgeInsets.only(left: 8, right: 24),
-                                 itemCount: books.length,
-                                 itemBuilder: (context, index) {
-                                   final book = books[index];
-                                   return CompactBookCard(
-                                     book: book,
-                                     progress: progressMap[book.id] ?? 0.0,
-                                     onTap: () {
-                                       Navigator.push(context, MaterialPageRoute(builder: (_) => MainLayoutScreen(book: book)))
-                                         .then((_) => _loadAllData());
-                                     },
-                                     onDelete: () => _deleteLocalBook(book),
-                                   );
-                                 },
-                               ),
-                             ),
-                        ],
-                      ),
-                    ),
-
-                    // Global Community Books Section
-                    SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.fromLTRB(24, 32, 24, 16),
-                            child: Text('Community Picks', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white)),
-                          ),
-                          if (globalBooks.isEmpty)
-                             const Padding(
-                               padding: EdgeInsets.symmetric(horizontal: 24.0),
-                               child: Text('No community books published yet.', style: TextStyle(color: Colors.white54)),
-                             )
-                          else
-                             SizedBox(
-                               height: 120,
-                               child: ListView.builder(
-                                 scrollDirection: Axis.horizontal,
-                                 physics: const BouncingScrollPhysics(),
-                                 padding: const EdgeInsets.only(left: 8, right: 24),
-                                 itemCount: globalBooks.length,
-                                 itemBuilder: (context, index) {
-                                   final gBook = globalBooks[index];
-                                   return CommunityBookCard(
-                                     book: gBook,
-                                     onGetPressed: () => _downloadGlobalBook(gBook),
-                                   );
-                                 },
-                               ),
-                             ),
-                        ],
-                      ),
-                    ),
-
-                    const SliverToBoxAdapter(child: SizedBox(height: 100)),
-                  ],
-                ),
-              ),
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: AppTheme.duoGreen,
-            child: const Icon(LucideIcons.plus, color: Colors.white, size: 32),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GenerateBookScreen())),
-          ),
-        );
-      }
-    );
-  }
-}
---- END OF FILE lib/screens/home_screen.dart ---
-
---- START OF FILE lib/screens/leaderboard_screen.dart ---
-import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
-import 'package:share_plus/share_plus.dart';
-import '../models/rank_model.dart';
-import '../theme/app_theme.dart';
-import '../widgets/rank_list_card.dart';
-import '../services/print_service.dart';
-
-class LeaderboardScreen extends StatefulWidget {
-  const LeaderboardScreen({super.key});
-
-  @override
-  State<LeaderboardScreen> createState() => _LeaderboardScreenState();
-}
-
-class _LeaderboardScreenState extends State<LeaderboardScreen> {
-  // Utilizing Dummy Data to demonstrate the multi-player tie logic on higher ranks
-  final List<RankEntry> dummyData = [
-    RankEntry(
-      rank: 1, 
-      xp: 15400, 
-      users: [RankUser(id: '1', name: 'Alice'), RankUser(id: '2', name: 'Bob')]
-    ),
-    RankEntry(
-      rank: 2, 
-      xp: 14200, 
-      users: [RankUser(id: '3', name: 'Charlie')]
-    ),
-    RankEntry(
-      rank: 3, 
-      xp: 13800, 
-      users: [RankUser(id: '4', name: 'Diana'), RankUser(id: '5', name: 'Eve'), RankUser(id: '6', name: 'Frank')]
-    ),
-    RankEntry(
-      rank: 4, 
-      xp: 12000, 
-      users: [RankUser(id: '7', name: 'Grace')]
-    ),
-    RankEntry(
-      rank: 5, 
-      xp: 11500, 
-      users: [RankUser(id: '8', name: 'Hank'), RankUser(id: '9', name: 'Ivy')]
-    ),
-    RankEntry(
-      rank: 6, 
-      xp: 9800, 
-      users: [RankUser(id: '10', name: 'Jack')]
-    ),
-  ];
-
-  Future<void> _exportPdf() async {
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Generating Printable PDF...')));
-      final file = await PrintService.generateRankListPdf(dummyData);
-      await Share.shareXFiles([XFile(file.path)], text: 'Check out the current leaderboard!');
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error generating PDF: $e')));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Leaderboard', style: TextStyle(fontWeight: FontWeight.w900)),
-        actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.printer, color: AppTheme.duoBlue),
-            tooltip: 'Export/Print',
-            onPressed: _exportPdf,
-          )
-        ],
-      ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(24),
-        itemCount: dummyData.length,
-        itemBuilder: (context, index) {
-          return RankListCard(entry: dummyData[index]);
-        },
-      ),
-    );
-  }
-}
---- END OF FILE lib/screens/leaderboard_screen.dart ---
-
---- START OF FILE lib/services/print_service.dart ---
-import 'dart:io';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:path_provider/path_provider.dart';
-import '../models/rank_model.dart';
-
-class PrintService {
-  static Future<File> generateRankListPdf(List<RankEntry> entries) async {
-    final pdf = pw.Document();
-
-    pdf.addPage(
-      pw.MultiPage(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(32),
-        build: (pw.Context context) {
-          return [
-            pw.Text('Leaderboard Ranking', style: pw.TextStyle(fontSize: 28, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800)),
-            pw.SizedBox(height: 8),
-            pw.Text('Global Player Statistics', style: pw.TextStyle(fontSize: 14, color: PdfColors.grey600)),
-            pw.SizedBox(height: 24),
-            
-            ...entries.map((e) {
-              final isTop3 = e.rank <= 3;
-              
-              PdfColor bgColor = PdfColors.white;
-              PdfColor textColor = PdfColors.grey800;
-              PdfColor avatarColor = PdfColors.blueGrey800;
-              
-              // Top ranks highlighted in Printable mode exactly as requested
-              if (e.rank == 1) {
-                bgColor = PdfColors.amber100;
-                textColor = PdfColors.amber900;
-                avatarColor = PdfColors.amber700;
-              } else if (e.rank == 2) {
-                bgColor = PdfColors.blueGrey100;
-                textColor = PdfColors.blueGrey900;
-                avatarColor = PdfColors.blueGrey700;
-              } else if (e.rank == 3) {
-                bgColor = PdfColors.orange100;
-                textColor = PdfColors.orange900;
-                avatarColor = PdfColors.orange700;
-              }
-
-              int displayCount = e.users.length > 3 ? 3 : e.users.length;
-              double avatarWidth = 36.0 + (displayCount > 1 ? (displayCount - 1) * 20.0 : 0);
-
-              return pw.Container(
-                margin: const pw.EdgeInsets.only(bottom: 12),
-                padding: const pw.EdgeInsets.all(12),
-                decoration: pw.BoxDecoration(
-                  color: bgColor,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(12)),
-                  border: pw.Border.all(color: isTop3 ? textColor : PdfColors.grey300, width: isTop3 ? 2 : 1),
-                ),
-                child: pw.Row(
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
-                  children: [
-                    pw.Container(
-                      width: 40,
-                      child: pw.Text('#${e.rank}', style: pw.TextStyle(fontSize: isTop3 ? 18 : 14, fontWeight: pw.FontWeight.bold, color: textColor)),
-                    ),
-                    pw.SizedBox(
-                      width: avatarWidth,
-                      height: 36,
-                      child: pw.Stack(
-                        children: List.generate(displayCount, (index) {
-                          final user = e.users[index];
-                          return pw.Positioned(
-                            left: index * 20.0,
-                            child: pw.Container(
-                              width: 36, height: 36,
-                              decoration: pw.BoxDecoration(
-                                shape: pw.BoxShape.circle,
-                                color: avatarColor,
-                                border: pw.Border.all(color: bgColor, width: 2),
-                              ),
-                              alignment: pw.Alignment.center,
-                              child: pw.Text(user.name[0].toUpperCase(), style: pw.TextStyle(color: PdfColors.white, fontWeight: pw.FontWeight.bold, fontSize: 14)),
-                            )
-                          );
-                        })
-                      )
-                    ),
-                    pw.SizedBox(width: 16),
-                    pw.Expanded(
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(e.users.map((u) => u.name).join(', '), style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: textColor)),
-                          if (e.users.length > 1)
-                            pw.Text('${e.users.length} players tied', style: pw.TextStyle(fontSize: 10, color: isTop3 ? textColor : PdfColors.grey600)),
-                        ]
-                      )
-                    ),
-                    pw.Text('${e.xp} XP', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: textColor)),
-                  ],
-                ),
-              );
-            }),
-          ];
-        },
-      ),
-    );
-
-    final output = await getTemporaryDirectory();
-    final file = File("${output.path}/leaderboard_ranking.pdf");
-    await file.writeAsBytes(await pdf.save());
-    return file;
-  }
-}
---- END OF FILE lib/services/print_service.dart ---
-
---- START OF FILE lib/widgets/rank_list_card.dart ---
-import 'package:flutter/material.dart';
-import '../models/rank_model.dart';
-import '../theme/app_theme.dart';
-
-class RankListCard extends StatelessWidget {
-  final RankEntry entry;
-
-  const RankListCard({super.key, required this.entry});
-
-  Color _getRankColor() {
-    if (entry.rank == 1) return Colors.amber;
-    if (entry.rank == 2) return Colors.blueGrey.shade300;
-    if (entry.rank == 3) return AppTheme.duoOrange;
-    return Colors.white54;
-  }
-
-  Color _getBgColor() {
-    if (entry.rank == 1) return Colors.amber.withOpacity(0.15);
-    if (entry.rank == 2) return Colors.blueGrey.withOpacity(0.15);
-    if (entry.rank == 3) return AppTheme.duoOrange.withOpacity(0.15);
-    return AppTheme.surface;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = _getRankColor();
-    final isTop3 = entry.rank <= 3;
-    final bgColor = _getBgColor();
-
-    // Determine the overlapping width dynamically
-    int displayCount = entry.users.length > 3 ? 3 : entry.users.length;
-    double avatarWidth = 40.0 + (displayCount > 1 ? (displayCount - 1) * 20.0 : 0);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isTop3 ? color.withOpacity(0.6) : Colors.white12, width: isTop3 ? 2 : 1),
-        boxShadow: isTop3 ? [
-          BoxShadow(
-            color: color.withOpacity(0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ] : [],
-      ),
-      child: Row(
-        children: [
-          // Rank Identity
-          SizedBox(
-            width: 40,
-            child: Text(
-              '#${entry.rank}',
-              style: TextStyle(
-                fontSize: isTop3 ? 20 : 16,
-                fontWeight: FontWeight.w900,
-                color: color,
-              ),
-            ),
-          ),
-          
-          // Overlapping Avatars for Ties
-          SizedBox(
-            width: avatarWidth,
-            height: 40,
-            child: Stack(
-              children: List.generate(displayCount, (index) {
-                final user = entry.users[index];
-                return Positioned(
-                  left: index * 20.0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: isTop3 ? color.withOpacity(0.8) : AppTheme.surface, width: 2),
-                    ),
-                    child: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: AppTheme.duoBlue,
-                      backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
-                      child: user.photoUrl == null 
-                          ? Text(user.name[0].toUpperCase(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white))
-                          : null,
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-          const SizedBox(width: 12),
-          
-          // Group Data
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.users.map((u) => u.name).join(', '),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: isTop3 ? Colors.white : Colors.white70,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (entry.users.length > 1)
-                  Text(
-                    '${entry.users.length} players tied',
-                    style: TextStyle(fontSize: 11, color: isTop3 ? color.withOpacity(0.9) : Colors.white54, fontWeight: FontWeight.bold),
-                  ),
-              ],
-            ),
-          ),
-          
-          // XP Highlights
-          Text(
-            '${entry.xp} XP',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 16,
-              color: isTop3 ? color : Colors.white54,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
---- END OF FILE lib/widgets/rank_list_card.dart ---
 
 --- START OF FILE src/App.tsx ---
 import React, { useState, useRef, useEffect } from 'react';
@@ -6353,6 +5837,7 @@ import CourseProgress from './components/lab/course-progress/CourseProgress';
 import TimetableDashboard from './components/lab/timetable/TimetableDashboard';
 import ATRList from './components/lab/atr-list/ATRList';
 import QPMaker from './components/lab/qp-maker/QPMaker';
+import FeeLogger from './components/lab/fee-logger/FeeLogger';
 
 // Online Exams Imports
 import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
@@ -6363,7 +5848,7 @@ const DEFAULT_ANSWER_KEY = `*   **Q1.** B\n*   **Q2.** A\n*   **Q3.** A\n*   **Q
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger';
 
 export default function App() {
   const [view, setView] = useState<ViewState>(() => {
@@ -7278,6 +6763,16 @@ export default function App() {
           <QPMaker onBack={() => setView('lab')} />
         )}
 
+        {view === 'lab-fee-logger' && (
+          <FeeLogger 
+            onBack={() => setView('lab')} 
+            apiKeys={apiKeys} 
+            model={proModel} 
+            concurrency={concurrency}
+            requestsPerKey={requestsPerKey}
+          />
+        )}
+
         {view === 'ranklist' && (
           <RankList 
             files={files} 
@@ -7654,10 +7149,10 @@ export default function ImageCropper({ imageUrl, onSave, onCancel }: ImageCroppe
 
 --- START OF FILE src/components/Lab.tsx ---
 import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText } from 'lucide-react';
+import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'home') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'home') => void;
 }
 
 export default function Lab({ onNavigate }: LabProps) {
@@ -7772,6 +7267,22 @@ export default function Lab({ onNavigate }: LabProps) {
           </p>
         </div>
 
+        <div
+          onClick={() => onNavigate('lab-fee-logger')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg group-hover:bg-emerald-100 transition-colors">
+              <Receipt className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Fee Logger</h3>
+          <p className="text-sm text-gray-600 flex-1">
+            Log and track student fee payments. Manually enter data or scan handwritten ledgers using AI.
+          </p>
+        </div>
+
       </div>
     </div>
   );
@@ -7845,6 +7356,7 @@ import { getStudentImage } from '../services/db';
 import StudentRankCard from './print/StudentRankCard';
 import TopRankCard from './print/TopRankCard';
 import PrintSettingsBar from './print/PrintSettingsBar';
+import PrintHeader from './print/PrintHeader';
 
 interface PrintableRankListProps {
   files: { result?: OMRResult }[];
@@ -7891,11 +7403,13 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
     [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
   );
 
+  // Take up to 5 students that occupy rank 1, 2, or 3
+  const podiumStudents = rankedResults.filter(r => r.rank <= 3).slice(0, 5);
+
   useEffect(() => {
     const loadImages = async () => {
-      const top3 = rankedResults.slice(0, 3);
       const images: Record<string, string> = {};
-      for (const item of top3) {
+      for (const item of podiumStudents) {
         const file = await getStudentImage(item.student.name);
         if (file) {
           images[item.student.name] = URL.createObjectURL(file);
@@ -7906,20 +7420,20 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
     loadImages();
   }, [rankedResults]);
 
-  const top3 = rankedResults.slice(0, 3);
+  // Reorder top podium to put highest ranks in the middle
+  const displayPodium: Array<{ student: OMRResult, rank: number }> = [];
+  [...podiumStudents].sort((a,b) => a.rank - b.rank).forEach((item, i) => {
+    if (i % 2 === 0) displayPodium.push({ student: item.student, rank: item.rank });
+    else displayPodium.unshift({ student: item.student, rank: item.rank });
+  });
 
-  // Reorder top 3 to put 1st place in the middle: [2nd, 1st, 3rd]
-  const displayTop3 = [];
-  if (top3.length > 1) displayTop3.push({ student: top3[1].student, rank: top3[1].rank });
-  if (top3.length > 0) displayTop3.push({ student: top3[0].student, rank: top3[0].rank });
-  if (top3.length > 2) displayTop3.push({ student: top3[2].student, rank: top3[2].rank });
-
-  // Generate the chapter/topic string
   const chapterTopicString = chapters.map(c => c.name).join(' · ');
+  
+  // Adjust podium sizing if there are more than 3 cards
+  const podiumScale = podiumStudents.length > 3 ? Math.max(cardScale * 0.75, 10) : Math.max(cardScale, 14);
 
   return (
     <div className="min-h-screen bg-white text-black">
-      {/* Non-printable controls */}
       <PrintSettingsBar
         subjectName={subjectName}
         setSubjectName={setSubjectName}
@@ -7936,31 +7450,19 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
         onBack={onBack}
       />
 
-      {/* Printable Content */}
       <div className="print:m-0 p-4 md:p-8 pt-0">
         {showHeader && (
-          <div className="mb-8 pt-4">
-            <div className="flex items-center justify-between mb-4">
-              <img src="/logo1.png" alt="Logo" className="h-12 md:h-16 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
-              <div className="text-center flex-1">
-                <h1 className="text-sm md:text-xl font-bold tracking-[0.4em] uppercase ml-[0.4em] text-gray-800">
-                  AIMS PLUS TEST SERIES · CRASH 2026
-                </h1>
-                <h2 className="text-xl md:text-2xl font-black mt-1">DAY {dayNumber} — RANK LIST</h2>
-              </div>
-              <img src="/logo2.png" alt="Logo" className="h-12 md:h-16 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
-            </div>
-            <div className="text-center text-xs md:text-sm font-medium max-w-4xl mx-auto uppercase text-gray-700">
-              <span className="font-bold text-gray-900">{subjectName}</span> | {chapterTopicString}
-            </div>
-          </div>
+          <PrintHeader 
+            subjectName={subjectName} 
+            dayNumber={dayNumber} 
+            chapterTopicString={chapterTopicString} 
+          />
         )}
 
-        {/* Top 3 Section */}
-        {showTop3 && displayTop3.length > 0 && (
+        {showTop3 && displayPodium.length > 0 && (
           <div className="mb-10">
             <div className="flex flex-wrap justify-center items-end gap-4 md:gap-8">
-              {displayTop3.map(({ student, rank }) => (
+              {displayPodium.map(({ student, rank }) => (
                 <TopRankCard 
                   key={`top-${student.name}-${rank}`}
                   student={student}
@@ -7968,14 +7470,13 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
                   score={calculateScore(student)}
                   chapters={chapters}
                   imageUrl={studentImages[student.name]}
-                  fontSizeScale={Math.max(cardScale, 14)} // Keep top cards slightly bigger
+                  fontSizeScale={podiumScale} 
                 />
               ))}
             </div>
           </div>
         )}
 
-        {/* All Students Grid */}
         <div>
           {showHeader && <h2 className="text-lg font-bold mb-4 border-b pb-2 border-gray-200">All Students</h2>}
           <div 
@@ -8372,7 +7873,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { OMRResult } from '../services/geminiService';
 import { parseTopicMapping, Chapter } from '../utils/topicParser';
 import { getStudentImage, saveStudentImage } from '../services/db';
-import { ArrowLeft, Camera, Image as ImageIcon, Printer, Search } from 'lucide-react';
+import { ArrowLeft, Printer, Search } from 'lucide-react';
+import AppTopRankCard from './ranklist/AppTopRankCard';
+import AppStandardRankCard from './ranklist/AppStandardRankCard';
 
 interface RankListProps {
   files: { result?: OMRResult }[];
@@ -8399,7 +7902,7 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
     .sort((a, b) => {
       const scoreDiff = calculateScore(b) - calculateScore(a);
       return scoreDiff !== 0 ? scoreDiff : a.name.localeCompare(b.name);
-    }); // Sort by highest score
+    });
 
   const rankedResults = sortedResults.reduce(
     (acc, student, index) => {
@@ -8418,11 +7921,16 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
 
   const filteredResults = rankedResults.filter(r => r.student.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
+  // Podium contains all students with rank 1, 2, or 3 (up to 5 max)
+  const podiumStudents = filteredResults.filter(r => r.rank <= 3).slice(0, 5);
+  // The rest go into the standard grid
+  const standardStudents = filteredResults.slice(podiumStudents.length);
+
   useEffect(() => {
     const loadImages = async () => {
-      const top3 = rankedResults.slice(0, 3);
       const images: Record<string, string> = {};
-      for (const item of top3) {
+      // Only load images for those who actually appear in the podium
+      for (const item of podiumStudents) {
         const file = await getStudentImage(item.student.name);
         if (file) {
           images[item.student.name] = URL.createObjectURL(file);
@@ -8431,7 +7939,7 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
       setStudentImages(images);
     };
     loadImages();
-  }, [rankedResults]);
+  }, [rankedResults, searchQuery]); 
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0] && selectedStudentForImage) {
@@ -8452,13 +7960,24 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
     fileInputRef.current?.click();
   };
 
-  const calculateChapterProgress = (student: OMRResult, chapter: Chapter) => {
-    if (chapter.questions.length === 0) return 0;
-    let correct = 0;
-    chapter.questions.forEach(q => {
-      if (student.scores[`q${q}`] === 1) correct++;
-    });
-    return (correct / chapter.questions.length) * 100;
+  // Helper to visually arrange podium so highest ranks are in the center on desktop
+  const getDesktopOrderClass = (index: number, total: number) => {
+    const orders: Record<number, number[]> = {
+      1: [1],
+      2: [2, 1],
+      3: [2, 1, 3],
+      4: [3, 2, 4, 1],
+      5: [3, 2, 4, 1, 5]
+    };
+    const order = orders[total]?.[index] || index + 1;
+    const map: Record<number, string> = {
+      1: 'md:order-1',
+      2: 'md:order-2',
+      3: 'md:order-3',
+      4: 'md:order-4',
+      5: 'md:order-5'
+    };
+    return map[order] || '';
   };
 
   return (
@@ -8501,101 +8020,46 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
         onChange={handleImageUpload}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredResults.length === 0 ? (
-          <div className="col-span-full py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm">
-            No students found matching your search.
-          </div>
-        ) : (
-          filteredResults.map(({ student, rank }, mapIndex) => {
-            // Find original global index for proper styling of top 3
-            const index = rankedResults.findIndex(r => r.student.name === student.name);
-            const isTop3 = index < 3;
-            
-            let cardBg = 'bg-white border-gray-200';
-            let rankColor = 'text-gray-500';
-            let spanClass = '';
-            
-            if (index === 0) {
-              cardBg = 'bg-gradient-to-br from-yellow-100 to-yellow-200 border-yellow-400 shadow-yellow-100';
-              rankColor = 'text-yellow-700';
-              spanClass = 'md:col-span-2 md:row-span-2';
-            } else if (index === 1) {
-              cardBg = 'bg-gradient-to-br from-gray-100 to-gray-200 border-gray-400';
-              rankColor = 'text-gray-700';
-            } else if (index === 2) {
-              cardBg = 'bg-gradient-to-br from-orange-100 to-orange-200 border-orange-400';
-              rankColor = 'text-orange-700';
-            }
+      {podiumStudents.length === 0 && standardStudents.length === 0 ? (
+        <div className="py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm">
+          No students found matching your search.
+        </div>
+      ) : (
+        <>
+          {podiumStudents.length > 0 && (
+            <div className="flex flex-col md:flex-row flex-wrap justify-center items-center md:items-end gap-6 mb-12 mt-4">
+              {podiumStudents.map((item, index) => (
+                <AppTopRankCard
+                  key={`${item.student.name}-${item.rank}`}
+                  student={item.student}
+                  rank={item.rank}
+                  score={item.score}
+                  chapters={chapters}
+                  imageUrl={studentImages[item.student.name]}
+                  onImageClick={triggerImageUpload}
+                  onClick={() => onStudentClick(item.student)}
+                  orderClass={getDesktopOrderClass(index, podiumStudents.length)}
+                />
+              ))}
+            </div>
+          )}
 
-            return (
-              <div 
-                key={`${student.name}-${rank}`}
-                onClick={() => onStudentClick(student)}
-                className={`relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${cardBg} ${spanClass}`}
-              >
-                <div className={`absolute top-0 right-0 bg-black/5 px-4 py-1.5 rounded-bl-xl font-black text-lg ${rankColor}`}>
-                  #{rank}
-                </div>
-
-                <div className={`flex items-center gap-4 mb-4 ${index === 0 ? 'md:flex-col md:items-start md:gap-6' : ''}`}>
-                  {isTop3 && (
-                    <div 
-                      className={`relative rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center overflow-hidden group shrink-0 ${index === 0 ? 'w-24 h-24 md:w-32 md:h-32' : 'w-20 h-20'}`}
-                      onClick={(e) => triggerImageUpload(e, student.name)}
-                    >
-                      {studentImages[student.name] ? (
-                        <>
-                          <img src={studentImages[student.name]} alt={student.name} className="w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Camera className="w-6 h-6 text-white" />
-                          </div>
-                        </>
-                      ) : (
-                        <ImageIcon className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
-                      )}
-                    </div>
-                  )}
-                  
-                  <div className="flex-1 min-w-0">
-                    <h3 className={`${index === 0 ? 'text-2xl md:text-3xl' : 'text-lg'} font-bold text-gray-900 truncate`} title={student.name}>
-                      {student.name}
-                    </h3>
-                    <div className="flex items-center gap-3 mt-2 text-sm">
-                      <span className="font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded">Correct: {student.right}</span>
-                      <span className="font-medium text-red-700 bg-red-100 px-2 py-0.5 rounded">Wrong: {student.wrong}</span>
-                    </div>
-                    <div className={`${index === 0 ? 'text-4xl' : 'text-2xl'} font-black mt-2 text-gray-800`}>
-                      {calculateScore(student)} <span className="text-sm font-medium text-gray-500">pts</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className={`space-y-3 mt-4 pt-4 border-t ${index === 0 ? 'border-yellow-300' : 'border-black/5'}`}>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500">Chapter Progress</h4>
-                  {chapters.map(chapter => {
-                    const progress = calculateChapterProgress(student, chapter);
-                    return (
-                      <div key={chapter.name} className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-700 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
-                          <span className="font-bold text-gray-900">{Math.round(progress)}%</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full transition-all duration-500 ${index === 0 ? 'bg-yellow-500' : 'bg-blue-500'}`}
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+          {standardStudents.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {standardStudents.map(item => (
+                <AppStandardRankCard
+                  key={`${item.student.name}-${item.rank}`}
+                  student={item.student}
+                  rank={item.rank}
+                  score={item.score}
+                  chapters={chapters}
+                  onClick={() => onStudentClick(item.student)}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -10574,7 +10038,7 @@ Return only valid JSON without extra text.`;
         }
 
         const student = students[canonicalName];
-        student.scores.push(score);
+        student.scores.push({ examId: exam.id, examName: exam.name, score });
         student.totalExamsAttended++;
         student.lastAttendedExamIndex = examIndex;
       });
@@ -10583,7 +10047,7 @@ Return only valid JSON without extra text.`;
       const currentRankings: StudentState[] = Object.values(students)
         .filter(s => s.scores.length > 0) // Only rank students with active scores
         .map(s => {
-          const sum = s.scores.reduce((a, b) => a + b, 0);
+          const sum = s.scores.reduce((a, b) => a + b.score, 0);
           s.currentAverage = sum / s.scores.length;
           return s;
         })
@@ -11448,7 +10912,7 @@ export function ManualMerge({ rawNames, initialResolutions, onComplete }: Manual
 --- START OF FILE src/components/lab/atr-list/Results.tsx ---
 import React, { useState, useEffect } from 'react';
 import { DayResult, Top20Entry } from './types';
-import { Printer, Trophy, TrendingUp, TrendingDown, Minus, Award, Edit2, Check, Settings2 } from 'lucide-react';
+import { Printer, Trophy, TrendingUp, TrendingDown, Minus, Award, Edit2, Check, Settings2, X, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { AvatarCropper } from './AvatarCropper';
 import { getAvatar, saveAvatar, removeAvatar } from './lib/db';
@@ -11462,10 +10926,14 @@ export function Results({ results }: ResultsProps) {
   const [headerTitle, setHeaderTitle] = useState('AIMS PLUS Track Record');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState('');
-  
+
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState('');
   const [avatars, setAvatars] = useState<Record<string, string>>({});
+
+  // Student detail modal
+  const [detailStudent, setDetailStudent] = useState<Top20Entry | null>(null);
+  const [detailExamIdx, setDetailExamIdx] = useState(0);
 
   // Print settings
   const [printColumns, setPrintColumns] = useState(4);
@@ -11706,12 +11174,12 @@ export function Results({ results }: ResultsProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 print:gap-2 print-grid overflow-show">
             {currentResult.top20.map((student) => (
-              <div 
-                key={student.canonicalName}
+              <div
                 className={cn(
-                  "relative flex flex-col items-center p-6 print:p-2 rounded-2xl border transition-all duration-300",
+                  "relative flex flex-col items-center p-6 print:p-2 rounded-2xl border transition-all duration-300 cursor-pointer",
                   getRankStyle(student.rank, student.status)
                 )}
+                onClick={() => { setDetailStudent(student); setDetailExamIdx(0); }}
               >
                 <div className={cn(
                   "absolute -top-1 -left-1  w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm print:text-xs shadow-sm border-2 border-white",
@@ -11816,7 +11284,7 @@ export function Results({ results }: ResultsProps) {
         </div>
       </div>
 
-      <AvatarCropper 
+      <AvatarCropper
         isOpen={cropperOpen}
         onClose={() => setCropperOpen(false)}
         onSave={handleSaveAvatar}
@@ -11824,6 +11292,156 @@ export function Results({ results }: ResultsProps) {
         studentName={selectedStudent}
         hasAvatar={!!avatars[selectedStudent]}
       />
+
+      {detailStudent && (
+        <StudentDetailModal
+          student={detailStudent}
+          exams={results.map(r => ({ examId: r.examId, examName: r.examName }))}
+          initialExamIdx={detailExamIdx}
+          onClose={() => setDetailStudent(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+interface StudentDetailModalProps {
+  student: Top20Entry;
+  exams: { examId: string; examName: string }[];
+  initialExamIdx: number;
+  onClose: () => void;
+}
+
+function StudentDetailModal({ student, exams, initialExamIdx, onClose }: StudentDetailModalProps) {
+  const [activeExamIdx, setActiveExamIdx] = useState(initialExamIdx);
+
+  const scores = student.scores;
+  const totalScore = scores.reduce((sum, s) => sum + s.score, 0);
+  const avgScore = scores.length > 0 ? totalScore / scores.length : 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">{student.canonicalName}</h2>
+              <p className="text-blue-100 mt-1">Exam Score History</p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <div className="flex gap-6 mt-4">
+            <div>
+              <div className="text-3xl font-black">{scores.length}</div>
+              <div className="text-xs text-blue-100 uppercase tracking-wider">Exams Attended</div>
+            </div>
+            <div>
+              <div className="text-3xl font-black">{avgScore.toFixed(1)}</div>
+              <div className="text-xs text-blue-100 uppercase tracking-wider">Average Score</div>
+            </div>
+            <div>
+              <div className="text-3xl font-black">{totalScore}</div>
+              <div className="text-xs text-blue-100 uppercase tracking-wider">Total Score</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 overflow-y-auto max-h-[60vh]">
+          {exams.length > 1 && (
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                onClick={() => setActiveExamIdx(Math.max(0, activeExamIdx - 1))}
+                disabled={activeExamIdx === 0}
+                className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-40 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="flex-1 text-center font-medium text-sm text-gray-700">
+                {exams[activeExamIdx].examName}
+              </div>
+              <button
+                onClick={() => setActiveExamIdx(Math.min(exams.length - 1, activeExamIdx + 1))}
+                disabled={activeExamIdx === exams.length - 1}
+                className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-40 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {scores.map((entry, idx) => {
+              const isInTop20 = exams.slice(0, activeExamIdx + 1).some((_, i) => {
+                // Check if student was in top 20 at each exam
+                return true; // simplified - we just show all scores
+              });
+              return (
+                <div key={entry.examId} className={cn(
+                  "flex items-center justify-between p-3 rounded-xl border",
+                  entry.examId === exams[activeExamIdx]?.examId
+                    ? "bg-blue-50 border-blue-200"
+                    : "bg-gray-50 border-gray-100 hover:border-gray-200"
+                )}>
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold",
+                      entry.examId === exams[activeExamIdx]?.examId
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-600"
+                    )}>
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{entry.examName}</div>
+                      <div className="text-xs text-gray-500">Exam #{idx + 1}</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={cn(
+                      "text-xl font-black",
+                      entry.score >= 0 ? "text-green-600" : "text-red-600"
+                    )}>
+                      {entry.score >= 0 ? '+' : ''}{entry.score}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Rank #{idx + 1} in class
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+              <TrendingUp className="w-4 h-4" />
+              <span className="font-medium">Performance Trend</span>
+            </div>
+            <div className="flex items-end gap-1 h-16">
+              {scores.map((entry, idx) => {
+                const maxScore = Math.max(...scores.map(s => Math.abs(s.score)), 1);
+                const height = (Math.abs(entry.score) / maxScore) * 100;
+                return (
+                  <div key={entry.examId} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      className={cn(
+                        "w-full rounded-t transition-all",
+                        entry.examId === exams[activeExamIdx]?.examId
+                          ? "bg-blue-500"
+                          : entry.score >= 0 ? "bg-green-400" : "bg-red-400"
+                      )}
+                      style={{ height: `${height}%` }}
+                    />
+                    <span className="text-[8px] text-gray-400">{idx + 1}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -12069,9 +11687,15 @@ export interface ProcessedRecord {
   score: number;
 }
 
+export interface ScoreEntry {
+  examId: string;
+  examName: string;
+  score: number;
+}
+
 export interface StudentState {
   canonicalName: string;
-  scores: number[];
+  scores: ScoreEntry[];
   totalExamsAttended: number;
   lastAttendedExamIndex: number;
   hatTricks: number;
@@ -13233,6 +12857,1549 @@ export type BatchName = 'B1' | 'B2' | 'B3';
 export type CourseProgressMap = Record<BatchName, SubjectProgress[]>;
 
 --- END OF FILE src/components/lab/course-progress/types.ts ---
+
+--- START OF FILE src/components/lab/fee-logger/FeeDashboard.tsx ---
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, Calendar } from 'lucide-react';
+import { FeeLogData } from '../../../services/firebaseService';
+import { StudentSummary, StudentFeeCard, StudentFeeTable, FeeStatsRow, StudentProgressCard } from './index';
+
+interface FeeDashboardProps {
+  logs: FeeLogData[];
+  loading: boolean;
+}
+
+type ViewMode = 'tracker' | 'progress';
+
+export default function FeeDashboard({ logs, loading }: FeeDashboardProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('progress');
+  
+  const [targetFee, setTargetFee] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_target_fee');
+    return saved ? Number(saved) : 24000;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('omr_target_fee', targetFee.toString());
+  }, [targetFee]);
+
+  const studentSummaries = useMemo(() => {
+    const map = new Map<string, StudentSummary>();
+    
+    logs.forEach(log => {
+      let dateObj;
+      try {
+        dateObj = new Date(log.date + 'T12:00:00');
+      } catch {
+        return;
+      }
+      
+      const month = dateObj.getMonth(); // 0 to 11
+      
+      // Combine records with the same admission number (if valid)
+      const adm = log.admissionNo ? String(log.admissionNo).trim().toUpperCase() : '';
+      const key = (adm && adm !== '-' && adm !== 'UNKNOWN') ? adm : `NAME-${log.studentName.trim().toUpperCase()}`;
+      
+      if (!map.has(key)) {
+        map.set(key, {
+          id: key,
+          admissionNo: log.admissionNo || '-',
+          studentName: log.studentName, // Takes the first encountered name
+          studentClass: log.studentClass || '-',
+          monthlyPayments: {},
+          totalPaid: 0
+        });
+      }
+      
+      const summary = map.get(key)!;
+      if (!summary.monthlyPayments[month]) {
+        summary.monthlyPayments[month] = [];
+      }
+      
+      summary.monthlyPayments[month].push({
+        amount: Number(log.feeAmount),
+        isGPay: log.isGPay,
+        date: log.date
+      });
+      
+      // Sort payments within the month by date
+      summary.monthlyPayments[month].sort((a, b) => a.date.localeCompare(b.date));
+      
+      summary.totalPaid += Number(log.feeAmount);
+    });
+    
+    return Array.from(map.values()).sort((a, b) => a.studentName.localeCompare(b.studentName));
+  }, [logs]);
+
+  const filteredStudents = useMemo(() => {
+    if (!searchQuery.trim()) return studentSummaries;
+    const query = searchQuery.toLowerCase();
+    return studentSummaries.filter(s => 
+      s.studentName.toLowerCase().includes(query) || 
+      s.admissionNo.toLowerCase().includes(query) ||
+      s.studentClass.toLowerCase().includes(query)
+    );
+  }, [studentSummaries, searchQuery]);
+
+  const totalRevenue = studentSummaries.reduce((sum, s) => sum + s.totalPaid, 0);
+
+  if (loading) {
+    return (
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-center items-center h-64">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-8 w-8 bg-gray-200 rounded-full mb-4"></div>
+          <div className="h-4 w-24 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (logs.length === 0) {
+    return (
+      <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+        <Calendar className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+        <h3 className="text-lg font-bold text-gray-900 mb-1">No data available</h3>
+        <p className="text-gray-500 text-sm">Add or scan fee logs to see the dashboard.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Row */}
+      <FeeStatsRow 
+        studentCount={studentSummaries.length}
+        totalRevenue={totalRevenue}
+        targetFee={targetFee}
+        onTargetFeeChange={setTargetFee}
+      />
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex items-center bg-gray-100 p-1 rounded-lg w-full sm:w-auto">
+          <button
+            onClick={() => setViewMode('progress')}
+            className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${
+              viewMode === 'progress' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Target Progress
+          </button>
+          <button
+            onClick={() => setViewMode('tracker')}
+            className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${
+              viewMode === 'tracker' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            12-Month Tracker
+          </button>
+        </div>
+        
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by name, class, adm no..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* Main Content */}
+      {filteredStudents.length === 0 ? (
+        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+          <p className="text-gray-500 font-medium">No students match your search.</p>
+        </div>
+      ) : viewMode === 'progress' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredStudents.map(student => (
+            <StudentProgressCard 
+              key={student.id} 
+              student={student} 
+              targetFee={targetFee} 
+            />
+          ))}
+        </div>
+      ) : (
+        <>
+          {/* Mobile view for 12-month tracker */}
+          <div className="block lg:hidden space-y-4">
+            {filteredStudents.map(student => (
+              <StudentFeeCard key={student.id} student={student} />
+            ))}
+          </div>
+
+          {/* Desktop view for 12-month tracker */}
+          <div className="hidden lg:block">
+            <StudentFeeTable students={filteredStudents} />
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/fee-logger/FeeDashboard.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/FeeLogCard.tsx ---
+import React from 'react';
+import { format } from 'date-fns';
+import { Smartphone, Receipt, Trash2 } from 'lucide-react';
+import { FeeLogData } from '../../../services/firebaseService';
+
+interface Props {
+  log: FeeLogData;
+  deletingId: string | null;
+  setDeletingId: (id: string | null) => void;
+  handleDelete: (id: string) => void;
+}
+
+export default function FeeLogCard({ log, deletingId, setDeletingId, handleDelete }: Props) {
+  let dateDisplay = 'N/A';
+  if (log.date) {
+    try {
+      // ensure consistent parsing
+      dateDisplay = format(new Date(log.date + 'T12:00:00'), 'MMM d, yyyy');
+    } catch (e) {
+      dateDisplay = log.date;
+    }
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <div className="font-bold text-gray-900 text-lg">{log.studentName}</div>
+          <div className="text-xs text-gray-500 font-medium mt-0.5">Adm: {log.admissionNo} • Class: {log.studentClass}</div>
+        </div>
+        <div className="font-black text-blue-600 text-lg">${Number(log.feeAmount).toFixed(2)}</div>
+      </div>
+      <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-100">
+        <div className="flex flex-col gap-1.5 text-xs">
+          <span className="text-gray-500 font-medium">{dateDisplay}</span>
+          {log.isGPay ? (
+            <span className="inline-flex items-center text-green-700 bg-green-50 px-2 py-1 rounded-full font-bold w-fit border border-green-200">
+              <Smartphone className="w-3 h-3 mr-1" /> GPay
+            </span>
+          ) : (
+            <span className="inline-flex items-center text-gray-700 bg-gray-100 px-2 py-1 rounded-full font-bold w-fit border border-gray-200">
+              <Receipt className="w-3 h-3 mr-1" /> Cash/Other
+            </span>
+          )}
+        </div>
+        <div>
+          {deletingId === log.id ? (
+            <div className="flex flex-col items-end gap-2 bg-red-50 p-2 rounded-lg border border-red-100">
+              <span className="text-xs text-red-600 font-bold px-1">Delete?</span>
+              <div className="flex gap-2">
+                <button onClick={() => handleDelete(log.id)} className="bg-red-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-700 transition-colors shadow-sm">Yes</button>
+                <button onClick={() => setDeletingId(null)} className="bg-white text-gray-700 border border-gray-300 px-3 py-1.5 rounded text-xs font-bold hover:bg-gray-50 transition-colors shadow-sm">No</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => setDeletingId(log.id)} className="text-gray-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors border border-transparent hover:border-red-100">
+              <Trash2 className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/fee-logger/FeeLogCard.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/FeeLogForm.tsx ---
+import React, { useState } from 'react';
+import { format } from 'date-fns';
+import { Loader2 } from 'lucide-react';
+import { FeeLogData } from '../../../services/firebaseService';
+
+interface FeeLogFormProps {
+  onAddLogs: (logs: Omit<FeeLogData, 'id' | 'createdAt'>[]) => Promise<void>;
+}
+
+export default function FeeLogForm({ onAddLogs }: FeeLogFormProps) {
+  const [admissionNo, setAdmissionNo] = useState('');
+  const [studentClass, setStudentClass] = useState('');
+  const [studentName, setStudentName] = useState('');
+  const [feeAmount, setFeeAmount] = useState('');
+  const [isGPay, setIsGPay] = useState(false);
+  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      if (!admissionNo || !studentName || !feeAmount || !date) {
+        throw new Error('Please fill all required fields.');
+      }
+
+      await onAddLogs([{
+        admissionNo: String(admissionNo),
+        studentClass: String(studentClass),
+        studentName: String(studentName),
+        feeAmount: Number(feeAmount),
+        isGPay: Boolean(isGPay),
+        date: String(date),
+      }]);
+
+      // Reset form
+      setAdmissionNo('');
+      setStudentClass('');
+      setStudentName('');
+      setFeeAmount('');
+      setIsGPay(false);
+      setDate(format(new Date(), 'yyyy-MM-dd'));
+    } catch (err: any) {
+      console.error('Error adding fee log:', err);
+      setError(err.message || 'Failed to log fee. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-gray-100">
+      <h2 className="text-xl font-semibold text-gray-800 mb-6">Log New Fee</h2>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
+          {error}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Admission No.
+            </label>
+            <input
+              type="text"
+              required
+              value={admissionNo}
+              onChange={(e) => setAdmissionNo(e.target.value)}
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+              placeholder="e.g. 1024"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Class
+            </label>
+            <input
+              type="text"
+              value={studentClass}
+              onChange={(e) => setStudentClass(e.target.value)}
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+              placeholder="e.g. 10A"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-1">
+            Student Name
+          </label>
+          <input
+            type="text"
+            required
+            value={studentName}
+            onChange={(e) => setStudentName(e.target.value)}
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+            placeholder="John Doe"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Fee Amount
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-2.5 text-gray-500 font-bold">$</span>
+              <input
+                type="number"
+                required
+                min="0"
+                step="0.01"
+                value={feeAmount}
+                onChange={(e) => setFeeAmount(e.target.value)}
+                className="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">
+              Date
+            </label>
+            <input
+              type="date"
+              required
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg cursor-pointer" onClick={() => setIsGPay(!isGPay)}>
+          <input
+            type="checkbox"
+            id="isGPay"
+            checked={isGPay}
+            onChange={(e) => setIsGPay(e.target.checked)}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+          />
+          <label htmlFor="isGPay" className="ml-2 block text-sm font-medium text-gray-900 cursor-pointer">
+            Paid via Google Pay (GPay)
+          </label>
+        </div>
+
+        <div className="pt-4 border-t border-gray-100">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
+                Saving...
+              </>
+            ) : (
+              'Log Fee'
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/fee-logger/FeeLogForm.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/FeeLogger.tsx ---
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Plus, ImageIcon, List, AlertTriangle, LayoutDashboard } from 'lucide-react';
+import { FeeLogForm, FeeLogList, ImageScanner, FeeDashboard } from './index';
+import { getFeeLogs, saveFeeLogs, isFirebaseConfigured, FeeLogData } from '../../../services/firebaseService';
+
+interface FeeLoggerProps {
+  onBack: () => void;
+  apiKeys: string[];
+  model: string;
+  concurrency: number;
+  requestsPerKey: number;
+}
+
+type FeeLoggerTab = 'dashboard' | 'form' | 'scanner' | 'list';
+
+export default function FeeLogger({ onBack, apiKeys, model, concurrency, requestsPerKey }: FeeLoggerProps) {
+  const [activeTab, setActiveTab] = useState<FeeLoggerTab>('dashboard');
+  const [logs, setLogs] = useState<FeeLogData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadLogs();
+  }, []);
+
+  const loadLogs = async () => {
+    setLoading(true);
+    try {
+      if (isFirebaseConfigured) {
+        const dbLogs = await getFeeLogs();
+        setLogs(dbLogs);
+      } else {
+        const local = localStorage.getItem('omr_fee_logs');
+        if (local) setLogs(JSON.parse(local));
+      }
+    } catch (e) {
+      console.error("Failed to load logs:", e);
+      const local = localStorage.getItem('omr_fee_logs');
+      if (local) setLogs(JSON.parse(local));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveLogsToDB = async (newLogs: FeeLogData[]) => {
+    setLogs(newLogs);
+    localStorage.setItem('omr_fee_logs', JSON.stringify(newLogs));
+    if (isFirebaseConfigured) {
+      try {
+        await saveFeeLogs(newLogs);
+      } catch (e) {
+        console.error("Failed to save to firebase", e);
+      }
+    }
+  };
+
+  const handleAddLogs = async (newEntries: Omit<FeeLogData, 'id' | 'createdAt'>[]) => {
+    const created = newEntries.map(entry => ({
+      ...entry,
+      id: Math.random().toString(36).substring(7),
+      createdAt: new Date().toISOString()
+    }));
+    await saveLogsToDB([...created, ...logs]);
+    setActiveTab('dashboard');
+  };
+
+  const handleDeleteLog = async (id: string) => {
+    const newLogs = logs.filter(l => l.id !== id);
+    await saveLogsToDB(newLogs);
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onBack}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900">Fee Logger</h1>
+        </div>
+      </div>
+
+      <p className="text-gray-600">
+        Log and track student fee payments. View 12-month progress, add entries manually, or scan from handwritten ledgers using AI.
+      </p>
+
+      {!isFirebaseConfigured && (
+        <div className="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-xl flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          <p className="text-sm font-medium"><strong>Firebase Not Configured:</strong> Fee logs are only being saved locally to this browser and will not sync globally across devices.</p>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div className="flex gap-2 border-b border-gray-200 overflow-x-auto hide-scrollbar">
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
+            activeTab === 'dashboard'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <LayoutDashboard className="w-4 h-4" />
+            Dashboard
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('form')}
+          className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
+            activeTab === 'form'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            Manual Entry
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('scanner')}
+          className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
+            activeTab === 'scanner'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <ImageIcon className="w-4 h-4" />
+            Scan Images
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab('list')}
+          className={`px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap ${
+            activeTab === 'list'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <List className="w-4 h-4" />
+            View Logs
+          </span>
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="py-2">
+        {activeTab === 'dashboard' && (
+          <FeeDashboard logs={logs} loading={loading} />
+        )}
+
+        {activeTab === 'form' && (
+          <FeeLogForm onAddLogs={handleAddLogs} />
+        )}
+
+        {activeTab === 'scanner' && (
+          <ImageScanner
+            onAddLogs={handleAddLogs}
+            existingLogs={logs}
+            apiKeys={apiKeys}
+            model={model}
+            concurrency={concurrency}
+            requestsPerKey={requestsPerKey}
+          />
+        )}
+
+        {activeTab === 'list' && (
+          <FeeLogList 
+             logs={logs} 
+             loading={loading} 
+             onDeleteLog={handleDeleteLog} 
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/fee-logger/FeeLogger.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/FeeLogList.tsx ---
+import React, { useState } from 'react';
+import { format } from 'date-fns';
+import { Receipt, Smartphone, Trash2 } from 'lucide-react';
+import { FeeLogData } from '../../../services/firebaseService';
+import FeeLogCard from './FeeLogCard';
+
+interface FeeLogListProps {
+  logs: FeeLogData[];
+  loading: boolean;
+  onDeleteLog: (id: string) => Promise<void>;
+}
+
+export default function FeeLogList({ logs, loading, onDeleteLog }: FeeLogListProps) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = async (id: string) => {
+    await onDeleteLog(id);
+    setDeletingId(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-center items-center h-64">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-8 w-8 bg-gray-200 rounded-full mb-4"></div>
+          <div className="h-4 w-24 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (logs.length === 0) {
+    return (
+      <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 text-center">
+        <Receipt className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+        <h3 className="text-lg font-bold text-gray-900 mb-1">No fee logs yet</h3>
+        <p className="text-gray-500 text-sm">Fees logged will appear here.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+        <h2 className="text-lg font-bold text-gray-800">Recent Fee Logs</h2>
+        <span className="text-xs font-bold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{logs.length} Entries</span>
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-white">
+            <tr>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Date
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Student
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Class
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Amount
+              </th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Method
+              </th>
+              <th scope="col" className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-100">
+            {logs.map((log) => {
+              let dateDisplay = 'N/A';
+              if (log.date) {
+                try {
+                  dateDisplay = format(new Date(log.date + 'T12:00:00'), 'MMM d, yyyy');
+                } catch(e) {
+                  dateDisplay = log.date;
+                }
+              }
+
+              return (
+              <tr key={log.id} className="hover:bg-gray-50 transition-colors duration-150">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-600">
+                  {dateDisplay}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-bold text-gray-900">{log.studentName}</div>
+                  <div className="text-xs text-gray-500 font-medium mt-0.5">Adm: {log.admissionNo}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-600">
+                  {log.studentClass}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-black text-blue-600">
+                  ${Number(log.feeAmount).toFixed(2)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {log.isGPay ? (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+                      <Smartphone className="w-3 h-3 mr-1" />
+                      GPay
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-100 text-gray-700 border border-gray-200">
+                      <Receipt className="w-3 h-3 mr-1" />
+                      Other
+                    </span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  {deletingId === log.id ? (
+                    <div className="flex items-center justify-end gap-2 bg-red-50 p-1.5 rounded-lg border border-red-100 w-fit ml-auto">
+                      <span className="text-xs text-red-600 font-bold px-1">Delete?</span>
+                      <button
+                        onClick={() => handleDelete(log.id)}
+                        className="text-white bg-red-600 hover:bg-red-700 px-2.5 py-1 rounded text-xs transition-colors shadow-sm"
+                      >
+                        Yes
+                      </button>
+                      <button
+                        onClick={() => setDeletingId(null)}
+                        className="text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 px-2.5 py-1 rounded text-xs transition-colors shadow-sm"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setDeletingId(log.id)}
+                      className="text-gray-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 border border-transparent hover:border-red-100"
+                      title="Delete record"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </td>
+              </tr>
+            )})}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden p-4 space-y-3 bg-gray-50">
+        {logs.map((log) => (
+          <FeeLogCard 
+            key={log.id} 
+            log={log} 
+            deletingId={deletingId} 
+            setDeletingId={setDeletingId} 
+            handleDelete={handleDelete} 
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/fee-logger/FeeLogList.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/FeeStatsRow.tsx ---
+import React from 'react';
+import { Users, DollarSign, Target } from 'lucide-react';
+
+interface FeeStatsRowProps {
+  studentCount: number;
+  totalRevenue: number;
+  targetFee: number;
+  onTargetFeeChange: (val: number) => void;
+}
+
+export default function FeeStatsRow({
+  studentCount,
+  totalRevenue,
+  targetFee,
+  onTargetFeeChange
+}: FeeStatsRowProps) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+          <Users className="w-6 h-6" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Active Students</p>
+          <p className="text-2xl font-black text-gray-900">{studentCount}</p>
+        </div>
+      </div>
+      
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 shrink-0">
+          <DollarSign className="w-6 h-6" />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Total Revenue</p>
+          <p className="text-2xl font-black text-gray-900">${totalRevenue.toFixed(2)}</p>
+        </div>
+      </div>
+      
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4 sm:col-span-2 lg:col-span-1">
+         <div className="w-12 h-12 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 shrink-0">
+          <Target className="w-6 h-6" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Target Fee (Per Student)</p>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+            <input
+              type="number"
+              min="0"
+              value={targetFee}
+              onChange={(e) => onTargetFeeChange(Number(e.target.value) || 0)}
+              className="w-full pl-7 pr-3 py-1.5 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 font-bold outline-none transition-colors"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/fee-logger/FeeStatsRow.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/ImageScanner.tsx ---
+import React, { useState, useRef } from 'react';
+import { Upload, ImageIcon, Loader2, AlertCircle } from 'lucide-react';
+import { extractFeeRecordsBatch } from '../../../services/geminiService';
+import { FeeLogData } from '../../../services/firebaseService';
+import { ExtractedRecord, ImageScannerResults } from './index';
+
+interface ImageScannerProps {
+  onAddLogs: (logs: Omit<FeeLogData, 'id' | 'createdAt'>[]) => Promise<void>;
+  existingLogs: FeeLogData[];
+  apiKeys: string[];
+  model: string;
+  concurrency: number;
+  requestsPerKey: number;
+}
+
+export default function ImageScanner({ onAddLogs, existingLogs, apiKeys, model, concurrency, requestsPerKey }: ImageScannerProps) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [results, setResults] = useState<ExtractedRecord[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getDuplicateReason = (record: ExtractedRecord, index: number) => {
+    if (!record.admissionNo || !record.date) return null;
+
+    // Check intra-batch
+    const intraBatch = results.findIndex((r, i) =>
+      i !== index &&
+      r.admissionNo === record.admissionNo &&
+      r.date === record.date &&
+      r.feeAmount === record.feeAmount
+    );
+    if (intraBatch !== -1) return 'Duplicate found in current scan';
+
+    // Check DB
+    const dbMatch = existingLogs.find(log => {
+      if (!log.date || !log.admissionNo) return false;
+      return log.admissionNo === record.admissionNo &&
+             log.date === record.date &&
+             Number(log.feeAmount) === Number(record.feeAmount);
+    });
+
+    if (dbMatch) return 'Already exists in database';
+
+    return null;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFiles(Array.from(e.target.files));
+      setResults([]);
+      setError(null);
+    }
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(',')[1]);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const processImages = async () => {
+    const validKeys = apiKeys.filter(k => k.trim());
+    if (validKeys.length === 0) {
+      setError("No valid API keys found. Please configure them in Settings.");
+      return;
+    }
+    
+    if (files.length === 0) return;
+
+    setIsProcessing(true);
+    setError(null);
+    setProgress({ current: 0, total: files.length });
+
+    try {
+      const totalConcurrentRequests = validKeys.length > 0 ? validKeys.length * requestsPerKey : 1;
+      const concurrencyLimit = totalConcurrentRequests * Math.max(1, concurrency);
+
+      const allExtracted: ExtractedRecord[] = [];
+      let completed = 0;
+
+      for (let i = 0; i < files.length; i += concurrencyLimit) {
+        const chunk = files.slice(i, i + concurrencyLimit);
+
+        const chunkPromises = chunk.map(async (file, idx) => {
+          const base64 = await fileToBase64(file);
+          const imgData = { id: `img-${i + idx}`, base64, mimeType: file.type };
+          
+          // Process one image per request
+          const extractedRecords = await extractFeeRecordsBatch([imgData], validKeys, model);
+          return extractedRecords[imgData.id] || [];
+        });
+
+        const chunkResults = await Promise.allSettled(chunkPromises);
+
+        for (const result of chunkResults) {
+          if (result.status === 'fulfilled') {
+            allExtracted.push(...result.value);
+          } else {
+            console.error("Error processing an image:", result.reason);
+          }
+          completed++;
+        }
+        setProgress({ current: completed, total: files.length });
+      }
+
+      setResults(allExtracted);
+    } catch (err: any) {
+      console.error("Error processing images:", err);
+      setError(err.message || "Failed to process images. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const saveToDatabase = async () => {
+    if (results.length === 0) return;
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      const newEntries = results.map(record => ({
+        admissionNo: String(record.admissionNo || ''),
+        studentClass: String(record.studentClass || ''),
+        studentName: String(record.studentName || ''),
+        feeAmount: Number(record.feeAmount) || 0,
+        isGPay: Boolean(record.isGPay),
+        date: String(record.date || '')
+      }));
+
+      await onAddLogs(newEntries);
+      setResults([]);
+      setFiles([]);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err: any) {
+      console.error("Error saving records:", err);
+      setError("Failed to save records to database.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const removeRecord = (index: number) => {
+    setResults(results.filter((_, i) => i !== index));
+  };
+
+  const updateRecord = (index: number, field: keyof ExtractedRecord, value: any) => {
+    const newResults = [...results];
+    newResults[index] = { ...newResults[index], [field]: value };
+    setResults(newResults);
+  };
+
+  return (
+    <div className="bg-white p-5 md:p-6 rounded-xl shadow-sm border border-gray-100">
+      <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
+        <ImageIcon className="w-5 h-5 text-blue-600" />
+        Scan from Images
+      </h2>
+
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-lg flex items-start gap-3 text-red-700">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <p className="text-sm">{error}</p>
+        </div>
+      )}
+
+      <div className="space-y-6">
+        {/* Upload Section */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="flex-1 w-full">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              ref={fileInputRef}
+              className="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2.5 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-medium
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100 transition-colors cursor-pointer border border-gray-200 rounded-md bg-gray-50"
+            />
+          </div>
+          <button
+            onClick={processImages}
+            disabled={files.length === 0 || isProcessing || isSaving}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Processing ({progress.current}/{progress.total})
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                Extract Data
+              </>
+            )}
+          </button>
+        </div>
+
+        {apiKeys.filter(k => k.trim()).length === 0 && (
+          <div className="p-3 bg-yellow-50 text-yellow-800 rounded-md text-sm border border-yellow-200">
+            Please configure Gemini API keys in Settings to use image scanning.
+          </div>
+        )}
+
+        {files.length > 0 && !isProcessing && results.length === 0 && (
+          <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg border border-gray-100">
+            {files.length} image{files.length > 1 ? 's' : ''} selected. Click "Extract Data" to process.
+          </p>
+        )}
+
+        {/* Results Section */}
+        <ImageScannerResults
+          results={results}
+          isSaving={isSaving}
+          saveToDatabase={saveToDatabase}
+          removeRecord={removeRecord}
+          updateRecord={updateRecord}
+          getDuplicateReason={getDuplicateReason}
+        />
+      </div>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/fee-logger/ImageScanner.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/ImageScannerResults.tsx ---
+import React from 'react';
+import { Loader2, Save, AlertTriangle, Trash2 } from 'lucide-react';
+import { ExtractedRecord } from './index';
+
+interface ImageScannerResultsProps {
+  results: ExtractedRecord[];
+  isSaving: boolean;
+  saveToDatabase: () => void;
+  removeRecord: (index: number) => void;
+  updateRecord: (index: number, field: keyof ExtractedRecord, value: any) => void;
+  getDuplicateReason: (record: ExtractedRecord, index: number) => string | null;
+}
+
+export default function ImageScannerResults({
+  results,
+  isSaving,
+  saveToDatabase,
+  removeRecord,
+  updateRecord,
+  getDuplicateReason
+}: ImageScannerResultsProps) {
+  if (results.length === 0) return null;
+
+  return (
+    <div className="mt-8 border-t border-gray-100 pt-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+        <div>
+          <h3 className="text-lg font-bold text-gray-800">
+            Extracted Records ({results.length})
+          </h3>
+          <p className="text-xs text-gray-500 mt-1">
+            Please review the extracted data. Edit fields directly before saving.
+          </p>
+        </div>
+        <button
+          onClick={saveToDatabase}
+          disabled={isSaving}
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 disabled:opacity-50 transition-colors shadow-sm"
+        >
+          {isSaving ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
+          Save All
+        </button>
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Adm No</th>
+              <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Class</th>
+              <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
+              <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">GPay</th>
+              <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
+              <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Action</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {results.map((record, idx) => {
+              const duplicateReason = getDuplicateReason(record, idx);
+              return (
+              <tr key={idx} className={`hover:bg-gray-50 transition-colors ${duplicateReason ? 'bg-yellow-50' : ''}`}>
+                <td className="px-4 py-2">
+                  <input
+                    type="text"
+                    value={record.admissionNo}
+                    onChange={(e) => updateRecord(idx, 'admissionNo', e.target.value)}
+                    className="w-full bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-1 text-sm font-medium"
+                  />
+                </td>
+                <td className="px-4 py-2">
+                  <input
+                    type="text"
+                    value={record.studentClass}
+                    onChange={(e) => updateRecord(idx, 'studentClass', e.target.value)}
+                    className="w-20 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-1 text-sm font-medium"
+                  />
+                </td>
+                <td className="px-4 py-2">
+                  <input
+                    type="text"
+                    value={record.studentName}
+                    onChange={(e) => updateRecord(idx, 'studentName', e.target.value)}
+                    className="w-full min-w-[150px] bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-1 text-sm font-bold text-gray-900"
+                  />
+                </td>
+                <td className="px-4 py-2">
+                  <input
+                    type="number"
+                    value={record.feeAmount}
+                    onChange={(e) => updateRecord(idx, 'feeAmount', Number(e.target.value))}
+                    className="w-24 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-1 text-sm font-bold text-blue-600"
+                  />
+                </td>
+                <td className="px-4 py-2 text-center">
+                  <input
+                    type="checkbox"
+                    checked={record.isGPay}
+                    onChange={(e) => updateRecord(idx, 'isGPay', e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                  />
+                </td>
+                <td className="px-4 py-2">
+                  <input
+                    type="date"
+                    value={record.date}
+                    onChange={(e) => updateRecord(idx, 'date', e.target.value)}
+                    className="w-32 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-1 py-1 text-sm font-medium"
+                  />
+                </td>
+                <td className="px-4 py-2 text-center flex items-center justify-center gap-2 h-[53px]">
+                  {duplicateReason && (
+                    <div title={duplicateReason} className="text-yellow-600 bg-yellow-100 p-1.5 rounded">
+                      <AlertTriangle className="w-4 h-4" />
+                    </div>
+                  )}
+                  <button
+                    onClick={() => removeRecord(idx)}
+                    className="text-red-500 hover:text-red-700 p-1.5 rounded-md hover:bg-red-50 transition-colors"
+                    title="Remove row"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
+            )})}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {results.map((record, idx) => {
+          const duplicateReason = getDuplicateReason(record, idx);
+          return (
+            <div key={idx} className={`p-4 border rounded-xl shadow-sm ${duplicateReason ? 'bg-yellow-50 border-yellow-300' : 'bg-white border-gray-200'}`}>
+              <div className="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
+                 <span className="font-bold text-gray-700 text-sm">Record #{idx+1}</span>
+                 <div className="flex items-center gap-2">
+                   {duplicateReason && <AlertTriangle className="w-4 h-4 text-yellow-600" title={duplicateReason} />}
+                   <button onClick={() => removeRecord(idx)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-colors"><Trash2 className="w-4 h-4"/></button>
+                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                 <div>
+                   <label className="text-xs font-bold text-gray-500 block mb-1">Adm No</label>
+                   <input type="text" value={record.admissionNo} onChange={(e) => updateRecord(idx, 'admissionNo', e.target.value)} className="w-full border border-gray-200 rounded-lg p-2 text-sm font-medium focus:border-blue-500 outline-none"/>
+                 </div>
+                 <div>
+                   <label className="text-xs font-bold text-gray-500 block mb-1">Class</label>
+                   <input type="text" value={record.studentClass} onChange={(e) => updateRecord(idx, 'studentClass', e.target.value)} className="w-full border border-gray-200 rounded-lg p-2 text-sm font-medium focus:border-blue-500 outline-none"/>
+                 </div>
+                 <div className="col-span-2">
+                   <label className="text-xs font-bold text-gray-500 block mb-1">Name</label>
+                   <input type="text" value={record.studentName} onChange={(e) => updateRecord(idx, 'studentName', e.target.value)} className="w-full border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-900 focus:border-blue-500 outline-none"/>
+                 </div>
+                 <div>
+                   <label className="text-xs font-bold text-gray-500 block mb-1">Amount</label>
+                   <input type="number" value={record.feeAmount} onChange={(e) => updateRecord(idx, 'feeAmount', Number(e.target.value))} className="w-full border border-gray-200 rounded-lg p-2 text-sm font-bold text-blue-600 focus:border-blue-500 outline-none"/>
+                 </div>
+                 <div>
+                   <label className="text-xs font-bold text-gray-500 block mb-1">Date</label>
+                   <input type="date" value={record.date} onChange={(e) => updateRecord(idx, 'date', e.target.value)} className="w-full border border-gray-200 rounded-lg p-2 text-sm font-medium focus:border-blue-500 outline-none"/>
+                 </div>
+                 <div className="col-span-2 flex items-center mt-1 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                   <input type="checkbox" checked={record.isGPay} onChange={(e) => updateRecord(idx, 'isGPay', e.target.checked)} className="w-4 h-4 text-blue-600 rounded border-gray-300"/>
+                   <label className="text-sm font-medium text-gray-700 ml-2">Paid via GPay</label>
+                 </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+--- END OF FILE src/components/lab/fee-logger/ImageScannerResults.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/index.ts ---
+export { default as FeeLogForm } from './FeeLogForm';
+export { default as FeeLogList } from './FeeLogList';
+export { default as ImageScanner } from './ImageScanner';
+export { default as FeeLogger } from './FeeLogger';
+export { default as FeeLogCard } from './FeeLogCard';
+export { default as FeeDashboard } from './FeeDashboard';
+export { default as StudentFeeCard } from './StudentFeeCard';
+export { default as StudentFeeTable } from './StudentFeeTable';
+export { default as StudentProgressCard } from './StudentProgressCard';
+export { default as FeeStatsRow } from './FeeStatsRow';
+export { default as ImageScannerResults } from './ImageScannerResults';
+
+export interface PaymentEntry {
+  amount: number;
+  isGPay: boolean;
+  date: string;
+}
+
+export interface StudentSummary {
+  id: string;
+  admissionNo: string;
+  studentName: string;
+  studentClass: string;
+  monthlyPayments: Record<number, PaymentEntry[]>; // month index (0-11) -> array of payments
+  totalPaid: number;
+}
+
+export interface ExtractedRecord {
+  admissionNo: string;
+  studentClass: string;
+  studentName: string;
+  feeAmount: number;
+  isGPay: boolean;
+  date: string;
+}
+
+--- END OF FILE src/components/lab/fee-logger/index.ts ---
+
+--- START OF FILE src/components/lab/fee-logger/StudentFeeCard.tsx ---
+import React from 'react';
+import { StudentSummary } from './index';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+interface StudentFeeCardProps {
+  student: StudentSummary;
+}
+
+export default function StudentFeeCard({ student }: StudentFeeCardProps) {
+  return (
+    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start mb-4">
+        <div className="pr-2">
+          <h3 className="font-bold text-gray-900 text-base leading-tight mb-1">{student.studentName}</h3>
+          <div className="flex flex-wrap gap-2 text-xs font-medium text-gray-500">
+            <span className="bg-gray-100 px-2 py-0.5 rounded border border-gray-200">Adm: {student.admissionNo}</span>
+            <span className="bg-gray-100 px-2 py-0.5 rounded border border-gray-200">Class: {student.studentClass}</span>
+          </div>
+        </div>
+        <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-sm font-black border border-blue-200 shrink-0">
+          ${student.totalPaid.toFixed(2)}
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+        {MONTHS.map((month, index) => {
+          const payments = student.monthlyPayments[index] || [];
+          const hasPayments = payments.length > 0;
+          
+          return (
+            <div 
+              key={month} 
+              className={`flex flex-col items-center py-1.5 rounded-md border transition-colors ${
+                hasPayments ? 'bg-white border-gray-300 shadow-sm' : 'bg-gray-50 border-gray-100'
+              }`}
+            >
+              <span className={`text-[10px] font-bold ${hasPayments ? 'text-gray-800' : 'text-gray-400'}`}>
+                {month}
+              </span>
+              <div className="flex flex-col items-center justify-center gap-0.5 mt-1 min-h-[12px]">
+                {hasPayments ? (
+                  payments.map((p, idx) => (
+                    <span 
+                      key={idx} 
+                      className={`text-[9px] font-bold px-1 rounded ${
+                        p.isGPay ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-green-50 text-green-700 border border-green-100'
+                      }`}
+                      title={`$${p.amount.toFixed(2)} on ${p.date}`}
+                    >
+                      ${p.amount}
+                    </span>
+                  ))
+                ) : (
+                  <div className={`w-1.5 h-1.5 rounded-full bg-gray-200 mt-0.5`} />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/fee-logger/StudentFeeCard.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/StudentFeeTable.tsx ---
+import React from 'react';
+import { StudentSummary } from './index';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+interface StudentFeeTableProps {
+  students: StudentSummary[];
+}
+
+export default function StudentFeeTable({ students }: StudentFeeTableProps) {
+  return (
+    <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
+      <table className="w-full text-left border-collapse min-w-[1000px]">
+        <thead className="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 shadow-[1px_0_0_0_#e5e7eb]">Student Details</th>
+            {MONTHS.map(m => (
+              <th key={m} className="p-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-center min-w-[70px]">{m}</th>
+            ))}
+            <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Total Paid</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {students.map(student => (
+            <tr key={student.id} className="hover:bg-blue-50/30 transition-colors group">
+              <td className="p-4 sticky left-0 bg-white group-hover:bg-blue-50/30 z-10 shadow-[1px_0_0_0_#f3f4f6]">
+                <div className="font-bold text-sm text-gray-900">{student.studentName}</div>
+                <div className="text-xs text-gray-500 font-medium mt-0.5">Adm: {student.admissionNo} • Class: {student.studentClass}</div>
+              </td>
+              
+              {MONTHS.map((m, i) => {
+                const payments = student.monthlyPayments[i] || [];
+                const hasPayments = payments.length > 0;
+                
+                return (
+                  <td key={i} className="p-2 text-center align-top">
+                    <div className="flex flex-col items-center gap-1 mt-1">
+                      {hasPayments ? (
+                        payments.map((p, idx) => (
+                          <div
+                            key={idx}
+                            className={`inline-flex items-center justify-center px-1.5 py-0.5 rounded text-xs font-bold border shadow-sm ${
+                              p.isGPay 
+                                ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                                : 'bg-green-50 text-green-700 border-green-200'
+                            }`}
+                            title={`Paid $${p.amount.toFixed(2)} on ${p.date} (${p.isGPay ? 'GPay' : 'Cash'})`}
+                          >
+                            ${p.amount.toFixed(0)}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="inline-block w-2 h-2 bg-gray-200 rounded-full mx-auto mt-1" title={`Unpaid in ${m}`} />
+                      )}
+                    </div>
+                  </td>
+                );
+              })}
+              
+              <td className="p-4 text-sm font-black text-blue-600 text-right align-middle">
+                ${student.totalPaid.toFixed(2)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/fee-logger/StudentFeeTable.tsx ---
+
+--- START OF FILE src/components/lab/fee-logger/StudentProgressCard.tsx ---
+import React, { useState } from 'react';
+import { StudentSummary } from './index';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+
+interface Props {
+  student: StudentSummary;
+  targetFee: number;
+}
+
+export default function StudentProgressCard({ student, targetFee }: Props) {
+  const [expanded, setExpanded] = useState(false);
+  
+  // Calculate progress percentage (cap at 100% for the bar visual)
+  const rawProgress = targetFee > 0 ? (student.totalPaid / targetFee) * 100 : 0;
+  const progress = Math.min(100, Math.round(rawProgress));
+  
+  let colorClass = 'bg-red-500';
+  let bgClass = 'bg-red-50 text-red-700 border-red-200';
+  
+  if (progress >= 100) {
+    colorClass = 'bg-green-500';
+    bgClass = 'bg-green-50 text-green-700 border-green-200';
+  } else if (progress >= 50) {
+    colorClass = 'bg-yellow-400';
+    bgClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+  }
+
+  // Flatten all payments for the expanded view
+  const allPayments = Object.values(student.monthlyPayments)
+    .flat()
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md">
+      <div 
+        className="p-4 cursor-pointer hover:bg-gray-50 flex flex-col gap-3"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex justify-between items-start gap-2">
+          <div className="min-w-0">
+            <h3 className="font-bold text-gray-900 truncate" title={student.studentName}>
+              {student.studentName}
+            </h3>
+            <div className="text-xs text-gray-500 mt-0.5 truncate">
+              Adm: {student.admissionNo} • Class: {student.studentClass}
+            </div>
+          </div>
+          <div className={`px-2.5 py-1 rounded-lg text-xs font-bold border shrink-0 ${bgClass}`}>
+            ${student.totalPaid} / ${targetFee}
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
+            <div 
+              className={`h-full ${colorClass} transition-all duration-500`} 
+              style={{ width: `${progress}%` }} 
+            />
+          </div>
+          <span className="text-xs font-bold text-gray-600 w-9 text-right">{Math.round(rawProgress)}%</span>
+          {expanded ? (
+            <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+          )}
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="p-4 bg-gray-50 border-t border-gray-100">
+          <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Payment History</h4>
+          {allPayments.length > 0 ? (
+            <div className="space-y-2">
+              {allPayments.map((p, i) => (
+                <div key={i} className="flex justify-between items-center bg-white p-2.5 rounded-lg border border-gray-200 text-sm shadow-sm">
+                  <div className="font-medium text-gray-700">{p.date}</div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      p.isGPay ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-gray-100 text-gray-600 border border-gray-200'
+                    }`}>
+                      {p.isGPay ? 'GPay' : 'Cash'}
+                    </span>
+                    <span className="font-black text-gray-900">${p.amount}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-gray-500 text-center py-4 bg-white rounded-lg border border-dashed border-gray-200">
+              No payments logged.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/fee-logger/StudentProgressCard.tsx ---
 
 --- START OF FILE src/components/lab/online-exams/ExamDashboard.tsx ---
 import React, { useState, useEffect } from 'react';
@@ -15354,28 +16521,28 @@ interface TopRankCardProps {
 export default function TopRankCard({ student, rank, score, chapters, imageUrl, fontSizeScale }: TopRankCardProps) {
   let cardClasses = "flex flex-col items-center rounded-xl p-[0.8em] border shadow-md relative overflow-hidden break-inside-avoid ";
   let badgeClasses = "absolute -bottom-[0.5em] -right-[0.5em] w-[2.2em] h-[2.2em] rounded-full text-white flex items-center justify-center font-bold border-[0.15em] border-white z-20 text-[0.8em] shadow-sm ";
-  let scale = "";
   let cardHeight = '18.5em';
   let cardWidth = '14em';
 
   if (rank === 1) {
     cardClasses += "bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 border-yellow-200 text-slate-900 z-10 ";
     badgeClasses += "bg-yellow-600";
-    cardHeight = '22em';
-    cardWidth = '15.5em';
+    cardHeight = '20em';
+    cardWidth = '15em';
   } else if (rank === 2) {
     cardClasses += "bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 border-slate-300 text-slate-900 ";
     badgeClasses += "bg-slate-600";
-    cardHeight = '19em';
+    cardHeight = '18.5em';
+    cardWidth = '14em';
   } else {
     cardClasses += "bg-gradient-to-br from-orange-100 via-orange-200 to-amber-100 border-orange-300 text-slate-900 ";
     badgeClasses += "bg-orange-600";
-    cardHeight = '19em';
+    cardHeight = '18.5em';
+    cardWidth = '14em';
   }
 
-  // Use the passed fontSizeScale to control internal scaling proportionately
   return (
-    <div className={`${cardClasses} ${scale}`} style={{ fontSize: `${fontSizeScale}px`, width: cardWidth, minHeight: cardHeight, height: cardHeight }}>
+    <div className={`${cardClasses}`} style={{ fontSize: `${fontSizeScale}px`, width: cardWidth, minHeight: cardHeight, height: cardHeight }}>
       <div className="relative mb-[0.5em] mt-[0.3em]">
         {imageUrl ? (
           <img src={imageUrl} alt={student.name} className="w-[4.5em] h-[4.5em] rounded-full object-cover border-[0.2em] border-white shadow-sm" />
@@ -15409,8 +16576,206 @@ export default function TopRankCard({ student, rank, score, chapters, imageUrl, 
     </div>
   );
 }
-
 --- END OF FILE src/components/print/TopRankCard.tsx ---
+
+--- START OF FILE src/components/ranklist/AppStandardRankCard.tsx ---
+import React from 'react';
+import { OMRResult } from '../../services/geminiService';
+import { Chapter } from '../../utils/topicParser';
+
+interface AppStandardRankCardProps {
+  student: OMRResult;
+  rank: number;
+  score: number;
+  chapters: Chapter[];
+  onClick: () => void;
+}
+
+export default function AppStandardRankCard({ 
+  student, rank, score, chapters, onClick 
+}: AppStandardRankCardProps) {
+
+  const calculateChapterProgress = (studentData: OMRResult, chapter: Chapter) => {
+    if (chapter.questions.length === 0) return 0;
+    let correct = 0;
+    chapter.questions.forEach(q => {
+      if (studentData.scores[`q${q}`] === 1) correct++;
+    });
+    return (correct / chapter.questions.length) * 100;
+  };
+
+  return (
+    <div 
+      onClick={onClick}
+      className="relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden bg-white border-gray-200 flex flex-col h-full"
+    >
+      <div className="absolute top-0 right-0 bg-black/5 px-4 py-1.5 rounded-bl-xl font-black text-lg text-gray-500">
+        #{rank}
+      </div>
+
+      <div className="flex items-center gap-4 mb-4">
+        <div className="flex-1 min-w-0 pr-8">
+          <h3 className="text-lg font-bold text-gray-900 truncate" title={student.name}>
+            {student.name}
+          </h3>
+          <div className="flex items-center gap-3 mt-2 text-sm">
+            <span className="font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-100">C: {student.right}</span>
+            <span className="font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-100">W: {student.wrong}</span>
+          </div>
+          <div className="text-2xl font-black mt-2 text-gray-800">
+            {score} <span className="text-sm font-medium text-gray-500">pts</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3 mt-auto pt-4 border-t border-gray-100">
+        <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Chapter Progress</h4>
+        {chapters.map(chapter => {
+          if (chapter.questions.length === 0) return null;
+          const progress = calculateChapterProgress(student, chapter);
+          return (
+            <div key={chapter.name} className="space-y-1">
+              <div className="flex justify-between text-[11px]">
+                <span className="text-gray-600 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
+                <span className="font-bold text-gray-700">{Math.round(progress)}%</span>
+              </div>
+              <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-indigo-400 rounded-full transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/ranklist/AppStandardRankCard.tsx ---
+
+--- START OF FILE src/components/ranklist/AppTopRankCard.tsx ---
+import React from 'react';
+import { Camera, Image as ImageIcon } from 'lucide-react';
+import { OMRResult } from '../../services/geminiService';
+import { Chapter } from '../../utils/topicParser';
+
+interface AppTopRankCardProps {
+  student: OMRResult;
+  rank: number;
+  score: number;
+  chapters: Chapter[];
+  imageUrl?: string;
+  onImageClick: (e: React.MouseEvent, name: string) => void;
+  onClick: () => void;
+  orderClass: string;
+}
+
+export default function AppTopRankCard({ 
+  student, rank, score, chapters, imageUrl, onImageClick, onClick, orderClass 
+}: AppTopRankCardProps) {
+  
+  const calculateChapterProgress = (studentData: OMRResult, chapter: Chapter) => {
+    if (chapter.questions.length === 0) return 0;
+    let correct = 0;
+    chapter.questions.forEach(q => {
+      if (studentData.scores[`q${q}`] === 1) correct++;
+    });
+    return (correct / chapter.questions.length) * 100;
+  };
+
+  let cardBg = 'bg-white border-gray-200';
+  let rankColor = 'text-gray-500';
+  let progressBg = 'bg-blue-500';
+  let sizeClass = 'w-full md:w-[280px]'; // Standard podium size
+  
+  if (rank === 1) {
+    cardBg = 'bg-gradient-to-br from-yellow-100 to-yellow-200 border-yellow-400 shadow-yellow-100';
+    rankColor = 'text-yellow-700';
+    progressBg = 'bg-yellow-500';
+    sizeClass = 'w-full md:w-[320px] md:scale-105 z-10'; // Make Rank 1 slightly larger on desktop
+  } else if (rank === 2) {
+    cardBg = 'bg-gradient-to-br from-gray-100 to-gray-200 border-gray-400 shadow-gray-100';
+    rankColor = 'text-gray-700';
+    progressBg = 'bg-gray-500';
+  } else if (rank === 3) {
+    cardBg = 'bg-gradient-to-br from-orange-100 to-orange-200 border-orange-400 shadow-orange-100';
+    rankColor = 'text-orange-700';
+    progressBg = 'bg-orange-500';
+  }
+
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onImageClick(e, student.name);
+  };
+
+  return (
+    <div 
+      onClick={onClick}
+      className={`relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col ${cardBg} ${sizeClass} ${orderClass}`}
+    >
+      <div className={`absolute top-0 right-0 bg-black/5 px-4 py-1.5 rounded-bl-xl font-black text-lg ${rankColor}`}>
+        #{rank}
+      </div>
+
+      <div className="flex flex-col items-center gap-4 mb-4 mt-2">
+        <div 
+          className={`relative rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center overflow-hidden group shrink-0 ${rank === 1 ? 'w-28 h-28' : 'w-24 h-24'}`}
+          onClick={handleImageClick}
+        >
+          {imageUrl ? (
+            <>
+              <img src={imageUrl} alt={student.name} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="w-6 h-6 text-white" />
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center justify-center w-full h-full bg-gray-100 group-hover:bg-gray-200 transition-colors">
+              <ImageIcon className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
+            </div>
+          )}
+        </div>
+        
+        <div className="text-center w-full">
+          <h3 className={`${rank === 1 ? 'text-2xl' : 'text-xl'} font-bold text-gray-900 truncate px-2`} title={student.name}>
+            {student.name}
+          </h3>
+          <div className="flex items-center justify-center gap-3 mt-2 text-sm">
+            <span className="font-medium text-green-700 bg-green-100/80 px-2 py-0.5 rounded border border-green-200/50">C: {student.right}</span>
+            <span className="font-medium text-red-700 bg-red-100/80 px-2 py-0.5 rounded border border-red-200/50">W: {student.wrong}</span>
+          </div>
+          <div className={`${rank === 1 ? 'text-4xl' : 'text-3xl'} font-black mt-3 text-gray-800`}>
+            {score} <span className="text-sm font-medium text-gray-500">pts</span>
+          </div>
+        </div>
+      </div>
+
+      <div className={`space-y-3 mt-auto pt-4 border-t ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Chapter Progress</h4>
+        {chapters.map(chapter => {
+          if (chapter.questions.length === 0) return null;
+          const progress = calculateChapterProgress(student, chapter);
+          return (
+            <div key={chapter.name} className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-700 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
+                <span className="font-bold text-gray-900">{Math.round(progress)}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all duration-500 ${progressBg}`}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/ranklist/AppTopRankCard.tsx ---
 
 --- START OF FILE src/services/db.ts ---
 const DB_NAME = 'omr-db';
@@ -15506,6 +16871,7 @@ export async function getStudentImage(name: string): Promise<File | undefined> {
 --- START OF FILE src/services/firebaseService.ts ---
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy, setDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
@@ -15521,6 +16887,7 @@ export const isFirebaseConfigured = !!firebaseConfig.apiKey;
 // Initialize Firebase only if config exists and hasn't been initialized
 export const app = isFirebaseConfigured ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()) : null;
 export const db = isFirebaseConfigured ? getFirestore(app!) : null;
+export const auth = isFirebaseConfigured ? getAuth(app!) : null;
 
 export interface ExamIncident {
   time: string;
@@ -15547,6 +16914,17 @@ export interface ExamData {
   answerKey: Record<number, string>; // e.g., { 1: 'A', 2: 'B' }
   images: string[]; // Base64 compressed images
   createdAt: any;
+}
+
+export interface FeeLogData {
+  id: string;
+  admissionNo: string;
+  studentClass: string;
+  studentName: string;
+  feeAmount: number;
+  isGPay: boolean;
+  date: string;
+  createdAt: string;
 }
 
 // Service Functions
@@ -15633,6 +17011,21 @@ export async function saveTimetable(date: string, data: any): Promise<void> {
   await setDoc(docRef, { data, updatedAt: serverTimestamp() }, { merge: true });
 }
 
+export async function getFeeLogs(): Promise<FeeLogData[]> {
+  if (!db) throw new Error("Firebase is not configured.");
+  const docRef = doc(db, 'app_data', 'fee_logs');
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists() && docSnap.data().logs) {
+    return docSnap.data().logs;
+  }
+  return [];
+}
+
+export async function saveFeeLogs(logs: FeeLogData[]): Promise<void> {
+  if (!db) throw new Error("Firebase is not configured.");
+  const docRef = doc(db, 'app_data', 'fee_logs');
+  await setDoc(docRef, { logs, updatedAt: serverTimestamp() }, { merge: true });
+}
 --- END OF FILE src/services/firebaseService.ts ---
 
 --- START OF FILE src/services/geminiService.ts ---
@@ -16229,6 +17622,115 @@ Output your response as a JSON object with this exact structure:
   throw lastError || new Error('Failed to process image with all provided keys.');
 }
 
+export interface FeeRecord {
+  admissionNo: string;
+  studentClass: string;
+  studentName: string;
+  feeAmount: number;
+  isGPay: boolean;
+  date: string;
+}
+
+export async function extractFeeRecordsBatch(
+  images: { id: string, base64: string, mimeType: string }[],
+  apiKeys: string[],
+  model: string
+): Promise<Record<string, FeeRecord[]>> {
+  const keysToTry = getKeys(apiKeys);
+
+  const prompt = `
+You are an expert data extraction assistant.
+Extract the fee log records from the provided handwritten ledger images.
+The columns are typically: Admission No, Class, Student Name, Fee Amount, Payment Method (GP means Google Pay), and Date.
+
+Rules:
+1. Handle ditto marks (") or blank dates by inferring the date from the previous row.
+2. Convert dates to YYYY-MM-DD format. Assume the year is 2025 if not fully specified.
+3. If 'GP' is written in the payment method column, set isGPay to true, otherwise false.
+4. If a field is completely unreadable, leave it as an empty string (or 0 for numbers).
+
+Output your response as a JSON object mapping each image ID to an array of records with this structure:
+{
+  "image_id_1": [
+    {
+      "admissionNo": "1024",
+      "studentClass": "10A",
+      "studentName": "John Doe",
+      "feeAmount": 500,
+      "isGPay": true,
+      "date": "2025-04-10"
+    }
+  ],
+  "image_id_2": [...]
+}
+`;
+
+  const schemaConfig = {
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: images.reduce((acc, img) => {
+        acc[img.id] = {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              admissionNo: { type: Type.STRING },
+              studentClass: { type: Type.STRING },
+              studentName: { type: Type.STRING },
+              feeAmount: { type: Type.NUMBER },
+              isGPay: { type: Type.BOOLEAN },
+              date: { type: Type.STRING, description: "YYYY-MM-DD format" }
+            },
+            required: ["admissionNo", "studentClass", "studentName", "feeAmount", "isGPay", "date"]
+          }
+        };
+        return acc;
+      }, {} as any),
+      required: images.map(img => img.id)
+    }
+  };
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const { key } = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+
+      const contentsParts: any[] = [{ text: prompt }];
+      images.forEach((img) => {
+        contentsParts.push({ text: `Image ID: ${img.id}` });
+        contentsParts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } });
+      });
+
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-pro-preview',
+        contents: contentsParts,
+        config: schemaConfig as any
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+
+      let data;
+      try {
+        const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+        data = JSON.parse(cleanedText) as Record<string, FeeRecord[]>;
+      } catch (parseError) {
+        console.error("Parse Error:", parseError);
+        throw new Error("Failed to parse JSON from AI response.");
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('Error with API key in extractFeeRecordsBatch:', error);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Failed to extract fee records with all provided keys.');
+}
 --- END OF FILE src/services/geminiService.ts ---
 
 --- START OF FILE src/utils/cropUtils.ts ---

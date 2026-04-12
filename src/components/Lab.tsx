@@ -1,8 +1,8 @@
 import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText } from 'lucide-react';
+import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'home') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'home') => void;
 }
 
 export default function Lab({ onNavigate }: LabProps) {
@@ -114,6 +114,22 @@ export default function Lab({ onNavigate }: LabProps) {
           <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">QP Maker</h3>
           <p className="text-sm text-gray-600 flex-1">
             Create and manage question papers. Add questions with options, set correct answers, and export as JSON.
+          </p>
+        </div>
+
+        <div
+          onClick={() => onNavigate('lab-fee-logger')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-emerald-300 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg group-hover:bg-emerald-100 transition-colors">
+              <Receipt className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Fee Logger</h3>
+          <p className="text-sm text-gray-600 flex-1">
+            Log and track student fee payments. Manually enter data or scan handwritten ledgers using AI.
           </p>
         </div>
 
