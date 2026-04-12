@@ -70,6 +70,10 @@ export default function App() {
     const saved = localStorage.getItem('omr_requestsPerKey');
     return saved ? parseInt(saved, 10) : 1;
   });
+  const [numQuestions, setNumQuestions] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_numQuestions');
+    return saved ? parseInt(saved, 10) : 25;
+  });
   const [autoCropEnabled, setAutoCropEnabled] = useState<boolean>(() => {
     return localStorage.getItem('omr_autoCrop') === 'true';
   });
@@ -178,6 +182,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem('omr_sampling', sampling.toString()); }, [sampling]);
   useEffect(() => { localStorage.setItem('omr_concurrency', concurrency.toString()); }, [concurrency]);
   useEffect(() => { localStorage.setItem('omr_requestsPerKey', requestsPerKey.toString()); }, [requestsPerKey]);
+  useEffect(() => { localStorage.setItem('omr_numQuestions', numQuestions.toString()); }, [numQuestions]);
   useEffect(() => { localStorage.setItem('omr_autoCrop', autoCropEnabled.toString()); }, [autoCropEnabled]);
   useEffect(() => { localStorage.setItem('omr_attendance', attendanceSheet); }, [attendanceSheet]);
   useEffect(() => { localStorage.setItem('omr_answerKey', answerKey); }, [answerKey]);
@@ -446,7 +451,7 @@ export default function App() {
           const chunkedPromises = [];
           for (let k = 0; k < remainingImages.length; k += baseConcurrency) {
             const chunk = remainingImages.slice(k, k + baseConcurrency);
-            chunkedPromises.push(evaluateOMRBatch(chunk, keys, proModel, liteModel, answerKey));
+            chunkedPromises.push(evaluateOMRBatch(chunk, keys, proModel, liteModel, answerKey, numQuestions));
           }
           
           const chunkResults = await Promise.all(chunkedPromises);
@@ -870,6 +875,8 @@ export default function App() {
             setConcurrency={setConcurrency}
             requestsPerKey={requestsPerKey}
             setRequestsPerKey={setRequestsPerKey}
+            numQuestions={numQuestions}
+            setNumQuestions={setNumQuestions}
             autoCropEnabled={autoCropEnabled}
             setAutoCropEnabled={setAutoCropEnabled}
             answerKey={answerKey}

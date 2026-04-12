@@ -176,7 +176,8 @@ export async function evaluateOMRBatch(
   apiKeys: string[],
   model: string,
   liteModel: string,
-  answerKeyPrompt: string
+  answerKeyPrompt: string,
+  numQuestions: number = 25
 ): Promise<Record<string, OMRResult>> {
   const keysToTry = getKeys(apiKeys);
 
@@ -188,10 +189,10 @@ GIVE full focus on validation.
 ### Answer Key
 ${answerKeyPrompt}
 
-Questions 26 through 30 have not been bubbled. Ignore them.
+Questions 26 through 30 have not been bubbled. Ignore them unless there are more than 25 questions.
 
 ### Evaluation Rules:
-- For each question Q1 to Q25, determine if the student's answer is correct, wrong, or unattempted.
+- For each question Q1 to Q${numQuestions}, determine if the student's answer is correct, wrong, or unattempted.
 - Give 1 if correct, -1 if wrong, 0 if no answer.
 - Extract the student's NAME from the sheet. (Best effort only, exact spelling is not critical as it will be verified against an attendance sheet later).
 - Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
@@ -209,7 +210,7 @@ Output your response as a JSON object with the following structure:
     "q1": 1,
     "q2": -1,
     "q3": 0,
-    // ... up to q25
+    // ... up to q${numQuestions}
   },
   "image_id_2": {
     // ...
@@ -222,20 +223,19 @@ Output your response as a JSON object with the following structure:
     responseSchema: {
       type: Type.OBJECT,
       properties: images.reduce((acc, img) => {
+        const imgProps: any = {
+          name: { type: Type.STRING, description: "Student's name" },
+          right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
+          wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
+          confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" },
+        };
+        for (let q = 1; q <= numQuestions; q++) {
+          imgProps[`q${q}`] = { type: Type.INTEGER };
+        }
         acc[img.id] = {
           type: Type.OBJECT,
-          properties: {
-            name: { type: Type.STRING, description: "Student's name" },
-            right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
-            wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
-            confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" },
-            q1: { type: Type.INTEGER }, q2: { type: Type.INTEGER }, q3: { type: Type.INTEGER }, q4: { type: Type.INTEGER }, q5: { type: Type.INTEGER },
-            q6: { type: Type.INTEGER }, q7: { type: Type.INTEGER }, q8: { type: Type.INTEGER }, q9: { type: Type.INTEGER }, q10: { type: Type.INTEGER },
-            q11: { type: Type.INTEGER }, q12: { type: Type.INTEGER }, q13: { type: Type.INTEGER }, q14: { type: Type.INTEGER }, q15: { type: Type.INTEGER },
-            q16: { type: Type.INTEGER }, q17: { type: Type.INTEGER }, q18: { type: Type.INTEGER }, q19: { type: Type.INTEGER }, q20: { type: Type.INTEGER },
-            q21: { type: Type.INTEGER }, q22: { type: Type.INTEGER }, q23: { type: Type.INTEGER }, q24: { type: Type.INTEGER }, q25: { type: Type.INTEGER },
-          },
-          required: ["name", "right", "wrong", "confidence", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22", "q23", "q24", "q25"]
+          properties: imgProps,
+          required: ["name", "right", "wrong", "confidence", ...Array.from({ length: numQuestions }, (_, i) => `q${i + 1}`)]
         };
         return acc;
       }, {} as any),

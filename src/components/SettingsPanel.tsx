@@ -21,6 +21,8 @@ interface SettingsPanelProps {
   setConcurrency: (val: number) => void;
   requestsPerKey: number;
   setRequestsPerKey: (val: number) => void;
+  numQuestions: number;
+  setNumQuestions: (val: number) => void;
   autoCropEnabled: boolean;
   setAutoCropEnabled: (val: boolean) => void;
   answerKey: string;
@@ -42,6 +44,7 @@ export default function SettingsPanel({
   sampling, setSampling,
   concurrency, setConcurrency,
   requestsPerKey, setRequestsPerKey,
+  numQuestions, setNumQuestions,
   autoCropEnabled, setAutoCropEnabled,
   answerKey, setAnswerKey,
   attendanceSheet, setAttendanceSheet,
@@ -231,6 +234,19 @@ export default function SettingsPanel({
                 max="10"
                 value={requestsPerKey}
                 onChange={(e) => setRequestsPerKey(parseInt(e.target.value, 10) || 1)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
+              />
+            </div>
+            <div className="w-24">
+              <label className="block text-sm font-medium text-gray-700 mb-1" title="Number of questions">
+                Questions
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={numQuestions}
+                onChange={(e) => setNumQuestions(parseInt(e.target.value, 10) || 25)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
               />
             </div>
