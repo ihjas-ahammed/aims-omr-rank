@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { ArrowLeft, Upload, Printer, BarChart2, Search, FileText, Edit2 } from 'lucide-react';
 import PrintableScoreCards from './PrintableScoreCards';
+import PrintableDailyList from './PrintableDailyList';
 import { StudentScoreRecord } from './index';
 
 interface ScoreAnalysisDashboardProps {
@@ -12,6 +13,7 @@ export default function ScoreAnalysisDashboard({ onBack }: ScoreAnalysisDashboar
   const [students, setStudents] = useState<StudentScoreRecord[]>([]);
   const [scoreHeaders, setScoreHeaders] = useState<string[]>([]);
   const [showPrintView, setShowPrintView] = useState(false);
+  const [printDailyColumn, setPrintDailyColumn] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Report Title for Printing the Big List
@@ -101,6 +103,16 @@ export default function ScoreAnalysisDashboard({ onBack }: ScoreAnalysisDashboar
         students={students} 
         scoreHeaders={scoreHeaders} 
         onBack={() => setShowPrintView(false)} 
+      />
+    );
+  }
+
+  if (printDailyColumn) {
+    return (
+      <PrintableDailyList
+        students={students}
+        scoreColumn={printDailyColumn}
+        onBack={() => setPrintDailyColumn(null)}
       />
     );
   }
@@ -242,8 +254,17 @@ export default function ScoreAnalysisDashboard({ onBack }: ScoreAnalysisDashboar
                     Student Name
                   </th>
                   {scoreHeaders.map((header, idx) => (
-                    <th key={idx} className="p-3 text-xs md:text-sm font-black text-slate-700 uppercase tracking-wider text-center border-l border-gray-200">
-                      {header.replace(/Score\s*\(?/i, '').replace(/\)/g, '')}
+                    <th key={idx} className="p-2 text-xs md:text-sm font-black text-slate-700 uppercase tracking-wider text-center border-l border-gray-200 group/th hover:bg-slate-200 transition-colors">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span>{header.replace(/Score\s*\(?/i, '').replace(/\)/g, '')}</span>
+                        <button
+                          onClick={() => setPrintDailyColumn(header)}
+                          className="p-1.5 bg-teal-100 text-teal-700 hover:bg-teal-200 rounded opacity-0 group-hover/th:opacity-100 transition-opacity print:hidden shadow-sm"
+                          title={`Print Daily Rank List for ${header}`}
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </th>
                   ))}
                 </tr>

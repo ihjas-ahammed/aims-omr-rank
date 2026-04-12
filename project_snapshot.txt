@@ -1,17 +1,29 @@
-Here are the updated components with a significantly improved, colorful frontend design for both the main dashboard table and the printable score cards. 
+Here are the updates. I've added a **"Print Daily Report"** feature. 
 
-I have added the ability to print the **Big List (Table)** directly from the dashboard, complete with an editable report title that will show up beautifully formatted on the printed page. The printable score cards have also been redesigned with vibrant gradients and a modern card layout suitable for color printing.
+To make it intuitive, I added a tiny printer icon that appears when you hover over any date column header in the main table. Clicking it opens a dedicated, beautifully formatted daily rank list view (sorted by score, filtering out absentees), which you can print in color. I also isolated this new feature into a separate modular component (`PrintableDailyList.tsx`).
 
 ### Bash Commands
 *(No new packages needed, just run your existing dev server)*
 
 --- START OF FILE project_snapshot_out.txt ---
 
+--- START OF FILE src/components/lab/score-analysis/index.ts ---
+export { default as ScoreAnalysisDashboard } from './ScoreAnalysisDashboard';
+export { default as PrintableScoreCards } from './PrintableScoreCards';
+export { default as PrintableDailyList } from './PrintableDailyList';
+
+export interface StudentScoreRecord {
+  name: string;
+  scores: Record<string, string | number>;
+}
+--- END OF FILE src/components/lab/score-analysis/index.ts ---
+
 --- START OF FILE src/components/lab/score-analysis/ScoreAnalysisDashboard.tsx ---
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { ArrowLeft, Upload, Printer, BarChart2, Search, FileText, Edit2 } from 'lucide-react';
 import PrintableScoreCards from './PrintableScoreCards';
+import PrintableDailyList from './PrintableDailyList';
 import { StudentScoreRecord } from './index';
 
 interface ScoreAnalysisDashboardProps {
@@ -22,6 +34,7 @@ export default function ScoreAnalysisDashboard({ onBack }: ScoreAnalysisDashboar
   const [students, setStudents] = useState<StudentScoreRecord[]>([]);
   const [scoreHeaders, setScoreHeaders] = useState<string[]>([]);
   const [showPrintView, setShowPrintView] = useState(false);
+  const [printDailyColumn, setPrintDailyColumn] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Report Title for Printing the Big List
@@ -111,6 +124,16 @@ export default function ScoreAnalysisDashboard({ onBack }: ScoreAnalysisDashboar
         students={students} 
         scoreHeaders={scoreHeaders} 
         onBack={() => setShowPrintView(false)} 
+      />
+    );
+  }
+
+  if (printDailyColumn) {
+    return (
+      <PrintableDailyList
+        students={students}
+        scoreColumn={printDailyColumn}
+        onBack={() => setPrintDailyColumn(null)}
       />
     );
   }
@@ -252,8 +275,17 @@ export default function ScoreAnalysisDashboard({ onBack }: ScoreAnalysisDashboar
                     Student Name
                   </th>
                   {scoreHeaders.map((header, idx) => (
-                    <th key={idx} className="p-3 text-xs md:text-sm font-black text-slate-700 uppercase tracking-wider text-center border-l border-gray-200">
-                      {header.replace(/Score\s*\(?/i, '').replace(/\)/g, '')}
+                    <th key={idx} className="p-2 text-xs md:text-sm font-black text-slate-700 uppercase tracking-wider text-center border-l border-gray-200 group/th hover:bg-slate-200 transition-colors">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span>{header.replace(/Score\s*\(?/i, '').replace(/\)/g, '')}</span>
+                        <button
+                          onClick={() => setPrintDailyColumn(header)}
+                          className="p-1.5 bg-teal-100 text-teal-700 hover:bg-teal-200 rounded opacity-0 group-hover/th:opacity-100 transition-opacity print:hidden shadow-sm"
+                          title={`Print Daily Rank List for ${header}`}
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </th>
                   ))}
                 </tr>
@@ -298,77 +330,81 @@ export default function ScoreAnalysisDashboard({ onBack }: ScoreAnalysisDashboar
 }
 --- END OF FILE src/components/lab/score-analysis/ScoreAnalysisDashboard.tsx ---
 
---- START OF FILE src/components/lab/score-analysis/PrintableScoreCards.tsx ---
-import React, { useState } from 'react';
+--- START OF FILE src/components/lab/score-analysis/PrintableDailyList.tsx ---
+import React, { useState, useMemo } from 'react';
 import { ArrowLeft, Printer, Settings2 } from 'lucide-react';
 import { StudentScoreRecord } from './index';
 
-interface PrintableScoreCardsProps {
+interface PrintableDailyListProps {
   students: StudentScoreRecord[];
-  scoreHeaders: string[];
+  scoreColumn: string;
   onBack: () => void;
 }
 
-export default function PrintableScoreCards({ students, scoreHeaders, onBack }: PrintableScoreCardsProps) {
-  const [title, setTitle] = useState('WEEKLY SCORE REPORT');
-  const [subtitle, setSubtitle] = useState('AIMS PLUS TRACK RECORD');
+export default function PrintableDailyList({ students, scoreColumn, onBack }: PrintableDailyListProps) {
+  const formattedDate = scoreColumn.replace(/Score\s*\(?/i, '').replace(/\)/g, '').trim();
   
-  // By default, select the last 7 columns to fit perfectly on standard printed cards
-  const [selectedHeaders, setSelectedHeaders] = useState<string[]>(
-    scoreHeaders.slice(Math.max(0, scoreHeaders.length - 7))
-  );
+  const [title, setTitle] = useState('DAILY SCORE REPORT');
+  const [subtitle, setSubtitle] = useState('AIMS PLUS');
+  const [examDate, setExamDate] = useState(formattedDate);
 
-  const [cardsPerRow, setCardsPerRow] = useState<number>(2);
+  // Process data: Filter out absentees/invalid scores, convert to number, sort descending
+  const rankedStudents = useMemo(() => {
+    const validStudents = students
+      .filter(s => {
+        const val = s.scores[scoreColumn];
+        return val !== undefined && val !== '-' && val !== '' && !isNaN(Number(val));
+      })
+      .map(s => ({
+        ...s,
+        numScore: Number(s.scores[scoreColumn])
+      }))
+      .sort((a, b) => b.numScore - a.numScore); // Sort Highest to Lowest
 
-  const handleToggleHeader = (header: string) => {
-    setSelectedHeaders(prev => {
-      if (prev.includes(header)) {
-        return prev.filter(h => h !== header);
-      } else {
-        return [...prev, header];
+    // Assign dense ranking (1, 2, 2, 4...)
+    let currentRank = 1;
+    return validStudents.map((s, index) => {
+      if (index > 0 && validStudents[index - 1].numScore !== s.numScore) {
+        currentRank = index + 1;
       }
+      return { ...s, rank: currentRank };
     });
-  };
-
-  const formatHeader = (h: string) => {
-    // Simplify headers like "Score (07/04/25)" to "07/04/25"
-    return h.replace(/Score\s*\(?/i, '').replace(/\)/g, '').trim();
-  };
+  }, [students, scoreColumn]);
 
   return (
     <div className="min-h-screen bg-gray-100 text-black print:bg-white pb-12">
       {/* Print Settings Toolbar */}
       <div className="print:hidden mb-6 p-4 md:p-6 bg-white border-b border-gray-200 text-gray-900 shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-4">
               <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors border border-gray-200">
                 <ArrowLeft className="w-5 h-5 text-gray-700" />
               </button>
               <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-900">
-                <div className="p-1.5 bg-teal-100 text-teal-700 rounded-lg">
+                <div className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg">
                   <Settings2 className="w-5 h-5" />
                 </div>
-                Print Setup
+                Daily Print Setup
               </h2>
             </div>
             <button
               onClick={() => window.print()}
-              className="flex items-center gap-2 px-6 py-2.5 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700 transition-all shadow-md hover:shadow-lg w-full md:w-auto justify-center active:scale-95"
+              className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg w-full md:w-auto justify-center active:scale-95"
             >
               <Printer className="w-5 h-5" />
-              Print Cards
+              Print Daily Report
             </button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-5 rounded-2xl border border-slate-200">
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Main Title</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm font-bold text-slate-900 outline-none transition-shadow shadow-sm"
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold text-slate-900 outline-none transition-shadow shadow-sm"
               />
             </div>
             <div>
@@ -377,41 +413,17 @@ export default function PrintableScoreCards({ students, scoreHeaders, onBack }: 
                 type="text"
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-sm font-bold text-slate-900 outline-none transition-shadow shadow-sm"
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold text-slate-900 outline-none transition-shadow shadow-sm"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cards per row (Print)</label>
-              <div className="flex gap-2 p-1 bg-slate-200/50 rounded-xl border border-slate-200">
-                {[1, 2, 3, 4].map(num => (
-                  <button
-                    key={num}
-                    onClick={() => setCardsPerRow(num)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-black transition-all ${cardsPerRow === num ? 'bg-white text-teal-700 shadow-sm border border-slate-200/50' : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-800'}`}
-                  >
-                    {num}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
-              Select Columns to Print <span className="text-teal-600 bg-teal-50 px-2 py-0.5 rounded-md ml-2">{selectedHeaders.length} selected</span>
-            </label>
-            <div className="flex flex-wrap gap-2.5">
-              {scoreHeaders.map(h => (
-                <label key={h} className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer text-xs sm:text-sm font-bold transition-all shadow-sm ${selectedHeaders.includes(h) ? 'bg-teal-50 border-teal-300 text-teal-800' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'}`}>
-                  <input 
-                    type="checkbox" 
-                    checked={selectedHeaders.includes(h)} 
-                    onChange={() => handleToggleHeader(h)} 
-                    className="rounded text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
-                  />
-                  {formatHeader(h)}
-                </label>
-              ))}
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Exam Date / Column</label>
+              <input
+                type="text"
+                value={examDate}
+                onChange={(e) => setExamDate(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold text-slate-900 outline-none transition-shadow shadow-sm"
+              />
             </div>
           </div>
         </div>
@@ -419,73 +431,86 @@ export default function PrintableScoreCards({ students, scoreHeaders, onBack }: 
 
       <style>{`
         @media print {
-          @page { margin: 0.5cm; }
-          .print-grid {
-            grid-template-columns: repeat(${cardsPerRow}, minmax(0, 1fr)) !important;
-            gap: 12px !important;
-          }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          @page { margin: 1cm; size: portrait; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; }
         }
       `}</style>
 
-      {/* Cards Area */}
-      <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto print:max-w-none print:p-0">
-        <div className={`grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 print-grid`}>
-          {students.map((student, idx) => (
-            <div 
-              key={idx} 
-              className="rounded-2xl shadow-md bg-white flex flex-col h-full overflow-hidden break-inside-avoid border border-gray-200 print:shadow-sm"
-            >
-              {/* Colorful Banner */}
-              <div className="bg-gradient-to-r from-teal-600 to-emerald-500 p-4 sm:p-5 text-center text-white relative">
-                <div className="absolute top-0 right-0 bg-black/10 px-3 py-1 rounded-bl-xl font-bold text-xs">
-                  #{idx + 1}
-                </div>
-                <h2 className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.25em] text-teal-100 opacity-90">{subtitle}</h2>
-                <h1 className="text-lg md:text-xl font-black uppercase tracking-wide mt-1 leading-tight drop-shadow-sm">{title}</h1>
-              </div>
-              
-              {/* Card Body */}
-              <div className="p-4 sm:p-5 flex-1 flex flex-col bg-slate-50/30">
-                <div className="mb-5 text-center">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Student Name</div>
-                  <h3 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight drop-shadow-sm line-clamp-2">{student.name}</h3>
-                </div>
-
-                <div className="mt-auto bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                  <table className="w-full text-sm border-collapse">
-                    <thead>
-                      <tr className="bg-teal-50">
-                        {selectedHeaders.map((h, i) => (
-                          <th key={h} className={`border-b-2 border-teal-200 px-1 py-2 text-[9px] sm:text-[10px] font-bold text-teal-800 uppercase text-center leading-tight ${i !== selectedHeaders.length - 1 ? 'border-r border-teal-100/50' : ''}`}>
-                            {formatHeader(h)}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        {selectedHeaders.map((h, i) => {
-                          const val = student.scores[h];
-                          const isNumber = !isNaN(Number(val)) && val !== '-';
-                          return (
-                            <td key={h} className={`px-1 py-3 text-center text-base sm:text-lg font-black border-r last:border-r-0 border-gray-100 bg-white ${isNumber ? 'text-gray-800' : 'text-gray-300'}`}>
-                              {val}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          ))}
+      {/* Printable Area */}
+      <div className="p-4 md:p-8 pt-0 max-w-4xl mx-auto print:max-w-none print:p-0 bg-white shadow-xl print:shadow-none min-h-[297mm]">
+        
+        {/* Beautiful Header */}
+        <div className="text-center mb-8 border-b-4 border-indigo-600 pb-6 pt-8">
+          <h2 className="text-sm md:text-base font-bold text-indigo-600 uppercase tracking-[0.3em] mb-2">{subtitle}</h2>
+          <h1 className="text-3xl md:text-4xl font-black uppercase tracking-wider text-gray-900 mb-3">{title}</h1>
+          <div className="inline-block bg-indigo-50 border border-indigo-100 text-indigo-800 px-6 py-2 rounded-full font-bold text-lg shadow-sm">
+            {examDate}
+          </div>
         </div>
+
+        {/* Results Table */}
+        {rankedStudents.length === 0 ? (
+          <div className="text-center py-20 text-gray-500 font-medium">
+            No valid scores found for this date.
+          </div>
+        ) : (
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-100 border-y-2 border-gray-300">
+                <th className="py-3 px-4 text-sm font-black text-gray-600 uppercase tracking-wider w-20 text-center">Rank</th>
+                <th className="py-3 px-4 text-sm font-black text-gray-600 uppercase tracking-wider">Student Name</th>
+                <th className="py-3 px-4 text-sm font-black text-gray-600 uppercase tracking-wider w-32 text-center">Score</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {rankedStudents.map((student, idx) => {
+                // Highlight Top 3 rows
+                let rowBg = 'bg-white';
+                let rankColor = 'text-gray-500';
+                
+                if (student.rank === 1) {
+                  rowBg = 'bg-yellow-50/50';
+                  rankColor = 'text-yellow-600';
+                } else if (student.rank === 2) {
+                  rowBg = 'bg-slate-50';
+                  rankColor = 'text-slate-500';
+                } else if (student.rank === 3) {
+                  rowBg = 'bg-orange-50/30';
+                  rankColor = 'text-orange-500';
+                }
+
+                return (
+                  <tr key={idx} className={`${rowBg} break-inside-avoid`}>
+                    <td className="py-3 px-4 text-center">
+                      <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-black text-sm ${student.rank <= 3 ? 'bg-white shadow-sm border border-gray-200' : ''} ${rankColor}`}>
+                        {student.rank}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className={`font-bold ${student.rank <= 3 ? 'text-gray-900 text-lg' : 'text-gray-800 text-base'}`}>
+                        {student.name}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className={`font-black ${student.rank <= 3 ? 'text-indigo-700 text-xl' : 'text-indigo-600 text-lg'}`}>
+                        {student.numScore}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+
+        <div className="mt-8 text-center text-sm font-medium text-gray-400 pb-8">
+          Total Students Present: {rankedStudents.length}
+        </div>
+
       </div>
     </div>
   );
 }
---- END OF FILE src/components/lab/score-analysis/PrintableScoreCards.tsx ---
+--- END OF FILE src/components/lab/score-analysis/PrintableDailyList.tsx ---
 
 --- END OF FILE project_snapshot_out.txt ---
