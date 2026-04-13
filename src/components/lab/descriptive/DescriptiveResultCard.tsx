@@ -1,15 +1,16 @@
 import React from 'react';
 import { DescriptiveStudent } from './types';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
 
 interface Props {
   student: DescriptiveStudent;
   index: number;
+  onRemove: (id: string) => void;
 }
 
-export default function DescriptiveResultCard({ student, index }: Props) {
+export default function DescriptiveResultCard({ student, index, onRemove }: Props) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col md:flex-row transition-shadow hover:shadow-md">
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col md:flex-row transition-shadow hover:shadow-md relative">
       {/* Left side: Images */}
       <div className="w-full md:w-1/3 bg-gray-50 p-4 border-b md:border-b-0 md:border-r border-gray-200 flex gap-3 overflow-x-auto items-center hide-scrollbar">
         {student.images.map((img, i) => (
@@ -17,14 +18,22 @@ export default function DescriptiveResultCard({ student, index }: Props) {
             key={i} 
             src={img.previewUrl} 
             alt={`Page ${i+1}`} 
-            className="h-32 w-24 object-cover rounded-lg shadow-sm border border-gray-300 shrink-0" 
+            className="h-32 w-24 object-contain bg-white p-1 rounded-lg shadow-sm border border-gray-300 shrink-0" 
           />
         ))}
       </div>
 
       {/* Right side: Details */}
-      <div className="p-5 flex-1 flex flex-col min-w-0">
-        <div className="flex justify-between items-start mb-4 gap-2">
+      <div className="p-5 flex-1 flex flex-col min-w-0 relative">
+        <button 
+          onClick={() => onRemove(student.id)}
+          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors z-10"
+          title="Remove Student Record"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+
+        <div className="flex justify-between items-start mb-4 gap-2 pr-10">
           <div className="min-w-0">
             <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Student {index + 1}</div>
             <h3 className="text-xl font-bold text-gray-900 break-words">{student.name}</h3>

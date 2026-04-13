@@ -21,7 +21,7 @@ export default function DescriptiveQueue({ images, onRemove }: Props) {
         <div className="p-4 flex gap-4 overflow-x-auto hide-scrollbar">
           {images.map(img => (
             <div key={img.id} className="relative shrink-0 w-24 h-32 rounded-lg border border-gray-300 overflow-hidden bg-white group">
-              <img src={img.previewUrl} alt="scan" className="w-full h-full object-cover" />
+              <img src={img.previewUrl} alt="scan" className="w-full h-full object-contain p-1" />
               <button 
                 onClick={() => onRemove(img.id)}
                 className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"

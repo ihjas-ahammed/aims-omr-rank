@@ -2,7 +2,10 @@ Make the following changes:
 
     * Update Decriptive Evaluation:
         Fix:
-            after cropping, the uploaded image preview must change to the cropped file, also see if there is any issue in cropping after getting response from lite model
+            It is not possible to upload images again after one valuation is done
+            You can use parallel requests (following same rules as OMR) for rotation
+
+            
 
 Apply changes to both mobile view and desktop (movbile view is the priority)
 
