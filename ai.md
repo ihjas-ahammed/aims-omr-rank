@@ -1,12 +1,8 @@
 Make the following changes:
 
-    * Score data analysis:
-        Add a new lab element,
-            this will create a card based list (printable like we have printable rankl list in omr)
-            also a dashboard
-            it is for the data as in the given csv, add option in which we can improt such csv (same format) and be shown as cards here
-            also make it possible I can edit titrles (its to make a physical printed recordcof the score sheets) (7 days per page)
-            Note: do not take phone number even if its with our csv
+    * Update Decriptive Evaluation:
+        Fix:
+            after cropping, the uploaded image preview must change to the cropped file, also see if there is any issue in cropping after getting response from lite model
 
 Apply changes to both mobile view and desktop (movbile view is the priority)
 

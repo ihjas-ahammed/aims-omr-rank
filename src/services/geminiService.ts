@@ -402,25 +402,20 @@ export async function extractTextFromDocument(
   mimeType: string,
   apiKeys: string[],
   model: string,
-  extractionType: 'answerKey' | 'topicMapping'
+  extractionType: 'answerKey' | 'topicMapping' | 'descQuestions' | 'descAnswerKey' | 'descTopicMapping'
 ): Promise<string> {
   const keysToTry = getKeys(apiKeys);
   
-  const prompt = extractionType === 'answerKey' 
-    ? `Extract the answer key from this document. Format it as a simple list like:
-* **Q1.** A
-* **Q2.** B
-* **Q3.** C
-Only output the formatted text, nothing else.`
-    : `Extract the chapter and topic mapping from this document. Format it exactly like this:
-### Chapter Name
-* Topic Name: Q1, Q2, Q3
-* Another Topic: Q4, Q5
-
-### Another Chapter
-* Topic Name: Q6, Q7
-
-Only output the formatted text, nothing else.`;
+  let prompt = '';
+  if (extractionType === 'answerKey') {
+    prompt = `Extract the answer key from this document. Format it as a simple list like:\n* **Q1.** A\n* **Q2.** B\n* **Q3.** C\nOnly output the formatted text, nothing else.`;
+  } else if (extractionType === 'topicMapping' || extractionType === 'descTopicMapping') {
+    prompt = `Extract the chapter and topic mapping from this document. Format it exactly like this:\n### Chapter Name\n* Topic Name: Q1, Q2, Q3\n* Another Topic: Q4, Q5\n\n### Another Chapter\n* Topic Name: Q6, Q7\n\nOnly output the formatted text, nothing else.`;
+  } else if (extractionType === 'descQuestions') {
+    prompt = `Extract the questions from this question paper document. Keep the question numbers, the question text, and marks allocated. Format clearly.`;
+  } else if (extractionType === 'descAnswerKey') {
+    prompt = `Extract the descriptive answer key from this document. Keep the question numbers, the expected answers/points, and marks allocation. Format clearly.`;
+  }
 
   let lastError: any;
 

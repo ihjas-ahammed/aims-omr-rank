@@ -1,8 +1,8 @@
 import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2 } from 'lucide-react';
+import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'home') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'home') => void;
 }
 
 export default function Lab({ onNavigate }: LabProps) {
@@ -16,7 +16,7 @@ export default function Lab({ onNavigate }: LabProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div
           onClick={() => onNavigate('home')}
-          className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-blue-400 transition-all cursor-pointer group"
+          className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-blue-400 transition-all cursor-pointer group flex flex-col"
         >
           <div className="flex items-start justify-between">
             <div className="p-3 bg-blue-100 text-blue-600 rounded-lg group-hover:bg-blue-200 transition-colors">
@@ -25,15 +25,30 @@ export default function Lab({ onNavigate }: LabProps) {
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
           </div>
           <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">OMR Sheet Grading</h3>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-gray-700 flex-1">
             Upload OMR answer sheets, auto-evaluate responses using AI, and generate ranked results with topic-wise analysis.
           </p>
         </div>
 
+        <div 
+          onClick={() => onNavigate('lab-descriptive')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-blue-400 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-100 transition-colors">
+              <FileSignature className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Descriptive Evaluation</h3>
+          <p className="text-sm text-gray-600 flex-1">
+            Upload handwritten descriptive exam sheets. Auto-crop, group by student automatically, and evaluate answers with AI feedback.
+          </p>
+        </div>
 
         <div 
           onClick={() => onNavigate('lab-exams')}
-          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group"
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group flex flex-col"
         >
           <div className="flex items-start justify-between">
             <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-100 transition-colors">
@@ -42,7 +57,7 @@ export default function Lab({ onNavigate }: LabProps) {
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
           </div>
           <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Online Exams</h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 flex-1">
             Setup online exams using images of a question paper. Generate a link, collect student responses with anti-cheat monitoring, and view results.
           </p>
         </div>

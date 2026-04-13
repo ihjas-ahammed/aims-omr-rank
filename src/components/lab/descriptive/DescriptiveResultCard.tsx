@@ -1,10 +1,3 @@
-The reported `TypeError` in `DescriptiveResultCard.tsx` is caused by the component trying to use `.map()` on a `breakdown` property that is a string, not an array. This happens when rendering data that was saved with an older version of the application.
-
-I've fixed this by making the component backward-compatible. It now checks if `breakdown` is an array. If so, it renders the new, structured UI. If not (i.e., it's a string from old data), it safely displays it as plain text, preventing the application from crashing and ensuring old results remain viewable.
-
---- START OF FILE project_snapshot_out.txt ---
-
---- START OF FILE src/components/lab/descriptive/DescriptiveResultCard.tsx ---
 import React from 'react';
 import { DescriptiveStudent } from './types';
 import { AlertTriangle, Loader2 } from 'lucide-react';
@@ -95,5 +88,3 @@ export default function DescriptiveResultCard({ student, index }: Props) {
     </div>
   );
 }
---- END OF FILE src/components/lab/descriptive/DescriptiveResultCard.tsx ---
-
