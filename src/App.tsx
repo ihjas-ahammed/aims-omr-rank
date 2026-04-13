@@ -471,7 +471,17 @@ export default function App() {
           const chunkedPromises = [];
           for (let k = 0; k < remainingImages.length; k += baseConcurrency) {
             const chunk = remainingImages.slice(k, k + baseConcurrency);
-            chunkedPromises.push(evaluateOMRBatch(chunk, keys, proModel, liteModel, answerKey, numQuestions));
+            const p = evaluateOMRBatch(chunk, keys, proModel, liteModel, answerKey, numQuestions).then(res => {
+              // Update UI to show that this specific chunk finished its request
+              setFiles(prev => prev.map(f => {
+                if (chunk.some(img => img.id === f.id)) {
+                  return { ...f, stageName: `Evaluated (Attempt ${attempt + 1})` };
+                }
+                return f;
+              }));
+              return res;
+            });
+            chunkedPromises.push(p);
           }
           
           const chunkResults = await Promise.all(chunkedPromises);

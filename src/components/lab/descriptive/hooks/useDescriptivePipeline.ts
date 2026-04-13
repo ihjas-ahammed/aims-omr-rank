@@ -148,7 +148,6 @@ export function useDescriptivePipeline() {
       const h = cropRes.ymax - cropRes.ymin;
       let finalRotation = cropRes.rotation;
       
-      // Auto-correct to portrait if it's wider than it is tall
       if (w > h && (finalRotation === 0 || finalRotation === 180)) {
         console.log(`Auto-correcting orientation: crop is wider (${w}) than tall (${h}), setting rotation to 90.`);
         finalRotation = (finalRotation + 90) % 360;
@@ -171,7 +170,7 @@ export function useDescriptivePipeline() {
       return;
     }
     if (!getAnswerKey()) {
-      alert("Please provide an answer key in settings first.");
+      alert("Please provide an evaluation scheme in settings first.");
       onRequireSettings();
       return;
     }
@@ -195,18 +194,20 @@ export function useDescriptivePipeline() {
       const actionsToEval = updatedStudents.filter(std => std.status !== 'success').length;
       
       let totalActions = actionsToCrop + actionsToGroup + actionsToEval;
-      let completedActions = 0;
+      let currentCompleted = 0;
 
-      const updateProg = (stepDesc: string) => {
-        setProgress({ step: stepDesc, current: completedActions, total: totalActions });
+      const updateProg = (stepDesc: string, advance: boolean = false) => {
+        if (advance) currentCompleted++;
+        setProgress({ step: stepDesc, current: currentCompleted, total: totalActions });
       };
 
-      // Phase 1: Crop Uncropped Images (Parallelized)
+      updateProg('Starting pipeline...');
+
+      // Phase 1: Crop
       const uncroppedImages = updatedImages.filter(img => img.status !== 'cropped');
       for (let i = 0; i < uncroppedImages.length; i += concurrencyLimit) {
         const chunk = uncroppedImages.slice(i, i + concurrencyLimit);
         await Promise.all(chunk.map(async (img) => {
-          updateProg(`Cropping scanned page...`);
           const { croppedBase64, mimeType } = await applyCrop(img, keys, liteModel);
           const croppedFile = dataURLtoFile(`data:${mimeType};base64,${croppedBase64}`, img.file.name || 'cropped.jpg');
           
@@ -221,17 +222,16 @@ export function useDescriptivePipeline() {
             croppedBase64,
             status: 'cropped'
           };
-          completedActions++;
+          updateProg(`Cropped page...`, true);
         }));
         setImages([...updatedImages]);
       }
 
-      // Phase 2: Identify and Group Students (Sequential)
+      // Phase 2: Identify and Group
       let currentStudent: DescriptiveStudent | null = updatedStudents.length > 0 ? updatedStudents[updatedStudents.length - 1] : null;
       
       for (let i = 0; i < updatedImages.length; i++) {
         if (!updatedImages[i].studentId) {
-          updateProg(`Identifying student for page ${i + 1}...`);
           const img = updatedImages[i];
           const prevName = currentStudent?.name || null;
           
@@ -254,13 +254,13 @@ export function useDescriptivePipeline() {
           
           setImages([...updatedImages]);
           setStudents([...updatedStudents]);
-          completedActions++;
+          updateProg(`Identified student...`, true);
         }
       }
 
       await saveState(updatedImages, updatedStudents, 'processing');
 
-      // Phase 3: Evaluate Unevaluated Students (Parallelized)
+      // Phase 3: Evaluate
       const unevaluatedStudents = updatedStudents.filter(std => std.status !== 'success');
       for (let i = 0; i < unevaluatedStudents.length; i += concurrencyLimit) {
         const chunk = unevaluatedStudents.slice(i, i + concurrencyLimit);
@@ -272,7 +272,6 @@ export function useDescriptivePipeline() {
         setStudents([...updatedStudents]);
 
         await Promise.all(chunk.map(async (std) => {
-          updateProg(`Evaluating answers for ${std.name}...`);
           try {
             const evalImages = await Promise.all(std.images.map(async img => {
               const b64 = img.croppedBase64 || await fileToBase64(img.file);
@@ -289,7 +288,7 @@ export function useDescriptivePipeline() {
             updatedStudents[index].error = e.message;
             updatedStudents[index].status = 'error';
           }
-          completedActions++;
+          updateProg(`Evaluated ${std.name}`, true);
         }));
         
         setStudents([...updatedStudents]);

@@ -30,3 +30,14 @@ export interface DescriptiveStudent {
   result?: DescriptiveResult;
   error?: string;
 }
+
+export interface DescQuestionScheme {
+  qNum: string;
+  maxScore: number;
+  rubric: {
+    "3": string;
+    "2": string;
+    "1": string;
+    "0": string;
+  };
+}

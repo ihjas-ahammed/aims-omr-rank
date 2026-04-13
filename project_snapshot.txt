@@ -1,8 +1,2391 @@
-Here are the changes to completely revamp the Descriptive Evaluation module according to your blueprints. We've introduced a clean Overview Card layout, a detailed Analysis Modal for deep dives into student papers, and a dedicated Print Results screen with the required color-coded evaluation scheme.
-
-I've also updated the Answer Key settings to take in the Question Paper directly to automatically extract both the questions and the evaluation scheme.
-
 --- START OF FILE project_snapshot_out.txt ---
+
+--- START OF FILE src/App.tsx ---
+import React, { useState, useRef, useEffect } from 'react';
+import { Upload, Camera, Settings, CheckCircle, Plus, X, Beaker } from 'lucide-react';
+import { evaluateOMRBatch, correctNamesBatch, autoCropAndRotate, OMRResult } from './services/geminiService';
+import { saveImage, getImage, deleteImage } from './services/db';
+import { processImage, fileToBase64, applyCropAndRotate, rotateImageFile } from './utils/imageProcessing';
+import { dataURLtoFile } from './utils/fileUtils';
+
+import SettingsPanel from './components/SettingsPanel';
+import TopicMappingPanel from './components/lab/TopicMappingPanel';
+import RankList from './components/RankList';
+import StudentDetail from './components/StudentDetail';
+import PrintableRankList from './components/PrintableRankList';
+import ReviewModal from './components/ReviewModal';
+import Lab from './components/Lab';
+import AutoCropTool from './components/lab/AutoCropTool';
+import QueueItem, { ProcessedFile } from './components/QueueItem';
+import QueueToolbar from './components/QueueToolbar';
+import CourseProgress from './components/lab/course-progress/CourseProgress';
+import TimetableDashboard from './components/lab/timetable/TimetableDashboard';
+import ATRList from './components/lab/atr-list/ATRList';
+import QPMaker from './components/lab/qp-maker/QPMaker';
+import FeeLogger from './components/lab/fee-logger/FeeLogger';
+import CloudSessions from './components/lab/cloud-sessions/CloudSessions';
+import { ScoreAnalysisDashboard } from './components/lab/score-analysis';
+import DescriptiveDashboard from './components/lab/descriptive/DescriptiveDashboard';
+
+// Online Exams Imports
+import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
+
+const DEFAULT_ATTENDANCE = `ADIL MARZOOQUE\nADISANKAR\nADITHYA RAJ\nADWAID\nAHAMED IRFAN K\nAHAMED JUNAID\nAHLAM HASAN K\nAMAL CHANDRA N\nANJANA K\nANSHIA P\nANSILA KADOORAN\nAPARNA C\nARSHA FATHIMA M\nARSHIN PC\nASWATHY E\nATHUL VB\nAVANI PS\nAYISHA DIYA\nAZAL MHD\nDIYA AK\nDIYA FATHIMA KP\nDIYA MEHRIN K\nDIYA V\nFAHMA VP\nFAIZ AHMED AN\nFARHA P\nFATHIMA DILFA P\nFATHIMA FIZA M\nFATHIMA HIBA PP\nFATHIMA HUDA N\nFATHIMA LIYA A\nFATHIMA MINHA PE\nFATHIMA MISBHA VA\nFATHIMA NASHA\nFATHIMA NASHA CP\nFATHIMA RIFNA A\nFATHIMA SHAHNA PK\nFIDA THASNIM\nGOURI NANDA C\nHAMNA FATHIMA\nHANIYA FATHIMA P\nHANIYYA V\nHASNA SHARI VP\nHIBA FATHIMA KP\nHISHAM MHD\nKRISHNA PRIYA PC\nKRISTHI MUNADHA T\nLASIN ABDULLAH\nLISNA K\nLIYA FATHIMA A\nMAJID A\nMAZIN MHD\nMHD ADNAN K\nMHD AHANN TK\nMHD ANFAS TK\nMHD ASHFAQUE\nMHD DANISH\nMHD DIYAN\nMHD FAIROOZ\nMHD FARHAN K\nMHD FATHIN ALI\nMHD LIYAN P\nMHD MAJID RAMZAN TP\nMHD MUFLIH A\nMHD NAJADH\nMHD RAZAL T\nMHD RISHAN P\nMHD SABITH P\nMHD SABITH TK\nMHD SADHIL V\nMHD SHAFEEQ KK\nMHD SHAHABAS K\nMHD SINAN A\nMILHA RAZACK A\nMINHA PK\nMISHAL AHAMED\nNAIRA ABDUL LATHEEF\nNAJIH AHAMED\nNAJIYA NASRIN C\nNAJVA\nNAJVA FATHIMA C\nNASHA FATHIMA P\nNIDHA FATHIMA K\nNIDHA SHIRIN N\nNITHIN RAJ\nRAJEEBA K\nRANA FATHIMA K\nREHAN ABDUL RAHEEM\nREVATHY K\nRIDHA K\nRIFA CP\nRIFA P\nRINSHA JALIDHA P\nRINSHA SHERIN T\nRIYA SUNEER\nSHABANA JASMIN\nSILNA FATHIMA\nSITHARA BASHEER P\nSIYA TP\nTHANHA FATHIMA`;
+
+const DEFAULT_ANSWER_KEY = `*   **Q1.** B\n*   **Q2.** A\n*   **Q3.** A\n*   **Q4.** B\n*   **Q5.** C\n*   **Q6.** A\n*   **Q7.** A\n*   **Q8.** B\n*   **Q9.** C\n*   **Q10.** D\n*   **Q11.** A\n*   **Q12.** C\n*   **Q13.** B\n*   **Q14.** A\n*   **Q15.** C\n*   **Q16.** A\n*   **Q17.** Cancelled (give mark to everyone)\n*   **Q18.** B\n*   **Q19.** A\n*   **Q20.** C\n*   **Q21.** A\n*   **Q22.** A\n*   **Q23.** A\n*   **Q24.** B\n*   **Q25.** A`;
+
+const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
+
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive';
+
+export default function App() {
+  const [view, setView] = useState<ViewState>(() => {
+    if (window.location.pathname === '/course-progress') {
+      return 'lab-course-progress';
+    }
+    if (window.location.pathname === '/timetable') {
+      return 'lab-timetable';
+    }
+    if (new URLSearchParams(window.location.search).get('examId')) {
+      return 'exam-take';
+    }
+    return 'lab';
+  });
+
+  const [apiKeys, setApiKeys] = useState<string[]>(() => {
+    const saved = localStorage.getItem('omr_apiKeysList');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    const oldSaved = localStorage.getItem('omr_apiKeys');
+    if (oldSaved) return oldSaved.split(',').map(k => k.trim()).filter(Boolean);
+    return [''];
+  });
+  const [liteModel, setLiteModel] = useState<string>(() => localStorage.getItem('omr_liteModel') || 'gemini-3.1-flash-lite-preview');
+  const [proModel, setProModel] = useState<string>(() => localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview');
+  const [availableModels, setAvailableModels] = useState<string[]>(['gemini-3.1-flash-lite-preview', 'gemini-3.1-flash-preview', 'gemini-3.1-pro-preview', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemma-2-2b-it', 'gemma-2-9b-it', 'gemma-2-27b-it']);
+  const [imageResolution, setImageResolution] = useState<number>(() => parseInt(localStorage.getItem('omr_imageResolution') || '1024', 10));
+  const [sampling, setSampling] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_sampling');
+    return saved ? parseInt(saved, 10) : 2;
+  });
+  const [concurrency, setConcurrency] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_concurrency');
+    return saved ? parseInt(saved, 10) : 1;
+  });
+  const [requestsPerKey, setRequestsPerKey] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_requestsPerKey');
+    return saved ? parseInt(saved, 10) : 1;
+  });
+  const [numQuestions, setNumQuestions] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_numQuestions');
+    return saved ? parseInt(saved, 10) : 25;
+  });
+  const [autoCropEnabled, setAutoCropEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('omr_autoCrop') === 'true';
+  });
+
+  const [attendanceSheet, setAttendanceSheet] = useState<string>(() => localStorage.getItem('omr_attendance') || DEFAULT_ATTENDANCE);
+  const [answerKey, setAnswerKey] = useState<string>(() => localStorage.getItem('omr_answerKey') || DEFAULT_ANSWER_KEY);
+  const [topicMapping, setTopicMapping] = useState<string>(() => localStorage.getItem('omr_topicMapping') || DEFAULT_TOPIC_MAPPING);
+  const [parsedTopicMapping, setParsedTopicMapping] = useState<any>(() => {
+    const saved = localStorage.getItem('omr_parsedTopicMapping');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return null;
+  });
+  const [topicMappingByDay, setTopicMappingByDay] = useState<Record<number, string>>(() => {
+    const saved = localStorage.getItem('omr_topicMappingByDay');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return { 1: DEFAULT_TOPIC_MAPPING };
+  });
+  const [parsedTopicMappingByDay, setParsedTopicMappingByDay] = useState<Record<number, any>>(() => {
+    const saved = localStorage.getItem('omr_parsedTopicMappingByDay');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return { 1: null };
+  });
+
+  const [showSettings, setShowSettings] = useState(false);
+  const [correctNamesOnExport, setCorrectNamesOnExport] = useState<boolean>(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<OMRResult | null>(null);
+  
+  // Lab Exams State
+  const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+
+  const [days, setDays] = useState<number[]>(() => {
+    const saved = localStorage.getItem('omr_days');
+    return saved ? JSON.parse(saved) : [1];
+  });
+  const [currentDay, setCurrentDay] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_currentDay');
+    return saved ? parseInt(saved, 10) : 1;
+  });
+  const [filesByDay, setFilesByDay] = useState<Record<number, ProcessedFile[]>>(() => {
+    const savedDays = localStorage.getItem('omr_days');
+    const daysList = savedDays ? JSON.parse(savedDays) : [1];
+    const initial: Record<number, ProcessedFile[]> = {};
+    
+    daysList.forEach((day: number) => {
+      const saved = localStorage.getItem(`omr_files_${day}`);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved) as ProcessedFile[];
+          initial[day] = parsed.map(f => f.status === 'processing' ? { ...f, status: 'pending', attempt: 0, stageName: undefined } : f);
+        } catch (e) {
+          initial[day] = [];
+        }
+      } else if (day === 1) {
+        const oldSaved = localStorage.getItem('omr_files');
+        if (oldSaved) {
+          try {
+            const parsed = JSON.parse(oldSaved) as ProcessedFile[];
+            initial[day] = parsed.map(f => f.status === 'processing' ? { ...f, status: 'pending', attempt: 0, stageName: undefined } : f);
+          } catch (e) {
+            initial[day] = [];
+          }
+        } else {
+          initial[day] = [];
+        }
+      } else {
+        initial[day] = [];
+      }
+    });
+    return initial;
+  });
+
+  const files = filesByDay[currentDay] || [];
+  const setFiles = (updater: React.SetStateAction<ProcessedFile[]>) => {
+    setFilesByDay(prev => {
+      const currentFiles = prev[currentDay] || [];
+      const newFiles = typeof updater === 'function' ? updater(currentFiles) : updater;
+      return { ...prev, [currentDay]: newFiles };
+    });
+  };
+
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
+  const [reviewFileId, setReviewFileId] = useState<string | null>(null);
+  
+  const [sortBy, setSortBy] = useState<'default' | 'name' | 'score' | 'verification_confidence' | 'name_confidence'>('default');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
+  const [isRotating, setIsRotating] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const averageTimeRef = useRef<number>(8000);
+
+  // Manage browser history for popstate navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      if (window.location.pathname === '/course-progress') setView('lab-course-progress');
+      else if (window.location.pathname === '/timetable') setView('lab-timetable');
+      else if (window.location.pathname === '/') setView('home');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => { localStorage.setItem('omr_apiKeysList', JSON.stringify(apiKeys)); }, [apiKeys]);
+  useEffect(() => { localStorage.setItem('omr_liteModel', liteModel); }, [liteModel]);
+  useEffect(() => { localStorage.setItem('omr_proModel', proModel); }, [proModel]);
+  useEffect(() => { localStorage.setItem('omr_imageResolution', imageResolution.toString()); }, [imageResolution]);
+  useEffect(() => { localStorage.setItem('omr_sampling', sampling.toString()); }, [sampling]);
+  useEffect(() => { localStorage.setItem('omr_concurrency', concurrency.toString()); }, [concurrency]);
+  useEffect(() => { localStorage.setItem('omr_requestsPerKey', requestsPerKey.toString()); }, [requestsPerKey]);
+  useEffect(() => { localStorage.setItem('omr_numQuestions', numQuestions.toString()); }, [numQuestions]);
+  useEffect(() => { localStorage.setItem('omr_autoCrop', autoCropEnabled.toString()); }, [autoCropEnabled]);
+  useEffect(() => { localStorage.setItem('omr_attendance', attendanceSheet); }, [attendanceSheet]);
+  useEffect(() => { localStorage.setItem('omr_answerKey', answerKey); }, [answerKey]);
+  useEffect(() => { localStorage.setItem('omr_topicMapping', topicMapping); }, [topicMapping]);
+  useEffect(() => {
+    if (parsedTopicMapping) {
+      localStorage.setItem('omr_parsedTopicMapping', JSON.stringify(parsedTopicMapping));
+    }
+  }, [parsedTopicMapping]);
+  useEffect(() => { localStorage.setItem('omr_topicMappingByDay', JSON.stringify(topicMappingByDay)); }, [topicMappingByDay]);
+  useEffect(() => { localStorage.setItem('omr_parsedTopicMappingByDay', JSON.stringify(parsedTopicMappingByDay)); }, [parsedTopicMappingByDay]);
+  useEffect(() => { localStorage.setItem('omr_days', JSON.stringify(days)); }, [days]);
+  useEffect(() => { localStorage.setItem('omr_currentDay', currentDay.toString()); }, [currentDay]);
+
+  useEffect(() => {
+    const missingPreviewFiles = files.filter(f => !f.previewUrl && !failedImageIds.has(f.id));
+    
+    if (missingPreviewFiles.length > 0) {
+      const loadMissingImages = async () => {
+        const loadedData = await Promise.all(
+          missingPreviewFiles.map(async (f) => {
+            try {
+              const file = await getImage(f.id);
+              if (file) {
+                return { id: f.id, file, previewUrl: URL.createObjectURL(file) };
+              }
+            } catch (e) {
+              console.error('Failed to load image from DB', e);
+            }
+            return { id: f.id, failed: true };
+          })
+        );
+
+        const newFailedIds = loadedData.filter(l => l.failed).map(l => l.id);
+        if (newFailedIds.length > 0) {
+          setFailedImageIds(prev => new Set([...prev, ...newFailedIds]));
+        }
+
+        setFiles(prev => prev.map(f => {
+          const loaded = loadedData.find(l => l.id === f.id);
+          if (loaded && loaded.previewUrl) {
+            return { ...f, file: loaded.file, previewUrl: loaded.previewUrl };
+          }
+          return f;
+        }));
+      };
+      
+      loadMissingImages();
+    }
+  }, [files, failedImageIds]);
+
+  useEffect(() => {
+    Object.entries(filesByDay).forEach(([day, filesList]) => {
+      const filesToSave = filesList.map(f => ({
+        ...f,
+        file: undefined, 
+        previewUrl: undefined 
+      }));
+      localStorage.setItem(`omr_files_${day}`, JSON.stringify(filesToSave));
+    });
+  }, [filesByDay]);
+
+  const addDay = () => {
+    const newDay = Math.max(...days, 0) + 1;
+    setDays(prev => [...prev, newDay]);
+    setFilesByDay(prev => ({ ...prev, [newDay]: [] }));
+    setCurrentDay(newDay);
+  };
+
+  const deleteDay = (dayToDelete: number) => {
+    if (days.length <= 1) return;
+    if (!window.confirm(`Are you sure you want to delete Day ${dayToDelete}? This will remove all files for this day.`)) return;
+    
+    const filesToDelete = filesByDay[dayToDelete] || [];
+    filesToDelete.forEach(f => {
+      if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+      deleteImage(f.id);
+    });
+    
+    setDays(prev => prev.filter(d => d !== dayToDelete));
+    setFilesByDay(prev => {
+      const next = { ...prev };
+      delete next[dayToDelete];
+      return next;
+    });
+    localStorage.removeItem(`omr_files_${dayToDelete}`);
+    
+    if (currentDay === dayToDelete) {
+      setCurrentDay(days.find(d => d !== dayToDelete) || 1);
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      const newFiles = Array.from(event.target.files).map(file => ({
+        id: Math.random().toString(36).substring(7),
+        fileName: file.name,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        status: 'pending' as const,
+      }));
+      
+      for (const f of newFiles) {
+        await saveImage(f.id, f.file);
+      }
+      
+      setFiles(prev => [...prev, ...newFiles]);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+  };
+
+  const removeFile = async (id: string) => {
+    await deleteImage(id);
+    setFiles(prev => prev.filter(f => f.id !== id));
+    setSelectedFileIds(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(id);
+      return newSet;
+    });
+  };
+
+  const clearAllFiles = async () => {
+    if (window.confirm(`Are you sure you want to clear all files and results for Day ${currentDay}?`)) {
+      const filesToDelete = filesByDay[currentDay] || [];
+      for (const f of filesToDelete) {
+        if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+        await deleteImage(f.id);
+      }
+      setFiles([]);
+      setSelectedFileIds(new Set());
+    }
+  };
+
+  const handleUpdateFileImage = async (id: string, newFile: File) => {
+    await saveImage(id, newFile);
+    const newPreviewUrl = URL.createObjectURL(newFile);
+    setFiles(prev => prev.map(f => f.id === id ? { ...f, file: newFile, previewUrl: newPreviewUrl } : f));
+  };
+
+  const rotateSelected = async () => {
+    if (selectedFileIds.size === 0 || isRotating) return;
+    setIsRotating(true);
+    
+    try {
+      for (const id of selectedFileIds) {
+        const currentFiles = filesByDay[currentDay] || [];
+        const fileIndex = currentFiles.findIndex(f => f.id === id);
+        if (fileIndex === -1) continue;
+        
+        let fileObj = currentFiles[fileIndex].file;
+        if (!fileObj) {
+          fileObj = await getImage(id);
+        }
+        
+        if (fileObj) {
+          const rotatedFile = await rotateImageFile(fileObj, 90);
+          await saveImage(id, rotatedFile);
+          const newPreviewUrl = URL.createObjectURL(rotatedFile);
+          
+          setFiles(prev => prev.map(f => {
+            if (f.id === id) {
+              if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+              return { ...f, file: rotatedFile, previewUrl: newPreviewUrl };
+            }
+            return f;
+          }));
+        }
+      }
+      setSelectedFileIds(new Set());
+    } catch (e) {
+      console.error("Failed to rotate selected files", e);
+      alert("Failed to rotate some images.");
+    } finally {
+      setIsRotating(false);
+    }
+  };
+
+  const processFiles = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+
+    const keys = apiKeys.filter(k => k.trim());
+    const baseConcurrency = Math.max(1, concurrency);
+    const reqsPerKey = Math.max(1, requestsPerKey);
+    const totalConcurrentRequests = keys.length > 0 ? keys.length * reqsPerKey : 1;
+    const concurrencyLimit = totalConcurrentRequests * baseConcurrency;
+    
+    const pendingIds = files.filter(f => f.status === 'pending' || f.status === 'error').map(f => f.id);
+    setProgress({ current: 0, total: pendingIds.length });
+    let completedCount = 0;
+
+    for (let i = 0; i < pendingIds.length; i += concurrencyLimit) {
+      const chunkIds = pendingIds.slice(i, i + concurrencyLimit);
+      
+      setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'processing', error: undefined, attempt: 1, maxAttempts: sampling + 3, stageName: `Preparing Image...` } : f));
+
+      try {
+        const loadedImagesPromises = chunkIds.map(async (id) => {
+          const currentFile = filesByDay[currentDay]?.find(f => f.id === id) || files.find(f => f.id === id);
+          if (!currentFile) return null;
+          
+          let fileObj = currentFile.file;
+          if (!fileObj) {
+            fileObj = await getImage(id);
+            if (!fileObj) return null;
+          }
+
+          if (autoCropEnabled) {
+            setFiles(prev => prev.map(f => f.id === id ? { ...f, stageName: 'Auto-Cropping (Lite)...' } : f));
+            const rawBase64 = await fileToBase64(fileObj);
+            try {
+              const cropData = await autoCropAndRotate(rawBase64, fileObj.type, keys, liteModel);
+              const w = cropData.xmax - cropData.xmin;
+              const h = cropData.ymax - cropData.ymin;
+              let finalRotation = cropData.rotation;
+              
+              if (w > h && (finalRotation === 0 || finalRotation === 180)) {
+                finalRotation = (finalRotation + 90) % 360;
+              }
+              
+              const { base64, mimeType } = await applyCropAndRotate(fileObj, cropData, finalRotation, imageResolution);
+              
+              const croppedDataUrl = `data:${mimeType};base64,${base64}`;
+              const croppedFile = dataURLtoFile(croppedDataUrl, fileObj.name || 'image.jpg');
+              await saveImage(id, croppedFile);
+              const newPreviewUrl = URL.createObjectURL(croppedFile);
+              
+              setFiles(prev => prev.map(f => f.id === id ? { ...f, file: croppedFile, previewUrl: newPreviewUrl } : f));
+
+              return { id, base64, mimeType, fileObj: croppedFile };
+            } catch (error: any) {
+              console.error(`Auto-crop failed for ${id}, falling back to raw image.`, error);
+              const { base64, mimeType } = await processImage(fileObj, imageResolution, 0);
+              return { id, base64, mimeType, fileObj };
+            }
+          } else {
+            const { base64, mimeType } = await processImage(fileObj, imageResolution, 0);
+            return { id, base64, mimeType, fileObj };
+          }
+        });
+
+        const loadedResults = await Promise.all(loadedImagesPromises);
+        const imagesToProcess = loadedResults.filter(Boolean) as { id: string, base64: string, mimeType: string, fileObj: File }[];
+
+        if (imagesToProcess.length === 0) continue;
+
+        let resultsHistory: Record<string, OMRResult[]> = {};
+        for (const img of imagesToProcess) {
+          resultsHistory[img.id] = [];
+        }
+        
+        let targetMatches = sampling >= 2 ? 2 : 1;
+        let maxAttempts = sampling + 3;
+        let finalResults: Record<string, OMRResult> = {};
+        let completedIds = new Set<string>();
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          let stageName = attempt < sampling ? `Sampling ${attempt + 1}/${sampling}` : `Verification ${attempt - sampling + 1}`;
+          
+          const remainingImages = imagesToProcess.filter(img => !completedIds.has(img.id));
+          if (remainingImages.length === 0) break;
+          
+          setFiles(prev => prev.map(f => remainingImages.some(img => img.id === f.id) ? { ...f, attempt: attempt + 1, maxAttempts, stageName } : f));
+          
+          const attemptStartTime = Date.now();
+          
+          const chunkedPromises = [];
+          for (let k = 0; k < remainingImages.length; k += baseConcurrency) {
+            const chunk = remainingImages.slice(k, k + baseConcurrency);
+            const p = evaluateOMRBatch(chunk, keys, proModel, liteModel, answerKey, numQuestions).then(res => {
+              // Update UI to show that this specific chunk finished its request
+              setFiles(prev => prev.map(f => {
+                if (chunk.some(img => img.id === f.id)) {
+                  return { ...f, stageName: `Evaluated (Attempt ${attempt + 1})` };
+                }
+                return f;
+              }));
+              return res;
+            });
+            chunkedPromises.push(p);
+          }
+          
+          const chunkResults = await Promise.all(chunkedPromises);
+          const batchResults = chunkResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+          
+          const elapsed = Date.now() - attemptStartTime;
+          averageTimeRef.current = (averageTimeRef.current * 4 + elapsed) / 5;
+
+          for (const img of remainingImages) {
+            if (batchResults[img.id]) {
+              resultsHistory[img.id].push(batchResults[img.id]);
+            }
+            
+            if (attempt >= targetMatches - 1) {
+              const counts = new Map<string, number>();
+              let bestResult: OMRResult | null = null;
+              
+              for (const r of resultsHistory[img.id]) {
+                const key = JSON.stringify(r.scores);
+                counts.set(key, (counts.get(key) || 0) + 1);
+                if (counts.get(key)! >= targetMatches) {
+                  bestResult = resultsHistory[img.id].find(res => JSON.stringify(res.scores) === key) || r;
+                  break;
+                }
+              }
+              
+              if (bestResult) {
+                bestResult.confidences = resultsHistory[img.id].map(r => r.confidence);
+                finalResults[img.id] = bestResult;
+                completedIds.add(img.id);
+              } else if (attempt === maxAttempts - 1) {
+                const lastRes = resultsHistory[img.id][resultsHistory[img.id].length - 1];
+                if (lastRes) {
+                  lastRes.confidences = resultsHistory[img.id].map(r => r.confidence);
+                  finalResults[img.id] = lastRes;
+                }
+                completedIds.add(img.id);
+              }
+            }
+          }
+        }
+
+        setFiles(prev => prev.map(f => {
+          if (finalResults[f.id]) {
+            return { ...f, status: 'success', result: finalResults[f.id] };
+          }
+          if (chunkIds.includes(f.id) && !finalResults[f.id]) {
+            return { ...f, status: 'error', error: 'Failed to evaluate' };
+          }
+          return f;
+        }));
+
+      } catch (error: any) {
+        setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'error', error: error.message } : f));
+      } finally {
+        completedCount += chunkIds.length;
+        setProgress(p => ({ ...p, current: completedCount }));
+      }
+    }
+
+    setIsProcessing(false);
+  };
+
+  const retryAllFailed = () => {
+    setFiles(prev => prev.map(f => f.status === 'error' ? { ...f, status: 'pending', error: undefined } : f));
+  };
+
+  const retryFile = (id: string) => {
+    setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'pending', error: undefined } : f));
+  };
+
+  const recheckAll = () => {
+    setFiles(prev => prev.map(f => f.status === 'success' ? { ...f, status: 'pending', error: undefined, result: undefined } : f));
+  };
+
+  const recheckFile = (id: string) => {
+    setFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'pending', error: undefined, result: undefined } : f));
+  };
+
+  const fixNames = async () => {
+    const successfulFiles = files.filter(f => f.status === 'success' && f.result);
+    if (successfulFiles.length === 0) return;
+    if (!attendanceSheet.trim()) {
+      alert('Please enter the attendance sheet first.');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const uniqueNames = Array.from(new Set(successfulFiles.map(f => f.result!.name)));
+      const keys = apiKeys.filter(k => k.trim());
+      const nameMap = await correctNamesBatch(uniqueNames, attendanceSheet, keys, proModel);
+      
+      setFiles(prev => prev.map(f => {
+        if (f.status === 'success' && f.result && nameMap[f.result.name]) {
+          return {
+            ...f,
+            result: {
+              ...f.result,
+              name: nameMap[f.result.name].correctedName,
+              nameConfidence: nameMap[f.result.name].confidence
+            }
+          };
+        }
+        return f;
+      }));
+    } catch (error) {
+      console.error("Failed to fix names:", error);
+      alert("Failed to fix names. Check console for details.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const exportCSV = async () => {
+    const successfulFiles = files.filter(f => f.status === 'success' && f.result);
+    if (successfulFiles.length === 0) return;
+
+    let finalFiles = [...successfulFiles];
+
+    if (correctNamesOnExport && attendanceSheet.trim()) {
+      setIsExporting(true);
+      try {
+        const uniqueNames = Array.from(new Set(successfulFiles.map(f => f.result!.name)));
+        const keys = apiKeys.filter(k => k.trim());
+        const nameMap = await correctNamesBatch(uniqueNames, attendanceSheet, keys, proModel);
+        
+        setFiles(prev => prev.map(f => {
+          if (f.status === 'success' && f.result && nameMap[f.result.name]) {
+            return {
+              ...f,
+              result: {
+                ...f.result,
+                name: nameMap[f.result.name].correctedName,
+                nameConfidence: nameMap[f.result.name].confidence
+              }
+            };
+          }
+          return f;
+        }));
+
+        finalFiles = finalFiles.map(f => {
+          if (f.result && nameMap[f.result.name]) {
+            return {
+              ...f,
+              result: {
+                ...f.result,
+                name: nameMap[f.result.name].correctedName,
+                nameConfidence: nameMap[f.result.name].confidence
+              }
+            };
+          }
+          return f;
+        });
+      } catch (error: any) {
+        alert('Failed to correct names: ' + error.message);
+        setIsExporting(false);
+        return; 
+      }
+      setIsExporting(false);
+    }
+
+    let csv = 'NAME,RIGHT,WRONG,';
+    for (let i = 1; i <= 25; i++) csv += `Q${i},`;
+    csv = csv.slice(0, -1) + '\n';
+
+    finalFiles.forEach(f => {
+      const r = f.result!;
+      let row = `"${r.name.replace(/"/g, '""')}",${r.right},${r.wrong},`;
+      for (let i = 1; i <= 25; i++) {
+        row += `${r.scores[`q${i}`]},`;
+      }
+      csv += row.slice(0, -1) + '\n';
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'omr_results.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const isXlsx = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+
+    if (isXlsx) {
+      importFromXlsx(file);
+    } else {
+      importFromCsv(file);
+    }
+
+    if (csvInputRef.current) {
+      csvInputRef.current.value = '';
+    }
+  };
+
+  const importFromXlsx = async (file: File) => {
+    try {
+      const XLSX = await import('xlsx');
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+      const importedFiles: ProcessedFile[] = [];
+
+      for (let i = 1; i < jsonData.length; i++) {
+        const row = jsonData[i];
+        if (!row || row.length < 3) continue;
+
+        const name = String(row[0] || '').trim();
+        const right = parseInt(row[1], 10) || 0;
+        const wrong = parseInt(row[2], 10) || 0;
+
+        const scores: Record<string, number> = {};
+        if (row.length >= 4) {
+          for (let q = 1; q <= 25; q++) {
+            scores[`q${q}`] = parseInt(row[3 + q - 1], 10) || 0;
+          }
+        }
+
+        importedFiles.push({
+          id: `imported-${Date.now()}-${i}`,
+          file: new File([], file.name),
+          fileName: `Imported: ${name}`,
+          status: 'success',
+          result: { name, right, wrong, scores }
+        });
+      }
+
+      setFiles(prev => [...prev, ...importedFiles]);
+    } catch (error) {
+      console.error('Failed to import xlsx:', error);
+      alert('Failed to import xlsx file. Please ensure it is a valid Excel file.');
+    }
+  };
+
+  const importFromCsv = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+      if (lines.length < 2) return;
+
+      const importedFiles: ProcessedFile[] = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        let cells = [];
+        let inQuotes = false;
+        let currentCell = '';
+        for (let char of lines[i]) {
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === ',' && !inQuotes) {
+            cells.push(currentCell.trim());
+            currentCell = '';
+          } else {
+            currentCell += char;
+          }
+        }
+        cells.push(currentCell.trim());
+
+        if (cells.length < 3) continue;
+
+        const name = cells[0].replace(/^"|"$/g, '').replace(/""/g, '"');
+        const right = parseInt(cells[1], 10) || 0;
+        const wrong = parseInt(cells[2], 10) || 0;
+
+        const scores: Record<string, number> = {};
+        if (cells.length >= 4) {
+          for (let q = 1; q <= 25; q++) {
+            const scoreIdx = 3 + q - 1;
+            scores[`q${q}`] = parseInt(cells[scoreIdx] || '0', 10) || 0;
+          }
+        }
+
+        importedFiles.push({
+          id: `imported-${Date.now()}-${i}`,
+          file: new File([], 'imported.csv'),
+          fileName: `Imported: ${name}`,
+          status: 'success',
+          result: {
+            name,
+            right,
+            wrong,
+            scores
+          }
+        });
+      }
+
+      setFiles(prev => [...prev, ...importedFiles]);
+    };
+    reader.readAsText(file);
+  };
+
+  const reviewableFiles = files.filter(f => f.result);
+  const currentReviewIndex = reviewableFiles.findIndex(f => f.id === reviewFileId);
+  const hasNextReview = currentReviewIndex >= 0 && currentReviewIndex < reviewableFiles.length - 1;
+  const hasPrevReview = currentReviewIndex > 0;
+
+  const handleNextReview = () => {
+    if (hasNextReview) setReviewFileId(reviewableFiles[currentReviewIndex + 1].id);
+  };
+
+  const handlePrevReview = () => {
+    if (hasPrevReview) setReviewFileId(reviewableFiles[currentReviewIndex - 1].id);
+  };
+
+  const handleUpdateResultName = (id: string, newName: string) => {
+    setFiles(prev => prev.map(f => {
+      if (f.id === id && f.result) {
+        return { ...f, result: { ...f.result, name: newName } };
+      }
+      return f;
+    }));
+  };
+
+  const handleUpdateResultScore = (id: string, qNum: number, newScore: number) => {
+    setFiles(prev => prev.map(f => {
+      if (f.id === id && f.result) {
+        const newScores = { ...f.result.scores, [`q${qNum}`]: newScore };
+        
+        let right = 0;
+        let wrong = 0;
+        Object.values(newScores).forEach(score => {
+          if (score === 1) right++;
+          if (score === -1) wrong++;
+        });
+
+        return { 
+          ...f, 
+          result: { 
+            ...f.result, 
+            scores: newScores,
+            right,
+            wrong
+          } 
+        };
+      }
+      return f;
+    }));
+  };
+
+  const filteredFiles = files.filter(f => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return f.fileName.toLowerCase().includes(q) || (f.result?.name.toLowerCase().includes(q) ?? false);
+  });
+
+  const isAllSelected = filteredFiles.length > 0 && selectedFileIds.size === filteredFiles.length;
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedFileIds(new Set(filteredFiles.map(f => f.id)));
+    } else {
+      setSelectedFileIds(new Set());
+    }
+  };
+
+  const handleToggleSelect = (id: string, checked: boolean) => {
+    const newSet = new Set(selectedFileIds);
+    if (checked) newSet.add(id);
+    else newSet.delete(id);
+    setSelectedFileIds(newSet);
+  };
+
+  const successfulResults = files.filter(f => f.status === 'success' && f.result).map(f => f.result!);
+  const sortedResults = [...successfulResults].sort((a, b) => ((b.right * 4) - b.wrong) - ((a.right * 4) - a.wrong));
+  const currentDetailIndex = selectedStudent ? sortedResults.findIndex(r => r.name === selectedStudent.name) : -1;
+  const hasNextDetail = currentDetailIndex >= 0 && currentDetailIndex < sortedResults.length - 1;
+  const hasPrevDetail = currentDetailIndex > 0;
+
+  const handleDetailNext = () => {
+    if (hasNextDetail) setSelectedStudent(sortedResults[currentDetailIndex + 1]);
+  };
+  const handleDetailPrev = () => {
+    if (hasPrevDetail) setSelectedStudent(sortedResults[currentDetailIndex - 1]);
+  };
+
+  // Dedicated full-screen view for taking the exam
+  if (view === 'exam-take') {
+    const activeExamId = selectedExamId || new URLSearchParams(window.location.search).get('examId');
+    if (!activeExamId) {
+      return <div className="p-8 text-center text-red-500">Invalid Exam ID provided.</div>;
+    }
+    return <ExamTake examId={activeExamId} onFinish={() => {
+      window.history.pushState({}, '', '/');
+      setView('home');
+    }} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans print:bg-white">
+      <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { window.history.pushState({}, '', '/'); setView('lab'); }}>
+            <Beaker className="w-6 h-6 text-purple-600" />
+            <h1 className="text-xl font-semibold tracking-tight">AIMS Plus Lab</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { window.history.pushState({}, '', '/'); setView('lab'); }}
+              className={`flex items-center gap-2 p-2 rounded-md transition-colors ${view === 'lab' || view.startsWith('lab-') || view.startsWith('exam') ? 'text-purple-600 bg-purple-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+            >
+              <Beaker className="w-5 h-5" />
+              <span className="hidden sm:inline font-medium">Home</span>
+            </button>
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 print:p-0 print:m-0 print:max-w-none print:space-y-0">
+        
+        {view === 'home' && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 print:hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+            {days.map(day => (
+              <div key={day} className="flex items-center shrink-0">
+                <button
+                  onClick={() => setCurrentDay(day)}
+                  className={`px-4 py-2 rounded-l-md font-medium text-sm transition-colors ${currentDay === day ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
+                >
+                  Day {day}
+                </button>
+                {days.length > 1 && (
+                  <button
+                    onClick={() => deleteDay(day)}
+                    className={`px-2 py-2 rounded-r-md border-y border-r text-sm transition-colors ${currentDay === day ? 'bg-blue-700 text-white border-blue-700 hover:bg-blue-800' : 'bg-white text-gray-400 border-gray-200 hover:bg-red-50 hover:text-red-500'}`}
+                    title="Delete Day"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={addDay}
+              className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium shrink-0"
+            >
+              <Plus className="w-4 h-4" /> Add Day
+            </button>
+          </div>
+        )}
+
+        {showSettings && (
+          <SettingsPanel
+            apiKeys={apiKeys}
+            setApiKeys={setApiKeys}
+            liteModel={liteModel}
+            setLiteModel={setLiteModel}
+            proModel={proModel}
+            setProModel={setProModel}
+            availableModels={availableModels}
+            setAvailableModels={setAvailableModels}
+            imageResolution={imageResolution}
+            setImageResolution={setImageResolution}
+            sampling={sampling}
+            setSampling={setSampling}
+            concurrency={concurrency}
+            setConcurrency={setConcurrency}
+            requestsPerKey={requestsPerKey}
+            setRequestsPerKey={setRequestsPerKey}
+            numQuestions={numQuestions}
+            setNumQuestions={setNumQuestions}
+            autoCropEnabled={autoCropEnabled}
+            setAutoCropEnabled={setAutoCropEnabled}
+            answerKey={answerKey}
+            setAnswerKey={setAnswerKey}
+            attendanceSheet={attendanceSheet}
+            setAttendanceSheet={setAttendanceSheet}
+          />
+        )}
+
+        {view === 'lab' && (
+          <Lab onNavigate={(v) => {
+            if (v === 'home') {
+              window.history.pushState({}, '', '/');
+              setView('home');
+            } else if (v === 'lab-course-progress') {
+              window.history.pushState({}, '', '/course-progress');
+              setView('lab-course-progress');
+            } else if (v === 'lab-timetable') {
+              window.history.pushState({}, '', '/timetable');
+              setView('lab-timetable');
+            } else {
+              setView(v);
+            }
+          }} />
+        )}
+
+        {view === 'lab-crop' && (
+          <AutoCropTool apiKeys={apiKeys} liteModel={liteModel} onBack={() => setView('lab')} />
+        )}
+        
+        {view === 'lab-exams' && (
+          <ExamDashboard 
+            onNavigate={(v, id) => { 
+              if (id) setSelectedExamId(id); 
+              setView(v); 
+            }} 
+            onBack={() => setView('lab')} 
+          />
+        )}
+        
+        {view === 'exam-setup' && (
+          <ExamSetup onNavigate={(v) => setView(v)} />
+        )}
+
+        {view === 'exam-results' && selectedExamId && (
+          <ExamResults examId={selectedExamId} onBack={() => setView('lab-exams')} />
+        )}
+
+        {view === 'lab-course-progress' && (
+          <CourseProgress onBack={() => {
+            window.history.pushState({}, '', '/');
+            setView('lab');
+          }} />
+        )}
+
+        {view === 'lab-timetable' && (
+          <TimetableDashboard onBack={() => {
+            window.history.pushState({}, '', '/');
+            setView('lab');
+          }} />
+        )}
+
+        {view === 'lab-atr-list' && (
+          <ATRList onBack={() => setView('lab')} />
+        )}
+
+        {view === 'lab-qp-maker' && (
+          <QPMaker onBack={() => setView('lab')} />
+        )}
+
+        {view === 'lab-fee-logger' && (
+          <FeeLogger 
+            onBack={() => setView('lab')} 
+            apiKeys={apiKeys} 
+            model={proModel} 
+            concurrency={concurrency}
+            requestsPerKey={requestsPerKey}
+          />
+        )}
+
+        {view === 'lab-cloud-sessions' && (
+          <CloudSessions onBack={() => setView('lab')} />
+        )}
+
+        {view === 'lab-score-analysis' && (
+          <ScoreAnalysisDashboard onBack={() => setView('lab')} />
+        )}
+
+        {view === 'lab-descriptive' && (
+          <DescriptiveDashboard onBack={() => setView('lab')} />
+        )}
+
+        {view === 'ranklist' && (
+          <RankList
+            files={files}
+            topicMapping={topicMappingByDay[currentDay] || ''}
+            parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
+            onBack={() => setView('home')} 
+            onStudentClick={(student) => {
+              setSelectedStudent(student);
+              setView('detail');
+            }}
+            onPrintableClick={() => setView('printableRanklist')}
+          />
+        )}
+
+        {view === 'printableRanklist' && (
+          <PrintableRankList
+            files={files}
+            topicMapping={topicMappingByDay[currentDay] || ''}
+            parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
+            onBack={() => setView('ranklist')}
+          />
+        )}
+
+        {view === 'detail' && selectedStudent && (
+          <StudentDetail
+            student={selectedStudent}
+            topicMapping={topicMappingByDay[currentDay] || ''}
+            parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
+            onBack={() => setView('ranklist')} 
+            onNext={handleDetailNext}
+            onPrev={handleDetailPrev}
+            hasNext={hasNextDetail}
+            hasPrev={hasPrevDetail}
+          />
+        )}
+
+        {view === 'home' && (
+          <>
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-gray-500 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+              >
+                <Upload className="w-8 h-8 mb-3" />
+                <span className="font-medium">Upload OMR Images</span>
+                <span className="text-sm mt-1">Supports bulk upload</span>
+                <input 
+                  type="file" 
+                  multiple 
+                  accept="image/*" 
+                  className="hidden" 
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                />
+              </div>
+              
+              <div 
+                onClick={() => cameraInputRef.current?.click()}
+                className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-gray-500 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+              >
+                <Camera className="w-8 h-8 mb-3" />
+                <span className="font-medium">Take Picture</span>
+                <span className="text-sm mt-1">Use device camera</span>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  capture="environment"
+                  className="hidden" 
+                  ref={cameraInputRef}
+                  onChange={handleFileUpload}
+                />
+              </div>
+            </section>
+
+            <section className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <QueueToolbar
+                filesLength={files.length}
+                hasErrors={files.some(f => f.status === 'error')}
+                hasSuccess={files.some(f => f.status === 'success')}
+                isProcessing={isProcessing}
+                isExporting={isExporting}
+                isRotating={isRotating}
+                autoCropEnabled={autoCropEnabled}
+                setAutoCropEnabled={setAutoCropEnabled}
+                correctNamesOnExport={correctNamesOnExport}
+                setCorrectNamesOnExport={setCorrectNamesOnExport}
+                onClearAll={clearAllFiles}
+                onRetryFailed={retryAllFailed}
+                onRecheckAll={recheckAll}
+                onProcess={processFiles}
+                onFixNames={fixNames}
+                onExportCSV={exportCSV}
+                onImportCSVClick={() => csvInputRef.current?.click()}
+                onViewRankList={() => setView('ranklist')}
+                allSuccess={files.length > 0 && files.every(f => f.status === 'success')}
+                selectedCount={selectedFileIds.size}
+                isAllSelected={isAllSelected}
+                onSelectAll={handleSelectAll}
+                onRotateSelected={rotateSelected}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+              />
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                className="hidden"
+                ref={csvInputRef}
+                onChange={handleImportCSV}
+              />
+
+              <TopicMappingPanel
+                apiKeys={apiKeys}
+                proModel={proModel}
+                liteModel={liteModel}
+                topicMapping={topicMappingByDay[currentDay] || ''}
+                setTopicMapping={(val) => setTopicMappingByDay(prev => ({ ...prev, [currentDay]: val }))}
+                parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
+                setParsedTopicMapping={(val) => setParsedTopicMappingByDay(prev => ({ ...prev, [currentDay]: val }))}
+                dayLabel={days.length > 1 ? String(currentDay) : undefined}
+              />
+
+              {files.length > 0 && (
+                <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-gray-600 font-medium">Sort by:</span>
+                    <select 
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      className="border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500 py-1"
+                    >
+                      <option value="default">Default (Upload Order)</option>
+                      <option value="name">Name</option>
+                      <option value="score">Score</option>
+                      <option value="verification_confidence">Verification Confidence</option>
+                      <option value="name_confidence">Name Confidence</option>
+                    </select>
+                    {sortBy !== 'default' && (
+                      <button 
+                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                        className="p-1.5 bg-gray-200 hover:bg-gray-300 rounded text-gray-700 transition-colors"
+                        title={sortOrder === 'asc' ? "Ascending" : "Descending"}
+                      >
+                        {sortOrder === 'asc' ? '↑' : '↓'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {isProcessing && progress.total > 0 && (
+                <div className="w-full bg-gray-200 h-1.5 overflow-hidden">
+                  <div 
+                    className="bg-blue-600 h-1.5 transition-all duration-300 ease-out" 
+                    style={{ width: `${(progress.current / progress.total) * 100}%` }}
+                  ></div>
+                </div>
+              )}
+              
+              <div className="divide-y divide-gray-200 max-h-[600px] overflow-y-auto">
+                {filteredFiles.length > 0 ? (
+                  [...filteredFiles].sort((a, b) => {
+                    if (sortBy === 'default') return 0;
+                    
+                    if (a.status !== 'success' && b.status === 'success') return 1;
+                    if (a.status === 'success' && b.status !== 'success') return -1;
+                    if (a.status !== 'success' && b.status !== 'success') return 0;
+                    
+                    const resA = a.result!;
+                    const resB = b.result!;
+                    
+                    let comparison = 0;
+                    switch (sortBy) {
+                      case 'name':
+                        comparison = resA.name.localeCompare(resB.name);
+                        break;
+                      case 'score':
+                        const scoreA = (resA.right * 4) - resA.wrong;
+                        const scoreB = (resB.right * 4) - resB.wrong;
+                        comparison = scoreA - scoreB;
+                        break;
+                      case 'verification_confidence':
+                        const confA = resA.confidence ?? 0;
+                        const confB = resB.confidence ?? 0;
+                        comparison = confA - confB;
+                        break;
+                      case 'name_confidence':
+                        const nameConfA = resA.nameConfidence ?? 0;
+                        const nameConfB = resB.nameConfidence ?? 0;
+                        comparison = nameConfA - nameConfB;
+                        break;
+                    }
+                    
+                    return sortOrder === 'asc' ? comparison : -comparison;
+                  }).map((file) => (
+                    <QueueItem
+                      key={file.id}
+                      file={file}
+                      isProcessing={isProcessing}
+                      averageTime={averageTimeRef.current}
+                      isSelected={selectedFileIds.has(file.id)}
+                      onToggleSelect={handleToggleSelect}
+                      onRemove={removeFile}
+                      onRetry={retryFile}
+                      onRecheck={recheckFile}
+                      onClick={() => {
+                        if (file.status === 'success') {
+                          setReviewFileId(file.id);
+                        }
+                      }}
+                    />
+                  ))
+                ) : (
+                  <div className="p-12 text-center text-gray-500">
+                    {files.length === 0 ? "No images in queue. Upload some to get started." : "No files matched your search."}
+                  </div>
+                )}
+              </div>
+            </section>
+          </>
+        )}
+      </main>
+
+      {reviewFileId && (
+        <ReviewModal
+          fileId={reviewFileId}
+          fileName={files.find(f => f.id === reviewFileId)?.fileName || ''}
+          previewUrl={files.find(f => f.id === reviewFileId)?.previewUrl}
+          result={files.find(f => f.id === reviewFileId)?.result}
+          answerKey={answerKey}
+          onClose={() => setReviewFileId(null)}
+          onRetry={(id) => {
+            recheckFile(id);
+          }}
+          isProcessing={isProcessing}
+          onNext={handleNextReview}
+          onPrev={handlePrevReview}
+          hasNext={hasNextReview}
+          hasPrev={hasPrevReview}
+          onUpdateName={handleUpdateResultName}
+          onUpdateScore={handleUpdateResultScore}
+          onUpdateImage={handleUpdateFileImage}
+        />
+      )}
+    </div>
+  );
+}
+--- END OF FILE src/App.tsx ---
+
+--- START OF FILE src/components/lab/descriptive/DescCosmicDotGrid.tsx ---
+import React from 'react';
+import { DescriptiveBreakdown } from './types';
+
+interface Props {
+  breakdown: DescriptiveBreakdown[];
+}
+
+export default function DescCosmicDotGrid({ breakdown }: Props) {
+  return (
+    <div className="flex flex-wrap gap-[0.25em] justify-center items-center p-[0.3em] bg-white rounded-lg border border-gray-100 shadow-inner">
+      {breakdown.map((q, i) => {
+        let bgClass = 'bg-gray-200';
+        if (q.colorLevel === 3) bgClass = 'bg-green-500';
+        else if (q.colorLevel === 2) bgClass = 'bg-yellow-400';
+        else if (q.colorLevel === 1) bgClass = 'bg-orange-500';
+        else if (q.colorLevel === 0) bgClass = 'bg-red-500';
+
+        return (
+          <div 
+            key={i} 
+            className={`w-[0.55em] h-[0.55em] rounded-full ${bgClass} shadow-sm border border-black/5`} 
+            title={`Q${q.questionNumber}: ${q.score}/${q.maxScore}`} 
+          />
+        );
+      })}
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/descriptive/DescCosmicDotGrid.tsx ---
+
+--- START OF FILE src/components/lab/descriptive/DescPrintSettingsBar.tsx ---
+import React from 'react';
+import { ArrowLeft, Printer, Settings2 } from 'lucide-react';
+
+interface Props {
+  title: string;
+  setTitle: (v: string) => void;
+  subtitle: string;
+  setSubtitle: (v: string) => void;
+  cardsPerRow: number;
+  setCardsPerRow: (v: number) => void;
+  onBack: () => void;
+  onPrint: () => void;
+}
+
+export default function DescPrintSettingsBar({
+  title, setTitle, subtitle, setSubtitle, cardsPerRow, setCardsPerRow, onBack, onPrint
+}: Props) {
+  return (
+    <div className="print:hidden mb-4 p-4 md:p-6 bg-white border-b border-gray-200 text-gray-900 shadow-sm sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors border border-gray-200">
+              <ArrowLeft className="w-5 h-5 text-gray-700" />
+            </button>
+            <h2 className="text-2xl font-bold flex items-center gap-2 text-gray-900">
+              <div className="p-1.5 bg-indigo-100 text-indigo-700 rounded-lg">
+                <Settings2 className="w-5 h-5" />
+              </div>
+              Print Descriptive Results
+            </h2>
+          </div>
+          <button
+            onClick={onPrint}
+            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg w-full md:w-auto justify-center active:scale-95"
+          >
+            <Printer className="w-5 h-5" />
+            Print List
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-slate-50 p-5 rounded-2xl border border-slate-200">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Main Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold text-slate-900 outline-none transition-shadow shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Subtitle</label>
+            <input
+              type="text"
+              value={subtitle}
+              onChange={(e) => setSubtitle(e.target.value)}
+              className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-bold text-slate-900 outline-none transition-shadow shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cards per row</label>
+            <div className="flex gap-2 p-1 bg-slate-200/50 rounded-xl border border-slate-200">
+              {[2, 3, 4, 5].map(num => (
+                <button
+                  key={num}
+                  onClick={() => setCardsPerRow(num)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-black transition-all ${cardsPerRow === num ? 'bg-white text-indigo-700 shadow-sm border border-slate-200/50' : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-800'}`}
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/descriptive/DescPrintSettingsBar.tsx ---
+
+--- START OF FILE src/components/lab/descriptive/DescSchemeEditor.tsx ---
+import React, { useState, useEffect } from 'react';
+import { fileToBase64 } from '../../../utils/imageProcessing';
+import { extractTextFromDocument } from '../../../services/geminiService';
+import ExtractButton from './ExtractButton';
+import { FileText, AlertTriangle } from 'lucide-react';
+import { DescQuestionScheme } from './types';
+
+interface Props {
+  answerKey: string;
+  setAnswerKey: (val: string) => void;
+}
+
+export default function DescSchemeEditor({ answerKey, setAnswerKey }: Props) {
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [parsedScheme, setParsedScheme] = useState<DescQuestionScheme[] | null>(null);
+  const [parseError, setParseError] = useState(false);
+
+  useEffect(() => {
+    if (!answerKey.trim()) {
+      setParsedScheme(null);
+      setParseError(false);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(answerKey);
+      if (Array.isArray(parsed) && parsed.every(p => p.qNum && p.rubric)) {
+        setParsedScheme(parsed);
+        setParseError(false);
+      } else {
+        setParsedScheme(null);
+        setParseError(true);
+      }
+    } catch (e) {
+      setParsedScheme(null);
+      setParseError(true);
+    }
+  }, [answerKey]);
+
+  const handleExtract = async (file: File) => {
+    setIsExtracting(true);
+    try {
+      const apiKeys = JSON.parse(localStorage.getItem('omr_apiKeysList') || '[]').filter((k: string) => k.trim());
+      const proModel = localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview';
+      
+      if (apiKeys.length === 0) {
+        alert('Please add at least one API key in the home settings first.');
+        return;
+      }
+
+      const base64 = await fileToBase64(file);
+      const extractedText = await extractTextFromDocument(base64, file.type, apiKeys, proModel, 'descQPAndScheme');
+      
+      // Attempt to clean JSON formatting
+      const cleaned = extractedText.replace(/```json\n?|\n?```/g, '').trim();
+      setAnswerKey(cleaned);
+      
+    } catch (error: any) {
+      alert(`Failed to extract text: ${error.message}`);
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const handleUpdateField = (index: number, field: string, value: any, rubricKey?: keyof DescQuestionScheme['rubric']) => {
+    if (!parsedScheme) return;
+    const newScheme = [...parsedScheme];
+    if (rubricKey) {
+      newScheme[index].rubric[rubricKey] = value;
+    } else {
+      (newScheme[index] as any)[field] = value;
+    }
+    setParsedScheme(newScheme);
+    setAnswerKey(JSON.stringify(newScheme, null, 2));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <label className="block text-sm font-bold text-gray-700">Question Paper & Evaluation Scheme</label>
+        <div className="flex flex-wrap gap-2">
+          <ExtractButton 
+            isExtracting={isExtracting} 
+            onFileSelect={handleExtract} 
+            label="Auto-Generate Scheme with AI"
+            icon={<FileText className="w-3.5 h-3.5" />}
+          />
+        </div>
+      </div>
+
+      {parseError && (
+        <div className="p-3 bg-orange-50 border border-orange-200 text-orange-800 rounded-lg flex items-center gap-2 text-sm">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          The scheme could not be parsed as the strict JSON format. Please use the AI generator button above.
+        </div>
+      )}
+
+      {parsedScheme ? (
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+          {parsedScheme.map((q, idx) => (
+            <div key={idx} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-4">
+              <div className="flex items-center gap-4 border-b border-gray-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-gray-500">Q.Num:</span>
+                  <input 
+                    type="text" 
+                    value={q.qNum}
+                    onChange={e => handleUpdateField(idx, 'qNum', e.target.value)}
+                    className="w-16 px-2 py-1 border border-gray-300 rounded font-bold outline-none focus:border-blue-500 text-sm"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-gray-500">Max Score:</span>
+                  <input 
+                    type="number" 
+                    value={q.maxScore}
+                    onChange={e => handleUpdateField(idx, 'maxScore', Number(e.target.value))}
+                    className="w-20 px-2 py-1 border border-gray-300 rounded font-bold outline-none focus:border-blue-500 text-sm"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex gap-3">
+                  <div className="w-4 h-4 mt-1 rounded-full bg-green-500 shrink-0 shadow-sm" />
+                  <textarea 
+                    value={q.rubric["3"]} 
+                    onChange={e => handleUpdateField(idx, '', e.target.value, "3")}
+                    rows={2}
+                    className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded bg-green-50/30 focus:border-green-500 outline-none resize-none"
+                    placeholder="Criteria for full marks..."
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <div className="w-4 h-4 mt-1 rounded-full bg-yellow-400 shrink-0 shadow-sm" />
+                  <textarea 
+                    value={q.rubric["2"]} 
+                    onChange={e => handleUpdateField(idx, '', e.target.value, "2")}
+                    rows={2}
+                    className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded bg-yellow-50/30 focus:border-yellow-500 outline-none resize-none"
+                    placeholder="Criteria for partial marks..."
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <div className="w-4 h-4 mt-1 rounded-full bg-orange-500 shrink-0 shadow-sm" />
+                  <textarea 
+                    value={q.rubric["1"]} 
+                    onChange={e => handleUpdateField(idx, '', e.target.value, "1")}
+                    rows={2}
+                    className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded bg-orange-50/30 focus:border-orange-500 outline-none resize-none"
+                    placeholder="Criteria for minimal marks..."
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <div className="w-4 h-4 mt-1 rounded-full bg-red-500 shrink-0 shadow-sm" />
+                  <textarea 
+                    value={q.rubric["0"]} 
+                    onChange={e => handleUpdateField(idx, '', e.target.value, "0")}
+                    rows={2}
+                    className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded bg-red-50/30 focus:border-red-500 outline-none resize-none"
+                    placeholder="Criteria for zero marks..."
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <textarea
+          value={answerKey}
+          onChange={(e) => setAnswerKey(e.target.value)}
+          placeholder="Upload a Question Paper to auto-generate the JSON evaluation scheme..."
+          rows={10}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none text-sm font-mono"
+        />
+      )}
+      
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
+      `}} />
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/descriptive/DescSchemeEditor.tsx ---
+
+--- START OF FILE src/components/lab/descriptive/DescStudentSort.tsx ---
+import React from 'react';
+import { ArrowUp, ArrowDown, Search } from 'lucide-react';
+
+interface Props {
+  sortBy: 'name' | 'score' | 'default';
+  setSortBy: (v: 'name' | 'score' | 'default') => void;
+  sortOrder: 'asc' | 'desc';
+  setSortOrder: (v: 'asc' | 'desc') => void;
+  searchQuery: string;
+  setSearchQuery: (v: string) => void;
+}
+
+export default function DescStudentSort({ sortBy, setSortBy, sortOrder, setSortOrder, searchQuery, setSearchQuery }: Props) {
+  return (
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-gray-50 p-3 rounded-xl border border-gray-200">
+      <div className="flex items-center gap-2">
+        <span className="text-sm font-bold text-gray-600 uppercase tracking-wider ml-1">Sort:</span>
+        <select 
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as any)}
+          className="bg-white border border-gray-300 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-1.5 outline-none font-medium"
+        >
+          <option value="default">Default</option>
+          <option value="name">Name</option>
+          <option value="score">Score</option>
+        </select>
+        
+        {sortBy !== 'default' && (
+          <button 
+            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            className="p-1.5 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors shadow-sm"
+          >
+            {sortOrder === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+          </button>
+        )}
+      </div>
+
+      <div className="relative w-full sm:w-64">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search students..."
+          className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+        />
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/descriptive/DescStudentSort.tsx ---
+
+--- START OF FILE src/components/lab/descriptive/DescriptiveDashboard.tsx ---
+import React, { useState, useRef } from 'react';
+import { ArrowLeft, FileSignature, Settings, Loader2 } from 'lucide-react';
+import DescriptiveSettings from './DescriptiveSettings';
+import DescriptiveFixNameModal from './DescriptiveFixNameModal';
+import DescriptiveToolbar from './DescriptiveToolbar';
+import DescriptiveQueue from './DescriptiveQueue';
+import DescriptiveProgress from './DescriptiveProgress';
+import DescriptiveStudentList from './DescriptiveStudentList';
+import DescriptiveDetailModal from './DescriptiveDetailModal';
+import DescriptivePrintView from './DescriptivePrintView';
+import DescStudentSort from './DescStudentSort';
+import { DescriptiveStudent } from './types';
+import { useDescriptivePipeline } from './hooks/useDescriptivePipeline';
+
+interface Props {
+  onBack: () => void;
+}
+
+export default function DescriptiveDashboard({ onBack }: Props) {
+  const [showSettings, setShowSettings] = useState(false);
+  const [showFixName, setShowFixName] = useState(false);
+  const [showPrintView, setShowPrintView] = useState(false);
+  const [selectedStudentForDetails, setSelectedStudentForDetails] = useState<DescriptiveStudent | null>(null);
+  
+  const [sortBy, setSortBy] = useState<'name' | 'score' | 'default'>('default');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    images,
+    students,
+    pipelineState,
+    progress,
+    isLoadingState,
+    handleFileUpload,
+    handleRemoveImage,
+    handleClearAll,
+    runPipeline,
+    handleExportCSV,
+    handleUpdateStudents,
+    handleRemoveStudent
+  } = useDescriptivePipeline();
+
+  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      await handleFileUpload(e.target.files);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  if (isLoadingState) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (showPrintView) {
+    return <DescriptivePrintView students={students} onBack={() => setShowPrintView(false)} />;
+  }
+
+  const unassignedImages = images.filter(img => !img.studentId);
+
+  const filteredStudents = students.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  
+  const sortedStudents = [...filteredStudents].sort((a, b) => {
+    if (sortBy === 'default') return 0;
+    
+    if (sortBy === 'name') {
+      const cmp = a.name.localeCompare(b.name);
+      return sortOrder === 'asc' ? cmp : -cmp;
+    }
+    
+    if (sortBy === 'score') {
+      const scoreA = a.result?.totalScore || 0;
+      const scoreB = b.result?.totalScore || 0;
+      const cmp = scoreA - scoreB;
+      return sortOrder === 'asc' ? cmp : -cmp;
+    }
+    
+    return 0;
+  });
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors border border-gray-200 bg-white shadow-sm">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
+              <FileSignature className="w-6 h-6" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Descriptive Evaluation</h2>
+          </div>
+        </div>
+        <button
+          onClick={() => setShowSettings(true)}
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm w-full md:w-auto"
+        >
+          <Settings className="w-4 h-4" /> Settings
+        </button>
+      </div>
+
+      <div className="bg-white p-4 md:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
+        
+        <input 
+          type="file" 
+          multiple 
+          accept="image/*" 
+          className="hidden" 
+          ref={fileInputRef}
+          onChange={onUpload}
+        />
+
+        <DescriptiveToolbar
+          pipelineState={pipelineState}
+          imagesCount={images.length}
+          studentsCount={students.length}
+          onUploadClick={() => fileInputRef.current?.click()}
+          onClearAll={handleClearAll}
+          onFixNames={() => setShowFixName(true)}
+          onExportCSV={handleExportCSV}
+          onEvaluate={() => runPipeline(() => setShowSettings(true))}
+          onPrint={() => setShowPrintView(true)}
+        />
+
+        {pipelineState === 'processing' && (
+          <DescriptiveProgress step={progress.step} current={progress.current} total={progress.total} />
+        )}
+
+        {unassignedImages.length > 0 && (
+          <DescriptiveQueue images={unassignedImages} onRemove={handleRemoveImage} />
+        )}
+
+        {students.length > 0 && (
+          <>
+            <DescStudentSort 
+              sortBy={sortBy} setSortBy={setSortBy} 
+              sortOrder={sortOrder} setSortOrder={setSortOrder} 
+              searchQuery={searchQuery} setSearchQuery={setSearchQuery} 
+            />
+            <DescriptiveStudentList 
+              students={sortedStudents} 
+              onRemoveStudent={handleRemoveStudent}
+              onViewDetails={(s) => setSelectedStudentForDetails(s)} 
+            />
+          </>
+        )}
+
+        {!unassignedImages.length && !students.length && pipelineState !== 'processing' && (
+          <div className="p-12 text-center text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+            No images uploaded yet. Click "Upload Images" to start.
+          </div>
+        )}
+      </div>
+
+      {showSettings && <DescriptiveSettings onClose={() => setShowSettings(false)} />}
+      
+      {showFixName && (
+        <DescriptiveFixNameModal 
+          students={students} 
+          onUpdateStudents={handleUpdateStudents}
+          onClose={() => setShowFixName(false)} 
+        />
+      )}
+
+      {selectedStudentForDetails && (
+        <DescriptiveDetailModal
+          student={selectedStudentForDetails}
+          onClose={() => setSelectedStudentForDetails(null)}
+        />
+      )}
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/descriptive/DescriptiveDashboard.tsx ---
+
+--- START OF FILE src/components/lab/descriptive/DescriptivePrintView.tsx ---
+import React, { useState, useEffect } from 'react';
+import { DescriptiveStudent, DescQuestionScheme } from './types';
+import DescPrintSettingsBar from './DescPrintSettingsBar';
+import DescCosmicDotGrid from './DescCosmicDotGrid';
+
+interface Props {
+  students: DescriptiveStudent[];
+  onBack: () => void;
+}
+
+export default function DescriptivePrintView({ students, onBack }: Props) {
+  const [title, setTitle] = useState('DESCRIPTIVE EVALUATION');
+  const [subtitle, setSubtitle] = useState('AIMS PLUS TRACK RECORD');
+  const [cardsPerRow, setCardsPerRow] = useState<number>(3);
+  const [scheme, setScheme] = useState<DescQuestionScheme[]>([]);
+
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem('aims_desc_answerKey') || '[]');
+      if (Array.isArray(parsed)) setScheme(parsed);
+    } catch(e) {}
+  }, []);
+
+  const validStudents = students.filter(s => s.status === 'success' && s.result);
+
+  const rankedStudents = [...validStudents].sort((a, b) => {
+    return (b.result?.totalScore || 0) - (a.result?.totalScore || 0);
+  });
+
+  return (
+    <div className="min-h-screen bg-gray-100 text-black print:bg-white pb-12">
+      <DescPrintSettingsBar 
+        title={title} setTitle={setTitle}
+        subtitle={subtitle} setSubtitle={setSubtitle}
+        cardsPerRow={cardsPerRow} setCardsPerRow={setCardsPerRow}
+        onBack={onBack} onPrint={() => window.print()}
+      />
+
+      <style>{`
+        @media print {
+          @page { margin: 0.5cm; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; }
+          .print-grid {
+            grid-template-columns: repeat(${cardsPerRow}, minmax(0, 1fr)) !important;
+            gap: 12px !important;
+          }
+          .break-before-legend { page-break-before: always; }
+        }
+      `}</style>
+
+      <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 print:max-w-none print:p-0">
+        
+        {/* Header for print */}
+        <div className="hidden print:block text-center mb-6">
+          <h2 className="text-sm font-bold tracking-[0.3em] text-gray-500 uppercase">{subtitle}</h2>
+          <h1 className="text-3xl font-black text-gray-900 uppercase tracking-widest mt-1 border-b-2 border-gray-900 inline-block pb-2 px-6">{title}</h1>
+        </div>
+
+        <div className={`grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 print-grid`}>
+          {rankedStudents.map((student, idx) => {
+            const res = student.result!;
+            const maxScore = res.maxTotalScore || res.breakdown.reduce((sum, b) => sum + b.maxScore, 0) || 1;
+            
+            return (
+              <div key={student.id} className="rounded-2xl shadow-md bg-white flex flex-col h-full overflow-hidden break-inside-avoid border border-gray-200 print:shadow-sm">
+                <div className="flex justify-between items-center p-3 z-10 bg-gray-50 border-b border-gray-200">
+                  <span className="text-xs font-bold text-gray-500 bg-white px-2 py-0.5 rounded shadow-sm border border-gray-200">#{idx + 1}</span>
+                </div>
+                
+                <div className="p-4 text-center">
+                  <h3 className="text-xl font-black text-gray-900 leading-tight truncate mb-3" title={student.name}>{student.name}</h3>
+                  <div className="inline-block bg-indigo-50 border border-indigo-100 rounded-lg px-4 py-2 mb-4">
+                    <span className="text-sm font-bold text-indigo-900 uppercase tracking-widest mr-2">Score</span>
+                    <span className="text-3xl font-black text-indigo-700">{res.totalScore}</span>
+                    <span className="text-sm font-bold text-indigo-400">/{maxScore}</span>
+                  </div>
+                  
+                  <div className="mt-auto">
+                    <DescCosmicDotGrid breakdown={res.breakdown} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {scheme.length > 0 && (
+          <div className="mt-12 bg-white p-6 md:p-8 rounded-2xl border border-gray-300 shadow-sm break-inside-avoid break-before-legend">
+            <h3 className="text-2xl font-black text-gray-900 mb-6 border-b-2 border-gray-100 pb-3 uppercase tracking-wider text-center">Evaluation Legend</h3>
+            
+            <div className="flex flex-wrap justify-center gap-6 mb-8">
+              <div className="flex items-center gap-2"><div className="w-5 h-5 bg-green-500 rounded-full shadow-inner border border-black/10"/> <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">Full Marks</span></div>
+              <div className="flex items-center gap-2"><div className="w-5 h-5 bg-yellow-400 rounded-full shadow-inner border border-black/10"/> <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">Partial Marks</span></div>
+              <div className="flex items-center gap-2"><div className="w-5 h-5 bg-orange-500 rounded-full shadow-inner border border-black/10"/> <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">Minimal / Attempt</span></div>
+              <div className="flex items-center gap-2"><div className="w-5 h-5 bg-red-500 rounded-full shadow-inner border border-black/10"/> <span className="text-sm font-bold text-gray-700 uppercase tracking-wide">Wrong / Blank</span></div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              {scheme.map(q => (
+                <div key={q.qNum} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <h4 className="font-black text-lg text-gray-800 mb-3 border-b border-gray-200 pb-2">Q{q.qNum} <span className="text-sm font-bold text-gray-500">(Max: {q.maxScore})</span></h4>
+                  <ul className="space-y-2 text-sm">
+                    {q.rubric["3"] && <li className="flex gap-2 items-start"><div className="w-3 h-3 mt-1 bg-green-500 rounded-full shrink-0"/> <span className="font-medium text-gray-700">{q.rubric["3"]}</span></li>}
+                    {q.rubric["2"] && <li className="flex gap-2 items-start"><div className="w-3 h-3 mt-1 bg-yellow-400 rounded-full shrink-0"/> <span className="font-medium text-gray-700">{q.rubric["2"]}</span></li>}
+                    {q.rubric["1"] && <li className="flex gap-2 items-start"><div className="w-3 h-3 mt-1 bg-orange-500 rounded-full shrink-0"/> <span className="font-medium text-gray-700">{q.rubric["1"]}</span></li>}
+                    {q.rubric["0"] && <li className="flex gap-2 items-start"><div className="w-3 h-3 mt-1 bg-red-500 rounded-full shrink-0"/> <span className="font-medium text-gray-700">{q.rubric["0"]}</span></li>}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/descriptive/DescriptivePrintView.tsx ---
+
+--- START OF FILE src/components/lab/descriptive/DescriptiveSettings.tsx ---
+import React, { useState, useEffect } from 'react';
+import { X, Save } from 'lucide-react';
+import DescSchemeEditor from './DescSchemeEditor';
+import DescTopicMappingSection from './DescTopicMappingSection';
+
+interface Props {
+  onClose: () => void;
+}
+
+export default function DescriptiveSettings({ onClose }: Props) {
+  const [answerKey, setAnswerKey] = useState('');
+  const [topicMapping, setTopicMapping] = useState('');
+
+  useEffect(() => {
+    setAnswerKey(localStorage.getItem('aims_desc_answerKey') || '');
+    setTopicMapping(localStorage.getItem('aims_desc_topicMapping') || '');
+  }, []);
+
+  const handleSave = () => {
+    localStorage.setItem('aims_desc_answerKey', answerKey);
+    localStorage.setItem('aims_desc_topicMapping', topicMapping);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[95vh]">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
+          <h2 className="text-lg font-bold text-gray-800">Descriptive Evaluation Settings</h2>
+          <button onClick={onClose} className="p-1.5 text-gray-500 hover:bg-gray-200 rounded-full transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-100 text-sm text-blue-800 mb-6">
+            <strong>Note:</strong> API Keys and Models are shared with the OMR module. Configure them in the main Home settings.
+          </div>
+          
+          <DescSchemeEditor answerKey={answerKey} setAnswerKey={setAnswerKey} />
+          
+          <DescTopicMappingSection topicMapping={topicMapping} setTopicMapping={setTopicMapping} />
+        </div>
+
+        <div className="p-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 font-medium hover:bg-gray-200 rounded-lg transition-colors">
+            Cancel
+          </button>
+          <button onClick={handleSave} className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white font-medium hover:bg-blue-700 rounded-lg transition-colors shadow-sm">
+            <Save className="w-4 h-4" /> Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/descriptive/DescriptiveSettings.tsx ---
+
+--- START OF FILE src/components/lab/descriptive/hooks/useDescriptivePipeline.ts ---
+import { useState, useEffect } from 'react';
+import { get, set } from 'idb-keyval';
+import { DescriptiveImage, DescriptiveStudent } from '../types';
+import { saveImage, getImage, deleteImage } from '../../../../services/db';
+import { fileToBase64, processImage, applyCropAndRotate } from '../../../../utils/imageProcessing';
+import { dataURLtoFile } from '../../../../utils/fileUtils';
+import { autoCropAndRotate } from '../../../../services/geminiService';
+import { identifyStudentFromPage, evaluateDescriptiveAnswers } from '../../../../services/gemini/descriptiveService';
+
+export function useDescriptivePipeline() {
+  const [images, setImages] = useState<DescriptiveImage[]>([]);
+  const [students, setStudents] = useState<DescriptiveStudent[]>([]);
+  const [pipelineState, setPipelineState] = useState<'idle' | 'processing' | 'done'>('idle');
+  const [progress, setProgress] = useState({ step: '', current: 0, total: 0 });
+  const [isLoadingState, setIsLoadingState] = useState(true);
+
+  const getApiKeys = () => JSON.parse(localStorage.getItem('omr_apiKeysList') || '[]').filter((k: string) => k.trim());
+  const getLiteModel = () => localStorage.getItem('omr_liteModel') || 'gemini-3.1-flash-lite-preview';
+  const getProModel = () => localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview';
+  const getAnswerKey = () => localStorage.getItem('aims_desc_answerKey') || '';
+  const getTopicMapping = () => localStorage.getItem('aims_desc_topicMapping') || '';
+  const getConcurrency = () => parseInt(localStorage.getItem('omr_concurrency') || '1', 10);
+  const getRequestsPerKey = () => parseInt(localStorage.getItem('omr_requestsPerKey') || '1', 10);
+
+  useEffect(() => {
+    const loadState = async () => {
+      setIsLoadingState(true);
+      try {
+        const savedImagesMeta = await get('desc_images_meta');
+        const savedStudentsMeta = await get('desc_students_meta');
+        const savedPipelineState = await get('desc_pipeline_state');
+        
+        let loadedImages: DescriptiveImage[] = [];
+        
+        if (savedImagesMeta) {
+          loadedImages = (await Promise.all(savedImagesMeta.map(async (meta: any) => {
+            const file = await getImage(meta.id);
+            if (!file) return null;
+            return {
+              ...meta,
+              file,
+              previewUrl: URL.createObjectURL(file)
+            };
+          }))).filter(Boolean) as DescriptiveImage[];
+          setImages(loadedImages);
+        }
+
+        if (savedStudentsMeta) {
+          const loadedStudents = savedStudentsMeta.map((std: any) => {
+            const stdImages = std.images
+              .map((imgMeta: any) => loadedImages.find(i => i.id === imgMeta.id))
+              .filter(Boolean);
+            return { ...std, images: stdImages };
+          });
+          setStudents(loadedStudents);
+        }
+
+        if (savedPipelineState) {
+          setPipelineState(savedPipelineState);
+        }
+      } catch (e) {
+        console.error("Failed to load state", e);
+      } finally {
+        setIsLoadingState(false);
+      }
+    };
+    loadState();
+  }, []);
+
+  const saveState = async (imgs: DescriptiveImage[], stds: DescriptiveStudent[], pState: string) => {
+    const imgsMeta = imgs.map(img => ({ id: img.id, status: img.status, croppedBase64: img.croppedBase64, studentId: img.studentId }));
+    const stdsMeta = stds.map(std => ({
+      ...std,
+      images: std.images.map(img => ({ id: img.id }))
+    }));
+    await set('desc_images_meta', imgsMeta);
+    await set('desc_students_meta', stdsMeta);
+    await set('desc_pipeline_state', pState);
+  };
+
+  const handleFileUpload = async (filesList: FileList) => {
+    const newImages = Array.from(filesList).map(file => ({
+      id: Math.random().toString(36).substring(7),
+      file,
+      previewUrl: URL.createObjectURL(file),
+      status: 'pending' as const
+    }));
+    
+    for (const img of newImages) {
+      await saveImage(img.id, img.file);
+    }
+
+    const updatedImages = [...images, ...newImages];
+    const newPipelineState = pipelineState === 'done' ? 'idle' : pipelineState;
+    
+    setImages(updatedImages);
+    setPipelineState(newPipelineState);
+    
+    await saveState(updatedImages, students, newPipelineState);
+  };
+
+  const handleRemoveImage = async (id: string) => {
+    const img = images.find(i => i.id === id);
+    if (img && img.previewUrl) URL.revokeObjectURL(img.previewUrl);
+    await deleteImage(id);
+    
+    const newImages = images.filter(i => i.id !== id);
+    setImages(newImages);
+    await saveState(newImages, students, pipelineState);
+  };
+
+  const handleRemoveStudent = async (id: string) => {
+    if (!window.confirm("Remove this student and all their scanned pages?")) return;
+    
+    const std = students.find(s => s.id === id);
+    if (std) {
+       for (const img of std.images) {
+          if (img.previewUrl) URL.revokeObjectURL(img.previewUrl);
+          await deleteImage(img.id);
+       }
+    }
+    const newStudents = students.filter(s => s.id !== id);
+    const newImages = images.filter(img => img.studentId !== id);
+    setStudents(newStudents);
+    setImages(newImages);
+    await saveState(newImages, newStudents, pipelineState);
+  };
+
+  const handleClearAll = async () => {
+    if (window.confirm("Are you sure you want to clear all images and results?")) {
+      for (const img of images) {
+        if (img.previewUrl) URL.revokeObjectURL(img.previewUrl);
+        await deleteImage(img.id);
+      }
+      setImages([]);
+      setStudents([]);
+      setPipelineState('idle');
+      setProgress({ step: '', current: 0, total: 0 });
+      await saveState([], [], 'idle');
+    }
+  };
+
+  const applyCrop = async (img: DescriptiveImage, keys: string[], liteModel: string) => {
+    const base64 = await fileToBase64(img.file);
+    try {
+      const cropRes = await autoCropAndRotate(base64, img.file.type, keys, liteModel);
+      const w = cropRes.xmax - cropRes.xmin;
+      const h = cropRes.ymax - cropRes.ymin;
+      let finalRotation = cropRes.rotation;
+      
+      if (w > h && (finalRotation === 0 || finalRotation === 180)) {
+        console.log(`Auto-correcting orientation: crop is wider (${w}) than tall (${h}), setting rotation to 90.`);
+        finalRotation = (finalRotation + 90) % 360;
+      }
+      
+      const { base64: croppedBase64, mimeType } = await applyCropAndRotate(img.file, cropRes, finalRotation, 1600);
+      return { croppedBase64, mimeType };
+    } catch (e) {
+      console.warn("Auto crop failed for image, using original", e);
+      const { base64: defaultBase64, mimeType } = await processImage(img.file, 1600, 0);
+      return { croppedBase64: defaultBase64, mimeType };
+    }
+  };
+
+  const runPipeline = async (onRequireSettings: () => void) => {
+    const keys = getApiKeys();
+    if (keys.length === 0) {
+      alert("Please configure API keys in settings first.");
+      onRequireSettings();
+      return;
+    }
+    if (!getAnswerKey()) {
+      alert("Please provide an evaluation scheme in settings first.");
+      onRequireSettings();
+      return;
+    }
+
+    let currentPipelineState: 'idle' | 'processing' | 'done' = 'processing';
+    setPipelineState(currentPipelineState);
+    
+    try {
+      const liteModel = getLiteModel();
+      const proModel = getProModel();
+      const baseConcurrency = Math.max(1, getConcurrency());
+      const reqsPerKey = Math.max(1, getRequestsPerKey());
+      const totalConcurrentRequests = keys.length > 0 ? keys.length * reqsPerKey : 1;
+      const concurrencyLimit = totalConcurrentRequests * baseConcurrency;
+      
+      let updatedImages = [...images];
+      let updatedStudents = [...students];
+
+      const actionsToCrop = updatedImages.filter(img => img.status !== 'cropped').length;
+      const actionsToGroup = updatedImages.filter(img => !img.studentId).length;
+      const actionsToEval = updatedStudents.filter(std => std.status !== 'success').length;
+      
+      let totalActions = actionsToCrop + actionsToGroup + actionsToEval;
+      let currentCompleted = 0;
+
+      const updateProg = (stepDesc: string, advance: boolean = false) => {
+        if (advance) currentCompleted++;
+        setProgress({ step: stepDesc, current: currentCompleted, total: totalActions });
+      };
+
+      updateProg('Starting pipeline...');
+
+      // Phase 1: Crop
+      const uncroppedImages = updatedImages.filter(img => img.status !== 'cropped');
+      for (let i = 0; i < uncroppedImages.length; i += concurrencyLimit) {
+        const chunk = uncroppedImages.slice(i, i + concurrencyLimit);
+        await Promise.all(chunk.map(async (img) => {
+          const { croppedBase64, mimeType } = await applyCrop(img, keys, liteModel);
+          const croppedFile = dataURLtoFile(`data:${mimeType};base64,${croppedBase64}`, img.file.name || 'cropped.jpg');
+          
+          await saveImage(img.id, croppedFile);
+          if (img.previewUrl) URL.revokeObjectURL(img.previewUrl);
+          
+          const index = updatedImages.findIndex(u => u.id === img.id);
+          updatedImages[index] = {
+            ...img,
+            file: croppedFile,
+            previewUrl: URL.createObjectURL(croppedFile),
+            croppedBase64,
+            status: 'cropped'
+          };
+          updateProg(`Cropped page...`, true);
+        }));
+        setImages([...updatedImages]);
+      }
+
+      // Phase 2: Identify and Group
+      let currentStudent: DescriptiveStudent | null = updatedStudents.length > 0 ? updatedStudents[updatedStudents.length - 1] : null;
+      
+      for (let i = 0; i < updatedImages.length; i++) {
+        if (!updatedImages[i].studentId) {
+          const img = updatedImages[i];
+          const prevName = currentStudent?.name || null;
+          
+          const idRes = await identifyStudentFromPage(img.croppedBase64!, img.file.type, prevName, keys, liteModel);
+          
+          if (idRes.isNewStudent || !currentStudent) {
+            currentStudent = {
+              id: `std-${Math.random().toString(36).substring(7)}`,
+              name: idRes.studentName || `Unknown Student ${updatedStudents.length + 1}`,
+              images: [],
+              status: 'pending'
+            };
+            updatedStudents.push(currentStudent);
+            totalActions++; 
+          }
+          
+          currentStudent.images.push(img);
+          updatedImages[i].studentId = currentStudent.id;
+          currentStudent.status = 'pending';
+          
+          setImages([...updatedImages]);
+          setStudents([...updatedStudents]);
+          updateProg(`Identified student...`, true);
+        }
+      }
+
+      await saveState(updatedImages, updatedStudents, 'processing');
+
+      // Phase 3: Evaluate
+      const unevaluatedStudents = updatedStudents.filter(std => std.status !== 'success');
+      for (let i = 0; i < unevaluatedStudents.length; i += concurrencyLimit) {
+        const chunk = unevaluatedStudents.slice(i, i + concurrencyLimit);
+        
+        chunk.forEach(std => {
+          const index = updatedStudents.findIndex(u => u.id === std.id);
+          updatedStudents[index].status = 'evaluating';
+        });
+        setStudents([...updatedStudents]);
+
+        await Promise.all(chunk.map(async (std) => {
+          try {
+            const evalImages = await Promise.all(std.images.map(async img => {
+              const b64 = img.croppedBase64 || await fileToBase64(img.file);
+              return { base64: b64, mimeType: img.file.type };
+            }));
+
+            const res = await evaluateDescriptiveAnswers(evalImages, getAnswerKey(), getTopicMapping(), keys, proModel);
+            const index = updatedStudents.findIndex(u => u.id === std.id);
+            updatedStudents[index].result = res;
+            updatedStudents[index].status = 'success';
+            updatedStudents[index].error = undefined;
+          } catch (e: any) {
+            const index = updatedStudents.findIndex(u => u.id === std.id);
+            updatedStudents[index].error = e.message;
+            updatedStudents[index].status = 'error';
+          }
+          updateProg(`Evaluated ${std.name}`, true);
+        }));
+        
+        setStudents([...updatedStudents]);
+        await saveState(updatedImages, updatedStudents, 'processing');
+      }
+
+      currentPipelineState = 'done';
+      setPipelineState(currentPipelineState);
+      await saveState(updatedImages, updatedStudents, currentPipelineState);
+
+    } catch (err: any) {
+      alert("Pipeline failed: " + err.message);
+      currentPipelineState = 'idle';
+      setPipelineState(currentPipelineState);
+      await saveState(images, students, currentPipelineState);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (students.length === 0) return;
+    
+    let csv = 'NAME,SCORE,FEEDBACK\n';
+    students.forEach(s => {
+      const score = s.result?.totalScore ?? 0;
+      const feedback = (s.result?.feedback ?? '').replace(/"/g, '""');
+      csv += `"${s.name}",${score},"${feedback}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'descriptive_results.csv';
+    link.click();
+  };
+
+  const handleUpdateStudents = async (updated: DescriptiveStudent[]) => {
+    setStudents(updated);
+    await saveState(images, updated, pipelineState);
+  };
+
+  return {
+    images,
+    students,
+    pipelineState,
+    progress,
+    isLoadingState,
+    handleFileUpload,
+    handleRemoveImage,
+    handleRemoveStudent,
+    handleClearAll,
+    runPipeline,
+    handleExportCSV,
+    handleUpdateStudents
+  };
+}
+--- END OF FILE src/components/lab/descriptive/hooks/useDescriptivePipeline.ts ---
+
+--- START OF FILE src/components/lab/descriptive/index.ts ---
+export { default as DescriptiveDashboard } from './DescriptiveDashboard';
+export { default as DescriptiveSettings } from './DescriptiveSettings';
+export { default as DescriptiveOverviewCard } from './DescriptiveOverviewCard';
+export { default as DescriptiveDetailModal } from './DescriptiveDetailModal';
+export { default as DescriptivePrintView } from './DescriptivePrintView';
+export { default as DescriptiveFixNameModal } from './DescriptiveFixNameModal';
+export { default as DescriptiveToolbar } from './DescriptiveToolbar';
+export { default as DescriptiveQueue } from './DescriptiveQueue';
+export { default as DescriptiveProgress } from './DescriptiveProgress';
+export { default as DescriptiveStudentList } from './DescriptiveStudentList';
+export { default as ExtractButton } from './ExtractButton';
+export { default as DescSchemeEditor } from './DescSchemeEditor';
+export { default as DescTopicMappingSection } from './DescTopicMappingSection';
+export { default as DescStudentSort } from './DescStudentSort';
+export { default as DescPrintSettingsBar } from './DescPrintSettingsBar';
+export { default as DescCosmicDotGrid } from './DescCosmicDotGrid';
+export { useDescriptivePipeline } from './hooks/useDescriptivePipeline';
+export * from './types';
+--- END OF FILE src/components/lab/descriptive/index.ts ---
 
 --- START OF FILE src/components/lab/descriptive/types.ts ---
 export interface DescriptiveBreakdown {
@@ -36,6 +2419,17 @@ export interface DescriptiveStudent {
   status: 'pending' | 'evaluating' | 'success' | 'error';
   result?: DescriptiveResult;
   error?: string;
+}
+
+export interface DescQuestionScheme {
+  qNum: string;
+  maxScore: number;
+  rubric: {
+    "3": string;
+    "2": string;
+    "1": string;
+    "0": string;
+  };
 }
 --- END OF FILE src/components/lab/descriptive/types.ts ---
 
@@ -454,7 +2848,16 @@ export async function extractTextFromDocument(
   } else if (extractionType === 'topicMapping' || extractionType === 'descTopicMapping') {
     prompt = `Extract the chapter and topic mapping from this document. Format it exactly like this:\n### Chapter Name\n* Topic Name: Q1, Q2, Q3\n* Another Topic: Q4, Q5\n\n### Another Chapter\n* Topic Name: Q6, Q7\n\nOnly output the formatted text, nothing else.`;
   } else if (extractionType === 'descQPAndScheme') {
-    prompt = `You are an expert exam setter. Extract all the questions from this question paper image. For each question extracted, provide the expected answer or key evaluation points, and the maximum marks allocated. Format as a clear, structured evaluation scheme so that an examiner can grade student answers based on it.`;
+    prompt = `You are an expert exam setter. Extract all questions from this question paper image.
+    Format the output as a JSON array of objects. Each object must have:
+    - "qNum": question number (string)
+    - "maxScore": maximum marks (number)
+    - "rubric": object with keys "3", "2", "1", "0".
+      "3": Criteria for full marks (Green)
+      "2": Criteria for partial marks / minor errors (Yellow)
+      "1": Criteria for minimal marks / attempt (Orange)
+      "0": Criteria for zero marks (Red)
+    Return ONLY valid JSON array.`;
   }
 
   let lastError: any;
@@ -812,18 +3215,14 @@ export async function evaluateDescriptiveAnswers(
 
   const contents: any[] = [
     { text: `You are an expert examiner. Grade the student's descriptive exam answers from these images.
-Question Paper & Evaluation Scheme:
+Question Paper & Evaluation Scheme (JSON):
 ${answerKey}
 
 Topic Mapping:
 ${topicMapping}
 
-Provide the total score achieved, the maximum possible total score for the exam, a detailed breakdown of marks per question, and constructive overall feedback.
-For each question, assign a 'colorLevel' from 0 to 3 based on the student's answer quality:
-0 -> No answer or completely wrong.
-1 -> Only attempted or minor correct steps.
-2 -> Correct method/way but final value/answer is wrong.
-3 -> All correct.
+For each question, assign a 'colorLevel' (0, 1, 2, or 3) strictly based on the rubric provided in the evaluation scheme JSON.
+Provide totalScore, maxTotalScore, breakdown of marks, and short constructive overall feedback.
 ` }
   ];
   
@@ -937,661 +3336,4 @@ Official Names: ${JSON.stringify(officialNames)}`;
   return finalMap;
 }
 --- END OF FILE src/services/gemini/descriptiveService.ts ---
-
---- START OF FILE src/components/lab/descriptive/DescAnswerKeySection.tsx ---
-import React, { useState } from 'react';
-import { fileToBase64 } from '../../../utils/imageProcessing';
-import { extractTextFromDocument } from '../../../services/geminiService';
-import ExtractButton from './ExtractButton';
-import { FileText } from 'lucide-react';
-
-interface Props {
-  answerKey: string;
-  setAnswerKey: (val: string | ((prev: string) => string)) => void;
-}
-
-export default function DescAnswerKeySection({ answerKey, setAnswerKey }: Props) {
-  const [isExtracting, setIsExtracting] = useState(false);
-
-  const handleExtract = async (file: File) => {
-    setIsExtracting(true);
-    try {
-      const apiKeys = JSON.parse(localStorage.getItem('omr_apiKeysList') || '[]').filter((k: string) => k.trim());
-      const proModel = localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview';
-      
-      if (apiKeys.length === 0) {
-        alert('Please add at least one API key in the home settings first.');
-        return;
-      }
-
-      const base64 = await fileToBase64(file);
-      const extractedText = await extractTextFromDocument(base64, file.type, apiKeys, proModel, 'descQPAndScheme');
-
-      setAnswerKey(prev => {
-        const trimmed = prev.trim();
-        if (!trimmed) return extractedText;
-        return `${trimmed}\n\n--- Extracted Evaluation Scheme ---\n\n${extractedText}`;
-      });
-
-      alert(`Successfully extracted evaluation scheme from Question Paper!`);
-    } catch (error: any) {
-      alert(`Failed to extract text: ${error.message}`);
-    } finally {
-      setIsExtracting(false);
-    }
-  };
-
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <label className="block text-sm font-bold text-gray-700">Question Paper & Answer Scheme</label>
-        <div className="flex flex-wrap gap-2">
-          <ExtractButton 
-            isExtracting={isExtracting} 
-            onFileSelect={handleExtract} 
-            label="Scan Question Paper"
-            icon={<FileText className="w-3.5 h-3.5" />}
-          />
-        </div>
-      </div>
-      <textarea
-        value={answerKey}
-        onChange={(e) => setAnswerKey(e.target.value)}
-        placeholder="Paste evaluation scheme here or upload a Question Paper to auto-generate the scheme..."
-        rows={10}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none text-sm font-mono"
-      />
-    </div>
-  );
-}
---- END OF FILE src/components/lab/descriptive/DescAnswerKeySection.tsx ---
-
---- START OF FILE src/components/lab/descriptive/DescriptiveOverviewCard.tsx ---
-import React from 'react';
-import { DescriptiveStudent } from './types';
-import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
-
-interface Props {
-  student: DescriptiveStudent;
-  onRemove: (id: string) => void;
-  onViewDetails: (student: DescriptiveStudent) => void;
-}
-
-export default function DescriptiveOverviewCard({ student, onRemove, onViewDetails }: Props) {
-  let cardClasses = "bg-white border-gray-200 hover:border-blue-300 text-gray-900";
-  let scoreDisplay = "--";
-  let maxScoreDisplay = "--";
-  
-  if (student.status === 'success' && student.result) {
-    const total = student.result.totalScore;
-    const maxTotal = student.result.maxTotalScore || student.result.breakdown.reduce((s, b) => s + b.maxScore, 0) || 1;
-    const pct = (total / maxTotal) * 100;
-    
-    scoreDisplay = total.toString();
-    maxScoreDisplay = maxTotal.toString();
-    
-    // Proportional coloring: < 47% Red, <= 80% Yellow, > 80% Green
-    if (pct < 47) {
-      cardClasses = "bg-red-50 border-red-200 text-red-900 hover:border-red-400";
-    } else if (pct <= 80) {
-      cardClasses = "bg-yellow-50 border-yellow-200 text-yellow-900 hover:border-yellow-400";
-    } else {
-      cardClasses = "bg-green-50 border-green-200 text-green-900 hover:border-green-400";
-    }
-  }
-
-  return (
-    <div 
-      onClick={() => onViewDetails(student)}
-      className={`relative p-4 md:p-5 rounded-2xl border shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between ${cardClasses}`}
-    >
-      <div className="flex flex-col min-w-0 pr-4">
-        <h3 className="font-bold text-lg truncate leading-tight mb-1" title={student.name}>{student.name}</h3>
-        
-        {student.status === 'success' && (
-          <div className="flex items-center gap-2 opacity-80 text-sm font-medium">
-            Score: {scoreDisplay} / {maxScoreDisplay}
-          </div>
-        )}
-        
-        {student.status === 'error' && (
-          <div className="flex items-center gap-1.5 text-xs font-bold text-red-600 mt-1">
-            <AlertTriangle className="w-3.5 h-3.5" /> Evaluation Failed
-          </div>
-        )}
-
-        {(student.status === 'pending' || student.status === 'evaluating') && (
-          <div className="flex items-center gap-1.5 text-xs font-bold opacity-70 mt-1">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Evaluating...
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center gap-4 shrink-0">
-        {student.status === 'success' && (
-          <div className="text-3xl font-black opacity-90 drop-shadow-sm">
-            {scoreDisplay}
-          </div>
-        )}
-        <button 
-          onClick={(e) => { e.stopPropagation(); onRemove(student.id); }}
-          className="p-2 opacity-40 hover:opacity-100 hover:text-red-600 hover:bg-red-100 rounded-full transition-all"
-          title="Remove Student"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/lab/descriptive/DescriptiveOverviewCard.tsx ---
-
---- START OF FILE src/components/lab/descriptive/DescriptiveDetailModal.tsx ---
-import React, { useState } from 'react';
-import { X, LayoutTemplate } from 'lucide-react';
-import { DescriptiveStudent } from './types';
-
-interface Props {
-  student: DescriptiveStudent;
-  onClose: () => void;
-}
-
-export default function DescriptiveDetailModal({ student, onClose }: Props) {
-  const [selectedImg, setSelectedImg] = useState(student.images[0]?.previewUrl || '');
-
-  const res = student.result;
-  const maxScore = res?.maxTotalScore || res?.breakdown.reduce((sum, b) => sum + b.maxScore, 0) || 1;
-
-  const getColorClass = (level: number) => {
-    switch (level) {
-      case 0: return 'border-red-400 bg-red-50 text-red-900';
-      case 1: return 'border-orange-400 bg-orange-50 text-orange-900';
-      case 2: return 'border-yellow-400 bg-yellow-50 text-yellow-900';
-      case 3: return 'border-green-400 bg-green-50 text-green-900';
-      default: return 'border-gray-200 bg-gray-50 text-gray-800';
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden">
-        
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-slate-50 shrink-0">
-          <div>
-            <h2 className="text-2xl font-black text-gray-900">{student.name}</h2>
-            {res && (
-              <p className="text-sm font-bold text-gray-500 mt-0.5">
-                Total Score: <span className="text-indigo-600 text-lg ml-1">{res.totalScore}</span> / {maxScore}
-              </p>
-            )}
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500">
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
-          {/* Left: Analysis */}
-          <div className="w-full md:w-1/2 lg:w-3/5 p-4 sm:p-6 overflow-y-auto flex flex-col gap-6 custom-scrollbar bg-white">
-            
-            {res?.breakdown && res.breakdown.length > 0 && (
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Question Analysis</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {res.breakdown.map((q, i) => (
-                    <div key={i} className={`p-3 rounded-xl border-2 flex flex-col ${getColorClass(q.colorLevel)}`}>
-                      <div className="flex justify-between items-center mb-2 pb-2 border-b border-black/10">
-                        <span className="font-bold text-sm">Q{q.questionNumber}</span>
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-white/60 shadow-sm border border-black/5">
-                          {q.score} / {q.maxScore}
-                        </span>
-                      </div>
-                      <p className="text-xs font-medium opacity-80 leading-relaxed break-words">{q.remarks}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {res?.feedback && (
-              <div className="mt-auto">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Overall Feedback</h3>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-wrap shadow-inner">
-                  {res.feedback}
-                </div>
-              </div>
-            )}
-
-            {!res && (
-              <div className="flex-1 flex items-center justify-center text-gray-400 font-medium">
-                No evaluation data available.
-              </div>
-            )}
-          </div>
-
-          {/* Right: Image Preview */}
-          <div className="w-full md:w-1/2 lg:w-2/5 border-t md:border-t-0 md:border-l border-gray-200 bg-gray-100 flex flex-col overflow-hidden min-h-[300px] md:min-h-0">
-            <div className="flex-1 p-4 flex items-center justify-center overflow-auto relative">
-              {selectedImg ? (
-                <img src={selectedImg} alt="Page preview" className="max-w-full max-h-full object-contain rounded shadow-sm bg-white" />
-              ) : (
-                <div className="flex flex-col items-center text-gray-400 gap-2">
-                  <LayoutTemplate className="w-8 h-8" />
-                  <span className="text-sm font-medium">No pages found</span>
-                </div>
-              )}
-            </div>
-            
-            {student.images.length > 1 && (
-              <div className="h-24 bg-white border-t border-gray-200 p-2 flex gap-2 overflow-x-auto shrink-0 custom-scrollbar items-center">
-                {student.images.map((img, i) => (
-                  <button 
-                    key={i}
-                    onClick={() => setSelectedImg(img.previewUrl)}
-                    className={`h-full aspect-[1/1.4] shrink-0 rounded border-2 overflow-hidden transition-all ${selectedImg === img.previewUrl ? 'border-indigo-500 shadow-md scale-105' : 'border-transparent hover:border-gray-300 opacity-60 hover:opacity-100'}`}
-                  >
-                    <img src={img.previewUrl} className="w-full h-full object-cover bg-gray-50" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      <style dangerouslySetInnerHTML={{__html: `
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
-      `}} />
-    </div>
-  );
-}
---- END OF FILE src/components/lab/descriptive/DescriptiveDetailModal.tsx ---
-
---- START OF FILE src/components/lab/descriptive/DescriptivePrintView.tsx ---
-import React from 'react';
-import { DescriptiveStudent } from './types';
-import { ArrowLeft, Printer, Settings2 } from 'lucide-react';
-
-interface Props {
-  students: DescriptiveStudent[];
-  onBack: () => void;
-}
-
-export default function DescriptivePrintView({ students, onBack }: Props) {
-  // Filter evaluated students
-  const validStudents = students.filter(s => s.status === 'success' && s.result);
-
-  return (
-    <div className="min-h-screen bg-gray-100 text-black print:bg-white pb-12">
-      <div className="print:hidden mb-6 p-4 md:p-6 bg-white border-b border-gray-200 text-gray-900 shadow-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors border border-gray-200">
-              <ArrowLeft className="w-5 h-5 text-gray-700" />
-            </button>
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <div className="p-1.5 bg-blue-100 text-blue-700 rounded-lg">
-                <Settings2 className="w-5 h-5" />
-              </div>
-              Print Evaluation Results
-            </h2>
-          </div>
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md hover:shadow-lg w-full md:w-auto justify-center"
-          >
-            <Printer className="w-5 h-5" />
-            Print Cards
-          </button>
-        </div>
-      </div>
-
-      <style>{`
-        @media print {
-          @page { margin: 1cm; }
-          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; }
-          .print-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-        }
-      `}</style>
-
-      <div className="max-w-6xl mx-auto p-4 print:p-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 print:gap-4 print-grid">
-          {validStudents.map((student, idx) => {
-            const res = student.result!;
-            const maxScore = res.maxTotalScore || res.breakdown.reduce((sum, b) => sum + b.maxScore, 0) || 1;
-            
-            return (
-              <div key={student.id} className="bg-white rounded-2xl border border-gray-300 shadow-sm p-5 break-inside-avoid flex flex-col">
-                <div className="mb-4 pb-3 border-b border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Student</div>
-                  <h3 className="text-xl font-black text-gray-900 truncate leading-tight" title={student.name}>{student.name}</h3>
-                  <div className="mt-2 text-lg font-bold text-gray-600">
-                    Score: <span className="text-2xl font-black text-indigo-600">{res.totalScore}</span> / {maxScore}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {res.breakdown.map((q, i) => {
-                    let dotColor = 'bg-gray-200';
-                    if (q.colorLevel === 0) dotColor = 'bg-red-500';
-                    else if (q.colorLevel === 1) dotColor = 'bg-orange-500';
-                    else if (q.colorLevel === 2) dotColor = 'bg-yellow-400';
-                    else if (q.colorLevel === 3) dotColor = 'bg-green-500';
-
-                    return (
-                      <div key={i} className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                        <span className="text-xs font-bold text-gray-700 w-5">Q{q.questionNumber}</span>
-                        <div className={`w-3.5 h-3.5 rounded-full ${dotColor} shadow-inner`} />
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                {/* Optional tiny feedback snippet if fits */}
-                <div className="mt-auto text-[11px] font-medium text-gray-500 line-clamp-3 bg-gray-50 p-2 rounded">
-                  {res.feedback}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Legend / Key at bottom of print */}
-        <div className="mt-12 bg-white p-6 rounded-2xl border border-gray-300 shadow-sm break-inside-avoid">
-          <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Evaluation Legend</h3>
-          <div className="flex flex-wrap gap-6 mb-6">
-            <div className="flex items-center gap-2"><div className="w-4 h-4 bg-red-500 rounded-full shadow-inner"/> <span className="text-sm font-bold text-gray-700">R: No answer / Wrong</span></div>
-            <div className="flex items-center gap-2"><div className="w-4 h-4 bg-orange-500 rounded-full shadow-inner"/> <span className="text-sm font-bold text-gray-700">O: Only attempt</span></div>
-            <div className="flex items-center gap-2"><div className="w-4 h-4 bg-yellow-400 rounded-full shadow-inner"/> <span className="text-sm font-bold text-gray-700">Y: Correct way, wrong value</span></div>
-            <div className="flex items-center gap-2"><div className="w-4 h-4 bg-green-500 rounded-full shadow-inner"/> <span className="text-sm font-bold text-gray-700">G: All correct</span></div>
-          </div>
-          
-          <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-xl whitespace-pre-wrap font-medium">
-            <span className="font-bold text-gray-800 uppercase tracking-widest text-xs block mb-2">Answer Key & Scheme Context</span>
-            {localStorage.getItem('aims_desc_answerKey') || 'No scheme provided.'}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/lab/descriptive/DescriptivePrintView.tsx ---
-
---- START OF FILE src/components/lab/descriptive/DescriptiveStudentList.tsx ---
-import React from 'react';
-import { DescriptiveStudent } from './types';
-import DescriptiveOverviewCard from './DescriptiveOverviewCard';
-
-interface Props {
-  students: DescriptiveStudent[];
-  onRemoveStudent: (id: string) => void;
-  onViewDetails: (student: DescriptiveStudent) => void;
-}
-
-export default function DescriptiveStudentList({ students, onRemoveStudent, onViewDetails }: Props) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {students.map((student) => (
-        <DescriptiveOverviewCard 
-          key={student.id} 
-          student={student} 
-          onRemove={onRemoveStudent}
-          onViewDetails={onViewDetails}
-        />
-      ))}
-    </div>
-  );
-}
---- END OF FILE src/components/lab/descriptive/DescriptiveStudentList.tsx ---
-
---- START OF FILE src/components/lab/descriptive/DescriptiveToolbar.tsx ---
-import React from 'react';
-import { Upload, Trash2, CheckCircle2, Download, Play, Loader2, Printer } from 'lucide-react';
-
-interface Props {
-  pipelineState: string;
-  imagesCount: number;
-  studentsCount: number;
-  onUploadClick: () => void;
-  onClearAll: () => void;
-  onFixNames: () => void;
-  onExportCSV: () => void;
-  onEvaluate: () => void;
-  onPrint?: () => void;
-}
-
-export default function DescriptiveToolbar({
-  pipelineState, imagesCount, studentsCount,
-  onUploadClick, onClearAll, onFixNames, onExportCSV, onEvaluate, onPrint
-}: Props) {
-  return (
-    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-      <div className="flex flex-wrap gap-3 w-full lg:w-auto">
-        <button
-          onClick={onUploadClick}
-          disabled={pipelineState === 'processing'}
-          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg font-medium hover:bg-blue-100 transition-colors disabled:opacity-50 shadow-sm"
-        >
-          <Upload className="w-4 h-4" /> Upload Images
-        </button>
-        <button
-          onClick={onClearAll}
-          disabled={pipelineState === 'processing' || (imagesCount === 0 && studentsCount === 0)}
-          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg font-medium hover:bg-gray-100 transition-colors disabled:opacity-50 shadow-sm"
-        >
-          <Trash2 className="w-4 h-4" /> Clear All
-        </button>
-      </div>
-
-      <div className="flex flex-wrap gap-3 w-full lg:w-auto">
-        <button
-          onClick={onFixNames}
-          disabled={pipelineState === 'processing' || studentsCount === 0}
-          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-lg font-medium hover:bg-yellow-100 transition-colors disabled:opacity-50 shadow-sm"
-        >
-          <CheckCircle2 className="w-4 h-4" /> Fix Names
-        </button>
-        <button
-          onClick={onExportCSV}
-          disabled={pipelineState !== 'done'}
-          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg font-medium hover:bg-green-100 transition-colors disabled:opacity-50 shadow-sm"
-        >
-          <Download className="w-4 h-4" /> Export CSV
-        </button>
-        {onPrint && (
-          <button
-            onClick={onPrint}
-            disabled={pipelineState !== 'done'}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg font-medium hover:bg-indigo-100 transition-colors disabled:opacity-50 shadow-sm"
-          >
-            <Printer className="w-4 h-4" /> Print Results
-          </button>
-        )}
-        <button
-          onClick={onEvaluate}
-          disabled={imagesCount === 0 || pipelineState === 'processing'}
-          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
-        >
-          {pipelineState === 'processing' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-          Evaluate
-        </button>
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/lab/descriptive/DescriptiveToolbar.tsx ---
-
---- START OF FILE src/components/lab/descriptive/DescriptiveDashboard.tsx ---
-import React, { useState, useRef } from 'react';
-import { ArrowLeft, FileSignature, Settings, Loader2 } from 'lucide-react';
-import DescriptiveSettings from './DescriptiveSettings';
-import DescriptiveFixNameModal from './DescriptiveFixNameModal';
-import DescriptiveToolbar from './DescriptiveToolbar';
-import DescriptiveQueue from './DescriptiveQueue';
-import DescriptiveProgress from './DescriptiveProgress';
-import DescriptiveStudentList from './DescriptiveStudentList';
-import DescriptiveDetailModal from './DescriptiveDetailModal';
-import DescriptivePrintView from './DescriptivePrintView';
-import { DescriptiveStudent } from './types';
-import { useDescriptivePipeline } from './hooks/useDescriptivePipeline';
-
-interface Props {
-  onBack: () => void;
-}
-
-export default function DescriptiveDashboard({ onBack }: Props) {
-  const [showSettings, setShowSettings] = useState(false);
-  const [showFixName, setShowFixName] = useState(false);
-  const [showPrintView, setShowPrintView] = useState(false);
-  const [selectedStudentForDetails, setSelectedStudentForDetails] = useState<DescriptiveStudent | null>(null);
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const {
-    images,
-    students,
-    pipelineState,
-    progress,
-    isLoadingState,
-    handleFileUpload,
-    handleRemoveImage,
-    handleClearAll,
-    runPipeline,
-    handleExportCSV,
-    handleUpdateStudents,
-    handleRemoveStudent
-  } = useDescriptivePipeline();
-
-  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      await handleFileUpload(e.target.files);
-    }
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  if (isLoadingState) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-      </div>
-    );
-  }
-
-  if (showPrintView) {
-    return <DescriptivePrintView students={students} onBack={() => setShowPrintView(false)} />;
-  }
-
-  // Filter images that haven't been assigned to a student yet (newly uploaded)
-  const unassignedImages = images.filter(img => !img.studentId);
-
-  return (
-    <div className="max-w-7xl mx-auto space-y-6 pb-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button onClick={onBack} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors border border-gray-200 bg-white shadow-sm">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
-              <FileSignature className="w-6 h-6" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900">Descriptive Evaluation</h2>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowSettings(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium shadow-sm w-full md:w-auto"
-        >
-          <Settings className="w-4 h-4" /> Settings
-        </button>
-      </div>
-
-      <div className="bg-white p-4 md:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
-        
-        <input 
-          type="file" 
-          multiple 
-          accept="image/*" 
-          className="hidden" 
-          ref={fileInputRef}
-          onChange={onUpload}
-        />
-
-        <DescriptiveToolbar
-          pipelineState={pipelineState}
-          imagesCount={images.length}
-          studentsCount={students.length}
-          onUploadClick={() => fileInputRef.current?.click()}
-          onClearAll={handleClearAll}
-          onFixNames={() => setShowFixName(true)}
-          onExportCSV={handleExportCSV}
-          onEvaluate={() => runPipeline(() => setShowSettings(true))}
-          onPrint={() => setShowPrintView(true)}
-        />
-
-        {pipelineState === 'processing' && (
-          <DescriptiveProgress step={progress.step} current={progress.current} total={progress.total} />
-        )}
-
-        {unassignedImages.length > 0 && (
-          <DescriptiveQueue images={unassignedImages} onRemove={handleRemoveImage} />
-        )}
-
-        {students.length > 0 && (
-          <DescriptiveStudentList 
-            students={students} 
-            onRemoveStudent={handleRemoveStudent}
-            onViewDetails={(s) => setSelectedStudentForDetails(s)} 
-          />
-        )}
-
-        {!unassignedImages.length && !students.length && pipelineState !== 'processing' && (
-          <div className="p-12 text-center text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-            No images uploaded yet. Click "Upload Images" to start.
-          </div>
-        )}
-      </div>
-
-      {showSettings && <DescriptiveSettings onClose={() => setShowSettings(false)} />}
-      
-      {showFixName && (
-        <DescriptiveFixNameModal 
-          students={students} 
-          onUpdateStudents={handleUpdateStudents}
-          onClose={() => setShowFixName(false)} 
-        />
-      )}
-
-      {selectedStudentForDetails && (
-        <DescriptiveDetailModal
-          student={selectedStudentForDetails}
-          onClose={() => setSelectedStudentForDetails(null)}
-        />
-      )}
-    </div>
-  );
-}
---- END OF FILE src/components/lab/descriptive/DescriptiveDashboard.tsx ---
-
---- START OF FILE src/components/lab/descriptive/index.ts ---
-export { default as DescriptiveDashboard } from './DescriptiveDashboard';
-export { default as DescriptiveSettings } from './DescriptiveSettings';
-export { default as DescriptiveOverviewCard } from './DescriptiveOverviewCard';
-export { default as DescriptiveDetailModal } from './DescriptiveDetailModal';
-export { default as DescriptivePrintView } from './DescriptivePrintView';
-export { default as DescriptiveFixNameModal } from './DescriptiveFixNameModal';
-export { default as DescriptiveToolbar } from './DescriptiveToolbar';
-export { default as DescriptiveQueue } from './DescriptiveQueue';
-export { default as DescriptiveProgress } from './DescriptiveProgress';
-export { default as DescriptiveStudentList } from './DescriptiveStudentList';
-export { default as ExtractButton } from './ExtractButton';
-export { default as DescAnswerKeySection } from './DescAnswerKeySection';
-export { default as DescTopicMappingSection } from './DescTopicMappingSection';
-export { useDescriptivePipeline } from './hooks/useDescriptivePipeline';
-export * from './types';
---- END OF FILE src/components/lab/descriptive/index.ts ---
-
---- START OF FILE project_snapshot_out.txt ---
+--- END OF FILE project_snapshot_out.txt ---

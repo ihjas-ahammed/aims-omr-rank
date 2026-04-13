@@ -8,6 +8,7 @@ import DescriptiveProgress from './DescriptiveProgress';
 import DescriptiveStudentList from './DescriptiveStudentList';
 import DescriptiveDetailModal from './DescriptiveDetailModal';
 import DescriptivePrintView from './DescriptivePrintView';
+import DescStudentSort from './DescStudentSort';
 import { DescriptiveStudent } from './types';
 import { useDescriptivePipeline } from './hooks/useDescriptivePipeline';
 
@@ -20,6 +21,10 @@ export default function DescriptiveDashboard({ onBack }: Props) {
   const [showFixName, setShowFixName] = useState(false);
   const [showPrintView, setShowPrintView] = useState(false);
   const [selectedStudentForDetails, setSelectedStudentForDetails] = useState<DescriptiveStudent | null>(null);
+  
+  const [sortBy, setSortBy] = useState<'name' | 'score' | 'default'>('default');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [searchQuery, setSearchQuery] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,8 +62,27 @@ export default function DescriptiveDashboard({ onBack }: Props) {
     return <DescriptivePrintView students={students} onBack={() => setShowPrintView(false)} />;
   }
 
-  // Filter images that haven't been assigned to a student yet (newly uploaded)
   const unassignedImages = images.filter(img => !img.studentId);
+
+  const filteredStudents = students.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  
+  const sortedStudents = [...filteredStudents].sort((a, b) => {
+    if (sortBy === 'default') return 0;
+    
+    if (sortBy === 'name') {
+      const cmp = a.name.localeCompare(b.name);
+      return sortOrder === 'asc' ? cmp : -cmp;
+    }
+    
+    if (sortBy === 'score') {
+      const scoreA = a.result?.totalScore || 0;
+      const scoreB = b.result?.totalScore || 0;
+      const cmp = scoreA - scoreB;
+      return sortOrder === 'asc' ? cmp : -cmp;
+    }
+    
+    return 0;
+  });
 
   return (
     <div className="max-w-7xl mx-auto space-y-6 pb-12">
@@ -114,11 +138,18 @@ export default function DescriptiveDashboard({ onBack }: Props) {
         )}
 
         {students.length > 0 && (
-          <DescriptiveStudentList 
-            students={students} 
-            onRemoveStudent={handleRemoveStudent}
-            onViewDetails={(s) => setSelectedStudentForDetails(s)} 
-          />
+          <>
+            <DescStudentSort 
+              sortBy={sortBy} setSortBy={setSortBy} 
+              sortOrder={sortOrder} setSortOrder={setSortOrder} 
+              searchQuery={searchQuery} setSearchQuery={setSearchQuery} 
+            />
+            <DescriptiveStudentList 
+              students={sortedStudents} 
+              onRemoveStudent={handleRemoveStudent}
+              onViewDetails={(s) => setSelectedStudentForDetails(s)} 
+            />
+          </>
         )}
 
         {!unassignedImages.length && !students.length && pipelineState !== 'processing' && (

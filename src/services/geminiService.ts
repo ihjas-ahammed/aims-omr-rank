@@ -412,7 +412,16 @@ export async function extractTextFromDocument(
   } else if (extractionType === 'topicMapping' || extractionType === 'descTopicMapping') {
     prompt = `Extract the chapter and topic mapping from this document. Format it exactly like this:\n### Chapter Name\n* Topic Name: Q1, Q2, Q3\n* Another Topic: Q4, Q5\n\n### Another Chapter\n* Topic Name: Q6, Q7\n\nOnly output the formatted text, nothing else.`;
   } else if (extractionType === 'descQPAndScheme') {
-    prompt = `You are an expert exam setter. Extract all the questions from this question paper image. For each question extracted, provide the expected answer or key evaluation points, and the maximum marks allocated. Format as a clear, structured evaluation scheme so that an examiner can grade student answers based on it.`;
+    prompt = `You are an expert exam setter. Extract all questions from this question paper image.
+    Format the output as a JSON array of objects. Each object must have:
+    - "qNum": question number (string)
+    - "maxScore": maximum marks (number)
+    - "rubric": object with keys "3", "2", "1", "0".
+      "3": Criteria for full marks (Green)
+      "2": Criteria for partial marks / minor errors (Yellow)
+      "1": Criteria for minimal marks / attempt (Orange)
+      "0": Criteria for zero marks (Red)
+    Return ONLY valid JSON array.`;
   }
 
   let lastError: any;

@@ -72,18 +72,14 @@ export async function evaluateDescriptiveAnswers(
 
   const contents: any[] = [
     { text: `You are an expert examiner. Grade the student's descriptive exam answers from these images.
-Question Paper & Evaluation Scheme:
+Question Paper & Evaluation Scheme (JSON):
 ${answerKey}
 
 Topic Mapping:
 ${topicMapping}
 
-Provide the total score achieved, the maximum possible total score for the exam, a detailed breakdown of marks per question, and constructive overall feedback.
-For each question, assign a 'colorLevel' from 0 to 3 based on the student's answer quality:
-0 -> No answer or completely wrong.
-1 -> Only attempted or minor correct steps.
-2 -> Correct method/way but final value/answer is wrong.
-3 -> All correct.
+For each question, assign a 'colorLevel' (0, 1, 2, or 3) strictly based on the rubric provided in the evaluation scheme JSON.
+Provide totalScore, maxTotalScore, breakdown of marks, and short constructive overall feedback.
 ` }
   ];
   

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
-import DescAnswerKeySection from './DescAnswerKeySection';
+import DescSchemeEditor from './DescSchemeEditor';
 import DescTopicMappingSection from './DescTopicMappingSection';
 
 interface Props {
@@ -37,7 +37,7 @@ export default function DescriptiveSettings({ onClose }: Props) {
             <strong>Note:</strong> API Keys and Models are shared with the OMR module. Configure them in the main Home settings.
           </div>
           
-          <DescAnswerKeySection answerKey={answerKey} setAnswerKey={setAnswerKey} />
+          <DescSchemeEditor answerKey={answerKey} setAnswerKey={setAnswerKey} />
           
           <DescTopicMappingSection topicMapping={topicMapping} setTopicMapping={setTopicMapping} />
         </div>
