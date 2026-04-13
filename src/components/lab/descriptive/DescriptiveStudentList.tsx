@@ -1,21 +1,22 @@
 import React from 'react';
 import { DescriptiveStudent } from './types';
-import DescriptiveResultCard from './DescriptiveResultCard';
+import DescriptiveOverviewCard from './DescriptiveOverviewCard';
 
 interface Props {
   students: DescriptiveStudent[];
   onRemoveStudent: (id: string) => void;
+  onViewDetails: (student: DescriptiveStudent) => void;
 }
 
-export default function DescriptiveStudentList({ students, onRemoveStudent }: Props) {
+export default function DescriptiveStudentList({ students, onRemoveStudent, onViewDetails }: Props) {
   return (
-    <div className="grid grid-cols-1 gap-6">
-      {students.map((student, idx) => (
-        <DescriptiveResultCard 
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {students.map((student) => (
+        <DescriptiveOverviewCard 
           key={student.id} 
           student={student} 
-          index={idx} 
           onRemove={onRemoveStudent}
+          onViewDetails={onViewDetails}
         />
       ))}
     </div>

@@ -1,6 +1,8 @@
 export { default as DescriptiveDashboard } from './DescriptiveDashboard';
 export { default as DescriptiveSettings } from './DescriptiveSettings';
-export { default as DescriptiveResultCard } from './DescriptiveResultCard';
+export { default as DescriptiveOverviewCard } from './DescriptiveOverviewCard';
+export { default as DescriptiveDetailModal } from './DescriptiveDetailModal';
+export { default as DescriptivePrintView } from './DescriptivePrintView';
 export { default as DescriptiveFixNameModal } from './DescriptiveFixNameModal';
 export { default as DescriptiveToolbar } from './DescriptiveToolbar';
 export { default as DescriptiveQueue } from './DescriptiveQueue';

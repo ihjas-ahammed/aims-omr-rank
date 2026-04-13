@@ -1,11 +1,19 @@
 Make the following changes:
 
     * Update Decriptive Evaluation:
-        Fix:
-            It is not possible to upload images again after one valuation is done
-            You can use parallel requests (following same rules as OMR) for rotation
+        Update the entire design of descriptive evaluation based on the given blueprint, give better front end design
 
-            
+
+        The overview cards are. Shown in the main screen,  this will make it easy to look at hundreds of student scores 
+
+        And the detailed analysis is when we click on each of it
+
+
+        Note: results print screen is on another page, there will be a button to that (like we had with OMR ranklist) and use the given card
+
+        So, in order to get the given card on qp analysis for answers (from now on take in the qp not the answer key and extract both questions and answers) and also the evaluation scheme, with the feedback color
+
+
 
 Apply changes to both mobile view and desktop (movbile view is the priority)
 

@@ -2,11 +2,13 @@ export interface DescriptiveBreakdown {
   questionNumber: string;
   score: number;
   maxScore: number;
+  colorLevel: 0 | 1 | 2 | 3; // 0=Red(No answer), 1=Orange(Only attempt), 2=Yellow(Correct way/wrong value), 3=Green(All correct)
   remarks: string;
 }
 
 export interface DescriptiveResult {
   totalScore: number;
+  maxTotalScore: number;
   breakdown: DescriptiveBreakdown[];
   feedback: string;
 }

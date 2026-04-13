@@ -1,30 +1,1428 @@
-Here are the requested updates. I have improved modularity by splitting the student list into a new `DescriptiveStudentList` component, implemented parallel processing for auto-cropping and valuation using the same concurrency rules as OMR, and fixed the UI logic so you can upload and process additional images without losing previous valuations.
+Here are the changes to completely revamp the Descriptive Evaluation module according to your blueprints. We've introduced a clean Overview Card layout, a detailed Analysis Modal for deep dives into student papers, and a dedicated Print Results screen with the required color-coded evaluation scheme.
+
+I've also updated the Answer Key settings to take in the Question Paper directly to automatically extract both the questions and the evaluation scheme.
+
+--- START OF FILE project_snapshot_out.txt ---
+
+--- START OF FILE src/components/lab/descriptive/types.ts ---
+export interface DescriptiveBreakdown {
+  questionNumber: string;
+  score: number;
+  maxScore: number;
+  colorLevel: 0 | 1 | 2 | 3; // 0=Red(No answer), 1=Orange(Only attempt), 2=Yellow(Correct way/wrong value), 3=Green(All correct)
+  remarks: string;
+}
+
+export interface DescriptiveResult {
+  totalScore: number;
+  maxTotalScore: number;
+  breakdown: DescriptiveBreakdown[];
+  feedback: string;
+}
+
+export interface DescriptiveImage {
+  id: string;
+  file: File;
+  previewUrl: string;
+  croppedBase64?: string;
+  status: 'pending' | 'cropped';
+  studentId?: string;
+}
+
+export interface DescriptiveStudent {
+  id: string;
+  name: string;
+  images: DescriptiveImage[];
+  status: 'pending' | 'evaluating' | 'success' | 'error';
+  result?: DescriptiveResult;
+  error?: string;
+}
+--- END OF FILE src/components/lab/descriptive/types.ts ---
+
+--- START OF FILE src/services/geminiService.ts ---
+import { GoogleGenAI, Type } from '@google/genai';
+
+export interface OMRResult {
+  name: string;
+  right: number;
+  wrong: number;
+  scores: Record<string, number>; // q1 to q25
+  confidence: number;
+  confidences?: number[];
+  nameConfidence?: number;
+}
+
+export interface AutoCropResult {
+  ymin: number;
+  xmin: number;
+  ymax: number;
+  xmax: number;
+  rotation: number;
+}
+
+let currentKeyIndex = 0;
+
+function getKeys(apiKeys: string[]) {
+  const keys = apiKeys.length > 0 ? apiKeys : [process.env.GEMINI_API_KEY].filter(Boolean) as string[];
+  if (keys.length === 0) {
+    throw new Error('No API keys provided.');
+  }
+  return keys;
+}
+
+function getNextKey(keys: string[]): { key: string, index: number } {
+  const index = currentKeyIndex;
+  currentKeyIndex = (currentKeyIndex + 1) % keys.length;
+  return { key: keys[index], index };
+}
+
+export async function fetchAvailableModels(apiKeys: string[]): Promise<string[]> {
+  const keys = getKeys(apiKeys);
+  let lastError: any;
+  
+  for (let i = 0; i < keys.length; i++) {
+    const { key } = getNextKey(keys);
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const data = await res.json();
+      return data.models
+        .map((m: any) => m.name.replace('models/', ''))
+        .filter((name: string) => name.includes('gemini') || name.includes('gemma'));
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('Failed to fetch models');
+}
+
+export async function evaluateOMR(
+  imageBase64: string,
+  mimeType: string,
+  apiKeys: string[],
+  model: string,
+  liteModel: string,
+  answerKeyPrompt: string
+): Promise<OMRResult> {
+  const keysToTry = getKeys(apiKeys);
+
+  const prompt = `
+You are an expert OMR sheet evaluator.
+Evaluate the provided OMR sheet image based on the following rules and answer key.
+GIVE full focus on validation.
+
+### Answer Key
+${answerKeyPrompt}
+
+Questions 26 through 30 have not been bubbled. Ignore them.
+
+### Evaluation Rules:
+- For each question Q1 to Q25, determine if the student's answer is correct, wrong, or unattempted.
+- Give 1 if correct, -1 if wrong, 0 if no answer.
+- Cross marks: If a student made a mistake and used a cross mark on a bubble, evaluate their second option (the bubbled one without a cross). If they only have one cross mark and no other bubble, skip the question (give 0).
+- Extract the student's NAME from the sheet. (Best effort only, exact spelling is not critical as it will be verified against an attendance sheet later).
+- Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
+- Provide a confidence score from 0 to 100 representing how confident you are in your evaluation of this sheet.
+
+Output your response as a JSON object with the following structure:
+{
+  "name": "Student Name",
+  "right": 10,
+  "wrong": 5,
+  "confidence": 95,
+  "q1": 1,
+  "q2": -1,
+  "q3": 0,
+  // ... up to q25
+}
+`;
+
+  const schemaConfig = {
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: {
+        name: { type: Type.STRING, description: "Student's name" },
+        right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
+        wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
+        confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" },
+        q1: { type: Type.INTEGER }, q2: { type: Type.INTEGER }, q3: { type: Type.INTEGER }, q4: { type: Type.INTEGER }, q5: { type: Type.INTEGER },
+        q6: { type: Type.INTEGER }, q7: { type: Type.INTEGER }, q8: { type: Type.INTEGER }, q9: { type: Type.INTEGER }, q10: { type: Type.INTEGER },
+        q11: { type: Type.INTEGER }, q12: { type: Type.INTEGER }, q13: { type: Type.INTEGER }, q14: { type: Type.INTEGER }, q15: { type: Type.INTEGER },
+        q16: { type: Type.INTEGER }, q17: { type: Type.INTEGER }, q18: { type: Type.INTEGER }, q19: { type: Type.INTEGER }, q20: { type: Type.INTEGER },
+        q21: { type: Type.INTEGER }, q22: { type: Type.INTEGER }, q23: { type: Type.INTEGER }, q24: { type: Type.INTEGER }, q25: { type: Type.INTEGER },
+      },
+      required: ["name", "right", "wrong", "confidence", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22", "q23", "q24", "q25"]
+    }
+  };
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const { key } = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-pro-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: imageBase64, mimeType } }
+        ]
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+      
+      let data;
+      try {
+        const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+        data = JSON.parse(cleanedText);
+      } catch (parseError) {
+        console.log('Failed to parse JSON from pro model, using lite model to restructure...', text);
+        const restructureResponse = await ai.models.generateContent({
+          model: liteModel || 'gemini-3.1-flash-lite-preview',
+          contents: `Extract the OMR evaluation data from the following text and format it as JSON.\n\nText:\n${text}`,
+          config: schemaConfig as any
+        });
+        
+        const restructuredText = restructureResponse.text;
+        if (!restructuredText) throw new Error('Empty response from lite model during restructure');
+        data = JSON.parse(restructuredText);
+      }
+      
+      const scores: Record<string, number> = {};
+      for (let j = 1; j <= 25; j++) {
+        scores[`q${j}`] = data[`q${j}`] ?? 0;
+      }
+
+      return {
+        name: data.name || 'Unknown',
+        right: data.right || 0,
+        wrong: data.wrong || 0,
+        confidence: data.confidence ?? 100,
+        scores
+      };
+
+    } catch (error: any) {
+      console.error('Error with API key:', error);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Failed to evaluate OMR sheet with all provided keys.');
+}
+
+export async function evaluateOMRBatch(
+  images: { id: string, base64: string, mimeType: string }[],
+  apiKeys: string[],
+  model: string,
+  liteModel: string,
+  answerKeyPrompt: string,
+  numQuestions: number = 25
+): Promise<Record<string, OMRResult>> {
+  const keysToTry = getKeys(apiKeys);
+
+  const prompt = `
+You are an expert OMR sheet evaluator.
+Evaluate the provided OMR sheet images based on the following rules and answer key.
+GIVE full focus on validation.
+
+### Answer Key
+${answerKeyPrompt}
+
+Questions 26 through 30 have not been bubbled. Ignore them unless there are more than 25 questions.
+
+### Evaluation Rules:
+- For each question Q1 to Q${numQuestions}, determine if the student's answer is correct, wrong, or unattempted.
+- Give 1 if correct, -1 if wrong, 0 if no answer.
+- Extract the student's NAME from the sheet. (Best effort only, exact spelling is not critical as it will be verified against an attendance sheet later).
+- Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
+- Provide a confidence score from 0 to 100 representing how confident you are in your evaluation of this sheet. (be accurate)
+
+You will receive ${images.length} images. Each image corresponds to an ID. Evaluate each image and return a JSON object mapping the image ID to its evaluation result.
+
+Output your response as a JSON object with the following structure:
+{
+  "image_id_1": {
+    "name": "Student Name",
+    "right": 10,
+    "wrong": 5,
+    "confidence": 95,
+    "q1": 1,
+    "q2": -1,
+    "q3": 0,
+    // ... up to q${numQuestions}
+  },
+  "image_id_2": {
+    // ...
+  }
+}
+`;
+
+  const schemaConfig = {
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: images.reduce((acc, img) => {
+        const imgProps: any = {
+          name: { type: Type.STRING, description: "Student's name" },
+          right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
+          wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
+          confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" },
+        };
+        for (let q = 1; q <= numQuestions; q++) {
+          imgProps[`q${q}`] = { type: Type.INTEGER };
+        }
+        acc[img.id] = {
+          type: Type.OBJECT,
+          properties: imgProps,
+          required: ["name", "right", "wrong", "confidence", ...Array.from({ length: numQuestions }, (_, i) => `q${i + 1}`)]
+        };
+        return acc;
+      }, {} as any),
+      required: images.map(img => img.id)
+    }
+  };
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const { key } = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      
+      const contentsParts: any[] = [{ text: prompt }];
+      images.forEach((img) => {
+        contentsParts.push({ text: `Image ID: ${img.id}` });
+        contentsParts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } });
+      });
+
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-pro-preview',
+        contents: contentsParts
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+      
+      let data;
+      try {
+        const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+        data = JSON.parse(cleanedText);
+      } catch (parseError) {
+        console.log('Failed to parse JSON from pro model, using lite model to restructure...', text);
+        const restructureResponse = await ai.models.generateContent({
+          model: liteModel || 'gemini-3.1-flash-lite-preview',
+          contents: `Extract the OMR evaluation data from the following text and format it as JSON.\n\nText:\n${text}`,
+          config: schemaConfig as any
+        });
+        
+        const restructuredText = restructureResponse.text;
+        if (!restructuredText) throw new Error('Empty response from lite model during restructure');
+        data = JSON.parse(restructuredText);
+      }
+      
+      const finalResults: Record<string, OMRResult> = {};
+      
+      for (const img of images) {
+        const imgData = data[img.id];
+        if (!imgData) continue;
+        
+        const scores: Record<string, number> = {};
+        for (let j = 1; j <= 25; j++) {
+          scores[`q${j}`] = imgData[`q${j}`] ?? 0;
+        }
+        
+        finalResults[img.id] = {
+          name: imgData.name || 'Unknown',
+          right: imgData.right || 0,
+          wrong: imgData.wrong || 0,
+          confidence: imgData.confidence ?? 100,
+          scores
+        };
+      }
+
+      return finalResults;
+
+    } catch (error: any) {
+      console.error('Error with API key:', error);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Failed to evaluate OMR sheets with all provided keys.');
+}
+
+export async function correctNamesBatch(
+  foundNames: string[],
+  attendanceSheet: string,
+  apiKeys: string[],
+  model: string
+): Promise<Record<string, { correctedName: string, confidence: number }>> {
+  if (foundNames.length === 0) return {};
+  
+  const keysToTry = getKeys(apiKeys);
+  const finalMap: Record<string, { correctedName: string, confidence: number }> = {};
+  const BATCH_SIZE = 20;
+  const batchPromises = [];
+  
+  for (let batchStart = 0; batchStart < foundNames.length; batchStart += BATCH_SIZE) {
+    const batchNames = foundNames.slice(batchStart, batchStart + BATCH_SIZE);
+    
+    batchPromises.push((async () => {
+      const prompt = `
+You are a data correction assistant.
+I have a list of names extracted via OCR from OMR sheets, which might have spelling mistakes.
+I also have an official attendance sheet.
+Map each extracted name to the closest matching name in the attendance sheet.
+Watch out specifically for these three distinct people: "Fathima Nasha", "Fathima Nasha CP", and "Nasha Fathima P".
+similarly, we have Ridha K and Rihan K
+
+For each name, provide the closest match from the attendance sheet and a confidence score (0-100) representing how certain you are of this match. If no good match is found, return the original name and a low confidence score.
+
+Extracted Names:
+${JSON.stringify(batchNames)}
+
+Attendance Sheet:
+${attendanceSheet}
+`;
+
+      let lastError: any;
+      for (let i = 0; i < keysToTry.length; i++) {
+        const { key } = getNextKey(keysToTry);
+        try {
+          const ai = new GoogleGenAI({ apiKey: key });
+          
+          const response = await ai.models.generateContent({
+            model: model || 'gemini-3.1-pro-preview',
+            contents: prompt,
+            config: {
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    original: { type: Type.STRING, description: "The exact extracted name" },
+                    corrected: { type: Type.STRING, description: "The corrected name from the attendance sheet" },
+                    confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" }
+                  },
+                  required: ["original", "corrected", "confidence"]
+                }
+              }
+            }
+          });
+
+          const text = response.text;
+          if (!text) throw new Error('Empty response from model');
+          
+          const data = JSON.parse(text) as { original: string, corrected: string, confidence: number }[];
+          return data;
+        } catch (error) {
+          console.error('Error with API key in batch correction:', error);
+          lastError = error;
+        }
+      }
+      throw lastError || new Error('Failed to correct names with all provided keys.');
+    })());
+  }
+  
+  const results = await Promise.all(batchPromises);
+  
+  for (const batchResult of results) {
+    for (const item of batchResult) {
+      finalMap[item.original] = { correctedName: item.corrected, confidence: item.confidence };
+    }
+  }
+
+  return finalMap;
+}
+
+export async function extractTextFromDocument(
+  base64: string,
+  mimeType: string,
+  apiKeys: string[],
+  model: string,
+  extractionType: 'answerKey' | 'topicMapping' | 'descQPAndScheme' | 'descTopicMapping'
+): Promise<string> {
+  const keysToTry = getKeys(apiKeys);
+  
+  let prompt = '';
+  if (extractionType === 'answerKey') {
+    prompt = `Extract the answer key from this document. Format it as a simple list like:\n* **Q1.** A\n* **Q2.** B\n* **Q3.** C\nOnly output the formatted text, nothing else.`;
+  } else if (extractionType === 'topicMapping' || extractionType === 'descTopicMapping') {
+    prompt = `Extract the chapter and topic mapping from this document. Format it exactly like this:\n### Chapter Name\n* Topic Name: Q1, Q2, Q3\n* Another Topic: Q4, Q5\n\n### Another Chapter\n* Topic Name: Q6, Q7\n\nOnly output the formatted text, nothing else.`;
+  } else if (extractionType === 'descQPAndScheme') {
+    prompt = `You are an expert exam setter. Extract all the questions from this question paper image. For each question extracted, provide the expected answer or key evaluation points, and the maximum marks allocated. Format as a clear, structured evaluation scheme so that an examiner can grade student answers based on it.`;
+  }
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const { key } = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-pro-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: base64, mimeType } }
+        ]
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+      
+      return text.trim();
+    } catch (error: any) {
+      console.error('Error with API key in extractTextFromDocument:', error);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Failed to extract text with all provided keys.');
+}
+
+export async function parseTopicMappingWithAI(
+  mappingText: string,
+  apiKeys: string[],
+  model: string
+): Promise<any> {
+  const keysToTry = getKeys(apiKeys);
+
+  const prompt = `
+You are an expert curriculum parser.
+Convert the provided topic mapping text into a structured JSON format.
+The text contains Chapters, Topics, and the Question numbers associated with each topic.
+
+Input text:
+${mappingText}
+`;
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const { key } = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-flash-lite-preview',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING, description: "The name of the chapter" },
+                questions: { 
+                  type: Type.ARRAY, 
+                  items: { type: Type.INTEGER },
+                  description: "All question numbers in this chapter"
+                },
+                topics: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      name: { type: Type.STRING, description: "The name of the topic" },
+                      questions: {
+                        type: Type.ARRAY,
+                        items: { type: Type.INTEGER },
+                        description: "The question numbers associated with this topic"
+                      }
+                    },
+                    required: ["name", "questions"]
+                  }
+                }
+              },
+              required: ["name", "questions", "topics"]
+            }
+          }
+        }
+      });
+
+      const jsonStr = response.text?.trim() || '[]';
+      const parsed = JSON.parse(jsonStr);
+      return parsed;
+    } catch (error) {
+      console.error('Error with API key in parseTopicMappingWithAI:', error);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Failed to parse topic mapping with all provided keys.');
+}
+
+export async function autoCropAndRotate(
+  imageBase64: string,
+  mimeType: string,
+  apiKeys: string[],
+  model: string
+): Promise<AutoCropResult> {
+  const keysToTry = getKeys(apiKeys);
+
+  const prompt = `
+You are an image processing assistant. Identify the exact bounding box of the main OMR sheet document within the image, ignoring background surfaces.
+Return the coordinates of the bounding box normalized to a 0-1000 scale (ymin, xmin, ymax, xmax).
+
+CRITICAL: OMR sheets are PORTRAIT (taller than they are wide). 
+If the image shows the sheet lying sideways (landscape), you MUST return a rotation of 90 or 270 to make it upright.
+Determine the clockwise rotation needed (0, 90, 180, or 270) to make the text on the OMR sheet upright and readable in a portrait orientation.
+
+Output your response as a JSON object with this exact structure:
+{
+  "ymin": 100,
+  "xmin": 150,
+  "ymax": 900,
+  "xmax": 850,
+  "rotation": 0
+}
+`;
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const { key } = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-flash-lite-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: imageBase64, mimeType } }
+        ],
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              ymin: { type: Type.INTEGER },
+              xmin: { type: Type.INTEGER },
+              ymax: { type: Type.INTEGER },
+              xmax: { type: Type.INTEGER },
+              rotation: { type: Type.INTEGER }
+            },
+            required: ["ymin", "xmin", "ymax", "xmax", "rotation"]
+          }
+        }
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+      
+      const data = JSON.parse(text) as AutoCropResult;
+      return data;
+    } catch (error) {
+      console.error('Error with API key in autoCropAndRotate:', error);
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('Failed to process image with all provided keys.');
+}
+
+export interface FeeRecord {
+  admissionNo: string;
+  studentClass: string;
+  studentName: string;
+  feeAmount: number;
+  isGPay: boolean;
+  date: string;
+}
+
+export async function extractFeeRecordsBatch(
+  images: { id: string, base64: string, mimeType: string }[],
+  apiKeys: string[],
+  model: string
+): Promise<Record<string, FeeRecord[]>> {
+  const keysToTry = getKeys(apiKeys);
+
+  const prompt = `
+You are an expert data extraction assistant.
+Extract the fee log records from the provided handwritten ledger images.
+The columns are typically: Admission No, Class, Student Name, Fee Amount, Payment Method (GP means Google Pay), and Date.
+
+Rules:
+1. Handle ditto marks (") or blank dates by inferring the date from the previous row.
+2. Convert dates to YYYY-MM-DD format. Assume the year is 2025 if not fully specified.
+3. If 'GP' is written in the payment method column, set isGPay to true, otherwise false.
+4. If a field is completely unreadable, leave it as an empty string (or 0 for numbers).
+
+Output your response as a JSON object mapping each image ID to an array of records with this structure:
+{
+  "image_id_1": [
+    {
+      "admissionNo": "1024",
+      "studentClass": "10A",
+      "studentName": "John Doe",
+      "feeAmount": 500,
+      "isGPay": true,
+      "date": "2025-04-10"
+    }
+  ],
+  "image_id_2": [...]
+}
+`;
+
+  const schemaConfig = {
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: images.reduce((acc, img) => {
+        acc[img.id] = {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              admissionNo: { type: Type.STRING },
+              studentClass: { type: Type.STRING },
+              studentName: { type: Type.STRING },
+              feeAmount: { type: Type.NUMBER },
+              isGPay: { type: Type.BOOLEAN },
+              date: { type: Type.STRING, description: "YYYY-MM-DD format" }
+            },
+            required: ["admissionNo", "studentClass", "studentName", "feeAmount", "isGPay", "date"]
+          }
+        };
+        return acc;
+      }, {} as any),
+      required: images.map(img => img.id)
+    }
+  };
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const { key } = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+
+      const contentsParts: any[] = [{ text: prompt }];
+      images.forEach((img) => {
+        contentsParts.push({ text: `Image ID: ${img.id}` });
+        contentsParts.push({ inlineData: { data: img.base64, mimeType: img.mimeType } });
+      });
+
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-pro-preview',
+        contents: contentsParts,
+        config: schemaConfig as any
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+
+      let data;
+      try {
+        const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+        data = JSON.parse(cleanedText) as Record<string, FeeRecord[]>;
+      } catch (parseError) {
+        console.error("Parse Error:", parseError);
+        throw new Error("Failed to parse JSON from AI response.");
+      }
+
+      return data;
+    } catch (error: any) {
+      console.error('Error with API key in extractFeeRecordsBatch:', error);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Failed to extract fee records with all provided keys.');
+}
+--- END OF FILE src/services/geminiService.ts ---
+
+--- START OF FILE src/services/gemini/descriptiveService.ts ---
+import { GoogleGenAI, Type } from '@google/genai';
+
+let currentKeyIndex = 0;
+function getNextKey(keys: string[]) {
+  if (keys.length === 0) throw new Error("No API keys provided.");
+  const index = currentKeyIndex;
+  currentKeyIndex = (currentKeyIndex + 1) % keys.length;
+  return keys[index];
+}
+
+export async function identifyStudentFromPage(
+  base64: string,
+  mimeType: string,
+  previousName: string | null,
+  apiKeys: string[],
+  model: string
+): Promise<{ isNewStudent: boolean, studentName: string | null }> {
+  const keysToTry = apiKeys.filter(k => k.trim());
+  let lastError: any;
+
+  const prompt = `Analyze this handwritten exam page. 
+Context: The previous page belonged to student "${previousName || 'None'}".
+Determine if this page belongs to a new student or is a continuation of the previous student's exam.
+Look for a clear "Name" or "Student" field at the top.
+If there is a new name, return isNewStudent: true and the studentName.
+If there is no name and it looks like a continuation, return isNewStudent: false and studentName: null.
+`;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const key = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-flash-lite-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: base64, mimeType } }
+        ],
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              isNewStudent: { type: Type.BOOLEAN },
+              studentName: { type: Type.STRING, nullable: true }
+            },
+            required: ["isNewStudent"]
+          }
+        }
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+      const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+      return JSON.parse(cleanedText);
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError || new Error("Failed to identify student with provided keys.");
+}
+
+export async function evaluateDescriptiveAnswers(
+  images: { base64: string, mimeType: string }[],
+  answerKey: string,
+  topicMapping: string,
+  apiKeys: string[],
+  model: string
+): Promise<{ totalScore: number, maxTotalScore: number, breakdown: any[], feedback: string }> {
+  const keysToTry = apiKeys.filter(k => k.trim());
+  let lastError: any;
+
+  const contents: any[] = [
+    { text: `You are an expert examiner. Grade the student's descriptive exam answers from these images.
+Question Paper & Evaluation Scheme:
+${answerKey}
+
+Topic Mapping:
+${topicMapping}
+
+Provide the total score achieved, the maximum possible total score for the exam, a detailed breakdown of marks per question, and constructive overall feedback.
+For each question, assign a 'colorLevel' from 0 to 3 based on the student's answer quality:
+0 -> No answer or completely wrong.
+1 -> Only attempted or minor correct steps.
+2 -> Correct method/way but final value/answer is wrong.
+3 -> All correct.
+` }
+  ];
+  
+  images.forEach(img => {
+    contents.push({ inlineData: { data: img.base64, mimeType: img.mimeType } });
+  });
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const key = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-pro-preview',
+        contents,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              totalScore: { type: Type.NUMBER },
+              maxTotalScore: { type: Type.NUMBER },
+              breakdown: { 
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    questionNumber: { type: Type.STRING },
+                    score: { type: Type.NUMBER },
+                    maxScore: { type: Type.NUMBER },
+                    colorLevel: { type: Type.INTEGER, description: "0: Red, 1: Orange, 2: Yellow, 3: Green" },
+                    remarks: { type: Type.STRING }
+                  },
+                  required: ["questionNumber", "score", "maxScore", "colorLevel", "remarks"]
+                }
+              },
+              feedback: { type: Type.STRING }
+            },
+            required: ["totalScore", "maxTotalScore", "breakdown", "feedback"]
+          }
+        }
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+      const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+      return JSON.parse(cleanedText);
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError || new Error("Failed to evaluate answers with provided keys.");
+}
+
+export async function fixDescriptiveNamesBatch(
+  extractedNames: string[],
+  officialNames: string[],
+  apiKeys: string[],
+  model: string
+): Promise<Record<string, { correctedName: string, confidence: number }>> {
+  const keysToTry = apiKeys.filter(k => k.trim());
+  let lastError: any;
+  const finalMap: Record<string, { correctedName: string, confidence: number }> = {};
+  const BATCH_SIZE = 20;
+
+  for (let start = 0; start < extractedNames.length; start += BATCH_SIZE) {
+    const batch = extractedNames.slice(start, start + BATCH_SIZE);
+    
+    const prompt = `You are a data correction assistant.
+Map each extracted name to the closest matching name in the official list.
+Extracted Names: ${JSON.stringify(batch)}
+Official Names: ${JSON.stringify(officialNames)}`;
+
+    for (let i = 0; i < keysToTry.length; i++) {
+      const key = getNextKey(keysToTry);
+      try {
+        const ai = new GoogleGenAI({ apiKey: key });
+        const response = await ai.models.generateContent({
+          model: model || 'gemini-3.1-pro-preview',
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  original: { type: Type.STRING },
+                  corrected: { type: Type.STRING },
+                  confidence: { type: Type.INTEGER }
+                },
+                required: ["original", "corrected", "confidence"]
+              }
+            }
+          }
+        });
+
+        const text = response.text;
+        if (!text) throw new Error('Empty response');
+        const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+        const data = JSON.parse(cleanedText) as any[];
+        data.forEach(item => {
+          finalMap[item.original] = { correctedName: item.corrected, confidence: item.confidence };
+        });
+        break; // break inner loop on success
+      } catch (e) {
+        lastError = e;
+        if (i === keysToTry.length - 1) throw lastError;
+      }
+    }
+  }
+  return finalMap;
+}
+--- END OF FILE src/services/gemini/descriptiveService.ts ---
+
+--- START OF FILE src/components/lab/descriptive/DescAnswerKeySection.tsx ---
+import React, { useState } from 'react';
+import { fileToBase64 } from '../../../utils/imageProcessing';
+import { extractTextFromDocument } from '../../../services/geminiService';
+import ExtractButton from './ExtractButton';
+import { FileText } from 'lucide-react';
+
+interface Props {
+  answerKey: string;
+  setAnswerKey: (val: string | ((prev: string) => string)) => void;
+}
+
+export default function DescAnswerKeySection({ answerKey, setAnswerKey }: Props) {
+  const [isExtracting, setIsExtracting] = useState(false);
+
+  const handleExtract = async (file: File) => {
+    setIsExtracting(true);
+    try {
+      const apiKeys = JSON.parse(localStorage.getItem('omr_apiKeysList') || '[]').filter((k: string) => k.trim());
+      const proModel = localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview';
+      
+      if (apiKeys.length === 0) {
+        alert('Please add at least one API key in the home settings first.');
+        return;
+      }
+
+      const base64 = await fileToBase64(file);
+      const extractedText = await extractTextFromDocument(base64, file.type, apiKeys, proModel, 'descQPAndScheme');
+
+      setAnswerKey(prev => {
+        const trimmed = prev.trim();
+        if (!trimmed) return extractedText;
+        return `${trimmed}\n\n--- Extracted Evaluation Scheme ---\n\n${extractedText}`;
+      });
+
+      alert(`Successfully extracted evaluation scheme from Question Paper!`);
+    } catch (error: any) {
+      alert(`Failed to extract text: ${error.message}`);
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <label className="block text-sm font-bold text-gray-700">Question Paper & Answer Scheme</label>
+        <div className="flex flex-wrap gap-2">
+          <ExtractButton 
+            isExtracting={isExtracting} 
+            onFileSelect={handleExtract} 
+            label="Scan Question Paper"
+            icon={<FileText className="w-3.5 h-3.5" />}
+          />
+        </div>
+      </div>
+      <textarea
+        value={answerKey}
+        onChange={(e) => setAnswerKey(e.target.value)}
+        placeholder="Paste evaluation scheme here or upload a Question Paper to auto-generate the scheme..."
+        rows={10}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none text-sm font-mono"
+      />
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/descriptive/DescAnswerKeySection.tsx ---
+
+--- START OF FILE src/components/lab/descriptive/DescriptiveOverviewCard.tsx ---
+import React from 'react';
+import { DescriptiveStudent } from './types';
+import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
+
+interface Props {
+  student: DescriptiveStudent;
+  onRemove: (id: string) => void;
+  onViewDetails: (student: DescriptiveStudent) => void;
+}
+
+export default function DescriptiveOverviewCard({ student, onRemove, onViewDetails }: Props) {
+  let cardClasses = "bg-white border-gray-200 hover:border-blue-300 text-gray-900";
+  let scoreDisplay = "--";
+  let maxScoreDisplay = "--";
+  
+  if (student.status === 'success' && student.result) {
+    const total = student.result.totalScore;
+    const maxTotal = student.result.maxTotalScore || student.result.breakdown.reduce((s, b) => s + b.maxScore, 0) || 1;
+    const pct = (total / maxTotal) * 100;
+    
+    scoreDisplay = total.toString();
+    maxScoreDisplay = maxTotal.toString();
+    
+    // Proportional coloring: < 47% Red, <= 80% Yellow, > 80% Green
+    if (pct < 47) {
+      cardClasses = "bg-red-50 border-red-200 text-red-900 hover:border-red-400";
+    } else if (pct <= 80) {
+      cardClasses = "bg-yellow-50 border-yellow-200 text-yellow-900 hover:border-yellow-400";
+    } else {
+      cardClasses = "bg-green-50 border-green-200 text-green-900 hover:border-green-400";
+    }
+  }
+
+  return (
+    <div 
+      onClick={() => onViewDetails(student)}
+      className={`relative p-4 md:p-5 rounded-2xl border shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center justify-between ${cardClasses}`}
+    >
+      <div className="flex flex-col min-w-0 pr-4">
+        <h3 className="font-bold text-lg truncate leading-tight mb-1" title={student.name}>{student.name}</h3>
+        
+        {student.status === 'success' && (
+          <div className="flex items-center gap-2 opacity-80 text-sm font-medium">
+            Score: {scoreDisplay} / {maxScoreDisplay}
+          </div>
+        )}
+        
+        {student.status === 'error' && (
+          <div className="flex items-center gap-1.5 text-xs font-bold text-red-600 mt-1">
+            <AlertTriangle className="w-3.5 h-3.5" /> Evaluation Failed
+          </div>
+        )}
+
+        {(student.status === 'pending' || student.status === 'evaluating') && (
+          <div className="flex items-center gap-1.5 text-xs font-bold opacity-70 mt-1">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Evaluating...
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-4 shrink-0">
+        {student.status === 'success' && (
+          <div className="text-3xl font-black opacity-90 drop-shadow-sm">
+            {scoreDisplay}
+          </div>
+        )}
+        <button 
+          onClick={(e) => { e.stopPropagation(); onRemove(student.id); }}
+          className="p-2 opacity-40 hover:opacity-100 hover:text-red-600 hover:bg-red-100 rounded-full transition-all"
+          title="Remove Student"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/descriptive/DescriptiveOverviewCard.tsx ---
+
+--- START OF FILE src/components/lab/descriptive/DescriptiveDetailModal.tsx ---
+import React, { useState } from 'react';
+import { X, LayoutTemplate } from 'lucide-react';
+import { DescriptiveStudent } from './types';
+
+interface Props {
+  student: DescriptiveStudent;
+  onClose: () => void;
+}
+
+export default function DescriptiveDetailModal({ student, onClose }: Props) {
+  const [selectedImg, setSelectedImg] = useState(student.images[0]?.previewUrl || '');
+
+  const res = student.result;
+  const maxScore = res?.maxTotalScore || res?.breakdown.reduce((sum, b) => sum + b.maxScore, 0) || 1;
+
+  const getColorClass = (level: number) => {
+    switch (level) {
+      case 0: return 'border-red-400 bg-red-50 text-red-900';
+      case 1: return 'border-orange-400 bg-orange-50 text-orange-900';
+      case 2: return 'border-yellow-400 bg-yellow-50 text-yellow-900';
+      case 3: return 'border-green-400 bg-green-50 text-green-900';
+      default: return 'border-gray-200 bg-gray-50 text-gray-800';
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 sm:p-4 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden">
+        
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-slate-50 shrink-0">
+          <div>
+            <h2 className="text-2xl font-black text-gray-900">{student.name}</h2>
+            {res && (
+              <p className="text-sm font-bold text-gray-500 mt-0.5">
+                Total Score: <span className="text-indigo-600 text-lg ml-1">{res.totalScore}</span> / {maxScore}
+              </p>
+            )}
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-500">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
+          {/* Left: Analysis */}
+          <div className="w-full md:w-1/2 lg:w-3/5 p-4 sm:p-6 overflow-y-auto flex flex-col gap-6 custom-scrollbar bg-white">
+            
+            {res?.breakdown && res.breakdown.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Question Analysis</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {res.breakdown.map((q, i) => (
+                    <div key={i} className={`p-3 rounded-xl border-2 flex flex-col ${getColorClass(q.colorLevel)}`}>
+                      <div className="flex justify-between items-center mb-2 pb-2 border-b border-black/10">
+                        <span className="font-bold text-sm">Q{q.questionNumber}</span>
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-white/60 shadow-sm border border-black/5">
+                          {q.score} / {q.maxScore}
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium opacity-80 leading-relaxed break-words">{q.remarks}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {res?.feedback && (
+              <div className="mt-auto">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Overall Feedback</h3>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 leading-relaxed whitespace-pre-wrap shadow-inner">
+                  {res.feedback}
+                </div>
+              </div>
+            )}
+
+            {!res && (
+              <div className="flex-1 flex items-center justify-center text-gray-400 font-medium">
+                No evaluation data available.
+              </div>
+            )}
+          </div>
+
+          {/* Right: Image Preview */}
+          <div className="w-full md:w-1/2 lg:w-2/5 border-t md:border-t-0 md:border-l border-gray-200 bg-gray-100 flex flex-col overflow-hidden min-h-[300px] md:min-h-0">
+            <div className="flex-1 p-4 flex items-center justify-center overflow-auto relative">
+              {selectedImg ? (
+                <img src={selectedImg} alt="Page preview" className="max-w-full max-h-full object-contain rounded shadow-sm bg-white" />
+              ) : (
+                <div className="flex flex-col items-center text-gray-400 gap-2">
+                  <LayoutTemplate className="w-8 h-8" />
+                  <span className="text-sm font-medium">No pages found</span>
+                </div>
+              )}
+            </div>
+            
+            {student.images.length > 1 && (
+              <div className="h-24 bg-white border-t border-gray-200 p-2 flex gap-2 overflow-x-auto shrink-0 custom-scrollbar items-center">
+                {student.images.map((img, i) => (
+                  <button 
+                    key={i}
+                    onClick={() => setSelectedImg(img.previewUrl)}
+                    className={`h-full aspect-[1/1.4] shrink-0 rounded border-2 overflow-hidden transition-all ${selectedImg === img.previewUrl ? 'border-indigo-500 shadow-md scale-105' : 'border-transparent hover:border-gray-300 opacity-60 hover:opacity-100'}`}
+                  >
+                    <img src={img.previewUrl} className="w-full h-full object-cover bg-gray-50" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
+      `}} />
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/descriptive/DescriptiveDetailModal.tsx ---
+
+--- START OF FILE src/components/lab/descriptive/DescriptivePrintView.tsx ---
+import React from 'react';
+import { DescriptiveStudent } from './types';
+import { ArrowLeft, Printer, Settings2 } from 'lucide-react';
+
+interface Props {
+  students: DescriptiveStudent[];
+  onBack: () => void;
+}
+
+export default function DescriptivePrintView({ students, onBack }: Props) {
+  // Filter evaluated students
+  const validStudents = students.filter(s => s.status === 'success' && s.result);
+
+  return (
+    <div className="min-h-screen bg-gray-100 text-black print:bg-white pb-12">
+      <div className="print:hidden mb-6 p-4 md:p-6 bg-white border-b border-gray-200 text-gray-900 shadow-sm sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors border border-gray-200">
+              <ArrowLeft className="w-5 h-5 text-gray-700" />
+            </button>
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <div className="p-1.5 bg-blue-100 text-blue-700 rounded-lg">
+                <Settings2 className="w-5 h-5" />
+              </div>
+              Print Evaluation Results
+            </h2>
+          </div>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md hover:shadow-lg w-full md:w-auto justify-center"
+          >
+            <Printer className="w-5 h-5" />
+            Print Cards
+          </button>
+        </div>
+      </div>
+
+      <style>{`
+        @media print {
+          @page { margin: 1cm; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white; }
+          .print-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+        }
+      `}</style>
+
+      <div className="max-w-6xl mx-auto p-4 print:p-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 print:gap-4 print-grid">
+          {validStudents.map((student, idx) => {
+            const res = student.result!;
+            const maxScore = res.maxTotalScore || res.breakdown.reduce((sum, b) => sum + b.maxScore, 0) || 1;
+            
+            return (
+              <div key={student.id} className="bg-white rounded-2xl border border-gray-300 shadow-sm p-5 break-inside-avoid flex flex-col">
+                <div className="mb-4 pb-3 border-b border-gray-100">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Student</div>
+                  <h3 className="text-xl font-black text-gray-900 truncate leading-tight" title={student.name}>{student.name}</h3>
+                  <div className="mt-2 text-lg font-bold text-gray-600">
+                    Score: <span className="text-2xl font-black text-indigo-600">{res.totalScore}</span> / {maxScore}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {res.breakdown.map((q, i) => {
+                    let dotColor = 'bg-gray-200';
+                    if (q.colorLevel === 0) dotColor = 'bg-red-500';
+                    else if (q.colorLevel === 1) dotColor = 'bg-orange-500';
+                    else if (q.colorLevel === 2) dotColor = 'bg-yellow-400';
+                    else if (q.colorLevel === 3) dotColor = 'bg-green-500';
+
+                    return (
+                      <div key={i} className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                        <span className="text-xs font-bold text-gray-700 w-5">Q{q.questionNumber}</span>
+                        <div className={`w-3.5 h-3.5 rounded-full ${dotColor} shadow-inner`} />
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Optional tiny feedback snippet if fits */}
+                <div className="mt-auto text-[11px] font-medium text-gray-500 line-clamp-3 bg-gray-50 p-2 rounded">
+                  {res.feedback}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Legend / Key at bottom of print */}
+        <div className="mt-12 bg-white p-6 rounded-2xl border border-gray-300 shadow-sm break-inside-avoid">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Evaluation Legend</h3>
+          <div className="flex flex-wrap gap-6 mb-6">
+            <div className="flex items-center gap-2"><div className="w-4 h-4 bg-red-500 rounded-full shadow-inner"/> <span className="text-sm font-bold text-gray-700">R: No answer / Wrong</span></div>
+            <div className="flex items-center gap-2"><div className="w-4 h-4 bg-orange-500 rounded-full shadow-inner"/> <span className="text-sm font-bold text-gray-700">O: Only attempt</span></div>
+            <div className="flex items-center gap-2"><div className="w-4 h-4 bg-yellow-400 rounded-full shadow-inner"/> <span className="text-sm font-bold text-gray-700">Y: Correct way, wrong value</span></div>
+            <div className="flex items-center gap-2"><div className="w-4 h-4 bg-green-500 rounded-full shadow-inner"/> <span className="text-sm font-bold text-gray-700">G: All correct</span></div>
+          </div>
+          
+          <div className="text-sm text-gray-600 bg-gray-50 p-4 rounded-xl whitespace-pre-wrap font-medium">
+            <span className="font-bold text-gray-800 uppercase tracking-widest text-xs block mb-2">Answer Key & Scheme Context</span>
+            {localStorage.getItem('aims_desc_answerKey') || 'No scheme provided.'}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/descriptive/DescriptivePrintView.tsx ---
 
 --- START OF FILE src/components/lab/descriptive/DescriptiveStudentList.tsx ---
 import React from 'react';
 import { DescriptiveStudent } from './types';
-import DescriptiveResultCard from './DescriptiveResultCard';
+import DescriptiveOverviewCard from './DescriptiveOverviewCard';
 
 interface Props {
   students: DescriptiveStudent[];
   onRemoveStudent: (id: string) => void;
+  onViewDetails: (student: DescriptiveStudent) => void;
 }
 
-export default function DescriptiveStudentList({ students, onRemoveStudent }: Props) {
+export default function DescriptiveStudentList({ students, onRemoveStudent, onViewDetails }: Props) {
   return (
-    <div className="grid grid-cols-1 gap-6">
-      {students.map((student, idx) => (
-        <DescriptiveResultCard 
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {students.map((student) => (
+        <DescriptiveOverviewCard 
           key={student.id} 
           student={student} 
-          index={idx} 
           onRemove={onRemoveStudent}
+          onViewDetails={onViewDetails}
         />
       ))}
     </div>
   );
 }
 --- END OF FILE src/components/lab/descriptive/DescriptiveStudentList.tsx ---
+
+--- START OF FILE src/components/lab/descriptive/DescriptiveToolbar.tsx ---
+import React from 'react';
+import { Upload, Trash2, CheckCircle2, Download, Play, Loader2, Printer } from 'lucide-react';
+
+interface Props {
+  pipelineState: string;
+  imagesCount: number;
+  studentsCount: number;
+  onUploadClick: () => void;
+  onClearAll: () => void;
+  onFixNames: () => void;
+  onExportCSV: () => void;
+  onEvaluate: () => void;
+  onPrint?: () => void;
+}
+
+export default function DescriptiveToolbar({
+  pipelineState, imagesCount, studentsCount,
+  onUploadClick, onClearAll, onFixNames, onExportCSV, onEvaluate, onPrint
+}: Props) {
+  return (
+    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+      <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+        <button
+          onClick={onUploadClick}
+          disabled={pipelineState === 'processing'}
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg font-medium hover:bg-blue-100 transition-colors disabled:opacity-50 shadow-sm"
+        >
+          <Upload className="w-4 h-4" /> Upload Images
+        </button>
+        <button
+          onClick={onClearAll}
+          disabled={pipelineState === 'processing' || (imagesCount === 0 && studentsCount === 0)}
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg font-medium hover:bg-gray-100 transition-colors disabled:opacity-50 shadow-sm"
+        >
+          <Trash2 className="w-4 h-4" /> Clear All
+        </button>
+      </div>
+
+      <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+        <button
+          onClick={onFixNames}
+          disabled={pipelineState === 'processing' || studentsCount === 0}
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-lg font-medium hover:bg-yellow-100 transition-colors disabled:opacity-50 shadow-sm"
+        >
+          <CheckCircle2 className="w-4 h-4" /> Fix Names
+        </button>
+        <button
+          onClick={onExportCSV}
+          disabled={pipelineState !== 'done'}
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg font-medium hover:bg-green-100 transition-colors disabled:opacity-50 shadow-sm"
+        >
+          <Download className="w-4 h-4" /> Export CSV
+        </button>
+        {onPrint && (
+          <button
+            onClick={onPrint}
+            disabled={pipelineState !== 'done'}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg font-medium hover:bg-indigo-100 transition-colors disabled:opacity-50 shadow-sm"
+          >
+            <Printer className="w-4 h-4" /> Print Results
+          </button>
+        )}
+        <button
+          onClick={onEvaluate}
+          disabled={imagesCount === 0 || pipelineState === 'processing'}
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
+        >
+          {pipelineState === 'processing' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+          Evaluate
+        </button>
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/descriptive/DescriptiveToolbar.tsx ---
 
 --- START OF FILE src/components/lab/descriptive/DescriptiveDashboard.tsx ---
 import React, { useState, useRef } from 'react';
@@ -35,6 +1433,9 @@ import DescriptiveToolbar from './DescriptiveToolbar';
 import DescriptiveQueue from './DescriptiveQueue';
 import DescriptiveProgress from './DescriptiveProgress';
 import DescriptiveStudentList from './DescriptiveStudentList';
+import DescriptiveDetailModal from './DescriptiveDetailModal';
+import DescriptivePrintView from './DescriptivePrintView';
+import { DescriptiveStudent } from './types';
 import { useDescriptivePipeline } from './hooks/useDescriptivePipeline';
 
 interface Props {
@@ -44,6 +1445,8 @@ interface Props {
 export default function DescriptiveDashboard({ onBack }: Props) {
   const [showSettings, setShowSettings] = useState(false);
   const [showFixName, setShowFixName] = useState(false);
+  const [showPrintView, setShowPrintView] = useState(false);
+  const [selectedStudentForDetails, setSelectedStudentForDetails] = useState<DescriptiveStudent | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,18 +1480,24 @@ export default function DescriptiveDashboard({ onBack }: Props) {
     );
   }
 
+  if (showPrintView) {
+    return <DescriptivePrintView students={students} onBack={() => setShowPrintView(false)} />;
+  }
+
   // Filter images that haven't been assigned to a student yet (newly uploaded)
   const unassignedImages = images.filter(img => !img.studentId);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors">
+          <button onClick={onBack} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors border border-gray-200 bg-white shadow-sm">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
-            <FileSignature className="w-6 h-6 text-blue-600" />
+            <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
+              <FileSignature className="w-6 h-6" />
+            </div>
             <h2 className="text-2xl font-bold text-gray-900">Descriptive Evaluation</h2>
           </div>
         </div>
@@ -100,7 +1509,7 @@ export default function DescriptiveDashboard({ onBack }: Props) {
         </button>
       </div>
 
-      <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
+      <div className="bg-white p-4 md:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
         
         <input 
           type="file" 
@@ -120,6 +1529,7 @@ export default function DescriptiveDashboard({ onBack }: Props) {
           onFixNames={() => setShowFixName(true)}
           onExportCSV={handleExportCSV}
           onEvaluate={() => runPipeline(() => setShowSettings(true))}
+          onPrint={() => setShowPrintView(true)}
         />
 
         {pipelineState === 'processing' && (
@@ -133,7 +1543,8 @@ export default function DescriptiveDashboard({ onBack }: Props) {
         {students.length > 0 && (
           <DescriptiveStudentList 
             students={students} 
-            onRemoveStudent={handleRemoveStudent} 
+            onRemoveStudent={handleRemoveStudent}
+            onViewDetails={(s) => setSelectedStudentForDetails(s)} 
           />
         )}
 
@@ -153,467 +1564,24 @@ export default function DescriptiveDashboard({ onBack }: Props) {
           onClose={() => setShowFixName(false)} 
         />
       )}
+
+      {selectedStudentForDetails && (
+        <DescriptiveDetailModal
+          student={selectedStudentForDetails}
+          onClose={() => setSelectedStudentForDetails(null)}
+        />
+      )}
     </div>
   );
 }
 --- END OF FILE src/components/lab/descriptive/DescriptiveDashboard.tsx ---
 
---- START OF FILE src/components/lab/descriptive/DescriptiveResultCard.tsx ---
-import React from 'react';
-import { DescriptiveStudent } from './types';
-import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
-
-interface Props {
-  student: DescriptiveStudent;
-  index: number;
-  onRemove: (id: string) => void;
-}
-
-export default function DescriptiveResultCard({ student, index, onRemove }: Props) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col md:flex-row transition-shadow hover:shadow-md relative">
-      {/* Left side: Images */}
-      <div className="w-full md:w-1/3 bg-gray-50 p-4 border-b md:border-b-0 md:border-r border-gray-200 flex gap-3 overflow-x-auto items-center hide-scrollbar">
-        {student.images.map((img, i) => (
-          <img 
-            key={i} 
-            src={img.previewUrl} 
-            alt={`Page ${i+1}`} 
-            className="h-32 w-24 object-contain bg-white p-1 rounded-lg shadow-sm border border-gray-300 shrink-0" 
-          />
-        ))}
-      </div>
-
-      {/* Right side: Details */}
-      <div className="p-5 flex-1 flex flex-col min-w-0 relative">
-        <button 
-          onClick={() => onRemove(student.id)}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors z-10"
-          title="Remove Student Record"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-
-        <div className="flex justify-between items-start mb-4 gap-2 pr-10">
-          <div className="min-w-0">
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Student {index + 1}</div>
-            <h3 className="text-xl font-bold text-gray-900 break-words">{student.name}</h3>
-          </div>
-          {student.status === 'success' && student.result && (
-            <div className="bg-green-50 border border-green-200 px-4 py-2 rounded-xl text-center shrink-0 shadow-sm">
-              <div className="text-xs font-bold text-green-700 uppercase tracking-wider mb-0.5">Score</div>
-              <div className="text-2xl font-black text-green-800 leading-none">{student.result.totalScore}</div>
-            </div>
-          )}
-          {student.status === 'error' && (
-            <div className="bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg flex items-center gap-2 text-red-700 shrink-0">
-              <AlertTriangle className="w-4 h-4" />
-              <span className="text-xs font-bold uppercase tracking-wider">Failed</span>
-            </div>
-          )}
-          {(student.status === 'pending' || student.status === 'evaluating') && (
-            <div className="bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg flex items-center gap-2 text-blue-700 shrink-0">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-xs font-bold uppercase tracking-wider">Evaluating</span>
-            </div>
-          )}
-        </div>
-
-        {student.status === 'success' && student.result && (
-          <div className="flex flex-col gap-4 flex-1 mt-2">
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Score Breakdown</h4>
-              {Array.isArray(student.result.breakdown) ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {student.result.breakdown.map((item, i) => (
-                    <div key={i} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm flex flex-col hover:border-blue-300 transition-colors">
-                      <div className="flex justify-between items-center mb-2 border-b border-gray-100 pb-2">
-                        <span className="font-bold text-gray-800 text-sm">Q{item.questionNumber}</span>
-                        <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100">
-                          {item.score} / {item.maxScore}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 leading-relaxed line-clamp-3" title={item.remarks}>{item.remarks}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-600 whitespace-pre-wrap text-sm">{String(student.result.breakdown)}</p>
-              )}
-            </div>
-            
-            <div className="bg-blue-50/50 rounded-xl p-4 border border-blue-100 flex-1">
-              <h4 className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">Overall Feedback</h4>
-              <p className="text-blue-900/80 whitespace-pre-wrap text-sm font-medium leading-relaxed">{student.result.feedback}</p>
-            </div>
-          </div>
-        )}
-
-        {student.status === 'error' && (
-          <div className="text-sm text-red-600 bg-red-50 p-4 rounded-lg border border-red-100 mt-2 font-medium">
-            {student.error}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/lab/descriptive/DescriptiveResultCard.tsx ---
-
---- START OF FILE src/components/lab/descriptive/hooks/useDescriptivePipeline.ts ---
-import { useState, useEffect } from 'react';
-import { get, set } from 'idb-keyval';
-import { DescriptiveImage, DescriptiveStudent } from '../types';
-import { saveImage, getImage, deleteImage } from '../../../../services/db';
-import { fileToBase64, processImage, applyCropAndRotate } from '../../../../utils/imageProcessing';
-import { dataURLtoFile } from '../../../../utils/fileUtils';
-import { autoCropAndRotate } from '../../../../services/geminiService';
-import { identifyStudentFromPage, evaluateDescriptiveAnswers } from '../../../../services/gemini/descriptiveService';
-
-export function useDescriptivePipeline() {
-  const [images, setImages] = useState<DescriptiveImage[]>([]);
-  const [students, setStudents] = useState<DescriptiveStudent[]>([]);
-  const [pipelineState, setPipelineState] = useState<'idle' | 'processing' | 'done'>('idle');
-  const [progress, setProgress] = useState({ step: '', current: 0, total: 0 });
-  const [isLoadingState, setIsLoadingState] = useState(true);
-
-  const getApiKeys = () => JSON.parse(localStorage.getItem('omr_apiKeysList') || '[]').filter((k: string) => k.trim());
-  const getLiteModel = () => localStorage.getItem('omr_liteModel') || 'gemini-3.1-flash-lite-preview';
-  const getProModel = () => localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview';
-  const getAnswerKey = () => localStorage.getItem('aims_desc_answerKey') || '';
-  const getTopicMapping = () => localStorage.getItem('aims_desc_topicMapping') || '';
-  const getConcurrency = () => parseInt(localStorage.getItem('omr_concurrency') || '1', 10);
-  const getRequestsPerKey = () => parseInt(localStorage.getItem('omr_requestsPerKey') || '1', 10);
-
-  useEffect(() => {
-    const loadState = async () => {
-      setIsLoadingState(true);
-      try {
-        const savedImagesMeta = await get('desc_images_meta');
-        const savedStudentsMeta = await get('desc_students_meta');
-        const savedPipelineState = await get('desc_pipeline_state');
-        
-        let loadedImages: DescriptiveImage[] = [];
-        
-        if (savedImagesMeta) {
-          loadedImages = (await Promise.all(savedImagesMeta.map(async (meta: any) => {
-            const file = await getImage(meta.id);
-            if (!file) return null;
-            return {
-              ...meta,
-              file,
-              previewUrl: URL.createObjectURL(file)
-            };
-          }))).filter(Boolean) as DescriptiveImage[];
-          setImages(loadedImages);
-        }
-
-        if (savedStudentsMeta) {
-          const loadedStudents = savedStudentsMeta.map((std: any) => {
-            const stdImages = std.images
-              .map((imgMeta: any) => loadedImages.find(i => i.id === imgMeta.id))
-              .filter(Boolean);
-            return { ...std, images: stdImages };
-          });
-          setStudents(loadedStudents);
-        }
-
-        if (savedPipelineState) {
-          setPipelineState(savedPipelineState);
-        }
-      } catch (e) {
-        console.error("Failed to load state", e);
-      } finally {
-        setIsLoadingState(false);
-      }
-    };
-    loadState();
-  }, []);
-
-  const saveState = async (imgs: DescriptiveImage[], stds: DescriptiveStudent[], pState: string) => {
-    const imgsMeta = imgs.map(img => ({ id: img.id, status: img.status, croppedBase64: img.croppedBase64, studentId: img.studentId }));
-    const stdsMeta = stds.map(std => ({
-      ...std,
-      images: std.images.map(img => ({ id: img.id }))
-    }));
-    await set('desc_images_meta', imgsMeta);
-    await set('desc_students_meta', stdsMeta);
-    await set('desc_pipeline_state', pState);
-  };
-
-  const handleFileUpload = async (filesList: FileList) => {
-    const newImages = Array.from(filesList).map(file => ({
-      id: Math.random().toString(36).substring(7),
-      file,
-      previewUrl: URL.createObjectURL(file),
-      status: 'pending' as const
-    }));
-    
-    for (const img of newImages) {
-      await saveImage(img.id, img.file);
-    }
-
-    const updatedImages = [...images, ...newImages];
-    const newPipelineState = pipelineState === 'done' ? 'idle' : pipelineState;
-    
-    setImages(updatedImages);
-    setPipelineState(newPipelineState);
-    
-    await saveState(updatedImages, students, newPipelineState);
-  };
-
-  const handleRemoveImage = async (id: string) => {
-    const img = images.find(i => i.id === id);
-    if (img && img.previewUrl) URL.revokeObjectURL(img.previewUrl);
-    await deleteImage(id);
-    
-    const newImages = images.filter(i => i.id !== id);
-    setImages(newImages);
-    await saveState(newImages, students, pipelineState);
-  };
-
-  const handleRemoveStudent = async (id: string) => {
-    if (!window.confirm("Remove this student and all their scanned pages?")) return;
-    
-    const std = students.find(s => s.id === id);
-    if (std) {
-       for (const img of std.images) {
-          if (img.previewUrl) URL.revokeObjectURL(img.previewUrl);
-          await deleteImage(img.id);
-       }
-    }
-    const newStudents = students.filter(s => s.id !== id);
-    const newImages = images.filter(img => img.studentId !== id);
-    setStudents(newStudents);
-    setImages(newImages);
-    await saveState(newImages, newStudents, pipelineState);
-  };
-
-  const handleClearAll = async () => {
-    if (window.confirm("Are you sure you want to clear all images and results?")) {
-      for (const img of images) {
-        if (img.previewUrl) URL.revokeObjectURL(img.previewUrl);
-        await deleteImage(img.id);
-      }
-      setImages([]);
-      setStudents([]);
-      setPipelineState('idle');
-      setProgress({ step: '', current: 0, total: 0 });
-      await saveState([], [], 'idle');
-    }
-  };
-
-  const applyCrop = async (img: DescriptiveImage, keys: string[], liteModel: string) => {
-    const base64 = await fileToBase64(img.file);
-    try {
-      const cropRes = await autoCropAndRotate(base64, img.file.type, keys, liteModel);
-      const w = cropRes.xmax - cropRes.xmin;
-      const h = cropRes.ymax - cropRes.ymin;
-      let finalRotation = cropRes.rotation;
-      
-      // Auto-correct to portrait if it's wider than it is tall
-      if (w > h && (finalRotation === 0 || finalRotation === 180)) {
-        console.log(`Auto-correcting orientation: crop is wider (${w}) than tall (${h}), setting rotation to 90.`);
-        finalRotation = (finalRotation + 90) % 360;
-      }
-      
-      const { base64: croppedBase64, mimeType } = await applyCropAndRotate(img.file, cropRes, finalRotation, 1600);
-      return { croppedBase64, mimeType };
-    } catch (e) {
-      console.warn("Auto crop failed for image, using original", e);
-      const { base64: defaultBase64, mimeType } = await processImage(img.file, 1600, 0);
-      return { croppedBase64: defaultBase64, mimeType };
-    }
-  };
-
-  const runPipeline = async (onRequireSettings: () => void) => {
-    const keys = getApiKeys();
-    if (keys.length === 0) {
-      alert("Please configure API keys in settings first.");
-      onRequireSettings();
-      return;
-    }
-    if (!getAnswerKey()) {
-      alert("Please provide an answer key in settings first.");
-      onRequireSettings();
-      return;
-    }
-
-    let currentPipelineState: 'idle' | 'processing' | 'done' = 'processing';
-    setPipelineState(currentPipelineState);
-    
-    try {
-      const liteModel = getLiteModel();
-      const proModel = getProModel();
-      const baseConcurrency = Math.max(1, getConcurrency());
-      const reqsPerKey = Math.max(1, getRequestsPerKey());
-      const totalConcurrentRequests = keys.length > 0 ? keys.length * reqsPerKey : 1;
-      const concurrencyLimit = totalConcurrentRequests * baseConcurrency;
-      
-      let updatedImages = [...images];
-      let updatedStudents = [...students];
-
-      const actionsToCrop = updatedImages.filter(img => img.status !== 'cropped').length;
-      const actionsToGroup = updatedImages.filter(img => !img.studentId).length;
-      const actionsToEval = updatedStudents.filter(std => std.status !== 'success').length;
-      
-      let totalActions = actionsToCrop + actionsToGroup + actionsToEval;
-      let completedActions = 0;
-
-      const updateProg = (stepDesc: string) => {
-        setProgress({ step: stepDesc, current: completedActions, total: totalActions });
-      };
-
-      // Phase 1: Crop Uncropped Images (Parallelized)
-      const uncroppedImages = updatedImages.filter(img => img.status !== 'cropped');
-      for (let i = 0; i < uncroppedImages.length; i += concurrencyLimit) {
-        const chunk = uncroppedImages.slice(i, i + concurrencyLimit);
-        await Promise.all(chunk.map(async (img) => {
-          updateProg(`Cropping scanned page...`);
-          const { croppedBase64, mimeType } = await applyCrop(img, keys, liteModel);
-          const croppedFile = dataURLtoFile(`data:${mimeType};base64,${croppedBase64}`, img.file.name || 'cropped.jpg');
-          
-          await saveImage(img.id, croppedFile);
-          if (img.previewUrl) URL.revokeObjectURL(img.previewUrl);
-          
-          const index = updatedImages.findIndex(u => u.id === img.id);
-          updatedImages[index] = {
-            ...img,
-            file: croppedFile,
-            previewUrl: URL.createObjectURL(croppedFile),
-            croppedBase64,
-            status: 'cropped'
-          };
-          completedActions++;
-        }));
-        setImages([...updatedImages]);
-      }
-
-      // Phase 2: Identify and Group Students (Sequential)
-      let currentStudent: DescriptiveStudent | null = updatedStudents.length > 0 ? updatedStudents[updatedStudents.length - 1] : null;
-      
-      for (let i = 0; i < updatedImages.length; i++) {
-        if (!updatedImages[i].studentId) {
-          updateProg(`Identifying student for page ${i + 1}...`);
-          const img = updatedImages[i];
-          const prevName = currentStudent?.name || null;
-          
-          const idRes = await identifyStudentFromPage(img.croppedBase64!, img.file.type, prevName, keys, liteModel);
-          
-          if (idRes.isNewStudent || !currentStudent) {
-            currentStudent = {
-              id: `std-${Math.random().toString(36).substring(7)}`,
-              name: idRes.studentName || `Unknown Student ${updatedStudents.length + 1}`,
-              images: [],
-              status: 'pending'
-            };
-            updatedStudents.push(currentStudent);
-            totalActions++; 
-          }
-          
-          currentStudent.images.push(img);
-          updatedImages[i].studentId = currentStudent.id;
-          currentStudent.status = 'pending';
-          
-          setImages([...updatedImages]);
-          setStudents([...updatedStudents]);
-          completedActions++;
-        }
-      }
-
-      await saveState(updatedImages, updatedStudents, 'processing');
-
-      // Phase 3: Evaluate Unevaluated Students (Parallelized)
-      const unevaluatedStudents = updatedStudents.filter(std => std.status !== 'success');
-      for (let i = 0; i < unevaluatedStudents.length; i += concurrencyLimit) {
-        const chunk = unevaluatedStudents.slice(i, i + concurrencyLimit);
-        
-        chunk.forEach(std => {
-          const index = updatedStudents.findIndex(u => u.id === std.id);
-          updatedStudents[index].status = 'evaluating';
-        });
-        setStudents([...updatedStudents]);
-
-        await Promise.all(chunk.map(async (std) => {
-          updateProg(`Evaluating answers for ${std.name}...`);
-          try {
-            const evalImages = await Promise.all(std.images.map(async img => {
-              const b64 = img.croppedBase64 || await fileToBase64(img.file);
-              return { base64: b64, mimeType: img.file.type };
-            }));
-
-            const res = await evaluateDescriptiveAnswers(evalImages, getAnswerKey(), getTopicMapping(), keys, proModel);
-            const index = updatedStudents.findIndex(u => u.id === std.id);
-            updatedStudents[index].result = res;
-            updatedStudents[index].status = 'success';
-            updatedStudents[index].error = undefined;
-          } catch (e: any) {
-            const index = updatedStudents.findIndex(u => u.id === std.id);
-            updatedStudents[index].error = e.message;
-            updatedStudents[index].status = 'error';
-          }
-          completedActions++;
-        }));
-        
-        setStudents([...updatedStudents]);
-        await saveState(updatedImages, updatedStudents, 'processing');
-      }
-
-      currentPipelineState = 'done';
-      setPipelineState(currentPipelineState);
-      await saveState(updatedImages, updatedStudents, currentPipelineState);
-
-    } catch (err: any) {
-      alert("Pipeline failed: " + err.message);
-      currentPipelineState = 'idle';
-      setPipelineState(currentPipelineState);
-      await saveState(images, students, currentPipelineState);
-    }
-  };
-
-  const handleExportCSV = () => {
-    if (students.length === 0) return;
-    
-    let csv = 'NAME,SCORE,FEEDBACK\n';
-    students.forEach(s => {
-      const score = s.result?.totalScore ?? 0;
-      const feedback = (s.result?.feedback ?? '').replace(/"/g, '""');
-      csv += `"${s.name}",${score},"${feedback}"\n`;
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'descriptive_results.csv';
-    link.click();
-  };
-
-  const handleUpdateStudents = async (updated: DescriptiveStudent[]) => {
-    setStudents(updated);
-    await saveState(images, updated, pipelineState);
-  };
-
-  return {
-    images,
-    students,
-    pipelineState,
-    progress,
-    isLoadingState,
-    handleFileUpload,
-    handleRemoveImage,
-    handleRemoveStudent,
-    handleClearAll,
-    runPipeline,
-    handleExportCSV,
-    handleUpdateStudents
-  };
-}
---- END OF FILE src/components/lab/descriptive/hooks/useDescriptivePipeline.ts ---
-
 --- START OF FILE src/components/lab/descriptive/index.ts ---
 export { default as DescriptiveDashboard } from './DescriptiveDashboard';
 export { default as DescriptiveSettings } from './DescriptiveSettings';
-export { default as DescriptiveResultCard } from './DescriptiveResultCard';
+export { default as DescriptiveOverviewCard } from './DescriptiveOverviewCard';
+export { default as DescriptiveDetailModal } from './DescriptiveDetailModal';
+export { default as DescriptivePrintView } from './DescriptivePrintView';
 export { default as DescriptiveFixNameModal } from './DescriptiveFixNameModal';
 export { default as DescriptiveToolbar } from './DescriptiveToolbar';
 export { default as DescriptiveQueue } from './DescriptiveQueue';
@@ -625,3 +1593,5 @@ export { default as DescTopicMappingSection } from './DescTopicMappingSection';
 export { useDescriptivePipeline } from './hooks/useDescriptivePipeline';
 export * from './types';
 --- END OF FILE src/components/lab/descriptive/index.ts ---
+
+--- START OF FILE project_snapshot_out.txt ---

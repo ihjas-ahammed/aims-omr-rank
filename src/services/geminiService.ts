@@ -402,7 +402,7 @@ export async function extractTextFromDocument(
   mimeType: string,
   apiKeys: string[],
   model: string,
-  extractionType: 'answerKey' | 'topicMapping' | 'descQuestions' | 'descAnswerKey' | 'descTopicMapping'
+  extractionType: 'answerKey' | 'topicMapping' | 'descQPAndScheme' | 'descTopicMapping'
 ): Promise<string> {
   const keysToTry = getKeys(apiKeys);
   
@@ -411,10 +411,8 @@ export async function extractTextFromDocument(
     prompt = `Extract the answer key from this document. Format it as a simple list like:\n* **Q1.** A\n* **Q2.** B\n* **Q3.** C\nOnly output the formatted text, nothing else.`;
   } else if (extractionType === 'topicMapping' || extractionType === 'descTopicMapping') {
     prompt = `Extract the chapter and topic mapping from this document. Format it exactly like this:\n### Chapter Name\n* Topic Name: Q1, Q2, Q3\n* Another Topic: Q4, Q5\n\n### Another Chapter\n* Topic Name: Q6, Q7\n\nOnly output the formatted text, nothing else.`;
-  } else if (extractionType === 'descQuestions') {
-    prompt = `Extract the questions from this question paper document. Keep the question numbers, the question text, and marks allocated. Format clearly.`;
-  } else if (extractionType === 'descAnswerKey') {
-    prompt = `Extract the descriptive answer key from this document. Keep the question numbers, the expected answers/points, and marks allocation. Format clearly.`;
+  } else if (extractionType === 'descQPAndScheme') {
+    prompt = `You are an expert exam setter. Extract all the questions from this question paper image. For each question extracted, provide the expected answer or key evaluation points, and the maximum marks allocated. Format as a clear, structured evaluation scheme so that an examiner can grade student answers based on it.`;
   }
 
   let lastError: any;

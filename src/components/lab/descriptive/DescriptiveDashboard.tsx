@@ -6,6 +6,9 @@ import DescriptiveToolbar from './DescriptiveToolbar';
 import DescriptiveQueue from './DescriptiveQueue';
 import DescriptiveProgress from './DescriptiveProgress';
 import DescriptiveStudentList from './DescriptiveStudentList';
+import DescriptiveDetailModal from './DescriptiveDetailModal';
+import DescriptivePrintView from './DescriptivePrintView';
+import { DescriptiveStudent } from './types';
 import { useDescriptivePipeline } from './hooks/useDescriptivePipeline';
 
 interface Props {
@@ -15,6 +18,8 @@ interface Props {
 export default function DescriptiveDashboard({ onBack }: Props) {
   const [showSettings, setShowSettings] = useState(false);
   const [showFixName, setShowFixName] = useState(false);
+  const [showPrintView, setShowPrintView] = useState(false);
+  const [selectedStudentForDetails, setSelectedStudentForDetails] = useState<DescriptiveStudent | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,18 +53,24 @@ export default function DescriptiveDashboard({ onBack }: Props) {
     );
   }
 
+  if (showPrintView) {
+    return <DescriptivePrintView students={students} onBack={() => setShowPrintView(false)} />;
+  }
+
   // Filter images that haven't been assigned to a student yet (newly uploaded)
   const unassignedImages = images.filter(img => !img.studentId);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors">
+          <button onClick={onBack} className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors border border-gray-200 bg-white shadow-sm">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
-            <FileSignature className="w-6 h-6 text-blue-600" />
+            <div className="p-2 bg-blue-100 text-blue-700 rounded-lg">
+              <FileSignature className="w-6 h-6" />
+            </div>
             <h2 className="text-2xl font-bold text-gray-900">Descriptive Evaluation</h2>
           </div>
         </div>
@@ -71,7 +82,7 @@ export default function DescriptiveDashboard({ onBack }: Props) {
         </button>
       </div>
 
-      <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-200 shadow-sm space-y-6">
+      <div className="bg-white p-4 md:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-6">
         
         <input 
           type="file" 
@@ -91,6 +102,7 @@ export default function DescriptiveDashboard({ onBack }: Props) {
           onFixNames={() => setShowFixName(true)}
           onExportCSV={handleExportCSV}
           onEvaluate={() => runPipeline(() => setShowSettings(true))}
+          onPrint={() => setShowPrintView(true)}
         />
 
         {pipelineState === 'processing' && (
@@ -104,7 +116,8 @@ export default function DescriptiveDashboard({ onBack }: Props) {
         {students.length > 0 && (
           <DescriptiveStudentList 
             students={students} 
-            onRemoveStudent={handleRemoveStudent} 
+            onRemoveStudent={handleRemoveStudent}
+            onViewDetails={(s) => setSelectedStudentForDetails(s)} 
           />
         )}
 
@@ -122,6 +135,13 @@ export default function DescriptiveDashboard({ onBack }: Props) {
           students={students} 
           onUpdateStudents={handleUpdateStudents}
           onClose={() => setShowFixName(false)} 
+        />
+      )}
+
+      {selectedStudentForDetails && (
+        <DescriptiveDetailModal
+          student={selectedStudentForDetails}
+          onClose={() => setSelectedStudentForDetails(null)}
         />
       )}
     </div>

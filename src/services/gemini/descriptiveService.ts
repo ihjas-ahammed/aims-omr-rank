@@ -66,19 +66,25 @@ export async function evaluateDescriptiveAnswers(
   topicMapping: string,
   apiKeys: string[],
   model: string
-): Promise<{ totalScore: number, breakdown: any[], feedback: string }> {
+): Promise<{ totalScore: number, maxTotalScore: number, breakdown: any[], feedback: string }> {
   const keysToTry = apiKeys.filter(k => k.trim());
   let lastError: any;
 
   const contents: any[] = [
     { text: `You are an expert examiner. Grade the student's descriptive exam answers from these images.
-Answer Key:
+Question Paper & Evaluation Scheme:
 ${answerKey}
 
 Topic Mapping:
 ${topicMapping}
 
-Provide the total score, a detailed breakdown of marks per question, and constructive feedback.` }
+Provide the total score achieved, the maximum possible total score for the exam, a detailed breakdown of marks per question, and constructive overall feedback.
+For each question, assign a 'colorLevel' from 0 to 3 based on the student's answer quality:
+0 -> No answer or completely wrong.
+1 -> Only attempted or minor correct steps.
+2 -> Correct method/way but final value/answer is wrong.
+3 -> All correct.
+` }
   ];
   
   images.forEach(img => {
@@ -98,6 +104,7 @@ Provide the total score, a detailed breakdown of marks per question, and constru
             type: Type.OBJECT,
             properties: {
               totalScore: { type: Type.NUMBER },
+              maxTotalScore: { type: Type.NUMBER },
               breakdown: { 
                 type: Type.ARRAY,
                 items: {
@@ -106,14 +113,15 @@ Provide the total score, a detailed breakdown of marks per question, and constru
                     questionNumber: { type: Type.STRING },
                     score: { type: Type.NUMBER },
                     maxScore: { type: Type.NUMBER },
+                    colorLevel: { type: Type.INTEGER, description: "0: Red, 1: Orange, 2: Yellow, 3: Green" },
                     remarks: { type: Type.STRING }
                   },
-                  required: ["questionNumber", "score", "maxScore", "remarks"]
+                  required: ["questionNumber", "score", "maxScore", "colorLevel", "remarks"]
                 }
               },
               feedback: { type: Type.STRING }
             },
-            required: ["totalScore", "breakdown", "feedback"]
+            required: ["totalScore", "maxTotalScore", "breakdown", "feedback"]
           }
         }
       });
