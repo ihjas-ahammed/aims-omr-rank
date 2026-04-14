@@ -4,7 +4,7 @@ export interface OMRResult {
   name: string;
   right: number;
   wrong: number;
-  scores: Record<string, number>; // q1 to q25
+  scores: Record<string, number>; // q1 to qN
   confidence: number;
   confidences?: number[];
   nameConfidence?: number;
@@ -60,9 +60,12 @@ export async function evaluateOMR(
   apiKeys: string[],
   model: string,
   liteModel: string,
-  answerKeyPrompt: string
+  answerKeyPrompt: string,
+  numQuestions: number = 25,
+  numOptions: number = 4
 ): Promise<OMRResult> {
   const keysToTry = getKeys(apiKeys);
+  const maxOptionChar = String.fromCharCode(64 + numOptions);
 
   const prompt = `
 You are an expert OMR sheet evaluator.
@@ -72,10 +75,11 @@ GIVE full focus on validation.
 ### Answer Key
 ${answerKeyPrompt}
 
-Questions 26 through 30 have not been bubbled. Ignore them.
+Questions strictly beyond Q${numQuestions} might not have been bubbled. Ignore them.
 
 ### Evaluation Rules:
-- For each question Q1 to Q25, determine if the student's answer is correct, wrong, or unattempted.
+- For each question Q1 to Q${numQuestions}, determine if the student's answer is correct, wrong, or unattempted.
+- The exam has ${numOptions} options per question (A to ${maxOptionChar}).
 - Give 1 if correct, -1 if wrong, 0 if no answer.
 - Cross marks: If a student made a mistake and used a cross mark on a bubble, evaluate their second option (the bubbled one without a cross). If they only have one cross mark and no other bubble, skip the question (give 0).
 - Extract the student's NAME from the sheet. (Best effort only, exact spelling is not critical as it will be verified against an attendance sheet later).
@@ -91,7 +95,7 @@ Output your response as a JSON object with the following structure:
   "q1": 1,
   "q2": -1,
   "q3": 0,
-  // ... up to q25
+  // ... up to q${numQuestions}
 }
 `;
 
@@ -104,13 +108,9 @@ Output your response as a JSON object with the following structure:
         right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
         wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
         confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" },
-        q1: { type: Type.INTEGER }, q2: { type: Type.INTEGER }, q3: { type: Type.INTEGER }, q4: { type: Type.INTEGER }, q5: { type: Type.INTEGER },
-        q6: { type: Type.INTEGER }, q7: { type: Type.INTEGER }, q8: { type: Type.INTEGER }, q9: { type: Type.INTEGER }, q10: { type: Type.INTEGER },
-        q11: { type: Type.INTEGER }, q12: { type: Type.INTEGER }, q13: { type: Type.INTEGER }, q14: { type: Type.INTEGER }, q15: { type: Type.INTEGER },
-        q16: { type: Type.INTEGER }, q17: { type: Type.INTEGER }, q18: { type: Type.INTEGER }, q19: { type: Type.INTEGER }, q20: { type: Type.INTEGER },
-        q21: { type: Type.INTEGER }, q22: { type: Type.INTEGER }, q23: { type: Type.INTEGER }, q24: { type: Type.INTEGER }, q25: { type: Type.INTEGER },
+        ...Array.from({ length: numQuestions }, (_, i) => ({ [`q${i + 1}`]: { type: Type.INTEGER } })).reduce((a, b) => ({ ...a, ...b }), {})
       },
-      required: ["name", "right", "wrong", "confidence", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22", "q23", "q24", "q25"]
+      required: ["name", "right", "wrong", "confidence", ...Array.from({ length: numQuestions }, (_, i) => `q${i + 1}`)]
     }
   };
 
@@ -150,7 +150,7 @@ Output your response as a JSON object with the following structure:
       }
       
       const scores: Record<string, number> = {};
-      for (let j = 1; j <= 25; j++) {
+      for (let j = 1; j <= numQuestions; j++) {
         scores[`q${j}`] = data[`q${j}`] ?? 0;
       }
 
@@ -177,9 +177,11 @@ export async function evaluateOMRBatch(
   model: string,
   liteModel: string,
   answerKeyPrompt: string,
-  numQuestions: number = 25
+  numQuestions: number = 25,
+  numOptions: number = 4
 ): Promise<Record<string, OMRResult>> {
   const keysToTry = getKeys(apiKeys);
+  const maxOptionChar = String.fromCharCode(64 + numOptions);
 
   const prompt = `
 You are an expert OMR sheet evaluator.
@@ -189,10 +191,11 @@ GIVE full focus on validation.
 ### Answer Key
 ${answerKeyPrompt}
 
-Questions 26 through 30 have not been bubbled. Ignore them unless there are more than 25 questions.
+Questions strictly beyond Q${numQuestions} might not have been bubbled. Ignore them unless there are more than ${numQuestions} questions required.
 
 ### Evaluation Rules:
 - For each question Q1 to Q${numQuestions}, determine if the student's answer is correct, wrong, or unattempted.
+- The exam has ${numOptions} options per question (A to ${maxOptionChar}).
 - Give 1 if correct, -1 if wrong, 0 if no answer.
 - Extract the student's NAME from the sheet. (Best effort only, exact spelling is not critical as it will be verified against an attendance sheet later).
 - Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
@@ -288,7 +291,7 @@ Output your response as a JSON object with the following structure:
         if (!imgData) continue;
         
         const scores: Record<string, number> = {};
-        for (let j = 1; j <= 25; j++) {
+        for (let j = 1; j <= numQuestions; j++) {
           scores[`q${j}`] = imgData[`q${j}`] ?? 0;
         }
         

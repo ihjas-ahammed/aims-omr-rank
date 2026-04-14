@@ -11,6 +11,7 @@ export default function ExamSetup({ onNavigate }: ExamSetupProps) {
   const [title, setTitle] = useState('');
   const [className, setClassName] = useState('');
   const [totalQuestions, setTotalQuestions] = useState(25);
+  const [numOptions, setNumOptions] = useState(4);
   const [answerKeyInput, setAnswerKeyInput] = useState('');
   const [images, setImages] = useState<{ url: string; base64: string }[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -49,10 +50,11 @@ export default function ExamSetup({ onNavigate }: ExamSetupProps) {
     const keyMap: Record<number, string> = {};
     const lines = answerKeyInput.split('\n');
     let qNum = 1;
+    const maxChar = String.fromCharCode(64 + numOptions);
+    const regex = new RegExp(`\\b([A-${maxChar}])\\b`, 'i');
     
     for (const line of lines) {
-      // Look for standard options like A, B, C, D in the line
-      const match = line.match(/\b([A-D])\b/i);
+      const match = line.match(regex);
       if (match && qNum <= totalQuestions) {
         keyMap[qNum] = match[1].toUpperCase();
         qNum++;
@@ -69,7 +71,7 @@ export default function ExamSetup({ onNavigate }: ExamSetupProps) {
 
     const keyMap = parseAnswerKey();
     if (Object.keys(keyMap).length === 0) {
-      alert("Could not parse any valid answers (A, B, C, D) from the Answer Key input.");
+      alert(`Could not parse any valid answers (A-${String.fromCharCode(64 + numOptions)}) from the Answer Key input.`);
       return;
     }
 
@@ -80,6 +82,7 @@ export default function ExamSetup({ onNavigate }: ExamSetupProps) {
         title,
         className,
         totalQuestions,
+        numOptions,
         answerKey: keyMap,
         images: images.map(img => img.base64)
       });
@@ -132,16 +135,29 @@ export default function ExamSetup({ onNavigate }: ExamSetupProps) {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">Total Questions</label>
-          <input 
-            type="number" 
-            min="1" 
-            max="100" 
-            value={totalQuestions} 
-            onChange={(e) => setTotalQuestions(Number(e.target.value))} 
-            className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Total Questions</label>
+            <input 
+              type="number" 
+              min="1" 
+              max="200" 
+              value={totalQuestions} 
+              onChange={(e) => setTotalQuestions(Number(e.target.value))} 
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Options Per Question</label>
+            <input 
+              type="number" 
+              min="2" 
+              max="6" 
+              value={numOptions} 
+              onChange={(e) => setNumOptions(Number(e.target.value))} 
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
+            />
+          </div>
         </div>
 
         <div>
@@ -184,7 +200,7 @@ export default function ExamSetup({ onNavigate }: ExamSetupProps) {
 
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-1">Answer Key</label>
-          <p className="text-xs text-gray-500 mb-2">Paste your answer key. The system will look for letters A, B, C, D to assign to questions 1 to {totalQuestions}.</p>
+          <p className="text-xs text-gray-500 mb-2">Paste your answer key. The system will look for letters A to {String.fromCharCode(64 + numOptions)} to assign to questions 1 to {totalQuestions}.</p>
           <textarea 
             value={answerKeyInput} 
             onChange={(e) => setAnswerKeyInput(e.target.value)} 

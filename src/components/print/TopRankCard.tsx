@@ -9,11 +9,12 @@ interface TopRankCardProps {
   rank: number;
   score: number;
   chapters: Chapter[];
+  numQuestions: number;
   imageUrl?: string;
   fontSizeScale: number;
 }
 
-export default function TopRankCard({ student, rank, score, chapters, imageUrl, fontSizeScale }: TopRankCardProps) {
+export default function TopRankCard({ student, rank, score, chapters, numQuestions, imageUrl, fontSizeScale }: TopRankCardProps) {
   let cardClasses = "flex flex-col items-center rounded-xl p-[0.8em] border shadow-md relative overflow-hidden break-inside-avoid ";
   let badgeClasses = "absolute -bottom-[0.5em] -right-[0.5em] w-[2.2em] h-[2.2em] rounded-full text-white flex items-center justify-center font-bold border-[0.15em] border-white z-20 text-[0.8em] shadow-sm ";
   let cardHeight = '18.5em';
@@ -61,7 +62,7 @@ export default function TopRankCard({ student, rank, score, chapters, imageUrl, 
       <div className="mt-auto flex flex-row items-stretch w-full z-10 pt-[0.2em]">
         <div className="w-1/3 max-w-[5.2em] border-r border-gray-100 pr-[0.3em] shrink-0 flex items-center justify-center">
           <div className="aspect-square h-full max-h-[11.5em] flex items-center justify-center">
-            <CosmicDotGrid scores={student.scores} variant="top" />
+            <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} variant="top" />
           </div>
         </div>
         <div className="flex-1 pl-[0.3em] flex flex-col justify-center">

@@ -78,6 +78,10 @@ export default function App() {
     const saved = localStorage.getItem('omr_numQuestions');
     return saved ? parseInt(saved, 10) : 25;
   });
+  const [numOptions, setNumOptions] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_numOptions');
+    return saved ? parseInt(saved, 10) : 4;
+  });
   const [autoCropEnabled, setAutoCropEnabled] = useState<boolean>(() => {
     return localStorage.getItem('omr_autoCrop') === 'true';
   });
@@ -201,6 +205,7 @@ export default function App() {
   useEffect(() => { localStorage.setItem('omr_concurrency', concurrency.toString()); }, [concurrency]);
   useEffect(() => { localStorage.setItem('omr_requestsPerKey', requestsPerKey.toString()); }, [requestsPerKey]);
   useEffect(() => { localStorage.setItem('omr_numQuestions', numQuestions.toString()); }, [numQuestions]);
+  useEffect(() => { localStorage.setItem('omr_numOptions', numOptions.toString()); }, [numOptions]);
   useEffect(() => { localStorage.setItem('omr_autoCrop', autoCropEnabled.toString()); }, [autoCropEnabled]);
   useEffect(() => { localStorage.setItem('omr_attendance', attendanceSheet); }, [attendanceSheet]);
   useEffect(() => { localStorage.setItem('omr_answerKey', answerKey); }, [answerKey]);
@@ -471,7 +476,7 @@ export default function App() {
           const chunkedPromises = [];
           for (let k = 0; k < remainingImages.length; k += baseConcurrency) {
             const chunk = remainingImages.slice(k, k + baseConcurrency);
-            const p = evaluateOMRBatch(chunk, keys, proModel, liteModel, answerKey, numQuestions).then(res => {
+            const p = evaluateOMRBatch(chunk, keys, proModel, liteModel, answerKey, numQuestions, numOptions).then(res => {
               // Update UI to show that this specific chunk finished its request
               setFiles(prev => prev.map(f => {
                 if (chunk.some(img => img.id === f.id)) {
@@ -645,14 +650,14 @@ export default function App() {
     }
 
     let csv = 'NAME,RIGHT,WRONG,';
-    for (let i = 1; i <= 25; i++) csv += `Q${i},`;
+    for (let i = 1; i <= numQuestions; i++) csv += `Q${i},`;
     csv = csv.slice(0, -1) + '\n';
 
     finalFiles.forEach(f => {
       const r = f.result!;
       let row = `"${r.name.replace(/"/g, '""')}",${r.right},${r.wrong},`;
-      for (let i = 1; i <= 25; i++) {
-        row += `${r.scores[`q${i}`]},`;
+      for (let i = 1; i <= numQuestions; i++) {
+        row += `${r.scores[`q${i}`] ?? 0},`;
       }
       csv += row.slice(0, -1) + '\n';
     });
@@ -706,7 +711,7 @@ export default function App() {
 
         const scores: Record<string, number> = {};
         if (row.length >= 4) {
-          for (let q = 1; q <= 25; q++) {
+          for (let q = 1; q <= numQuestions; q++) {
             scores[`q${q}`] = parseInt(row[3 + q - 1], 10) || 0;
           }
         }
@@ -716,7 +721,7 @@ export default function App() {
           file: new File([], file.name),
           fileName: `Imported: ${name}`,
           status: 'success',
-          result: { name, right, wrong, scores }
+          result: { name, right, wrong, scores, confidence: 100 }
         });
       }
 
@@ -760,7 +765,7 @@ export default function App() {
 
         const scores: Record<string, number> = {};
         if (cells.length >= 4) {
-          for (let q = 1; q <= 25; q++) {
+          for (let q = 1; q <= numQuestions; q++) {
             const scoreIdx = 3 + q - 1;
             scores[`q${q}`] = parseInt(cells[scoreIdx] || '0', 10) || 0;
           }
@@ -775,7 +780,8 @@ export default function App() {
             name,
             right,
             wrong,
-            scores
+            scores,
+            confidence: 100
           }
         });
       }
@@ -959,6 +965,8 @@ export default function App() {
             setRequestsPerKey={setRequestsPerKey}
             numQuestions={numQuestions}
             setNumQuestions={setNumQuestions}
+            numOptions={numOptions}
+            setNumOptions={setNumOptions}
             autoCropEnabled={autoCropEnabled}
             setAutoCropEnabled={setAutoCropEnabled}
             answerKey={answerKey}
@@ -1056,6 +1064,7 @@ export default function App() {
             files={files}
             topicMapping={topicMappingByDay[currentDay] || ''}
             parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
+            numQuestions={numQuestions}
             onBack={() => setView('home')} 
             onStudentClick={(student) => {
               setSelectedStudent(student);
@@ -1070,6 +1079,7 @@ export default function App() {
             files={files}
             topicMapping={topicMappingByDay[currentDay] || ''}
             parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
+            numQuestions={numQuestions}
             onBack={() => setView('ranklist')}
           />
         )}
@@ -1248,6 +1258,7 @@ export default function App() {
                     <QueueItem
                       key={file.id}
                       file={file}
+                      numQuestions={numQuestions}
                       isProcessing={isProcessing}
                       averageTime={averageTimeRef.current}
                       isSelected={selectedFileIds.has(file.id)}
@@ -1280,6 +1291,7 @@ export default function App() {
           previewUrl={files.find(f => f.id === reviewFileId)?.previewUrl}
           result={files.find(f => f.id === reviewFileId)?.result}
           answerKey={answerKey}
+          numQuestions={numQuestions}
           onClose={() => setReviewFileId(null)}
           onRetry={(id) => {
             recheckFile(id);

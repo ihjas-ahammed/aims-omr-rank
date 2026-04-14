@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, RefreshCw, CheckCircle, XCircle, MinusCircle, ChevronLeft, ChevronRight, RotateCw, Edit2, Check, Crop } from 'lucide-react';
 import { OMRResult } from '../services/geminiService';
 import ImageCropper from './ImageCropper';
+import ReviewQuestionGrid from './ReviewQuestionGrid';
 
 interface ReviewModalProps {
   fileId: string;
@@ -9,6 +10,7 @@ interface ReviewModalProps {
   previewUrl?: string;
   result?: OMRResult;
   answerKey?: string;
+  numQuestions: number;
   onClose: () => void;
   onRetry: (id: string) => void;
   isProcessing: boolean;
@@ -22,7 +24,7 @@ interface ReviewModalProps {
 }
 
 export default function ReviewModal({ 
-  fileId, fileName, previewUrl, result, answerKey, 
+  fileId, fileName, previewUrl, result, answerKey, numQuestions,
   onClose, onRetry, isProcessing,
   onNext, onPrev, hasNext, hasPrev, onUpdateName, onUpdateScore, onUpdateImage
 }: ReviewModalProps) {
@@ -162,42 +164,12 @@ export default function ReviewModal({
             </div>
 
             <h4 className="font-semibold text-gray-700 mb-3 border-b pb-2">Question Breakdown</h4>
-            <div className="grid grid-cols-5 gap-2 mb-6">
-              {Array.from({ length: 25 }, (_, i) => i + 1).map(qNum => {
-                const score = result.scores[`q${qNum}`];
-                let bgColor = 'bg-gray-100 border-gray-200 text-gray-600';
-                let Icon = MinusCircle;
-                let iconColor = 'text-gray-400';
-                
-                if (score === 1) {
-                  bgColor = 'bg-green-50 border-green-200 text-green-800';
-                  Icon = CheckCircle;
-                  iconColor = 'text-green-500';
-                } else if (score === -1) {
-                  bgColor = 'bg-red-50 border-red-200 text-red-800';
-                  Icon = XCircle;
-                  iconColor = 'text-red-500';
-                }
-
-                return (
-                  <div 
-                    key={qNum} 
-                    onClick={() => {
-                      if (onUpdateScore) {
-                        const nextScore = score === 1 ? -1 : score === -1 ? 0 : 1;
-                        onUpdateScore(fileId, qNum, nextScore);
-                      }
-                    }}
-                    className={`flex flex-col items-center p-2 rounded border cursor-pointer hover:opacity-80 transition-opacity ${bgColor}`}
-                    title="Click to toggle result (Right -> Wrong -> No Answer)"
-                  >
-                    <span className="text-xs font-medium mb-1">Q{qNum}</span>
-                    <Icon className={`w-5 h-5 ${iconColor}`} />
-                    <span className="text-xs mt-1 font-bold">{score > 0 ? '+1' : score < 0 ? '-1' : '0'}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <ReviewQuestionGrid 
+              fileId={fileId} 
+              result={result} 
+              numQuestions={numQuestions} 
+              onUpdateScore={onUpdateScore} 
+            />
 
             <div className="mt-auto pt-4 border-t border-gray-200 shrink-0">
               <button

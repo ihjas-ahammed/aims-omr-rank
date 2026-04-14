@@ -22,8 +22,6 @@ export default function ExamTake({ examId, onFinish }: ExamTakeProps) {
   const [cheatPromptVisible, setCheatPromptVisible] = useState(false);
   const [cheatReason, setCheatReason] = useState('');
   const lastHiddenTime = useRef<string>('');
-  
-  const options = ['A', 'B', 'C', 'D'];
 
   useEffect(() => {
     async function fetchExam() {
@@ -202,6 +200,9 @@ export default function ExamTake({ examId, onFinish }: ExamTakeProps) {
     );
   }
 
+  const optionsCount = exam.numOptions || 4;
+  const options = Array.from({ length: optionsCount }, (_, i) => String.fromCharCode(65 + i));
+
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden">
       {/* Cheat Prompt Modal */}
@@ -255,19 +256,19 @@ export default function ExamTake({ examId, onFinish }: ExamTakeProps) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50 custom-scrollbar">
-          <div className="max-w-md mx-auto grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+        <div className="flex-1 overflow-y-auto p-4 bg-gray-50 custom-scrollbar">
+          <div className="max-w-full mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-3">
             {Array.from({ length: exam.totalQuestions }, (_, i) => i + 1).map(qNum => (
-              <div key={qNum} className="flex items-center gap-4 bg-white p-2 rounded border border-gray-200 shadow-sm">
-                <span className="w-6 font-bold text-gray-700 text-right">{qNum}.</span>
-                <div className="flex gap-2">
+              <div key={qNum} className="flex items-center gap-2 bg-white p-2 rounded border border-gray-200 shadow-sm overflow-x-auto hide-scrollbar">
+                <span className="w-6 font-bold text-gray-700 text-right shrink-0">{qNum}.</span>
+                <div className="flex gap-1.5 shrink-0">
                   {options.map(opt => {
                     const isSelected = answers[qNum] === opt;
                     return (
                       <button
                         key={opt}
                         onClick={() => handleOptionSelect(qNum, opt)}
-                        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all ${
+                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center text-xs sm:text-sm font-bold transition-all ${
                           isSelected 
                             ? 'bg-indigo-600 border-indigo-600 text-white' 
                             : 'bg-white border-gray-300 text-gray-500 hover:border-indigo-400 hover:bg-indigo-50'
@@ -290,6 +291,8 @@ export default function ExamTake({ examId, onFinish }: ExamTakeProps) {
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}} />
     </div>
   );

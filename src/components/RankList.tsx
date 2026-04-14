@@ -11,12 +11,13 @@ interface RankListProps {
   files: { result?: OMRResult }[];
   topicMapping: string;
   parsedTopicMapping?: any;
+  numQuestions: number;
   onBack: () => void;
   onStudentClick: (student: OMRResult) => void;
   onPrintableClick: () => void;
 }
 
-export default function RankList({ files, topicMapping, parsedTopicMapping, onBack, onStudentClick, onPrintableClick }: RankListProps) {
+export default function RankList({ files, topicMapping, parsedTopicMapping, numQuestions, onBack, onStudentClick, onPrintableClick }: RankListProps) {
   const [studentImages, setStudentImages] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -156,7 +157,7 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
         </div>
       ) : (
         <>
-          <ClassDashboard results={sortedResults} chapters={chapters} />
+          <ClassDashboard results={sortedResults} chapters={chapters} numQuestions={numQuestions} />
 
           {podiumStudents.length > 0 && (
             <div className="flex flex-col md:flex-row flex-wrap justify-center items-center md:items-end gap-6 mb-12 mt-4">
@@ -167,6 +168,7 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
                   rank={item.rank}
                   score={item.score}
                   chapters={chapters}
+                  numQuestions={numQuestions}
                   imageUrl={studentImages[item.student.name]}
                   onImageClick={triggerImageUpload}
                   onClick={() => onStudentClick(item.student)}

@@ -9,9 +9,10 @@ interface StudentRankCardProps {
   rank: number;
   score: number;
   chapters: Chapter[];
+  numQuestions: number;
 }
 
-export default function StudentRankCard({ student, rank, score, chapters }: StudentRankCardProps) {
+export default function StudentRankCard({ student, rank, score, chapters, numQuestions }: StudentRankCardProps) {
   return (
     <div className="flex flex-col p-[0.4em] border border-gray-200 rounded-[0.6em] text-center bg-white shadow-sm relative overflow-hidden h-full break-inside-avoid">
       
@@ -34,7 +35,7 @@ export default function StudentRankCard({ student, rank, score, chapters }: Stud
       {/* Container for Dots (Left) and Progress Bars (Right) side by side */}
       <div className="mt-auto flex flex-row items-start w-full z-10 pt-[0.4em] border-t border-gray-100">
         <div className="w-1/2 border-r border-gray-100 pr-[0.4em] shrink-0">
-          <CosmicDotGrid scores={student.scores} />
+          <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} />
         </div>
         <div className="w-1/2 pl-[0.4em] flex flex-col justify-center">
           <ChapterProgressBars chapters={chapters} student={student} compact={true} />

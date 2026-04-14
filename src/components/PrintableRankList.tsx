@@ -11,10 +11,11 @@ interface PrintableRankListProps {
   files: { result?: OMRResult }[];
   topicMapping: string;
   parsedTopicMapping?: any;
+  numQuestions: number;
   onBack: () => void;
 }
 
-export default function PrintableRankList({ files, topicMapping, parsedTopicMapping, onBack }: PrintableRankListProps) {
+export default function PrintableRankList({ files, topicMapping, parsedTopicMapping, numQuestions, onBack }: PrintableRankListProps) {
   const [subjectName, setSubjectName] = useState('PHYSICS');
   const [dayNumber, setDayNumber] = useState('4');
   const [studentImages, setStudentImages] = useState<Record<string, string>>({});
@@ -118,6 +119,7 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
                   rank={rank}
                   score={calculateScore(student)}
                   chapters={chapters}
+                  numQuestions={numQuestions}
                   imageUrl={studentImages[student.name]}
                   fontSizeScale={podiumScale} 
                 />
@@ -141,7 +143,8 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
                   student={student} 
                   rank={rank} 
                   score={score}
-                  chapters={chapters} 
+                  chapters={chapters}
+                  numQuestions={numQuestions}
                 />
               </div>
             ))}

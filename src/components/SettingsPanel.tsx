@@ -22,6 +22,8 @@ interface SettingsPanelProps {
   setRequestsPerKey: (val: number) => void;
   numQuestions: number;
   setNumQuestions: (val: number) => void;
+  numOptions: number;
+  setNumOptions: (val: number) => void;
   autoCropEnabled: boolean;
   setAutoCropEnabled: (val: boolean) => void;
   answerKey: string;
@@ -40,6 +42,7 @@ export default function SettingsPanel({
   concurrency, setConcurrency,
   requestsPerKey, setRequestsPerKey,
   numQuestions, setNumQuestions,
+  numOptions, setNumOptions,
   autoCropEnabled, setAutoCropEnabled,
   answerKey, setAnswerKey,
   attendanceSheet, setAttendanceSheet
@@ -175,7 +178,7 @@ export default function SettingsPanel({
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
             </div>
-            <div className="w-24">
+            <div className="w-20">
               <label className="block text-sm font-medium text-gray-700 mb-1" title="Validations for consensus">
                 Sampling
               </label>
@@ -188,9 +191,9 @@ export default function SettingsPanel({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
               />
             </div>
-            <div className="w-24">
+            <div className="w-20">
               <label className="block text-sm font-medium text-gray-700 mb-1" title="Images/Request">
-                Images/Req
+                Img/Req
               </label>
               <input
                 type="number"
@@ -201,9 +204,9 @@ export default function SettingsPanel({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
               />
             </div>
-            <div className="w-24">
+            <div className="w-20">
               <label className="block text-sm font-medium text-gray-700 mb-1" title="Requests/Key">
-                Reqs/Key
+                Req/Key
               </label>
               <input
                 type="number"
@@ -221,9 +224,22 @@ export default function SettingsPanel({
               <input
                 type="number"
                 min="1"
-                max="100"
+                max="200"
                 value={numQuestions}
                 onChange={(e) => setNumQuestions(parseInt(e.target.value, 10) || 25)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
+              />
+            </div>
+            <div className="w-20">
+              <label className="block text-sm font-medium text-gray-700 mb-1" title="Number of options per question (e.g. 4 for A-D, 5 for A-E)">
+                Options
+              </label>
+              <input
+                type="number"
+                min="2"
+                max="8"
+                value={numOptions}
+                onChange={(e) => setNumOptions(parseInt(e.target.value, 10) || 4)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
               />
             </div>

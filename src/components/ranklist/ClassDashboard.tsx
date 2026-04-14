@@ -6,9 +6,10 @@ import { AlertTriangle, TrendingUp, Users, Target, ChevronDown, ChevronUp, BarCh
 interface Props {
   results: OMRResult[];
   chapters: Chapter[];
+  numQuestions: number;
 }
 
-export default function ClassDashboard({ results, chapters }: Props) {
+export default function ClassDashboard({ results, chapters, numQuestions }: Props) {
   const [showAllTopics, setShowAllTopics] = useState(false);
 
   const stats = useMemo(() => {
@@ -46,7 +47,7 @@ export default function ClassDashboard({ results, chapters }: Props) {
       totalScore += score;
       if (score > maxScore) maxScore = score;
 
-      for (let i = 1; i <= Math.max(25, maxQ); i++) {
+      for (let i = 1; i <= Math.max(numQuestions, maxQ); i++) {
         if (!qMap.has(i)) continue; // only count mapped questions for stats
         
         if (!qStats[i]) qStats[i] = { correct: 0, wrong: 0, unattempted: 0 };
@@ -123,7 +124,7 @@ export default function ClassDashboard({ results, chapters }: Props) {
       topicArr: sortedTopics
     };
 
-  }, [results, chapters]);
+  }, [results, chapters, numQuestions]);
 
   if (!stats) return null;
 

@@ -18,6 +18,7 @@ export interface ProcessedFile {
 
 interface QueueItemProps {
   file: ProcessedFile;
+  numQuestions: number;
   isProcessing: boolean;
   averageTime: number;
   isSelected: boolean;
@@ -28,7 +29,7 @@ interface QueueItemProps {
   onClick: () => void;
 }
 
-export default function QueueItem({ file, isProcessing, averageTime, isSelected, onToggleSelect, onRemove, onRetry, onRecheck, onClick }: QueueItemProps) {
+export default function QueueItem({ file, numQuestions, isProcessing, averageTime, isSelected, onToggleSelect, onRemove, onRetry, onRecheck, onClick }: QueueItemProps) {
   return (
     <div 
       className={`p-4 flex items-start gap-3 sm:gap-4 ${file.status === 'success' ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''} ${isSelected ? 'bg-blue-50/50' : ''}`}
@@ -156,8 +157,9 @@ export default function QueueItem({ file, isProcessing, averageTime, isSelected,
                 <RotateCcw className="w-3 h-3" /> Recheck
               </button>
             </div>
-            <div className="flex flex-wrap gap-1">
-              {Array.from({ length: 25 }, (_, i) => i + 1).map(qNum => {
+            
+            <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto custom-scrollbar p-1 border border-gray-100 rounded bg-white">
+              {Array.from({ length: numQuestions }, (_, i) => i + 1).map(qNum => {
                 const score = file.result!.scores[`q${qNum}`];
                 let bgColor = 'bg-gray-100 text-gray-600';
                 if (score === 1) bgColor = 'bg-green-100 text-green-700';

@@ -40,6 +40,7 @@ export interface ExamData {
   title: string;
   className: string;
   totalQuestions: number;
+  numOptions?: number;
   answerKey: Record<number, string>; // e.g., { 1: 'A', 2: 'B' }
   images: string[]; // Base64 compressed images
   createdAt: any;
