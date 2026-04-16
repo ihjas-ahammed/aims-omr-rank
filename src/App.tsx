@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Camera, Settings, CheckCircle, Plus, X, Beaker } from 'lucide-react';
-import { evaluateOMRBatch, correctNamesBatch, autoCropAndRotate, aiSplitOMRImage, OMRResult } from './services/geminiService';
+import { Upload, Camera, Settings, Plus, X, Beaker } from 'lucide-react';
+import { correctNamesBatch, OMRResult } from './services/geminiService';
 import { saveImage, getImage, deleteImage } from './services/db';
-import { processImage, fileToBase64, applyCropAndRotate, rotateImageFile } from './utils/imageProcessing';
-import { dataURLtoFile } from './utils/fileUtils';
+import { rotateImageFile } from './utils/imageProcessing';
+import { processOMRImages } from './utils/omrProcessor';
 
 import SettingsPanel from './components/SettingsPanel';
 import TopicMappingPanel from './components/lab/TopicMappingPanel';
@@ -24,12 +24,37 @@ import CloudSessions from './components/lab/cloud-sessions/CloudSessions';
 import { ScoreAnalysisDashboard } from './components/lab/score-analysis';
 import DescriptiveDashboard from './components/lab/descriptive/DescriptiveDashboard';
 
-// Online Exams Imports
 import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
 
 const DEFAULT_ATTENDANCE = `ADIL MARZOOQUE\nADISANKAR\nADITHYA RAJ\nADWAID\nAHAMED IRFAN K\nAHAMED JUNAID\nAHLAM HASAN K\nAMAL CHANDRA N\nANJANA K\nANSHIA P\nANSILA KADOORAN\nAPARNA C\nARSHA FATHIMA M\nARSHIN PC\nASWATHY E\nATHUL VB\nAVANI PS\nAYISHA DIYA\nAZAL MHD\nDIYA AK\nDIYA FATHIMA KP\nDIYA MEHRIN K\nDIYA V\nFAHMA VP\nFAIZ AHMED AN\nFARHA P\nFATHIMA DILFA P\nFATHIMA FIZA M\nFATHIMA HIBA PP\nFATHIMA HUDA N\nFATHIMA LIYA A\nFATHIMA MINHA PE\nFATHIMA MISBHA VA\nFATHIMA NASHA\nFATHIMA NASHA CP\nFATHIMA RIFNA A\nFATHIMA SHAHNA PK\nFIDA THASNIM\nGOURI NANDA C\nHAMNA FATHIMA\nHANIYA FATHIMA P\nHANIYYA V\nHASNA SHARI VP\nHIBA FATHIMA KP\nHISHAM MHD\nKRISHNA PRIYA PC\nKRISTHI MUNADHA T\nLASIN ABDULLAH\nLISNA K\nLIYA FATHIMA A\nMAJID A\nMAZIN MHD\nMHD ADNAN K\nMHD AHANN TK\nMHD ANFAS TK\nMHD ASHFAQUE\nMHD DANISH\nMHD DIYAN\nMHD FAIROOZ\nMHD FARHAN K\nMHD FATHIN ALI\nMHD LIYAN P\nMHD MAJID RAMZAN TP\nMHD MUFLIH A\nMHD NAJADH\nMHD RAZAL T\nMHD RISHAN P\nMHD SABITH P\nMHD SABITH TK\nMHD SADHIL V\nMHD SHAFEEQ KK\nMHD SHAHABAS K\nMHD SINAN A\nMILHA RAZACK A\nMINHA PK\nMISHAL AHAMED\nNAIRA ABDUL LATHEEF\nNAJIH AHAMED\nNAJIYA NASRIN C\nNAJVA\nNAJVA FATHIMA C\nNASHA FATHIMA P\nNIDHA FATHIMA K\nNIDHA SHIRIN N\nNITHIN RAJ\nRAJEEBA K\nRANA FATHIMA K\nREHAN ABDUL RAHEEM\nREVATHY K\nRIDHA K\nRIFA CP\nRIFA P\nRINSHA JALIDHA P\nRINSHA SHERIN T\nRIYA SUNEER\nSHABANA JASMIN\nSILNA FATHIMA\nSITHARA BASHEER P\nSIYA TP\nTHANHA FATHIMA`;
 
-const DEFAULT_ANSWER_KEY = `*   **Q1.** B\n*   **Q2.** A\n*   **Q3.** A\n*   **Q4.** B\n*   **Q5.** C\n*   **Q6.** A\n*   **Q7.** A\n*   **Q8.** B\n*   **Q9.** C\n*   **Q10.** D\n*   **Q11.** A\n*   **Q12.** C\n*   **Q13.** B\n*   **Q14.** A\n*   **Q15.** C\n*   **Q16.** A\n*   **Q17.** Cancelled (give mark to everyone)\n*   **Q18.** B\n*   **Q19.** A\n*   **Q20.** C\n*   **Q21.** A\n*   **Q22.** A\n*   **Q23.** A\n*   **Q24.** B\n*   **Q25.** A`;
+const DEFAULT_ANSWER_KEY = `{
+  "1": "B",
+  "2": "A",
+  "3": "A",
+  "4": "B",
+  "5": "C",
+  "6": "A",
+  "7": "A",
+  "8": "B",
+  "9": "C",
+  "10": "D",
+  "11": "A",
+  "12": "C",
+  "13": "B",
+  "14": "A",
+  "15": "C",
+  "16": "A",
+  "17": "*",
+  "18": "B",
+  "19": "A",
+  "20": "C",
+  "21": "A",
+  "22": "A",
+  "23": "A",
+  "24": "B",
+  "25": "A"
+}`;
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
@@ -122,7 +147,6 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<OMRResult | null>(null);
   
-  // Lab Exams State
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
 
   const [days, setDays] = useState<number[]>(() => {
@@ -192,7 +216,6 @@ export default function App() {
   const csvInputRef = useRef<HTMLInputElement>(null);
   const averageTimeRef = useRef<number>(8000);
 
-  // Manage browser history for popstate navigation
   useEffect(() => {
     const handlePopState = () => {
       if (window.location.pathname === '/course-progress') setView('lab-course-progress');
@@ -396,262 +419,31 @@ export default function App() {
     if (isProcessing) return;
     setIsProcessing(true);
 
-    const keys = apiKeys.filter(k => k.trim());
-    const baseConcurrency = Math.max(1, concurrency);
-    const reqsPerKey = Math.max(1, requestsPerKey);
-    const totalConcurrentRequests = keys.length > 0 ? keys.length * reqsPerKey : 1;
-    const concurrencyLimit = totalConcurrentRequests * baseConcurrency;
-    
-    const pendingIds = files.filter(f => f.status === 'pending' || f.status === 'error').map(f => f.id);
-    setProgress({ current: 0, total: pendingIds.length });
-    let completedCount = 0;
-
-    for (let i = 0; i < pendingIds.length; i += concurrencyLimit) {
-      const chunkIds = pendingIds.slice(i, i + concurrencyLimit);
-      
-      setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'processing', error: undefined, attempt: 1, maxAttempts: sampling + 3, stageName: `Preparing Image...` } : f));
-
-      try {
-        const loadedImagesPromises = chunkIds.map(async (id) => {
-          const currentFile = filesByDay[currentDay]?.find(f => f.id === id) || files.find(f => f.id === id);
-          if (!currentFile) return null;
-          
-          let fileObj = currentFile.file;
-          if (!fileObj) {
-            fileObj = await getImage(id);
-            if (!fileObj) return null;
-          }
-
-          if (autoCropEnabled) {
-            setFiles(prev => prev.map(f => f.id === id ? { ...f, stageName: 'Auto-Cropping (Lite)...' } : f));
-            const rawBase64 = await fileToBase64(fileObj);
-            try {
-              const cropData = await autoCropAndRotate(rawBase64, fileObj.type, keys, liteModel);
-              const w = cropData.xmax - cropData.xmin;
-              const h = cropData.ymax - cropData.ymin;
-              let finalRotation = cropData.rotation;
-              
-              if (w > h && (finalRotation === 0 || finalRotation === 180)) {
-                finalRotation = (finalRotation + 90) % 360;
-              }
-              
-              const { base64, mimeType } = await applyCropAndRotate(fileObj, cropData, finalRotation, imageResolution);
-              
-              const croppedDataUrl = `data:${mimeType};base64,${base64}`;
-              const croppedFile = dataURLtoFile(croppedDataUrl, fileObj.name || 'image.jpg');
-              await saveImage(id, croppedFile);
-              const newPreviewUrl = URL.createObjectURL(croppedFile);
-              
-              setFiles(prev => prev.map(f => f.id === id ? { ...f, file: croppedFile, previewUrl: newPreviewUrl } : f));
-
-              return { id, base64, mimeType, fileObj: croppedFile };
-            } catch (error: any) {
-              console.error(`Auto-crop failed for ${id}, falling back to raw image.`, error);
-              const { base64, mimeType } = await processImage(fileObj, imageResolution, 0);
-              return { id, base64, mimeType, fileObj };
-            }
-          } else {
-            const { base64, mimeType } = await processImage(fileObj, imageResolution, 0);
-            return { id, base64, mimeType, fileObj };
-          }
-        });
-
-        const loadedResults = await Promise.all(loadedImagesPromises);
-        const imagesToProcess = loadedResults.filter(Boolean) as { id: string, base64: string, mimeType: string, fileObj: File }[];
-
-        if (imagesToProcess.length === 0) continue;
-
-        let finalImagesToProcess: { id: string, base64: string, mimeType: string, fileObj: File, originalId: string, splitIndex?: number, extractedName?: string }[] = [];
-        
-        for (const img of imagesToProcess) {
-           if (experimentalSplit && numQuestions > 100) {
-              setFiles(prev => prev.map(f => f.id === img.id ? { ...f, stageName: 'AI Splitting Image...' } : f));
-              try {
-                const splitRes = await aiSplitOMRImage(img.base64, img.mimeType, keys, liteModel, experimentalSplitPrompt);
-                const splitBoxes = splitRes.boxes || [];
-                
-                let splitPreviews: string[] = [];
-                for (let idx = 0; idx < splitBoxes.length; idx++) {
-                   const splitData = await applyCropAndRotate(img.fileObj, splitBoxes[idx], splitBoxes[idx].rotation, imageResolution);
-                   const splitDataUrl = `data:${splitData.mimeType};base64,${splitData.base64}`;
-                   const splitFile = dataURLtoFile(splitDataUrl, `split_${idx}_${img.fileObj.name || 'image.jpg'}`);
-                   const splitUrl = URL.createObjectURL(splitFile);
-                   splitPreviews.push(splitUrl);
-                   
-                   finalImagesToProcess.push({
-                     originalId: img.id,
-                     id: `${img.id}_part${idx}`,
-                     base64: splitData.base64,
-                     mimeType: splitData.mimeType,
-                     fileObj: splitFile,
-                     splitIndex: idx,
-                     extractedName: splitRes.name
-                   });
-                }
-                
-                setFiles(prev => prev.map(f => f.id === img.id ? { ...f, splitPreviews } : f));
-              } catch (err) {
-                 console.error('Failed to split, falling back to original');
-                 finalImagesToProcess.push({ ...img, originalId: img.id });
-              }
-           } else {
-             finalImagesToProcess.push({ ...img, originalId: img.id });
-           }
-        }
-
-        let resultsHistory: Record<string, OMRResult[]> = {};
-        for (const img of imagesToProcess) {
-          resultsHistory[img.id] = [];
-        }
-        
-        let targetMatches = sampling >= 2 ? 2 : 1;
-        let maxAttempts = sampling + 3;
-        let finalResults: Record<string, OMRResult> = {};
-        let completedIds = new Set<string>();
-
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          let stageName = attempt < sampling ? `Sampling ${attempt + 1}/${sampling}` : `Verification ${attempt - sampling + 1}`;
-          
-          const remainingImages = finalImagesToProcess.filter(img => !completedIds.has(img.originalId));
-          if (remainingImages.length === 0) break;
-          
-          setFiles(prev => prev.map(f => remainingImages.some(img => img.originalId === f.id) ? { ...f, attempt: attempt + 1, maxAttempts, stageName } : f));
-          
-          const attemptStartTime = Date.now();
-          
-          const allChunks = [];
-          for (let k = 0; k < remainingImages.length; k += baseConcurrency) {
-            allChunks.push(remainingImages.slice(k, k + baseConcurrency));
-          }
-          
-          let rawBatchResults: any = {};
-          
-          for (let m = 0; m < allChunks.length; m += totalConcurrentRequests) {
-            const activeChunks = allChunks.slice(m, m + totalConcurrentRequests);
-            const activePromises = activeChunks.map(chunk => {
-              return evaluateOMRBatch(chunk, keys, proModel, liteModel, answerKey, numQuestions, numOptions).then(res => {
-                setFiles(prev => prev.map(f => {
-                  if (chunk.some(img => img.originalId === f.id)) {
-                    return { ...f, stageName: `Evaluated (Attempt ${attempt + 1})` };
-                  }
-                  return f;
-                }));
-                return res;
-              });
-            });
-            const chunkResults = await Promise.all(activePromises);
-            const combined = chunkResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
-            rawBatchResults = { ...rawBatchResults, ...combined };
-          }
-          
-          const batchResults: Record<string, OMRResult> = {};
-          
-          // Merge parts if needed
-          for (const piece of remainingImages) {
-             const pieceResult = rawBatchResults[piece.id];
-             if (pieceResult) {
-                if (!batchResults[piece.originalId]) {
-                   batchResults[piece.originalId] = {
-                     name: pieceResult.name || 'Unknown',
-                     right: 0,
-                     wrong: 0,
-                     confidence: pieceResult.confidence,
-                     scores: {}
-                   };
-                }
-                const merged = batchResults[piece.originalId];
-                merged.confidence = Math.min(merged.confidence, pieceResult.confidence);
-                
-                // Prioritize name extracted during the splitting phase, then pieceResult.name
-                if (piece.extractedName && piece.extractedName !== 'Unknown' && (!merged.name || merged.name === 'Unknown')) {
-                  merged.name = piece.extractedName;
-                } else if (pieceResult.name && pieceResult.name !== 'Unknown' && (!merged.name || merged.name === 'Unknown')) {
-                  merged.name = pieceResult.name; 
-                }
-
-                for (let q = 1; q <= numQuestions; q++) {
-                   const qKey = `q${q}`;
-                   const score = pieceResult.scores[qKey];
-                   if (score !== 0 && score !== undefined) {
-                      merged.scores[qKey] = score;
-                   }
-                }
-             }
-          }
-          
-          // Re-calculate right/wrong
-          for (const key of Object.keys(batchResults)) {
-             let right = 0, wrong = 0;
-             for (let q = 1; q <= numQuestions; q++) {
-                if (batchResults[key].scores[`q${q}`] === 1) right++;
-                if (batchResults[key].scores[`q${q}`] === -1) wrong++;
-             }
-             batchResults[key].right = right;
-             batchResults[key].wrong = wrong;
-          }
-          
-          const elapsed = Date.now() - attemptStartTime;
-          averageTimeRef.current = (averageTimeRef.current * 4 + elapsed) / 5;
-
-          for (const img of imagesToProcess) {
-            if (batchResults[img.id]) {
-              resultsHistory[img.id].push(batchResults[img.id]);
-            }
-            
-            if (attempt >= targetMatches - 1) {
-              const counts = new Map<string, number>();
-              let bestResult: OMRResult | null = null;
-              
-              for (const r of resultsHistory[img.id]) {
-                const key = JSON.stringify(r.scores);
-                counts.set(key, (counts.get(key) || 0) + 1);
-                if (counts.get(key)! >= targetMatches) {
-                  bestResult = resultsHistory[img.id].find(res => JSON.stringify(res.scores) === key) || r;
-                  break;
-                }
-              }
-              
-              if (bestResult) {
-                bestResult.confidences = resultsHistory[img.id].map(r => r.confidence);
-                finalResults[img.id] = bestResult;
-                if (!completedIds.has(img.id)) {
-                   completedIds.add(img.id);
-                   completedCount++;
-                   setProgress(p => ({ ...p, current: completedCount }));
-                }
-              } else if (attempt === maxAttempts - 1) {
-                const lastRes = resultsHistory[img.id][resultsHistory[img.id].length - 1];
-                if (lastRes) {
-                  lastRes.confidences = resultsHistory[img.id].map(r => r.confidence);
-                  finalResults[img.id] = lastRes;
-                }
-                if (!completedIds.has(img.id)) {
-                   completedIds.add(img.id);
-                   completedCount++;
-                   setProgress(p => ({ ...p, current: completedCount }));
-                }
-              }
-            }
-          }
-        }
-
-        setFiles(prev => prev.map(f => {
-          if (finalResults[f.id]) {
-            return { ...f, status: 'success', result: finalResults[f.id] };
-          }
-          if (chunkIds.includes(f.id) && !finalResults[f.id]) {
-            return { ...f, status: 'error', error: 'Failed to evaluate' };
-          }
-          return f;
-        }));
-
-      } catch (error: any) {
-        setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'error', error: error.message } : f));
-      } finally {
-        const failedInChunk = chunkIds.filter(id => !completedIds.has(id));
-        completedCount += failedInChunk.length;
-        setProgress(p => ({ ...p, current: completedCount }));
-      }
+    try {
+      await processOMRImages({
+        files,
+        filesByDay,
+        currentDay,
+        apiKeys,
+        liteModel,
+        proModel,
+        imageResolution,
+        sampling,
+        concurrency,
+        requestsPerKey,
+        numQuestions,
+        numOptions,
+        autoCropEnabled,
+        experimentalSplit,
+        experimentalSplitPrompt,
+        answerKey,
+        setFiles,
+        setProgress,
+        averageTimeRef
+      });
+    } catch (e: any) {
+      console.error("Pipeline failed", e);
+      alert(`Processing failed: ${e.message}`);
     }
 
     setIsProcessing(false);
@@ -982,7 +774,6 @@ export default function App() {
     if (hasPrevDetail) setSelectedStudent(sortedResults[currentDetailIndex - 1]);
   };
 
-  // Dedicated full-screen view for taking the exam
   if (view === 'exam-take') {
     const activeExamId = selectedExamId || new URLSearchParams(window.location.search).get('examId');
     if (!activeExamId) {

@@ -4,13 +4,15 @@ export interface OMRResult {
   name: string;
   right: number;
   wrong: number;
-  scores: Record<string, number>; // q1 to qN
+  scores: Record<string, number>; // q1 to qN (+1, -1, 0)
+  answers?: Record<string, string>; // The raw selected option (A, B, C...)
   confidence: number;
   confidences?: number[];
   nameConfidence?: number;
 }
 
 export interface AutoCropResult {
+  name?: string;
   ymin: number;
   xmin: number;
   ymax: number;
@@ -54,48 +56,72 @@ export async function fetchAvailableModels(apiKeys: string[]): Promise<string[]>
   throw lastError || new Error('Failed to fetch models');
 }
 
+export async function extractNameWithLite(imageBase64: string, mimeType: string, apiKeys: string[], model: string): Promise<string> {
+  const keysToTry = getKeys(apiKeys);
+  const prompt = "Extract the student's handwritten name from the top of this OMR sheet. If no name is clearly found, return 'Unknown'.";
+  
+  let lastError: any;
+  for (let i = 0; i < keysToTry.length; i++) {
+    const { key } = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-flash-lite-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: imageBase64, mimeType } }
+        ],
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: { name: { type: Type.STRING } },
+            required: ["name"]
+          }
+        }
+      });
+      const text = response.text?.replace(/```json\n?|\n?```/g, '').trim();
+      if (text) {
+        return JSON.parse(text).name || 'Unknown';
+      }
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError || new Error("Failed to extract name.");
+}
+
 export async function evaluateOMR(
   imageBase64: string,
   mimeType: string,
   apiKeys: string[],
   model: string,
   liteModel: string,
-  answerKeyPrompt: string,
   numQuestions: number = 25,
   numOptions: number = 4
-): Promise<OMRResult> {
+): Promise<{ answers: Record<string, string>, confidence: number }> {
   const keysToTry = getKeys(apiKeys);
   const maxOptionChar = String.fromCharCode(64 + numOptions);
 
   const prompt = `
 You are an expert OMR sheet evaluator.
-Evaluate the provided OMR sheet image based on the following rules and answer key.
-GIVE full focus on validation.
+Extract the bubbled option for each question up to Q${numQuestions}.
+The exam has ${numOptions} options per question (A to ${maxOptionChar}).
 
-### Answer Key
-${answerKeyPrompt}
+Rules:
+- Only include questions that have a single clear bubble.
+- If a student crossed out an option and clearly bubbled another, return the final bubbled one.
+- Omit questions that are completely blank or have multiple bubbles without a clear correction.
+- Return a confidence score (0-100) for your extraction.
 
-Questions strictly beyond Q${numQuestions} might not have been bubbled. Ignore them.
-
-### Evaluation Rules:
-- For each question Q1 to Q${numQuestions}, determine if the student's answer is correct, wrong, or unattempted.
-- The exam has ${numOptions} options per question (A to ${maxOptionChar}).
-- Give 1 if correct, -1 if wrong, 0 if no answer.
-- Cross marks: If a student made a mistake and used a cross mark on a bubble, evaluate their second option (the bubbled one without a cross). If they only have one cross mark and no other bubble, skip the question (give 0).
-- Extract the student's NAME from the sheet. (Best effort only, exact spelling is not critical as it will be verified against an attendance sheet later).
-- Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
-- Provide a confidence score from 0 to 100 representing how confident you are in your evaluation of this sheet.
-
-Output your response as a JSON object with the following structure:
+Output your response as a JSON object containing an array of answers:
 {
-  "name": "Student Name",
-  "right": 10,
-  "wrong": 5,
-  "confidence": 95,
-  "q1": 1,
-  "q2": -1,
-  "q3": 0,
-  // ... up to q${numQuestions}
+  "answers": [
+    { "q": "1", "a": "A" },
+    { "q": "2", "a": "B" },
+    { "q": "4", "a": "C" }
+  ],
+  "confidence": 95
 }
 `;
 
@@ -104,13 +130,20 @@ Output your response as a JSON object with the following structure:
     responseSchema: {
       type: Type.OBJECT,
       properties: {
-        name: { type: Type.STRING, description: "Student's name" },
-        right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
-        wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
-        confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" },
-        ...Array.from({ length: numQuestions }, (_, i) => ({ [`q${i + 1}`]: { type: Type.INTEGER } })).reduce((a, b) => ({ ...a, ...b }), {})
+        answers: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              q: { type: Type.STRING },
+              a: { type: Type.STRING }
+            },
+            required: ["q", "a"]
+          }
+        },
+        confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" }
       },
-      required: ["name", "right", "wrong", "confidence", ...Array.from({ length: numQuestions }, (_, i) => `q${i + 1}`)]
+      required: ["answers", "confidence"]
     }
   };
 
@@ -126,42 +159,29 @@ Output your response as a JSON object with the following structure:
         contents: [
           { text: prompt },
           { inlineData: { data: imageBase64, mimeType } }
-        ]
+        ],
+        config: schemaConfig as any
       });
 
       const text = response.text;
       if (!text) throw new Error('Empty response from model');
       
-      let data;
-      try {
-        const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
-        data = JSON.parse(cleanedText);
-      } catch (parseError) {
-        console.log('Failed to parse JSON from pro model, using lite model to restructure...', text);
-        const restructureResponse = await ai.models.generateContent({
-          model: liteModel || 'gemini-3.1-flash-lite-preview',
-          contents: `Extract the OMR evaluation data from the following text and format it as JSON.\n\nText:\n${text}`,
-          config: schemaConfig as any
-        });
-        
-        const restructuredText = restructureResponse.text;
-        if (!restructuredText) throw new Error('Empty response from lite model during restructure');
-        data = JSON.parse(restructuredText);
+      const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+      const data = JSON.parse(cleanedText);
+      
+      const mappedAnswers: Record<string, string> = {};
+      if (Array.isArray(data.answers)) {
+        for (const ans of data.answers) {
+          if (ans.q && ans.a) {
+            mappedAnswers[ans.q] = ans.a;
+          }
+        }
       }
       
-      const scores: Record<string, number> = {};
-      for (let j = 1; j <= numQuestions; j++) {
-        scores[`q${j}`] = data[`q${j}`] ?? 0;
-      }
-
       return {
-        name: data.name || 'Unknown',
-        right: data.right || 0,
-        wrong: data.wrong || 0,
-        confidence: data.confidence ?? 100,
-        scores
+        answers: mappedAnswers,
+        confidence: data.confidence ?? 100
       };
-
     } catch (error: any) {
       console.error('Error with API key:', error);
       lastError = error;
@@ -176,73 +196,62 @@ export async function evaluateOMRBatch(
   apiKeys: string[],
   model: string,
   liteModel: string,
-  answerKeyPrompt: string,
   numQuestions: number = 25,
   numOptions: number = 4
-): Promise<Record<string, OMRResult>> {
+): Promise<Record<string, { answers: Record<string, string>, confidence: number }>> {
   const keysToTry = getKeys(apiKeys);
   const maxOptionChar = String.fromCharCode(64 + numOptions);
 
   const prompt = `
 You are an expert OMR sheet evaluator.
-Evaluate the provided OMR sheet images based on the following rules and answer key.
-GIVE full focus on validation.
+Extract the bubbled option for each question up to Q${numQuestions}.
+The exam has ${numOptions} options per question (A to ${maxOptionChar}).
 
-### Answer Key
-${answerKeyPrompt}
+Rules:
+- Only include questions that have a single clear bubble.
+- If a student crossed out an option and clearly bubbled another, return the final bubbled one.
+- Omit questions that are completely blank or have multiple bubbles without a clear correction.
+- Return a confidence score (0-100) for your extraction accuracy.
 
-Questions strictly beyond Q${numQuestions} might not have been bubbled. Ignore them unless there are more than ${numQuestions} questions required.
+You will receive ${images.length} images. Each image corresponds to an ID. Evaluate each image and return a JSON array of objects.
 
-### Evaluation Rules:
-- For each question Q1 to Q${numQuestions}, determine if the student's answer is correct, wrong, or unattempted.
-- The exam has ${numOptions} options per question (A to ${maxOptionChar}).
-- Give 1 if correct, -1 if wrong, 0 if no answer.
-- Extract the student's NAME from the sheet. (Best effort only, exact spelling is not critical as it will be verified against an attendance sheet later).
-- Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
-- Provide a confidence score from 0 to 100 representing how confident you are in your evaluation of this sheet. (be accurate)
-
-You will receive ${images.length} images. Each image corresponds to an ID. Evaluate each image and return a JSON object mapping the image ID to its evaluation result.
-
-Output your response as a JSON object with the following structure:
-{
-  "image_id_1": {
-    "name": "Student Name",
-    "right": 10,
-    "wrong": 5,
-    "confidence": 95,
-    "q1": 1,
-    "q2": -1,
-    "q3": 0,
-    // ... up to q${numQuestions}
-  },
-  "image_id_2": {
-    // ...
+Output your response as a JSON array exactly matching this structure:
+[
+  {
+    "id": "image_id_1",
+    "answers": [
+      { "q": "1", "a": "A" },
+      { "q": "2", "a": "B" },
+      { "q": "4", "a": "C" }
+    ],
+    "confidence": 95
   }
-}
+]
 `;
 
   const schemaConfig = {
     responseMimeType: 'application/json',
     responseSchema: {
-      type: Type.OBJECT,
-      properties: images.reduce((acc, img) => {
-        const imgProps: any = {
-          name: { type: Type.STRING, description: "Student's name" },
-          right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
-          wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
-          confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" },
-        };
-        for (let q = 1; q <= numQuestions; q++) {
-          imgProps[`q${q}`] = { type: Type.INTEGER };
-        }
-        acc[img.id] = {
-          type: Type.OBJECT,
-          properties: imgProps,
-          required: ["name", "right", "wrong", "confidence", ...Array.from({ length: numQuestions }, (_, i) => `q${i + 1}`)]
-        };
-        return acc;
-      }, {} as any),
-      required: images.map(img => img.id)
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          id: { type: Type.STRING },
+          answers: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                q: { type: Type.STRING },
+                a: { type: Type.STRING }
+              },
+              required: ["q", "a"]
+            }
+          },
+          confidence: { type: Type.INTEGER }
+        },
+        required: ["id", "answers", "confidence"]
+      }
     }
   };
 
@@ -261,13 +270,14 @@ Output your response as a JSON object with the following structure:
 
       const response = await ai.models.generateContent({
         model: model || 'gemini-3.1-pro-preview',
-        contents: contentsParts
+        contents: contentsParts,
+        config: schemaConfig as any
       });
 
       const text = response.text;
       if (!text) throw new Error('Empty response from model');
       
-      let data;
+      let data: any[];
       try {
         const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
         data = JSON.parse(cleanedText);
@@ -275,7 +285,7 @@ Output your response as a JSON object with the following structure:
         console.log('Failed to parse JSON from pro model, using lite model to restructure...', text);
         const restructureResponse = await ai.models.generateContent({
           model: liteModel || 'gemini-3.1-flash-lite-preview',
-          contents: `Extract the OMR evaluation data from the following text and format it as JSON.\n\nText:\n${text}`,
+          contents: `Extract the OMR evaluation data from the following text and format it as a JSON array.\n\nText:\n${text}`,
           config: schemaConfig as any
         });
         
@@ -283,24 +293,24 @@ Output your response as a JSON object with the following structure:
         if (!restructuredText) throw new Error('Empty response from lite model during restructure');
         data = JSON.parse(restructuredText);
       }
+
+      const finalResults: Record<string, { answers: Record<string, string>, confidence: number }> = {};
       
-      const finalResults: Record<string, OMRResult> = {};
-      
-      for (const img of images) {
-        const imgData = data[img.id];
-        if (!imgData) continue;
+      for (const item of data) {
+        if (!item.id) continue;
         
-        const scores: Record<string, number> = {};
-        for (let j = 1; j <= numQuestions; j++) {
-          scores[`q${j}`] = imgData[`q${j}`] ?? 0;
+        const answers: Record<string, string> = {};
+        if (Array.isArray(item.answers)) {
+          for (const ans of item.answers) {
+            if (ans.q && ans.a) {
+              answers[ans.q] = ans.a;
+            }
+          }
         }
         
-        finalResults[img.id] = {
-          name: imgData.name || 'Unknown',
-          right: imgData.right || 0,
-          wrong: imgData.wrong || 0,
-          confidence: imgData.confidence ?? 100,
-          scores
+        finalResults[item.id] = {
+          answers,
+          confidence: item.confidence ?? 100
         };
       }
 
@@ -411,7 +421,7 @@ export async function extractTextFromDocument(
   
   let prompt = '';
   if (extractionType === 'answerKey') {
-    prompt = `Extract the answer key from this document. Format it as a simple list like:\n* **Q1.** A\n* **Q2.** B\n* **Q3.** C\nOnly output the formatted text, nothing else.`;
+    prompt = `Extract the answer key from this document. Format it as a strict JSON object mapping question numbers (as strings) to option letters. Example: {"1": "A", "2": "B", "3": "C"}. For cancelled questions, use "*". Return ONLY the valid JSON object.`;
   } else if (extractionType === 'topicMapping' || extractionType === 'descTopicMapping') {
     prompt = `Extract the chapter and topic mapping from this document. Format it exactly like this:\n### Chapter Name\n* Topic Name: Q1, Q2, Q3\n* Another Topic: Q4, Q5\n\n### Another Chapter\n* Topic Name: Q6, Q7\n\nOnly output the formatted text, nothing else.`;
   } else if (extractionType === 'descQPAndScheme') {
@@ -544,8 +554,11 @@ CRITICAL: OMR sheets are PORTRAIT (taller than they are wide).
 If the image shows the sheet lying sideways (landscape), you MUST return a rotation of 90 or 270 to make it upright.
 Determine the clockwise rotation needed (0, 90, 180, or 270) to make the text on the OMR sheet upright and readable in a portrait orientation.
 
+Additionally, extract the student's handwritten NAME from the top of the sheet (best effort). If no name is clearly found, omit the name field or return 'Unknown'.
+
 Output your response as a JSON object with this exact structure:
 {
+  "name": "Student Name",
   "ymin": 100,
   "xmin": 150,
   "ymax": 900,
@@ -572,6 +585,7 @@ Output your response as a JSON object with this exact structure:
           responseSchema: {
             type: Type.OBJECT,
             properties: {
+              name: { type: Type.STRING, description: "Extracted name if found" },
               ymin: { type: Type.INTEGER },
               xmin: { type: Type.INTEGER },
               ymax: { type: Type.INTEGER },
@@ -641,7 +655,7 @@ Output your response as a JSON object with this exact structure:
 `;
 
   const prompt = customPrompt && customPrompt.trim().length > 0
-    ? `${basePrompt}\n\nUSER'S CUSTOM SPLITTING INSTRUCTIONS:\n${customPrompt}\n`
+    ? `CRITICAL USER INSTRUCTIONS (OVERRIDE DEFAULT BEHAVIOR IF CONFLICTING):\n${customPrompt}\n\n---\n${basePrompt}`
     : basePrompt;
 
   let lastError: any;

@@ -87,7 +87,9 @@ export default function SettingsPanel({
       const base64 = await fileToBase64(file);
       const extractedText = await extractTextFromDocument(base64, file.type, keys, proModel, 'answerKey');
 
-      setAnswerKey(extractedText);
+      // Strip potential Markdown JSON markers
+      const cleanedText = extractedText.replace(/```json\n?|\n?```/g, '').trim();
+      setAnswerKey(cleanedText);
 
       alert('Successfully extracted Answer Key!');
     } catch (error: any) {
@@ -267,10 +269,10 @@ export default function SettingsPanel({
                   onChange={(e) => setAutoCropEnabled(e.target.checked)}
                   className="w-4 h-4 text-purple-600 bg-white border-purple-300 rounded focus:ring-purple-500 cursor-pointer"
                 />
-                Auto-Crop & Rotate OMR with AI
+                Auto-Crop & Extract Name with Lite Model
               </label>
               <p className="text-xs text-purple-700 mt-1 ml-6">
-                Uses the Lite model to perfectly frame and rotate images before evaluation. Highly recommended for skewed scans!
+                Uses the Lite model to properly frame the document, rotate it, and extract the student's name from the top before evaluation.
               </p>
             </div>
           </div>
@@ -288,7 +290,7 @@ export default function SettingsPanel({
                 Experimental: AI Split for &gt;100 Qs
               </label>
               <p className="text-xs text-orange-700 mt-1 ml-6">
-                Uses AI to discover question blocks and splits the image into multiple pieces automatically for evaluation.
+                Uses AI to discover question blocks and splits the image into multiple pieces automatically. (Also extracts Name).
               </p>
             </div>
           </div>
@@ -312,7 +314,7 @@ export default function SettingsPanel({
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="block text-sm font-medium text-gray-700">
-              Answer Key
+              Answer Key (JSON Format)
             </label>
             <div className="flex gap-2">
               <input 
@@ -335,11 +337,12 @@ export default function SettingsPanel({
               </button>
             </div>
           </div>
+          <p className="text-xs text-gray-500 mb-2">Provide a valid JSON mapping question numbers to answers. Use "*" as the answer to award a mark to everyone for a cancelled question.</p>
           <textarea
             value={answerKey}
             onChange={(e) => setAnswerKey(e.target.value)}
             rows={8}
-            placeholder="* **Q1.** A\n* **Q2.** B..."
+            placeholder='{\n  "1": "A",\n  "2": "B",\n  "3": "*"\n}'
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
           />
         </div>
