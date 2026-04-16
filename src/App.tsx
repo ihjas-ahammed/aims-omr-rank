@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Camera, Settings, CheckCircle, Plus, X, Beaker } from 'lucide-react';
-import { evaluateOMRBatch, correctNamesBatch, autoCropAndRotate, OMRResult } from './services/geminiService';
+import { evaluateOMRBatch, correctNamesBatch, autoCropAndRotate, aiSplitOMRImage, OMRResult } from './services/geminiService';
 import { saveImage, getImage, deleteImage } from './services/db';
 import { processImage, fileToBase64, applyCropAndRotate, rotateImageFile } from './utils/imageProcessing';
 import { dataURLtoFile } from './utils/fileUtils';
@@ -84,6 +84,12 @@ export default function App() {
   });
   const [autoCropEnabled, setAutoCropEnabled] = useState<boolean>(() => {
     return localStorage.getItem('omr_autoCrop') === 'true';
+  });
+  const [experimentalSplit, setExperimentalSplit] = useState<boolean>(() => {
+    return localStorage.getItem('omr_experimentalSplit') === 'true';
+  });
+  const [experimentalSplitPrompt, setExperimentalSplitPrompt] = useState<string>(() => {
+    return localStorage.getItem('omr_experimentalSplitPrompt') || '';
   });
 
   const [attendanceSheet, setAttendanceSheet] = useState<string>(() => localStorage.getItem('omr_attendance') || DEFAULT_ATTENDANCE);
@@ -207,6 +213,8 @@ export default function App() {
   useEffect(() => { localStorage.setItem('omr_numQuestions', numQuestions.toString()); }, [numQuestions]);
   useEffect(() => { localStorage.setItem('omr_numOptions', numOptions.toString()); }, [numOptions]);
   useEffect(() => { localStorage.setItem('omr_autoCrop', autoCropEnabled.toString()); }, [autoCropEnabled]);
+  useEffect(() => { localStorage.setItem('omr_experimentalSplit', experimentalSplit.toString()); }, [experimentalSplit]);
+  useEffect(() => { localStorage.setItem('omr_experimentalSplitPrompt', experimentalSplitPrompt); }, [experimentalSplitPrompt]);
   useEffect(() => { localStorage.setItem('omr_attendance', attendanceSheet); }, [attendanceSheet]);
   useEffect(() => { localStorage.setItem('omr_answerKey', answerKey); }, [answerKey]);
   useEffect(() => { localStorage.setItem('omr_topicMapping', topicMapping); }, [topicMapping]);
@@ -453,6 +461,44 @@ export default function App() {
 
         if (imagesToProcess.length === 0) continue;
 
+        let finalImagesToProcess: { id: string, base64: string, mimeType: string, fileObj: File, originalId: string, splitIndex?: number, extractedName?: string }[] = [];
+        
+        for (const img of imagesToProcess) {
+           if (experimentalSplit && numQuestions > 100) {
+              setFiles(prev => prev.map(f => f.id === img.id ? { ...f, stageName: 'AI Splitting Image...' } : f));
+              try {
+                const splitRes = await aiSplitOMRImage(img.base64, img.mimeType, keys, liteModel, experimentalSplitPrompt);
+                const splitBoxes = splitRes.boxes || [];
+                
+                let splitPreviews: string[] = [];
+                for (let idx = 0; idx < splitBoxes.length; idx++) {
+                   const splitData = await applyCropAndRotate(img.fileObj, splitBoxes[idx], splitBoxes[idx].rotation, imageResolution);
+                   const splitDataUrl = `data:${splitData.mimeType};base64,${splitData.base64}`;
+                   const splitFile = dataURLtoFile(splitDataUrl, `split_${idx}_${img.fileObj.name || 'image.jpg'}`);
+                   const splitUrl = URL.createObjectURL(splitFile);
+                   splitPreviews.push(splitUrl);
+                   
+                   finalImagesToProcess.push({
+                     originalId: img.id,
+                     id: `${img.id}_part${idx}`,
+                     base64: splitData.base64,
+                     mimeType: splitData.mimeType,
+                     fileObj: splitFile,
+                     splitIndex: idx,
+                     extractedName: splitRes.name
+                   });
+                }
+                
+                setFiles(prev => prev.map(f => f.id === img.id ? { ...f, splitPreviews } : f));
+              } catch (err) {
+                 console.error('Failed to split, falling back to original');
+                 finalImagesToProcess.push({ ...img, originalId: img.id });
+              }
+           } else {
+             finalImagesToProcess.push({ ...img, originalId: img.id });
+           }
+        }
+
         let resultsHistory: Record<string, OMRResult[]> = {};
         for (const img of imagesToProcess) {
           resultsHistory[img.id] = [];
@@ -466,36 +512,88 @@ export default function App() {
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
           let stageName = attempt < sampling ? `Sampling ${attempt + 1}/${sampling}` : `Verification ${attempt - sampling + 1}`;
           
-          const remainingImages = imagesToProcess.filter(img => !completedIds.has(img.id));
+          const remainingImages = finalImagesToProcess.filter(img => !completedIds.has(img.originalId));
           if (remainingImages.length === 0) break;
           
-          setFiles(prev => prev.map(f => remainingImages.some(img => img.id === f.id) ? { ...f, attempt: attempt + 1, maxAttempts, stageName } : f));
+          setFiles(prev => prev.map(f => remainingImages.some(img => img.originalId === f.id) ? { ...f, attempt: attempt + 1, maxAttempts, stageName } : f));
           
           const attemptStartTime = Date.now();
           
-          const chunkedPromises = [];
+          const allChunks = [];
           for (let k = 0; k < remainingImages.length; k += baseConcurrency) {
-            const chunk = remainingImages.slice(k, k + baseConcurrency);
-            const p = evaluateOMRBatch(chunk, keys, proModel, liteModel, answerKey, numQuestions, numOptions).then(res => {
-              // Update UI to show that this specific chunk finished its request
-              setFiles(prev => prev.map(f => {
-                if (chunk.some(img => img.id === f.id)) {
-                  return { ...f, stageName: `Evaluated (Attempt ${attempt + 1})` };
-                }
-                return f;
-              }));
-              return res;
-            });
-            chunkedPromises.push(p);
+            allChunks.push(remainingImages.slice(k, k + baseConcurrency));
           }
           
-          const chunkResults = await Promise.all(chunkedPromises);
-          const batchResults = chunkResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+          let rawBatchResults: any = {};
+          
+          for (let m = 0; m < allChunks.length; m += totalConcurrentRequests) {
+            const activeChunks = allChunks.slice(m, m + totalConcurrentRequests);
+            const activePromises = activeChunks.map(chunk => {
+              return evaluateOMRBatch(chunk, keys, proModel, liteModel, answerKey, numQuestions, numOptions).then(res => {
+                setFiles(prev => prev.map(f => {
+                  if (chunk.some(img => img.originalId === f.id)) {
+                    return { ...f, stageName: `Evaluated (Attempt ${attempt + 1})` };
+                  }
+                  return f;
+                }));
+                return res;
+              });
+            });
+            const chunkResults = await Promise.all(activePromises);
+            const combined = chunkResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+            rawBatchResults = { ...rawBatchResults, ...combined };
+          }
+          
+          const batchResults: Record<string, OMRResult> = {};
+          
+          // Merge parts if needed
+          for (const piece of remainingImages) {
+             const pieceResult = rawBatchResults[piece.id];
+             if (pieceResult) {
+                if (!batchResults[piece.originalId]) {
+                   batchResults[piece.originalId] = {
+                     name: pieceResult.name || 'Unknown',
+                     right: 0,
+                     wrong: 0,
+                     confidence: pieceResult.confidence,
+                     scores: {}
+                   };
+                }
+                const merged = batchResults[piece.originalId];
+                merged.confidence = Math.min(merged.confidence, pieceResult.confidence);
+                
+                // Prioritize name extracted during the splitting phase, then pieceResult.name
+                if (piece.extractedName && piece.extractedName !== 'Unknown' && (!merged.name || merged.name === 'Unknown')) {
+                  merged.name = piece.extractedName;
+                } else if (pieceResult.name && pieceResult.name !== 'Unknown' && (!merged.name || merged.name === 'Unknown')) {
+                  merged.name = pieceResult.name; 
+                }
+
+                for (let q = 1; q <= numQuestions; q++) {
+                   const qKey = `q${q}`;
+                   const score = pieceResult.scores[qKey];
+                   if (score !== 0 && score !== undefined) {
+                      merged.scores[qKey] = score;
+                   }
+                }
+             }
+          }
+          
+          // Re-calculate right/wrong
+          for (const key of Object.keys(batchResults)) {
+             let right = 0, wrong = 0;
+             for (let q = 1; q <= numQuestions; q++) {
+                if (batchResults[key].scores[`q${q}`] === 1) right++;
+                if (batchResults[key].scores[`q${q}`] === -1) wrong++;
+             }
+             batchResults[key].right = right;
+             batchResults[key].wrong = wrong;
+          }
           
           const elapsed = Date.now() - attemptStartTime;
           averageTimeRef.current = (averageTimeRef.current * 4 + elapsed) / 5;
 
-          for (const img of remainingImages) {
+          for (const img of imagesToProcess) {
             if (batchResults[img.id]) {
               resultsHistory[img.id].push(batchResults[img.id]);
             }
@@ -516,14 +614,22 @@ export default function App() {
               if (bestResult) {
                 bestResult.confidences = resultsHistory[img.id].map(r => r.confidence);
                 finalResults[img.id] = bestResult;
-                completedIds.add(img.id);
+                if (!completedIds.has(img.id)) {
+                   completedIds.add(img.id);
+                   completedCount++;
+                   setProgress(p => ({ ...p, current: completedCount }));
+                }
               } else if (attempt === maxAttempts - 1) {
                 const lastRes = resultsHistory[img.id][resultsHistory[img.id].length - 1];
                 if (lastRes) {
                   lastRes.confidences = resultsHistory[img.id].map(r => r.confidence);
                   finalResults[img.id] = lastRes;
                 }
-                completedIds.add(img.id);
+                if (!completedIds.has(img.id)) {
+                   completedIds.add(img.id);
+                   completedCount++;
+                   setProgress(p => ({ ...p, current: completedCount }));
+                }
               }
             }
           }
@@ -542,7 +648,8 @@ export default function App() {
       } catch (error: any) {
         setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'error', error: error.message } : f));
       } finally {
-        completedCount += chunkIds.length;
+        const failedInChunk = chunkIds.filter(id => !completedIds.has(id));
+        completedCount += failedInChunk.length;
         setProgress(p => ({ ...p, current: completedCount }));
       }
     }
@@ -973,6 +1080,10 @@ export default function App() {
             setAnswerKey={setAnswerKey}
             attendanceSheet={attendanceSheet}
             setAttendanceSheet={setAttendanceSheet}
+            experimentalSplit={experimentalSplit}
+            setExperimentalSplit={setExperimentalSplit}
+            experimentalSplitPrompt={experimentalSplitPrompt}
+            setExperimentalSplitPrompt={setExperimentalSplitPrompt}
           />
         )}
 
@@ -1289,6 +1400,7 @@ export default function App() {
           fileId={reviewFileId}
           fileName={files.find(f => f.id === reviewFileId)?.fileName || ''}
           previewUrl={files.find(f => f.id === reviewFileId)?.previewUrl}
+          splitPreviews={files.find(f => f.id === reviewFileId)?.splitPreviews}
           result={files.find(f => f.id === reviewFileId)?.result}
           answerKey={answerKey}
           numQuestions={numQuestions}

@@ -30,6 +30,10 @@ interface SettingsPanelProps {
   setAnswerKey: (val: string) => void;
   attendanceSheet: string;
   setAttendanceSheet: (val: string) => void;
+  experimentalSplit: boolean;
+  setExperimentalSplit: (val: boolean) => void;
+  experimentalSplitPrompt: string;
+  setExperimentalSplitPrompt: (val: string) => void;
 }
 
 export default function SettingsPanel({
@@ -45,7 +49,9 @@ export default function SettingsPanel({
   numOptions, setNumOptions,
   autoCropEnabled, setAutoCropEnabled,
   answerKey, setAnswerKey,
-  attendanceSheet, setAttendanceSheet
+  attendanceSheet, setAttendanceSheet,
+  experimentalSplit, setExperimentalSplit,
+  experimentalSplitPrompt, setExperimentalSplitPrompt
 }: SettingsPanelProps) {
   const [isExtractingText, setIsExtractingText] = useState<'answerKey' | null>(null);
 
@@ -268,6 +274,39 @@ export default function SettingsPanel({
               </p>
             </div>
           </div>
+          
+          <div className="md:col-span-2 mt-2 p-4 bg-orange-50 rounded-lg border border-orange-100 flex items-center justify-between">
+            <div>
+              <label htmlFor="experimentalSplit" className="text-sm font-bold text-orange-900 cursor-pointer flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="experimentalSplit"
+                  checked={experimentalSplit}
+                  onChange={(e) => setExperimentalSplit(e.target.checked)}
+                  className="w-4 h-4 text-orange-600 bg-white border-orange-300 rounded focus:ring-orange-500 cursor-pointer"
+                />
+                Experimental: AI Split for &gt;100 Qs
+              </label>
+              <p className="text-xs text-orange-700 mt-1 ml-6">
+                Uses AI to discover question blocks and splits the image into multiple pieces automatically for evaluation.
+              </p>
+            </div>
+          </div>
+          {experimentalSplit && (
+            <div className="md:col-span-2 mt-2 p-4 bg-orange-50 rounded-lg border border-orange-100 flex flex-col gap-2">
+              <label htmlFor="experimentalSplitPrompt" className="text-sm font-medium text-orange-900">
+                Custom Splitting Prompt (Optional)
+              </label>
+              <textarea
+                id="experimentalSplitPrompt"
+                value={experimentalSplitPrompt}
+                onChange={(e) => setExperimentalSplitPrompt(e.target.value)}
+                rows={3}
+                placeholder="Custom instructions for AI on how to split the image..."
+                className="w-full px-3 py-2 border border-orange-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 text-sm bg-white"
+              />
+            </div>
+          )}
         </div>
 
         <div>

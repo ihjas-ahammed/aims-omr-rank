@@ -8,6 +8,7 @@ export interface ProcessedFile {
   fileName: string;
   file?: File;
   previewUrl?: string;
+  splitPreviews?: string[];
   status: 'pending' | 'processing' | 'success' | 'error';
   attempt?: number;
   maxAttempts?: number;
@@ -45,7 +46,13 @@ export default function QueueItem({ file, numQuestions, isProcessing, averageTim
         />
       </div>
 
-      {file.previewUrl ? (
+      {file.splitPreviews && file.splitPreviews.length > 0 ? (
+        <div className="flex flex-col gap-1 shrink-0 h-24 overflow-y-auto custom-scrollbar pr-1">
+          {file.splitPreviews.map((url, i) => (
+             <img key={i} src={url} alt={`Split Preview ${i}`} className="w-24 object-contain rounded-lg border border-gray-200 bg-white" />
+          ))}
+        </div>
+      ) : file.previewUrl ? (
         <img src={file.previewUrl} alt="Preview" className="w-24 h-24 object-contain rounded-lg border border-gray-200 shrink-0 bg-white" />
       ) : (
         <div className="w-24 h-24 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center shrink-0 text-gray-400">

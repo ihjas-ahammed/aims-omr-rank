@@ -596,6 +596,111 @@ Output your response as a JSON object with this exact structure:
   throw lastError || new Error('Failed to process image with all provided keys.');
 }
 
+export interface AiSplitResult {
+  boxes: AutoCropResult[];
+  name?: string;
+}
+
+export async function aiSplitOMRImage(
+  imageBase64: string,
+  mimeType: string,
+  apiKeys: string[],
+  model: string,
+  customPrompt?: string
+): Promise<AiSplitResult> {
+  const keysToTry = getKeys(apiKeys);
+
+  const basePrompt = `
+You are an image processing assistant. Identify distinct, roughly equal vertical or horizontal sections (e.g. columns or halves) of questions on this OMR sheet.
+If there are multiple columns of questions, return a bounding box for each column. If the questions are split top and bottom, return bounding boxes for each half. 
+The goal is to split the image into multiple non-overlapping pieces so each piece contains a subset of questions.
+Return the coordinates of the bounding boxes normalized to a 0-1000 scale (ymin, xmin, ymax, xmax).
+Also return the required rotation needed to make the text upright (0, 90, 180, or 270). All pieces should typically have the same rotation.
+Additionally, extract the student's handwritten NAME from the top of the sheet (best effort).
+
+Output your response as a JSON object with this exact structure:
+{
+  "name": "Student Name",
+  "boxes": [
+    {
+      "ymin": 100,
+      "xmin": 50,
+      "ymax": 900,
+      "xmax": 450,
+      "rotation": 0
+    },
+    {
+      "ymin": 100,
+      "xmin": 500,
+      "ymax": 900,
+      "xmax": 950,
+      "rotation": 0
+    }
+  ]
+}
+`;
+
+  const prompt = customPrompt && customPrompt.trim().length > 0
+    ? `${basePrompt}\n\nUSER'S CUSTOM SPLITTING INSTRUCTIONS:\n${customPrompt}\n`
+    : basePrompt;
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const { key } = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-flash-lite-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: imageBase64, mimeType } }
+        ],
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              boxes: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    ymin: { type: Type.INTEGER },
+                    xmin: { type: Type.INTEGER },
+                    ymax: { type: Type.INTEGER },
+                    xmax: { type: Type.INTEGER },
+                    rotation: { type: Type.INTEGER }
+                  },
+                  required: ["ymin", "xmin", "ymax", "xmax", "rotation"]
+                }
+              }
+            },
+            required: ["boxes"]
+          }
+        }
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+      
+      const parsedData = JSON.parse(text) as AiSplitResult;
+      // ensure it's sorted logically (e.g. left to right, or top to bottom)
+      parsedData.boxes.sort((a, b) => {
+        if (Math.abs(a.xmin - b.xmin) > 100) return a.xmin - b.xmin; // left to right
+        return a.ymin - b.ymin; // top to bottom
+      });
+      return parsedData;
+    } catch (error) {
+      console.error('Error with API key in aiSplitOMRImage:', error);
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('Failed to split image with all provided keys.');
+}
+
 export interface FeeRecord {
   admissionNo: string;
   studentClass: string;

@@ -8,6 +8,7 @@ interface ReviewModalProps {
   fileId: string;
   fileName: string;
   previewUrl?: string;
+  splitPreviews?: string[];
   result?: OMRResult;
   answerKey?: string;
   numQuestions: number;
@@ -24,7 +25,7 @@ interface ReviewModalProps {
 }
 
 export default function ReviewModal({ 
-  fileId, fileName, previewUrl, result, answerKey, numQuestions,
+  fileId, fileName, previewUrl, splitPreviews, result, answerKey, numQuestions,
   onClose, onRetry, isProcessing,
   onNext, onPrev, hasNext, hasPrev, onUpdateName, onUpdateScore, onUpdateImage
 }: ReviewModalProps) {
@@ -101,8 +102,17 @@ export default function ReviewModal({
                     <Crop className="w-5 h-5" />
                   </button>
                 </div>
-                <div className="w-full h-full flex items-center justify-center overflow-auto p-4">
-                  {previewUrl ? (
+                <div className="w-full h-full flex items-center justify-center overflow-auto p-4 flex-col gap-4">
+                  {splitPreviews && splitPreviews.length > 0 ? (
+                      splitPreviews.map((url, i) => (
+                        <img 
+                          key={i}
+                          src={url} 
+                          alt={`OMR Sheet Piece ${i}`} 
+                          className="max-w-full object-contain shadow-sm rounded border border-gray-300 bg-white" 
+                        />
+                      ))
+                  ) : previewUrl ? (
                     <img 
                       src={previewUrl} 
                       alt="OMR Sheet" 
