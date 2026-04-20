@@ -5811,19 +5811,19 @@ export default defineConfig(({mode}) => {
 --- START OF FILE .firebase/hosting.ZGlzdA.cache ---
 logo2.png,1775390029907,ef4f5b4add3c8a95340db2ec4e6a5efb84d051ed119c762298defde1aa2067f3
 logo1.png,1775390029905,def463d27097d677effeb7dc6bc5c9d36f76919b30a370bd91fc43e633928ba8
-index.html,1776074381245,9195d4dd76842231bd8f37834cf28c4ab5cb9084b6bdcf83e3033e23015ced8c
-assets/index-sSox5i3E.css,1776074381245,6df7e4ef8d53f0f43e2295e6e21da072fb94b96800687fc17f6adbb6e306ed6d
-assets/index-eudokosC.js,1776074381246,9c8953542bb3ee0f5ed835a765c68831c55e668a6588d2886f94c1252c64604a
+index.html,1776340176438,015feba357da4299cdfbfa4bbfe42a0777d313bfc981d13eddc33687a9148511
+assets/index-d_KTqHP5.css,1776340176439,442e35fb4c011884d373b3c7893ae727e22c4d39157057d101acdb7971986507
+assets/index-C3eNsr8q.js,1776340176440,c2719013c7a3f010ffbb67922b4401a0f0e8f956b421b7de8e766668b00e077d
 
 --- END OF FILE .firebase/hosting.ZGlzdA.cache ---
 
 --- START OF FILE src/App.tsx ---
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Camera, Settings, CheckCircle, Plus, X, Beaker } from 'lucide-react';
-import { evaluateOMRBatch, correctNamesBatch, autoCropAndRotate, OMRResult } from './services/geminiService';
+import { Upload, Camera, Settings, Plus, X, Beaker } from 'lucide-react';
+import { correctNamesBatch, OMRResult } from './services/geminiService';
 import { saveImage, getImage, deleteImage } from './services/db';
-import { processImage, fileToBase64, applyCropAndRotate, rotateImageFile } from './utils/imageProcessing';
-import { dataURLtoFile } from './utils/fileUtils';
+import { rotateImageFile } from './utils/imageProcessing';
+import { processOMRImages } from './utils/omrProcessor';
 
 import SettingsPanel from './components/SettingsPanel';
 import TopicMappingPanel from './components/lab/TopicMappingPanel';
@@ -5844,12 +5844,37 @@ import CloudSessions from './components/lab/cloud-sessions/CloudSessions';
 import { ScoreAnalysisDashboard } from './components/lab/score-analysis';
 import DescriptiveDashboard from './components/lab/descriptive/DescriptiveDashboard';
 
-// Online Exams Imports
 import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
 
 const DEFAULT_ATTENDANCE = `ADIL MARZOOQUE\nADISANKAR\nADITHYA RAJ\nADWAID\nAHAMED IRFAN K\nAHAMED JUNAID\nAHLAM HASAN K\nAMAL CHANDRA N\nANJANA K\nANSHIA P\nANSILA KADOORAN\nAPARNA C\nARSHA FATHIMA M\nARSHIN PC\nASWATHY E\nATHUL VB\nAVANI PS\nAYISHA DIYA\nAZAL MHD\nDIYA AK\nDIYA FATHIMA KP\nDIYA MEHRIN K\nDIYA V\nFAHMA VP\nFAIZ AHMED AN\nFARHA P\nFATHIMA DILFA P\nFATHIMA FIZA M\nFATHIMA HIBA PP\nFATHIMA HUDA N\nFATHIMA LIYA A\nFATHIMA MINHA PE\nFATHIMA MISBHA VA\nFATHIMA NASHA\nFATHIMA NASHA CP\nFATHIMA RIFNA A\nFATHIMA SHAHNA PK\nFIDA THASNIM\nGOURI NANDA C\nHAMNA FATHIMA\nHANIYA FATHIMA P\nHANIYYA V\nHASNA SHARI VP\nHIBA FATHIMA KP\nHISHAM MHD\nKRISHNA PRIYA PC\nKRISTHI MUNADHA T\nLASIN ABDULLAH\nLISNA K\nLIYA FATHIMA A\nMAJID A\nMAZIN MHD\nMHD ADNAN K\nMHD AHANN TK\nMHD ANFAS TK\nMHD ASHFAQUE\nMHD DANISH\nMHD DIYAN\nMHD FAIROOZ\nMHD FARHAN K\nMHD FATHIN ALI\nMHD LIYAN P\nMHD MAJID RAMZAN TP\nMHD MUFLIH A\nMHD NAJADH\nMHD RAZAL T\nMHD RISHAN P\nMHD SABITH P\nMHD SABITH TK\nMHD SADHIL V\nMHD SHAFEEQ KK\nMHD SHAHABAS K\nMHD SINAN A\nMILHA RAZACK A\nMINHA PK\nMISHAL AHAMED\nNAIRA ABDUL LATHEEF\nNAJIH AHAMED\nNAJIYA NASRIN C\nNAJVA\nNAJVA FATHIMA C\nNASHA FATHIMA P\nNIDHA FATHIMA K\nNIDHA SHIRIN N\nNITHIN RAJ\nRAJEEBA K\nRANA FATHIMA K\nREHAN ABDUL RAHEEM\nREVATHY K\nRIDHA K\nRIFA CP\nRIFA P\nRINSHA JALIDHA P\nRINSHA SHERIN T\nRIYA SUNEER\nSHABANA JASMIN\nSILNA FATHIMA\nSITHARA BASHEER P\nSIYA TP\nTHANHA FATHIMA`;
 
-const DEFAULT_ANSWER_KEY = `*   **Q1.** B\n*   **Q2.** A\n*   **Q3.** A\n*   **Q4.** B\n*   **Q5.** C\n*   **Q6.** A\n*   **Q7.** A\n*   **Q8.** B\n*   **Q9.** C\n*   **Q10.** D\n*   **Q11.** A\n*   **Q12.** C\n*   **Q13.** B\n*   **Q14.** A\n*   **Q15.** C\n*   **Q16.** A\n*   **Q17.** Cancelled (give mark to everyone)\n*   **Q18.** B\n*   **Q19.** A\n*   **Q20.** C\n*   **Q21.** A\n*   **Q22.** A\n*   **Q23.** A\n*   **Q24.** B\n*   **Q25.** A`;
+const DEFAULT_ANSWER_KEY = `{
+  "1": "B",
+  "2": "A",
+  "3": "A",
+  "4": "B",
+  "5": "C",
+  "6": "A",
+  "7": "A",
+  "8": "B",
+  "9": "C",
+  "10": "D",
+  "11": "A",
+  "12": "C",
+  "13": "B",
+  "14": "A",
+  "15": "C",
+  "16": "A",
+  "17": "*",
+  "18": "B",
+  "19": "A",
+  "20": "C",
+  "21": "A",
+  "22": "A",
+  "23": "A",
+  "24": "B",
+  "25": "A"
+}`;
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
@@ -5898,8 +5923,18 @@ export default function App() {
     const saved = localStorage.getItem('omr_numQuestions');
     return saved ? parseInt(saved, 10) : 25;
   });
+  const [numOptions, setNumOptions] = useState<number>(() => {
+    const saved = localStorage.getItem('omr_numOptions');
+    return saved ? parseInt(saved, 10) : 4;
+  });
   const [autoCropEnabled, setAutoCropEnabled] = useState<boolean>(() => {
     return localStorage.getItem('omr_autoCrop') === 'true';
+  });
+  const [experimentalSplit, setExperimentalSplit] = useState<boolean>(() => {
+    return localStorage.getItem('omr_experimentalSplit') === 'true';
+  });
+  const [experimentalSplitPrompt, setExperimentalSplitPrompt] = useState<string>(() => {
+    return localStorage.getItem('omr_experimentalSplitPrompt') || '';
   });
 
   const [attendanceSheet, setAttendanceSheet] = useState<string>(() => localStorage.getItem('omr_attendance') || DEFAULT_ATTENDANCE);
@@ -5932,7 +5967,6 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<OMRResult | null>(null);
   
-  // Lab Exams State
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
 
   const [days, setDays] = useState<number[]>(() => {
@@ -6002,7 +6036,6 @@ export default function App() {
   const csvInputRef = useRef<HTMLInputElement>(null);
   const averageTimeRef = useRef<number>(8000);
 
-  // Manage browser history for popstate navigation
   useEffect(() => {
     const handlePopState = () => {
       if (window.location.pathname === '/course-progress') setView('lab-course-progress');
@@ -6021,7 +6054,10 @@ export default function App() {
   useEffect(() => { localStorage.setItem('omr_concurrency', concurrency.toString()); }, [concurrency]);
   useEffect(() => { localStorage.setItem('omr_requestsPerKey', requestsPerKey.toString()); }, [requestsPerKey]);
   useEffect(() => { localStorage.setItem('omr_numQuestions', numQuestions.toString()); }, [numQuestions]);
+  useEffect(() => { localStorage.setItem('omr_numOptions', numOptions.toString()); }, [numOptions]);
   useEffect(() => { localStorage.setItem('omr_autoCrop', autoCropEnabled.toString()); }, [autoCropEnabled]);
+  useEffect(() => { localStorage.setItem('omr_experimentalSplit', experimentalSplit.toString()); }, [experimentalSplit]);
+  useEffect(() => { localStorage.setItem('omr_experimentalSplitPrompt', experimentalSplitPrompt); }, [experimentalSplitPrompt]);
   useEffect(() => { localStorage.setItem('omr_attendance', attendanceSheet); }, [attendanceSheet]);
   useEffect(() => { localStorage.setItem('omr_answerKey', answerKey); }, [answerKey]);
   useEffect(() => { localStorage.setItem('omr_topicMapping', topicMapping); }, [topicMapping]);
@@ -6203,163 +6239,31 @@ export default function App() {
     if (isProcessing) return;
     setIsProcessing(true);
 
-    const keys = apiKeys.filter(k => k.trim());
-    const baseConcurrency = Math.max(1, concurrency);
-    const reqsPerKey = Math.max(1, requestsPerKey);
-    const totalConcurrentRequests = keys.length > 0 ? keys.length * reqsPerKey : 1;
-    const concurrencyLimit = totalConcurrentRequests * baseConcurrency;
-    
-    const pendingIds = files.filter(f => f.status === 'pending' || f.status === 'error').map(f => f.id);
-    setProgress({ current: 0, total: pendingIds.length });
-    let completedCount = 0;
-
-    for (let i = 0; i < pendingIds.length; i += concurrencyLimit) {
-      const chunkIds = pendingIds.slice(i, i + concurrencyLimit);
-      
-      setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'processing', error: undefined, attempt: 1, maxAttempts: sampling + 3, stageName: `Preparing Image...` } : f));
-
-      try {
-        const loadedImagesPromises = chunkIds.map(async (id) => {
-          const currentFile = filesByDay[currentDay]?.find(f => f.id === id) || files.find(f => f.id === id);
-          if (!currentFile) return null;
-          
-          let fileObj = currentFile.file;
-          if (!fileObj) {
-            fileObj = await getImage(id);
-            if (!fileObj) return null;
-          }
-
-          if (autoCropEnabled) {
-            setFiles(prev => prev.map(f => f.id === id ? { ...f, stageName: 'Auto-Cropping (Lite)...' } : f));
-            const rawBase64 = await fileToBase64(fileObj);
-            try {
-              const cropData = await autoCropAndRotate(rawBase64, fileObj.type, keys, liteModel);
-              const w = cropData.xmax - cropData.xmin;
-              const h = cropData.ymax - cropData.ymin;
-              let finalRotation = cropData.rotation;
-              
-              if (w > h && (finalRotation === 0 || finalRotation === 180)) {
-                finalRotation = (finalRotation + 90) % 360;
-              }
-              
-              const { base64, mimeType } = await applyCropAndRotate(fileObj, cropData, finalRotation, imageResolution);
-              
-              const croppedDataUrl = `data:${mimeType};base64,${base64}`;
-              const croppedFile = dataURLtoFile(croppedDataUrl, fileObj.name || 'image.jpg');
-              await saveImage(id, croppedFile);
-              const newPreviewUrl = URL.createObjectURL(croppedFile);
-              
-              setFiles(prev => prev.map(f => f.id === id ? { ...f, file: croppedFile, previewUrl: newPreviewUrl } : f));
-
-              return { id, base64, mimeType, fileObj: croppedFile };
-            } catch (error: any) {
-              console.error(`Auto-crop failed for ${id}, falling back to raw image.`, error);
-              const { base64, mimeType } = await processImage(fileObj, imageResolution, 0);
-              return { id, base64, mimeType, fileObj };
-            }
-          } else {
-            const { base64, mimeType } = await processImage(fileObj, imageResolution, 0);
-            return { id, base64, mimeType, fileObj };
-          }
-        });
-
-        const loadedResults = await Promise.all(loadedImagesPromises);
-        const imagesToProcess = loadedResults.filter(Boolean) as { id: string, base64: string, mimeType: string, fileObj: File }[];
-
-        if (imagesToProcess.length === 0) continue;
-
-        let resultsHistory: Record<string, OMRResult[]> = {};
-        for (const img of imagesToProcess) {
-          resultsHistory[img.id] = [];
-        }
-        
-        let targetMatches = sampling >= 2 ? 2 : 1;
-        let maxAttempts = sampling + 3;
-        let finalResults: Record<string, OMRResult> = {};
-        let completedIds = new Set<string>();
-
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          let stageName = attempt < sampling ? `Sampling ${attempt + 1}/${sampling}` : `Verification ${attempt - sampling + 1}`;
-          
-          const remainingImages = imagesToProcess.filter(img => !completedIds.has(img.id));
-          if (remainingImages.length === 0) break;
-          
-          setFiles(prev => prev.map(f => remainingImages.some(img => img.id === f.id) ? { ...f, attempt: attempt + 1, maxAttempts, stageName } : f));
-          
-          const attemptStartTime = Date.now();
-          
-          const chunkedPromises = [];
-          for (let k = 0; k < remainingImages.length; k += baseConcurrency) {
-            const chunk = remainingImages.slice(k, k + baseConcurrency);
-            const p = evaluateOMRBatch(chunk, keys, proModel, liteModel, answerKey, numQuestions).then(res => {
-              // Update UI to show that this specific chunk finished its request
-              setFiles(prev => prev.map(f => {
-                if (chunk.some(img => img.id === f.id)) {
-                  return { ...f, stageName: `Evaluated (Attempt ${attempt + 1})` };
-                }
-                return f;
-              }));
-              return res;
-            });
-            chunkedPromises.push(p);
-          }
-          
-          const chunkResults = await Promise.all(chunkedPromises);
-          const batchResults = chunkResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
-          
-          const elapsed = Date.now() - attemptStartTime;
-          averageTimeRef.current = (averageTimeRef.current * 4 + elapsed) / 5;
-
-          for (const img of remainingImages) {
-            if (batchResults[img.id]) {
-              resultsHistory[img.id].push(batchResults[img.id]);
-            }
-            
-            if (attempt >= targetMatches - 1) {
-              const counts = new Map<string, number>();
-              let bestResult: OMRResult | null = null;
-              
-              for (const r of resultsHistory[img.id]) {
-                const key = JSON.stringify(r.scores);
-                counts.set(key, (counts.get(key) || 0) + 1);
-                if (counts.get(key)! >= targetMatches) {
-                  bestResult = resultsHistory[img.id].find(res => JSON.stringify(res.scores) === key) || r;
-                  break;
-                }
-              }
-              
-              if (bestResult) {
-                bestResult.confidences = resultsHistory[img.id].map(r => r.confidence);
-                finalResults[img.id] = bestResult;
-                completedIds.add(img.id);
-              } else if (attempt === maxAttempts - 1) {
-                const lastRes = resultsHistory[img.id][resultsHistory[img.id].length - 1];
-                if (lastRes) {
-                  lastRes.confidences = resultsHistory[img.id].map(r => r.confidence);
-                  finalResults[img.id] = lastRes;
-                }
-                completedIds.add(img.id);
-              }
-            }
-          }
-        }
-
-        setFiles(prev => prev.map(f => {
-          if (finalResults[f.id]) {
-            return { ...f, status: 'success', result: finalResults[f.id] };
-          }
-          if (chunkIds.includes(f.id) && !finalResults[f.id]) {
-            return { ...f, status: 'error', error: 'Failed to evaluate' };
-          }
-          return f;
-        }));
-
-      } catch (error: any) {
-        setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'error', error: error.message } : f));
-      } finally {
-        completedCount += chunkIds.length;
-        setProgress(p => ({ ...p, current: completedCount }));
-      }
+    try {
+      await processOMRImages({
+        files,
+        filesByDay,
+        currentDay,
+        apiKeys,
+        liteModel,
+        proModel,
+        imageResolution,
+        sampling,
+        concurrency,
+        requestsPerKey,
+        numQuestions,
+        numOptions,
+        autoCropEnabled,
+        experimentalSplit,
+        experimentalSplitPrompt,
+        answerKey,
+        setFiles,
+        setProgress,
+        averageTimeRef
+      });
+    } catch (e: any) {
+      console.error("Pipeline failed", e);
+      alert(`Processing failed: ${e.message}`);
     }
 
     setIsProcessing(false);
@@ -6465,14 +6369,14 @@ export default function App() {
     }
 
     let csv = 'NAME,RIGHT,WRONG,';
-    for (let i = 1; i <= 25; i++) csv += `Q${i},`;
+    for (let i = 1; i <= numQuestions; i++) csv += `Q${i},`;
     csv = csv.slice(0, -1) + '\n';
 
     finalFiles.forEach(f => {
       const r = f.result!;
       let row = `"${r.name.replace(/"/g, '""')}",${r.right},${r.wrong},`;
-      for (let i = 1; i <= 25; i++) {
-        row += `${r.scores[`q${i}`]},`;
+      for (let i = 1; i <= numQuestions; i++) {
+        row += `${r.scores[`q${i}`] ?? 0},`;
       }
       csv += row.slice(0, -1) + '\n';
     });
@@ -6526,7 +6430,7 @@ export default function App() {
 
         const scores: Record<string, number> = {};
         if (row.length >= 4) {
-          for (let q = 1; q <= 25; q++) {
+          for (let q = 1; q <= numQuestions; q++) {
             scores[`q${q}`] = parseInt(row[3 + q - 1], 10) || 0;
           }
         }
@@ -6536,7 +6440,7 @@ export default function App() {
           file: new File([], file.name),
           fileName: `Imported: ${name}`,
           status: 'success',
-          result: { name, right, wrong, scores }
+          result: { name, right, wrong, scores, confidence: 100 }
         });
       }
 
@@ -6580,7 +6484,7 @@ export default function App() {
 
         const scores: Record<string, number> = {};
         if (cells.length >= 4) {
-          for (let q = 1; q <= 25; q++) {
+          for (let q = 1; q <= numQuestions; q++) {
             const scoreIdx = 3 + q - 1;
             scores[`q${q}`] = parseInt(cells[scoreIdx] || '0', 10) || 0;
           }
@@ -6595,7 +6499,8 @@ export default function App() {
             name,
             right,
             wrong,
-            scores
+            scores,
+            confidence: 100
           }
         });
       }
@@ -6689,7 +6594,6 @@ export default function App() {
     if (hasPrevDetail) setSelectedStudent(sortedResults[currentDetailIndex - 1]);
   };
 
-  // Dedicated full-screen view for taking the exam
   if (view === 'exam-take') {
     const activeExamId = selectedExamId || new URLSearchParams(window.location.search).get('examId');
     if (!activeExamId) {
@@ -6779,12 +6683,18 @@ export default function App() {
             setRequestsPerKey={setRequestsPerKey}
             numQuestions={numQuestions}
             setNumQuestions={setNumQuestions}
+            numOptions={numOptions}
+            setNumOptions={setNumOptions}
             autoCropEnabled={autoCropEnabled}
             setAutoCropEnabled={setAutoCropEnabled}
             answerKey={answerKey}
             setAnswerKey={setAnswerKey}
             attendanceSheet={attendanceSheet}
             setAttendanceSheet={setAttendanceSheet}
+            experimentalSplit={experimentalSplit}
+            setExperimentalSplit={setExperimentalSplit}
+            experimentalSplitPrompt={experimentalSplitPrompt}
+            setExperimentalSplitPrompt={setExperimentalSplitPrompt}
           />
         )}
 
@@ -6876,6 +6786,7 @@ export default function App() {
             files={files}
             topicMapping={topicMappingByDay[currentDay] || ''}
             parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
+            numQuestions={numQuestions}
             onBack={() => setView('home')} 
             onStudentClick={(student) => {
               setSelectedStudent(student);
@@ -6890,6 +6801,7 @@ export default function App() {
             files={files}
             topicMapping={topicMappingByDay[currentDay] || ''}
             parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
+            numQuestions={numQuestions}
             onBack={() => setView('ranklist')}
           />
         )}
@@ -7068,6 +6980,7 @@ export default function App() {
                     <QueueItem
                       key={file.id}
                       file={file}
+                      numQuestions={numQuestions}
                       isProcessing={isProcessing}
                       averageTime={averageTimeRef.current}
                       isSelected={selectedFileIds.has(file.id)}
@@ -7098,8 +7011,10 @@ export default function App() {
           fileId={reviewFileId}
           fileName={files.find(f => f.id === reviewFileId)?.fileName || ''}
           previewUrl={files.find(f => f.id === reviewFileId)?.previewUrl}
+          splitPreviews={files.find(f => f.id === reviewFileId)?.splitPreviews}
           result={files.find(f => f.id === reviewFileId)?.result}
           answerKey={answerKey}
+          numQuestions={numQuestions}
           onClose={() => setReviewFileId(null)}
           onRetry={(id) => {
             recheckFile(id);
@@ -7517,10 +7432,11 @@ interface PrintableRankListProps {
   files: { result?: OMRResult }[];
   topicMapping: string;
   parsedTopicMapping?: any;
+  numQuestions: number;
   onBack: () => void;
 }
 
-export default function PrintableRankList({ files, topicMapping, parsedTopicMapping, onBack }: PrintableRankListProps) {
+export default function PrintableRankList({ files, topicMapping, parsedTopicMapping, numQuestions, onBack }: PrintableRankListProps) {
   const [subjectName, setSubjectName] = useState('PHYSICS');
   const [dayNumber, setDayNumber] = useState('4');
   const [studentImages, setStudentImages] = useState<Record<string, string>>({});
@@ -7624,6 +7540,7 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
                   rank={rank}
                   score={calculateScore(student)}
                   chapters={chapters}
+                  numQuestions={numQuestions}
                   imageUrl={studentImages[student.name]}
                   fontSizeScale={podiumScale} 
                 />
@@ -7647,7 +7564,8 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
                   student={student} 
                   rank={rank} 
                   score={score}
-                  chapters={chapters} 
+                  chapters={chapters}
+                  numQuestions={numQuestions}
                 />
               </div>
             ))}
@@ -7670,6 +7588,7 @@ export interface ProcessedFile {
   fileName: string;
   file?: File;
   previewUrl?: string;
+  splitPreviews?: string[];
   status: 'pending' | 'processing' | 'success' | 'error';
   attempt?: number;
   maxAttempts?: number;
@@ -7680,6 +7599,7 @@ export interface ProcessedFile {
 
 interface QueueItemProps {
   file: ProcessedFile;
+  numQuestions: number;
   isProcessing: boolean;
   averageTime: number;
   isSelected: boolean;
@@ -7690,7 +7610,7 @@ interface QueueItemProps {
   onClick: () => void;
 }
 
-export default function QueueItem({ file, isProcessing, averageTime, isSelected, onToggleSelect, onRemove, onRetry, onRecheck, onClick }: QueueItemProps) {
+export default function QueueItem({ file, numQuestions, isProcessing, averageTime, isSelected, onToggleSelect, onRemove, onRetry, onRecheck, onClick }: QueueItemProps) {
   return (
     <div 
       className={`p-4 flex items-start gap-3 sm:gap-4 ${file.status === 'success' ? 'cursor-pointer hover:bg-gray-50 transition-colors' : ''} ${isSelected ? 'bg-blue-50/50' : ''}`}
@@ -7706,7 +7626,13 @@ export default function QueueItem({ file, isProcessing, averageTime, isSelected,
         />
       </div>
 
-      {file.previewUrl ? (
+      {file.splitPreviews && file.splitPreviews.length > 0 ? (
+        <div className="flex flex-col gap-1 shrink-0 h-24 overflow-y-auto custom-scrollbar pr-1">
+          {file.splitPreviews.map((url, i) => (
+             <img key={i} src={url} alt={`Split Preview ${i}`} className="w-24 object-contain rounded-lg border border-gray-200 bg-white" />
+          ))}
+        </div>
+      ) : file.previewUrl ? (
         <img src={file.previewUrl} alt="Preview" className="w-24 h-24 object-contain rounded-lg border border-gray-200 shrink-0 bg-white" />
       ) : (
         <div className="w-24 h-24 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center shrink-0 text-gray-400">
@@ -7818,8 +7744,9 @@ export default function QueueItem({ file, isProcessing, averageTime, isSelected,
                 <RotateCcw className="w-3 h-3" /> Recheck
               </button>
             </div>
-            <div className="flex flex-wrap gap-1">
-              {Array.from({ length: 25 }, (_, i) => i + 1).map(qNum => {
+            
+            <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto custom-scrollbar p-1 border border-gray-100 rounded bg-white">
+              {Array.from({ length: numQuestions }, (_, i) => i + 1).map(qNum => {
                 const score = file.result!.scores[`q${qNum}`];
                 let bgColor = 'bg-gray-100 text-gray-600';
                 if (score === 1) bgColor = 'bg-green-100 text-green-700';
@@ -8037,12 +7964,13 @@ interface RankListProps {
   files: { result?: OMRResult }[];
   topicMapping: string;
   parsedTopicMapping?: any;
+  numQuestions: number;
   onBack: () => void;
   onStudentClick: (student: OMRResult) => void;
   onPrintableClick: () => void;
 }
 
-export default function RankList({ files, topicMapping, parsedTopicMapping, onBack, onStudentClick, onPrintableClick }: RankListProps) {
+export default function RankList({ files, topicMapping, parsedTopicMapping, numQuestions, onBack, onStudentClick, onPrintableClick }: RankListProps) {
   const [studentImages, setStudentImages] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -8182,7 +8110,7 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
         </div>
       ) : (
         <>
-          <ClassDashboard results={sortedResults} chapters={chapters} />
+          <ClassDashboard results={sortedResults} chapters={chapters} numQuestions={numQuestions} />
 
           {podiumStudents.length > 0 && (
             <div className="flex flex-col md:flex-row flex-wrap justify-center items-center md:items-end gap-6 mb-12 mt-4">
@@ -8193,6 +8121,7 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, onBa
                   rank={item.rank}
                   score={item.score}
                   chapters={chapters}
+                  numQuestions={numQuestions}
                   imageUrl={studentImages[item.student.name]}
                   onImageClick={triggerImageUpload}
                   onClick={() => onStudentClick(item.student)}
@@ -8228,13 +8157,16 @@ import React, { useState, useEffect } from 'react';
 import { X, RefreshCw, CheckCircle, XCircle, MinusCircle, ChevronLeft, ChevronRight, RotateCw, Edit2, Check, Crop } from 'lucide-react';
 import { OMRResult } from '../services/geminiService';
 import ImageCropper from './ImageCropper';
+import ReviewQuestionGrid from './ReviewQuestionGrid';
 
 interface ReviewModalProps {
   fileId: string;
   fileName: string;
   previewUrl?: string;
+  splitPreviews?: string[];
   result?: OMRResult;
   answerKey?: string;
+  numQuestions: number;
   onClose: () => void;
   onRetry: (id: string) => void;
   isProcessing: boolean;
@@ -8248,7 +8180,7 @@ interface ReviewModalProps {
 }
 
 export default function ReviewModal({ 
-  fileId, fileName, previewUrl, result, answerKey, 
+  fileId, fileName, previewUrl, splitPreviews, result, answerKey, numQuestions,
   onClose, onRetry, isProcessing,
   onNext, onPrev, hasNext, hasPrev, onUpdateName, onUpdateScore, onUpdateImage
 }: ReviewModalProps) {
@@ -8325,8 +8257,17 @@ export default function ReviewModal({
                     <Crop className="w-5 h-5" />
                   </button>
                 </div>
-                <div className="w-full h-full flex items-center justify-center overflow-auto p-4">
-                  {previewUrl ? (
+                <div className="w-full h-full flex items-center justify-center overflow-auto p-4 flex-col gap-4">
+                  {splitPreviews && splitPreviews.length > 0 ? (
+                      splitPreviews.map((url, i) => (
+                        <img 
+                          key={i}
+                          src={url} 
+                          alt={`OMR Sheet Piece ${i}`} 
+                          className="max-w-full object-contain shadow-sm rounded border border-gray-300 bg-white" 
+                        />
+                      ))
+                  ) : previewUrl ? (
                     <img 
                       src={previewUrl} 
                       alt="OMR Sheet" 
@@ -8388,42 +8329,12 @@ export default function ReviewModal({
             </div>
 
             <h4 className="font-semibold text-gray-700 mb-3 border-b pb-2">Question Breakdown</h4>
-            <div className="grid grid-cols-5 gap-2 mb-6">
-              {Array.from({ length: 25 }, (_, i) => i + 1).map(qNum => {
-                const score = result.scores[`q${qNum}`];
-                let bgColor = 'bg-gray-100 border-gray-200 text-gray-600';
-                let Icon = MinusCircle;
-                let iconColor = 'text-gray-400';
-                
-                if (score === 1) {
-                  bgColor = 'bg-green-50 border-green-200 text-green-800';
-                  Icon = CheckCircle;
-                  iconColor = 'text-green-500';
-                } else if (score === -1) {
-                  bgColor = 'bg-red-50 border-red-200 text-red-800';
-                  Icon = XCircle;
-                  iconColor = 'text-red-500';
-                }
-
-                return (
-                  <div 
-                    key={qNum} 
-                    onClick={() => {
-                      if (onUpdateScore) {
-                        const nextScore = score === 1 ? -1 : score === -1 ? 0 : 1;
-                        onUpdateScore(fileId, qNum, nextScore);
-                      }
-                    }}
-                    className={`flex flex-col items-center p-2 rounded border cursor-pointer hover:opacity-80 transition-opacity ${bgColor}`}
-                    title="Click to toggle result (Right -> Wrong -> No Answer)"
-                  >
-                    <span className="text-xs font-medium mb-1">Q{qNum}</span>
-                    <Icon className={`w-5 h-5 ${iconColor}`} />
-                    <span className="text-xs mt-1 font-bold">{score > 0 ? '+1' : score < 0 ? '-1' : '0'}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <ReviewQuestionGrid 
+              fileId={fileId} 
+              result={result} 
+              numQuestions={numQuestions} 
+              onUpdateScore={onUpdateScore} 
+            />
 
             <div className="mt-auto pt-4 border-t border-gray-200 shrink-0">
               <button
@@ -8456,6 +8367,60 @@ export default function ReviewModal({
 }
 --- END OF FILE src/components/ReviewModal.tsx ---
 
+--- START OF FILE src/components/ReviewQuestionGrid.tsx ---
+import React from 'react';
+import { CheckCircle, XCircle, MinusCircle } from 'lucide-react';
+import { OMRResult } from '../services/geminiService';
+
+interface Props {
+  fileId: string;
+  result: OMRResult;
+  numQuestions: number;
+  onUpdateScore?: (id: string, qNum: number, newScore: number) => void;
+}
+
+export default function ReviewQuestionGrid({ fileId, result, numQuestions, onUpdateScore }: Props) {
+  return (
+    <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-1.5 mb-6 max-h-[30vh] overflow-y-auto custom-scrollbar pr-1 border border-gray-100 rounded-lg p-2 bg-gray-50">
+      {Array.from({ length: numQuestions }, (_, i) => i + 1).map(qNum => {
+        const score = result.scores[`q${qNum}`] || 0;
+        let bgColor = 'bg-white border-gray-200 text-gray-600';
+        let Icon = MinusCircle;
+        let iconColor = 'text-gray-400';
+        
+        if (score === 1) {
+          bgColor = 'bg-green-50 border-green-200 text-green-800';
+          Icon = CheckCircle;
+          iconColor = 'text-green-500';
+        } else if (score === -1) {
+          bgColor = 'bg-red-50 border-red-200 text-red-800';
+          Icon = XCircle;
+          iconColor = 'text-red-500';
+        }
+
+        return (
+          <div 
+            key={qNum} 
+            onClick={() => {
+              if (onUpdateScore) {
+                const nextScore = score === 1 ? -1 : score === -1 ? 0 : 1;
+                onUpdateScore(fileId, qNum, nextScore);
+              }
+            }}
+            className={`flex flex-col items-center p-1.5 sm:p-2 rounded border shadow-sm cursor-pointer hover:opacity-80 transition-opacity ${bgColor}`}
+            title="Click to toggle result (Right -> Wrong -> No Answer)"
+          >
+            <span className="text-[10px] sm:text-xs font-medium mb-0.5">Q{qNum}</span>
+            <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${iconColor}`} />
+            <span className="text-[10px] sm:text-xs mt-0.5 font-bold">{score > 0 ? '+1' : score < 0 ? '-1' : '0'}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+--- END OF FILE src/components/ReviewQuestionGrid.tsx ---
+
 --- START OF FILE src/components/SettingsPanel.tsx ---
 import React, { useRef, useState } from 'react';
 import { Plus, Minus, Loader2, Upload } from 'lucide-react';
@@ -8481,12 +8446,18 @@ interface SettingsPanelProps {
   setRequestsPerKey: (val: number) => void;
   numQuestions: number;
   setNumQuestions: (val: number) => void;
+  numOptions: number;
+  setNumOptions: (val: number) => void;
   autoCropEnabled: boolean;
   setAutoCropEnabled: (val: boolean) => void;
   answerKey: string;
   setAnswerKey: (val: string) => void;
   attendanceSheet: string;
   setAttendanceSheet: (val: string) => void;
+  experimentalSplit: boolean;
+  setExperimentalSplit: (val: boolean) => void;
+  experimentalSplitPrompt: string;
+  setExperimentalSplitPrompt: (val: string) => void;
 }
 
 export default function SettingsPanel({
@@ -8499,9 +8470,12 @@ export default function SettingsPanel({
   concurrency, setConcurrency,
   requestsPerKey, setRequestsPerKey,
   numQuestions, setNumQuestions,
+  numOptions, setNumOptions,
   autoCropEnabled, setAutoCropEnabled,
   answerKey, setAnswerKey,
-  attendanceSheet, setAttendanceSheet
+  attendanceSheet, setAttendanceSheet,
+  experimentalSplit, setExperimentalSplit,
+  experimentalSplitPrompt, setExperimentalSplitPrompt
 }: SettingsPanelProps) {
   const [isExtractingText, setIsExtractingText] = useState<'answerKey' | null>(null);
 
@@ -8537,7 +8511,9 @@ export default function SettingsPanel({
       const base64 = await fileToBase64(file);
       const extractedText = await extractTextFromDocument(base64, file.type, keys, proModel, 'answerKey');
 
-      setAnswerKey(extractedText);
+      // Strip potential Markdown JSON markers
+      const cleanedText = extractedText.replace(/```json\n?|\n?```/g, '').trim();
+      setAnswerKey(cleanedText);
 
       alert('Successfully extracted Answer Key!');
     } catch (error: any) {
@@ -8634,7 +8610,7 @@ export default function SettingsPanel({
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />
             </div>
-            <div className="w-24">
+            <div className="w-20">
               <label className="block text-sm font-medium text-gray-700 mb-1" title="Validations for consensus">
                 Sampling
               </label>
@@ -8647,9 +8623,9 @@ export default function SettingsPanel({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
               />
             </div>
-            <div className="w-24">
+            <div className="w-20">
               <label className="block text-sm font-medium text-gray-700 mb-1" title="Images/Request">
-                Images/Req
+                Img/Req
               </label>
               <input
                 type="number"
@@ -8660,9 +8636,9 @@ export default function SettingsPanel({
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
               />
             </div>
-            <div className="w-24">
+            <div className="w-20">
               <label className="block text-sm font-medium text-gray-700 mb-1" title="Requests/Key">
-                Reqs/Key
+                Req/Key
               </label>
               <input
                 type="number"
@@ -8680,9 +8656,22 @@ export default function SettingsPanel({
               <input
                 type="number"
                 min="1"
-                max="100"
+                max="200"
                 value={numQuestions}
                 onChange={(e) => setNumQuestions(parseInt(e.target.value, 10) || 25)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
+              />
+            </div>
+            <div className="w-20">
+              <label className="block text-sm font-medium text-gray-700 mb-1" title="Number of options per question (e.g. 4 for A-D, 5 for A-E)">
+                Options
+              </label>
+              <input
+                type="number"
+                min="2"
+                max="8"
+                value={numOptions}
+                onChange={(e) => setNumOptions(parseInt(e.target.value, 10) || 4)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 h-[42px]"
               />
             </div>
@@ -8704,19 +8693,52 @@ export default function SettingsPanel({
                   onChange={(e) => setAutoCropEnabled(e.target.checked)}
                   className="w-4 h-4 text-purple-600 bg-white border-purple-300 rounded focus:ring-purple-500 cursor-pointer"
                 />
-                Auto-Crop & Rotate OMR with AI
+                Auto-Crop & Extract Name with Lite Model
               </label>
               <p className="text-xs text-purple-700 mt-1 ml-6">
-                Uses the Lite model to perfectly frame and rotate images before evaluation. Highly recommended for skewed scans!
+                Uses the Lite model to properly frame the document, rotate it, and extract the student's name from the top before evaluation.
               </p>
             </div>
           </div>
+          
+          <div className="md:col-span-2 mt-2 p-4 bg-orange-50 rounded-lg border border-orange-100 flex items-center justify-between">
+            <div>
+              <label htmlFor="experimentalSplit" className="text-sm font-bold text-orange-900 cursor-pointer flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="experimentalSplit"
+                  checked={experimentalSplit}
+                  onChange={(e) => setExperimentalSplit(e.target.checked)}
+                  className="w-4 h-4 text-orange-600 bg-white border-orange-300 rounded focus:ring-orange-500 cursor-pointer"
+                />
+                Experimental: AI Split for &gt;100 Qs
+              </label>
+              <p className="text-xs text-orange-700 mt-1 ml-6">
+                Uses AI to discover question blocks and splits the image into multiple pieces automatically. (Also extracts Name).
+              </p>
+            </div>
+          </div>
+          {experimentalSplit && (
+            <div className="md:col-span-2 mt-2 p-4 bg-orange-50 rounded-lg border border-orange-100 flex flex-col gap-2">
+              <label htmlFor="experimentalSplitPrompt" className="text-sm font-medium text-orange-900">
+                Custom Splitting Prompt (Optional)
+              </label>
+              <textarea
+                id="experimentalSplitPrompt"
+                value={experimentalSplitPrompt}
+                onChange={(e) => setExperimentalSplitPrompt(e.target.value)}
+                rows={3}
+                placeholder="Custom instructions for AI on how to split the image..."
+                className="w-full px-3 py-2 border border-orange-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 text-sm bg-white"
+              />
+            </div>
+          )}
         </div>
 
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="block text-sm font-medium text-gray-700">
-              Answer Key
+              Answer Key (JSON Format)
             </label>
             <div className="flex gap-2">
               <input 
@@ -8739,11 +8761,12 @@ export default function SettingsPanel({
               </button>
             </div>
           </div>
+          <p className="text-xs text-gray-500 mb-2">Provide a valid JSON mapping question numbers to answers. Use "*" as the answer to award a mark to everyone for a cancelled question.</p>
           <textarea
             value={answerKey}
             onChange={(e) => setAnswerKey(e.target.value)}
             rows={8}
-            placeholder="* **Q1.** A\n* **Q2.** B..."
+            placeholder='{\n  "1": "A",\n  "2": "B",\n  "3": "*"\n}'
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
           />
         </div>
@@ -8764,7 +8787,6 @@ export default function SettingsPanel({
     </section>
   );
 }
-
 --- END OF FILE src/components/SettingsPanel.tsx ---
 
 --- START OF FILE src/components/StudentDetail.tsx ---
@@ -17330,6 +17352,7 @@ export default function ExamSetup({ onNavigate }: ExamSetupProps) {
   const [title, setTitle] = useState('');
   const [className, setClassName] = useState('');
   const [totalQuestions, setTotalQuestions] = useState(25);
+  const [numOptions, setNumOptions] = useState(4);
   const [answerKeyInput, setAnswerKeyInput] = useState('');
   const [images, setImages] = useState<{ url: string; base64: string }[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -17368,10 +17391,11 @@ export default function ExamSetup({ onNavigate }: ExamSetupProps) {
     const keyMap: Record<number, string> = {};
     const lines = answerKeyInput.split('\n');
     let qNum = 1;
+    const maxChar = String.fromCharCode(64 + numOptions);
+    const regex = new RegExp(`\\b([A-${maxChar}])\\b`, 'i');
     
     for (const line of lines) {
-      // Look for standard options like A, B, C, D in the line
-      const match = line.match(/\b([A-D])\b/i);
+      const match = line.match(regex);
       if (match && qNum <= totalQuestions) {
         keyMap[qNum] = match[1].toUpperCase();
         qNum++;
@@ -17388,7 +17412,7 @@ export default function ExamSetup({ onNavigate }: ExamSetupProps) {
 
     const keyMap = parseAnswerKey();
     if (Object.keys(keyMap).length === 0) {
-      alert("Could not parse any valid answers (A, B, C, D) from the Answer Key input.");
+      alert(`Could not parse any valid answers (A-${String.fromCharCode(64 + numOptions)}) from the Answer Key input.`);
       return;
     }
 
@@ -17399,6 +17423,7 @@ export default function ExamSetup({ onNavigate }: ExamSetupProps) {
         title,
         className,
         totalQuestions,
+        numOptions,
         answerKey: keyMap,
         images: images.map(img => img.base64)
       });
@@ -17451,16 +17476,29 @@ export default function ExamSetup({ onNavigate }: ExamSetupProps) {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-1">Total Questions</label>
-          <input 
-            type="number" 
-            min="1" 
-            max="100" 
-            value={totalQuestions} 
-            onChange={(e) => setTotalQuestions(Number(e.target.value))} 
-            className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Total Questions</label>
+            <input 
+              type="number" 
+              min="1" 
+              max="200" 
+              value={totalQuestions} 
+              onChange={(e) => setTotalQuestions(Number(e.target.value))} 
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-1">Options Per Question</label>
+            <input 
+              type="number" 
+              min="2" 
+              max="6" 
+              value={numOptions} 
+              onChange={(e) => setNumOptions(Number(e.target.value))} 
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" 
+            />
+          </div>
         </div>
 
         <div>
@@ -17503,7 +17541,7 @@ export default function ExamSetup({ onNavigate }: ExamSetupProps) {
 
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-1">Answer Key</label>
-          <p className="text-xs text-gray-500 mb-2">Paste your answer key. The system will look for letters A, B, C, D to assign to questions 1 to {totalQuestions}.</p>
+          <p className="text-xs text-gray-500 mb-2">Paste your answer key. The system will look for letters A to {String.fromCharCode(64 + numOptions)} to assign to questions 1 to {totalQuestions}.</p>
           <textarea 
             value={answerKeyInput} 
             onChange={(e) => setAnswerKeyInput(e.target.value)} 
@@ -17554,8 +17592,6 @@ export default function ExamTake({ examId, onFinish }: ExamTakeProps) {
   const [cheatPromptVisible, setCheatPromptVisible] = useState(false);
   const [cheatReason, setCheatReason] = useState('');
   const lastHiddenTime = useRef<string>('');
-  
-  const options = ['A', 'B', 'C', 'D'];
 
   useEffect(() => {
     async function fetchExam() {
@@ -17734,6 +17770,9 @@ export default function ExamTake({ examId, onFinish }: ExamTakeProps) {
     );
   }
 
+  const optionsCount = exam.numOptions || 4;
+  const options = Array.from({ length: optionsCount }, (_, i) => String.fromCharCode(65 + i));
+
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-100 overflow-hidden">
       {/* Cheat Prompt Modal */}
@@ -17787,19 +17826,19 @@ export default function ExamTake({ examId, onFinish }: ExamTakeProps) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50 custom-scrollbar">
-          <div className="max-w-md mx-auto grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+        <div className="flex-1 overflow-y-auto p-4 bg-gray-50 custom-scrollbar">
+          <div className="max-w-full mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-3">
             {Array.from({ length: exam.totalQuestions }, (_, i) => i + 1).map(qNum => (
-              <div key={qNum} className="flex items-center gap-4 bg-white p-2 rounded border border-gray-200 shadow-sm">
-                <span className="w-6 font-bold text-gray-700 text-right">{qNum}.</span>
-                <div className="flex gap-2">
+              <div key={qNum} className="flex items-center gap-2 bg-white p-2 rounded border border-gray-200 shadow-sm overflow-x-auto hide-scrollbar">
+                <span className="w-6 font-bold text-gray-700 text-right shrink-0">{qNum}.</span>
+                <div className="flex gap-1.5 shrink-0">
                   {options.map(opt => {
                     const isSelected = answers[qNum] === opt;
                     return (
                       <button
                         key={opt}
                         onClick={() => handleOptionSelect(qNum, opt)}
-                        className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-bold transition-all ${
+                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center text-xs sm:text-sm font-bold transition-all ${
                           isSelected 
                             ? 'bg-indigo-600 border-indigo-600 text-white' 
                             : 'bg-white border-gray-300 text-gray-500 hover:border-indigo-400 hover:bg-indigo-50'
@@ -17822,6 +17861,8 @@ export default function ExamTake({ examId, onFinish }: ExamTakeProps) {
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}} />
     </div>
   );
@@ -19611,17 +19652,28 @@ import React from 'react';
 
 interface CosmicDotGridProps {
   scores: Record<string, number>;
+  numQuestions: number;
   variant?: 'default' | 'top';
 }
 
-export default function CosmicDotGrid({ scores, variant = 'default' }: CosmicDotGridProps) {
-  const dotSizeClass = variant === 'top' ? 'w-[0.55em] h-[0.55em]' : 'w-[0.45em] h-[0.45em]';
-  const gapClass = variant === 'top' ? 'gap-[0.05em]' : 'gap-[0.08em]';
-  const containerWidth = variant === 'top' ? 'w-fit' : 'w-fit';
+export default function CosmicDotGrid({ scores, numQuestions, variant = 'default' }: CosmicDotGridProps) {
+  let dotSize = variant === 'top' ? 0.55 : 0.45;
+  let gap = variant === 'top' ? 0.05 : 0.08;
+
+  if (numQuestions > 100) {
+    dotSize *= 0.6;
+    gap *= 0.6;
+  } else if (numQuestions > 50) {
+    dotSize *= 0.75;
+    gap *= 0.75;
+  }
 
   return (
-    <div className={`grid grid-cols-5 ${gapClass} ${containerWidth} mx-auto`}>
-      {Array.from({ length: 25 }, (_, i) => i + 1).map(qNum => {
+    <div 
+      className="flex flex-wrap justify-center mx-auto w-full"
+      style={{ gap: `${gap}em` }}
+    >
+      {Array.from({ length: numQuestions }, (_, i) => i + 1).map(qNum => {
         const score = scores[`q${qNum}`] || 0;
         let bgClass = 'bg-gray-200'; // Blank / No Answer
 
@@ -19634,7 +19686,8 @@ export default function CosmicDotGrid({ scores, variant = 'default' }: CosmicDot
         return (
           <div
             key={qNum}
-            className={`${dotSizeClass} rounded-sm ${bgClass} transition-colors`}
+            style={{ width: `${dotSize}em`, height: `${dotSize}em` }}
+            className={`rounded-sm ${bgClass} transition-colors`}
             title={`Q${qNum}: ${score === 1 ? 'Correct' : score === -1 ? 'Wrong' : 'Blank'}`}
           />
         );
@@ -19642,7 +19695,6 @@ export default function CosmicDotGrid({ scores, variant = 'default' }: CosmicDot
     </div>
   );
 }
-
 --- END OF FILE src/components/print/CosmicDotGrid.tsx ---
 
 --- START OF FILE src/components/print/PrintHeader.tsx ---
@@ -19797,9 +19849,10 @@ interface StudentRankCardProps {
   rank: number;
   score: number;
   chapters: Chapter[];
+  numQuestions: number;
 }
 
-export default function StudentRankCard({ student, rank, score, chapters }: StudentRankCardProps) {
+export default function StudentRankCard({ student, rank, score, chapters, numQuestions }: StudentRankCardProps) {
   return (
     <div className="flex flex-col p-[0.4em] border border-gray-200 rounded-[0.6em] text-center bg-white shadow-sm relative overflow-hidden h-full break-inside-avoid">
       
@@ -19822,7 +19875,7 @@ export default function StudentRankCard({ student, rank, score, chapters }: Stud
       {/* Container for Dots (Left) and Progress Bars (Right) side by side */}
       <div className="mt-auto flex flex-row items-start w-full z-10 pt-[0.4em] border-t border-gray-100">
         <div className="w-1/2 border-r border-gray-100 pr-[0.4em] shrink-0">
-          <CosmicDotGrid scores={student.scores} />
+          <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} />
         </div>
         <div className="w-1/2 pl-[0.4em] flex flex-col justify-center">
           <ChapterProgressBars chapters={chapters} student={student} compact={true} />
@@ -19831,7 +19884,6 @@ export default function StudentRankCard({ student, rank, score, chapters }: Stud
     </div>
   );
 }
-
 --- END OF FILE src/components/print/StudentRankCard.tsx ---
 
 --- START OF FILE src/components/print/TopRankCard.tsx ---
@@ -19846,11 +19898,12 @@ interface TopRankCardProps {
   rank: number;
   score: number;
   chapters: Chapter[];
+  numQuestions: number;
   imageUrl?: string;
   fontSizeScale: number;
 }
 
-export default function TopRankCard({ student, rank, score, chapters, imageUrl, fontSizeScale }: TopRankCardProps) {
+export default function TopRankCard({ student, rank, score, chapters, numQuestions, imageUrl, fontSizeScale }: TopRankCardProps) {
   let cardClasses = "flex flex-col items-center rounded-xl p-[0.8em] border shadow-md relative overflow-hidden break-inside-avoid ";
   let badgeClasses = "absolute -bottom-[0.5em] -right-[0.5em] w-[2.2em] h-[2.2em] rounded-full text-white flex items-center justify-center font-bold border-[0.15em] border-white z-20 text-[0.8em] shadow-sm ";
   let cardHeight = '18.5em';
@@ -19898,7 +19951,7 @@ export default function TopRankCard({ student, rank, score, chapters, imageUrl, 
       <div className="mt-auto flex flex-row items-stretch w-full z-10 pt-[0.2em]">
         <div className="w-1/3 max-w-[5.2em] border-r border-gray-100 pr-[0.3em] shrink-0 flex items-center justify-center">
           <div className="aspect-square h-full max-h-[11.5em] flex items-center justify-center">
-            <CosmicDotGrid scores={student.scores} variant="top" />
+            <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} variant="top" />
           </div>
         </div>
         <div className="flex-1 pl-[0.3em] flex flex-col justify-center">
@@ -20118,9 +20171,10 @@ import { AlertTriangle, TrendingUp, Users, Target, ChevronDown, ChevronUp, BarCh
 interface Props {
   results: OMRResult[];
   chapters: Chapter[];
+  numQuestions: number;
 }
 
-export default function ClassDashboard({ results, chapters }: Props) {
+export default function ClassDashboard({ results, chapters, numQuestions }: Props) {
   const [showAllTopics, setShowAllTopics] = useState(false);
 
   const stats = useMemo(() => {
@@ -20158,7 +20212,7 @@ export default function ClassDashboard({ results, chapters }: Props) {
       totalScore += score;
       if (score > maxScore) maxScore = score;
 
-      for (let i = 1; i <= Math.max(25, maxQ); i++) {
+      for (let i = 1; i <= Math.max(numQuestions, maxQ); i++) {
         if (!qMap.has(i)) continue; // only count mapped questions for stats
         
         if (!qStats[i]) qStats[i] = { correct: 0, wrong: 0, unattempted: 0 };
@@ -20235,7 +20289,7 @@ export default function ClassDashboard({ results, chapters }: Props) {
       topicArr: sortedTopics
     };
 
-  }, [results, chapters]);
+  }, [results, chapters, numQuestions]);
 
   if (!stats) return null;
 
@@ -20472,6 +20526,7 @@ export interface ExamData {
   title: string;
   className: string;
   totalQuestions: number;
+  numOptions?: number;
   answerKey: Record<number, string>; // e.g., { 1: 'A', 2: 'B' }
   images: string[]; // Base64 compressed images
   createdAt: any;
@@ -20629,13 +20684,15 @@ export interface OMRResult {
   name: string;
   right: number;
   wrong: number;
-  scores: Record<string, number>; // q1 to q25
+  scores: Record<string, number>; // q1 to qN (+1, -1, 0)
+  answers?: Record<string, string>; // The raw selected option (A, B, C...)
   confidence: number;
   confidences?: number[];
   nameConfidence?: number;
 }
 
 export interface AutoCropResult {
+  name?: string;
   ymin: number;
   xmin: number;
   ymax: number;
@@ -20679,44 +20736,72 @@ export async function fetchAvailableModels(apiKeys: string[]): Promise<string[]>
   throw lastError || new Error('Failed to fetch models');
 }
 
+export async function extractNameWithLite(imageBase64: string, mimeType: string, apiKeys: string[], model: string): Promise<string> {
+  const keysToTry = getKeys(apiKeys);
+  const prompt = "Extract the student's handwritten name from the top of this OMR sheet. If no name is clearly found, return 'Unknown'.";
+  
+  let lastError: any;
+  for (let i = 0; i < keysToTry.length; i++) {
+    const { key } = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-flash-lite-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: imageBase64, mimeType } }
+        ],
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: { name: { type: Type.STRING } },
+            required: ["name"]
+          }
+        }
+      });
+      const text = response.text?.replace(/```json\n?|\n?```/g, '').trim();
+      if (text) {
+        return JSON.parse(text).name || 'Unknown';
+      }
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  throw lastError || new Error("Failed to extract name.");
+}
+
 export async function evaluateOMR(
   imageBase64: string,
   mimeType: string,
   apiKeys: string[],
   model: string,
   liteModel: string,
-  answerKeyPrompt: string
-): Promise<OMRResult> {
+  numQuestions: number = 25,
+  numOptions: number = 4
+): Promise<{ answers: Record<string, string>, confidence: number }> {
   const keysToTry = getKeys(apiKeys);
+  const maxOptionChar = String.fromCharCode(64 + numOptions);
 
   const prompt = `
 You are an expert OMR sheet evaluator.
-Evaluate the provided OMR sheet image based on the following rules and answer key.
-GIVE full focus on validation.
+Extract the bubbled option for each question up to Q${numQuestions}.
+The exam has ${numOptions} options per question (A to ${maxOptionChar}).
 
-### Answer Key
-${answerKeyPrompt}
+Rules:
+- Only include questions that have a single clear bubble.
+- If a student crossed out an option and clearly bubbled another, return the final bubbled one.
+- Omit questions that are completely blank or have multiple bubbles without a clear correction.
+- Return a confidence score (0-100) for your extraction.
 
-Questions 26 through 30 have not been bubbled. Ignore them.
-
-### Evaluation Rules:
-- For each question Q1 to Q25, determine if the student's answer is correct, wrong, or unattempted.
-- Give 1 if correct, -1 if wrong, 0 if no answer.
-- Cross marks: If a student made a mistake and used a cross mark on a bubble, evaluate their second option (the bubbled one without a cross). If they only have one cross mark and no other bubble, skip the question (give 0).
-- Extract the student's NAME from the sheet. (Best effort only, exact spelling is not critical as it will be verified against an attendance sheet later).
-- Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
-- Provide a confidence score from 0 to 100 representing how confident you are in your evaluation of this sheet.
-
-Output your response as a JSON object with the following structure:
+Output your response as a JSON object containing an array of answers:
 {
-  "name": "Student Name",
-  "right": 10,
-  "wrong": 5,
-  "confidence": 95,
-  "q1": 1,
-  "q2": -1,
-  "q3": 0,
-  // ... up to q25
+  "answers": [
+    { "q": "1", "a": "A" },
+    { "q": "2", "a": "B" },
+    { "q": "4", "a": "C" }
+  ],
+  "confidence": 95
 }
 `;
 
@@ -20725,17 +20810,20 @@ Output your response as a JSON object with the following structure:
     responseSchema: {
       type: Type.OBJECT,
       properties: {
-        name: { type: Type.STRING, description: "Student's name" },
-        right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
-        wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
-        confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" },
-        q1: { type: Type.INTEGER }, q2: { type: Type.INTEGER }, q3: { type: Type.INTEGER }, q4: { type: Type.INTEGER }, q5: { type: Type.INTEGER },
-        q6: { type: Type.INTEGER }, q7: { type: Type.INTEGER }, q8: { type: Type.INTEGER }, q9: { type: Type.INTEGER }, q10: { type: Type.INTEGER },
-        q11: { type: Type.INTEGER }, q12: { type: Type.INTEGER }, q13: { type: Type.INTEGER }, q14: { type: Type.INTEGER }, q15: { type: Type.INTEGER },
-        q16: { type: Type.INTEGER }, q17: { type: Type.INTEGER }, q18: { type: Type.INTEGER }, q19: { type: Type.INTEGER }, q20: { type: Type.INTEGER },
-        q21: { type: Type.INTEGER }, q22: { type: Type.INTEGER }, q23: { type: Type.INTEGER }, q24: { type: Type.INTEGER }, q25: { type: Type.INTEGER },
+        answers: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              q: { type: Type.STRING },
+              a: { type: Type.STRING }
+            },
+            required: ["q", "a"]
+          }
+        },
+        confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" }
       },
-      required: ["name", "right", "wrong", "confidence", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15", "q16", "q17", "q18", "q19", "q20", "q21", "q22", "q23", "q24", "q25"]
+      required: ["answers", "confidence"]
     }
   };
 
@@ -20751,42 +20839,29 @@ Output your response as a JSON object with the following structure:
         contents: [
           { text: prompt },
           { inlineData: { data: imageBase64, mimeType } }
-        ]
+        ],
+        config: schemaConfig as any
       });
 
       const text = response.text;
       if (!text) throw new Error('Empty response from model');
       
-      let data;
-      try {
-        const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
-        data = JSON.parse(cleanedText);
-      } catch (parseError) {
-        console.log('Failed to parse JSON from pro model, using lite model to restructure...', text);
-        const restructureResponse = await ai.models.generateContent({
-          model: liteModel || 'gemini-3.1-flash-lite-preview',
-          contents: `Extract the OMR evaluation data from the following text and format it as JSON.\n\nText:\n${text}`,
-          config: schemaConfig as any
-        });
-        
-        const restructuredText = restructureResponse.text;
-        if (!restructuredText) throw new Error('Empty response from lite model during restructure');
-        data = JSON.parse(restructuredText);
+      const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
+      const data = JSON.parse(cleanedText);
+      
+      const mappedAnswers: Record<string, string> = {};
+      if (Array.isArray(data.answers)) {
+        for (const ans of data.answers) {
+          if (ans.q && ans.a) {
+            mappedAnswers[ans.q] = ans.a;
+          }
+        }
       }
       
-      const scores: Record<string, number> = {};
-      for (let j = 1; j <= 25; j++) {
-        scores[`q${j}`] = data[`q${j}`] ?? 0;
-      }
-
       return {
-        name: data.name || 'Unknown',
-        right: data.right || 0,
-        wrong: data.wrong || 0,
-        confidence: data.confidence ?? 100,
-        scores
+        answers: mappedAnswers,
+        confidence: data.confidence ?? 100
       };
-
     } catch (error: any) {
       console.error('Error with API key:', error);
       lastError = error;
@@ -20801,70 +20876,62 @@ export async function evaluateOMRBatch(
   apiKeys: string[],
   model: string,
   liteModel: string,
-  answerKeyPrompt: string,
-  numQuestions: number = 25
-): Promise<Record<string, OMRResult>> {
+  numQuestions: number = 25,
+  numOptions: number = 4
+): Promise<Record<string, { answers: Record<string, string>, confidence: number }>> {
   const keysToTry = getKeys(apiKeys);
+  const maxOptionChar = String.fromCharCode(64 + numOptions);
 
   const prompt = `
 You are an expert OMR sheet evaluator.
-Evaluate the provided OMR sheet images based on the following rules and answer key.
-GIVE full focus on validation.
+Extract the bubbled option for each question up to Q${numQuestions}.
+The exam has ${numOptions} options per question (A to ${maxOptionChar}).
 
-### Answer Key
-${answerKeyPrompt}
+Rules:
+- Only include questions that have a single clear bubble.
+- If a student crossed out an option and clearly bubbled another, return the final bubbled one.
+- Omit questions that are completely blank or have multiple bubbles without a clear correction.
+- Return a confidence score (0-100) for your extraction accuracy.
 
-Questions 26 through 30 have not been bubbled. Ignore them unless there are more than 25 questions.
+You will receive ${images.length} images. Each image corresponds to an ID. Evaluate each image and return a JSON array of objects.
 
-### Evaluation Rules:
-- For each question Q1 to Q${numQuestions}, determine if the student's answer is correct, wrong, or unattempted.
-- Give 1 if correct, -1 if wrong, 0 if no answer.
-- Extract the student's NAME from the sheet. (Best effort only, exact spelling is not critical as it will be verified against an attendance sheet later).
-- Calculate total RIGHT (sum of 1s) and WRONG (count of -1s).
-- Provide a confidence score from 0 to 100 representing how confident you are in your evaluation of this sheet. (be accurate)
-
-You will receive ${images.length} images. Each image corresponds to an ID. Evaluate each image and return a JSON object mapping the image ID to its evaluation result.
-
-Output your response as a JSON object with the following structure:
-{
-  "image_id_1": {
-    "name": "Student Name",
-    "right": 10,
-    "wrong": 5,
-    "confidence": 95,
-    "q1": 1,
-    "q2": -1,
-    "q3": 0,
-    // ... up to q${numQuestions}
-  },
-  "image_id_2": {
-    // ...
+Output your response as a JSON array exactly matching this structure:
+[
+  {
+    "id": "image_id_1",
+    "answers": [
+      { "q": "1", "a": "A" },
+      { "q": "2", "a": "B" },
+      { "q": "4", "a": "C" }
+    ],
+    "confidence": 95
   }
-}
+]
 `;
 
   const schemaConfig = {
     responseMimeType: 'application/json',
     responseSchema: {
-      type: Type.OBJECT,
-      properties: images.reduce((acc, img) => {
-        const imgProps: any = {
-          name: { type: Type.STRING, description: "Student's name" },
-          right: { type: Type.INTEGER, description: "Total correct answers (1s)" },
-          wrong: { type: Type.INTEGER, description: "Total wrong answers (-1s)" },
-          confidence: { type: Type.INTEGER, description: "Confidence score from 0 to 100" },
-        };
-        for (let q = 1; q <= numQuestions; q++) {
-          imgProps[`q${q}`] = { type: Type.INTEGER };
-        }
-        acc[img.id] = {
-          type: Type.OBJECT,
-          properties: imgProps,
-          required: ["name", "right", "wrong", "confidence", ...Array.from({ length: numQuestions }, (_, i) => `q${i + 1}`)]
-        };
-        return acc;
-      }, {} as any),
-      required: images.map(img => img.id)
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          id: { type: Type.STRING },
+          answers: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                q: { type: Type.STRING },
+                a: { type: Type.STRING }
+              },
+              required: ["q", "a"]
+            }
+          },
+          confidence: { type: Type.INTEGER }
+        },
+        required: ["id", "answers", "confidence"]
+      }
     }
   };
 
@@ -20883,13 +20950,14 @@ Output your response as a JSON object with the following structure:
 
       const response = await ai.models.generateContent({
         model: model || 'gemini-3.1-pro-preview',
-        contents: contentsParts
+        contents: contentsParts,
+        config: schemaConfig as any
       });
 
       const text = response.text;
       if (!text) throw new Error('Empty response from model');
       
-      let data;
+      let data: any[];
       try {
         const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
         data = JSON.parse(cleanedText);
@@ -20897,7 +20965,7 @@ Output your response as a JSON object with the following structure:
         console.log('Failed to parse JSON from pro model, using lite model to restructure...', text);
         const restructureResponse = await ai.models.generateContent({
           model: liteModel || 'gemini-3.1-flash-lite-preview',
-          contents: `Extract the OMR evaluation data from the following text and format it as JSON.\n\nText:\n${text}`,
+          contents: `Extract the OMR evaluation data from the following text and format it as a JSON array.\n\nText:\n${text}`,
           config: schemaConfig as any
         });
         
@@ -20905,24 +20973,24 @@ Output your response as a JSON object with the following structure:
         if (!restructuredText) throw new Error('Empty response from lite model during restructure');
         data = JSON.parse(restructuredText);
       }
+
+      const finalResults: Record<string, { answers: Record<string, string>, confidence: number }> = {};
       
-      const finalResults: Record<string, OMRResult> = {};
-      
-      for (const img of images) {
-        const imgData = data[img.id];
-        if (!imgData) continue;
+      for (const item of data) {
+        if (!item.id) continue;
         
-        const scores: Record<string, number> = {};
-        for (let j = 1; j <= 25; j++) {
-          scores[`q${j}`] = imgData[`q${j}`] ?? 0;
+        const answers: Record<string, string> = {};
+        if (Array.isArray(item.answers)) {
+          for (const ans of item.answers) {
+            if (ans.q && ans.a) {
+              answers[ans.q] = ans.a;
+            }
+          }
         }
         
-        finalResults[img.id] = {
-          name: imgData.name || 'Unknown',
-          right: imgData.right || 0,
-          wrong: imgData.wrong || 0,
-          confidence: imgData.confidence ?? 100,
-          scores
+        finalResults[item.id] = {
+          answers,
+          confidence: item.confidence ?? 100
         };
       }
 
@@ -21033,7 +21101,7 @@ export async function extractTextFromDocument(
   
   let prompt = '';
   if (extractionType === 'answerKey') {
-    prompt = `Extract the answer key from this document. Format it as a simple list like:\n* **Q1.** A\n* **Q2.** B\n* **Q3.** C\nOnly output the formatted text, nothing else.`;
+    prompt = `Extract the answer key from this document. Format it as a strict JSON object mapping question numbers (as strings) to option letters. Example: {"1": "A", "2": "B", "3": "C"}. For cancelled questions, use "*". Return ONLY the valid JSON object.`;
   } else if (extractionType === 'topicMapping' || extractionType === 'descTopicMapping') {
     prompt = `Extract the chapter and topic mapping from this document. Format it exactly like this:\n### Chapter Name\n* Topic Name: Q1, Q2, Q3\n* Another Topic: Q4, Q5\n\n### Another Chapter\n* Topic Name: Q6, Q7\n\nOnly output the formatted text, nothing else.`;
   } else if (extractionType === 'descQPAndScheme') {
@@ -21166,8 +21234,11 @@ CRITICAL: OMR sheets are PORTRAIT (taller than they are wide).
 If the image shows the sheet lying sideways (landscape), you MUST return a rotation of 90 or 270 to make it upright.
 Determine the clockwise rotation needed (0, 90, 180, or 270) to make the text on the OMR sheet upright and readable in a portrait orientation.
 
+Additionally, extract the student's handwritten NAME from the top of the sheet (best effort). If no name is clearly found, omit the name field or return 'Unknown'.
+
 Output your response as a JSON object with this exact structure:
 {
+  "name": "Student Name",
   "ymin": 100,
   "xmin": 150,
   "ymax": 900,
@@ -21194,6 +21265,7 @@ Output your response as a JSON object with this exact structure:
           responseSchema: {
             type: Type.OBJECT,
             properties: {
+              name: { type: Type.STRING, description: "Extracted name if found" },
               ymin: { type: Type.INTEGER },
               xmin: { type: Type.INTEGER },
               ymax: { type: Type.INTEGER },
@@ -21216,6 +21288,111 @@ Output your response as a JSON object with this exact structure:
     }
   }
   throw lastError || new Error('Failed to process image with all provided keys.');
+}
+
+export interface AiSplitResult {
+  boxes: AutoCropResult[];
+  name?: string;
+}
+
+export async function aiSplitOMRImage(
+  imageBase64: string,
+  mimeType: string,
+  apiKeys: string[],
+  model: string,
+  customPrompt?: string
+): Promise<AiSplitResult> {
+  const keysToTry = getKeys(apiKeys);
+
+  const basePrompt = `
+You are an image processing assistant. Identify distinct, roughly equal vertical or horizontal sections (e.g. columns or halves) of questions on this OMR sheet.
+If there are multiple columns of questions, return a bounding box for each column. If the questions are split top and bottom, return bounding boxes for each half. 
+The goal is to split the image into multiple non-overlapping pieces so each piece contains a subset of questions.
+Return the coordinates of the bounding boxes normalized to a 0-1000 scale (ymin, xmin, ymax, xmax).
+Also return the required rotation needed to make the text upright (0, 90, 180, or 270). All pieces should typically have the same rotation.
+Additionally, extract the student's handwritten NAME from the top of the sheet (best effort).
+
+Output your response as a JSON object with this exact structure:
+{
+  "name": "Student Name",
+  "boxes": [
+    {
+      "ymin": 100,
+      "xmin": 50,
+      "ymax": 900,
+      "xmax": 450,
+      "rotation": 0
+    },
+    {
+      "ymin": 100,
+      "xmin": 500,
+      "ymax": 900,
+      "xmax": 950,
+      "rotation": 0
+    }
+  ]
+}
+`;
+
+  const prompt = customPrompt && customPrompt.trim().length > 0
+    ? `CRITICAL USER INSTRUCTIONS (OVERRIDE DEFAULT BEHAVIOR IF CONFLICTING):\n${customPrompt}\n\n---\n${basePrompt}`
+    : basePrompt;
+
+  let lastError: any;
+
+  for (let i = 0; i < keysToTry.length; i++) {
+    const { key } = getNextKey(keysToTry);
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      
+      const response = await ai.models.generateContent({
+        model: model || 'gemini-3.1-flash-lite-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: imageBase64, mimeType } }
+        ],
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              boxes: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    ymin: { type: Type.INTEGER },
+                    xmin: { type: Type.INTEGER },
+                    ymax: { type: Type.INTEGER },
+                    xmax: { type: Type.INTEGER },
+                    rotation: { type: Type.INTEGER }
+                  },
+                  required: ["ymin", "xmin", "ymax", "xmax", "rotation"]
+                }
+              }
+            },
+            required: ["boxes"]
+          }
+        }
+      });
+
+      const text = response.text;
+      if (!text) throw new Error('Empty response from model');
+      
+      const parsedData = JSON.parse(text) as AiSplitResult;
+      // ensure it's sorted logically (e.g. left to right, or top to bottom)
+      parsedData.boxes.sort((a, b) => {
+        if (Math.abs(a.xmin - b.xmin) > 100) return a.xmin - b.xmin; // left to right
+        return a.ymin - b.ymin; // top to bottom
+      });
+      return parsedData;
+    } catch (error) {
+      console.error('Error with API key in aiSplitOMRImage:', error);
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('Failed to split image with all provided keys.');
 }
 
 export interface FeeRecord {
@@ -21590,6 +21767,52 @@ export const dataURLtoFile = (dataurl: string, filename: string): File => {
 };
 --- END OF FILE src/utils/fileUtils.ts ---
 
+--- START OF FILE src/utils/grading.ts ---
+export function gradeAnswers(
+  studentAnswers: Record<string, string>,
+  answerKeyText: string,
+  numQuestions: number
+) {
+  let right = 0;
+  let wrong = 0;
+  const scores: Record<string, number> = {};
+  
+  let answerKey: Record<string, string> = {};
+  try {
+    answerKey = JSON.parse(answerKeyText);
+  } catch (e) {
+    console.error("Invalid Answer Key JSON. Grading will default to 0 marks unless wildcard '*' is used.");
+  }
+
+  for (let q = 1; q <= numQuestions; q++) {
+    const qStr = q.toString();
+    const qKeyFull = `q${q}`;
+    
+    // Support either "1": "A" or "q1": "A" in the answer key
+    const correctAns = answerKey[qStr] || answerKey[qKeyFull];
+    const studentAns = studentAnswers[qStr];
+
+    if (correctAns === '*') {
+      // Wildcard rule: Award mark to everyone
+      scores[qKeyFull] = 1;
+      right++;
+    } else if (studentAns && studentAns.trim() !== '') {
+      if (correctAns && studentAns.trim().toUpperCase() === correctAns.trim().toUpperCase()) {
+        scores[qKeyFull] = 1;
+        right++;
+      } else {
+        scores[qKeyFull] = -1;
+        wrong++;
+      }
+    } else {
+      scores[qKeyFull] = 0; // Unanswered
+    }
+  }
+
+  return { right, wrong, scores };
+}
+--- END OF FILE src/utils/grading.ts ---
+
 --- START OF FILE src/utils/imageProcessing.ts ---
 export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -21757,6 +21980,316 @@ export const rotateImageFile = (file: File, degrees: number): Promise<File> => {
   });
 };
 --- END OF FILE src/utils/imageProcessing.ts ---
+
+--- START OF FILE src/utils/omrProcessor.ts ---
+import React from 'react';
+import { ProcessedFile } from '../components/QueueItem';
+import {
+  autoCropAndRotate,
+  aiSplitOMRImage,
+  evaluateOMRBatch,
+  extractNameWithLite,
+  OMRResult
+} from '../services/geminiService';
+import { fileToBase64, applyCropAndRotate, processImage } from './imageProcessing';
+import { dataURLtoFile } from './fileUtils';
+import { getImage, saveImage } from '../services/db';
+import { gradeAnswers } from './grading';
+
+export interface OMRProcessorParams {
+  files: ProcessedFile[];
+  filesByDay: Record<number, ProcessedFile[]>;
+  currentDay: number;
+  apiKeys: string[];
+  liteModel: string;
+  proModel: string;
+  imageResolution: number;
+  sampling: number;
+  concurrency: number;
+  requestsPerKey: number;
+  numQuestions: number;
+  numOptions: number;
+  autoCropEnabled: boolean;
+  experimentalSplit: boolean;
+  experimentalSplitPrompt: string;
+  answerKey: string;
+  setFiles: React.Dispatch<React.SetStateAction<ProcessedFile[]>>;
+  setProgress: React.Dispatch<React.SetStateAction<{ current: number, total: number }>>;
+  averageTimeRef: React.MutableRefObject<number>;
+}
+
+export async function processOMRImages({
+  files,
+  filesByDay,
+  currentDay,
+  apiKeys,
+  liteModel,
+  proModel,
+  imageResolution,
+  sampling,
+  concurrency,
+  requestsPerKey,
+  numQuestions,
+  numOptions,
+  autoCropEnabled,
+  experimentalSplit,
+  experimentalSplitPrompt,
+  answerKey,
+  setFiles,
+  setProgress,
+  averageTimeRef
+}: OMRProcessorParams) {
+  const keys = apiKeys.filter(k => k.trim());
+  const baseConcurrency = Math.max(1, concurrency);
+  const reqsPerKey = Math.max(1, requestsPerKey);
+  const totalConcurrentRequests = keys.length > 0 ? keys.length * reqsPerKey : 1;
+  const concurrencyLimit = totalConcurrentRequests * baseConcurrency;
+
+  const pendingIds = files.filter(f => f.status === 'pending' || f.status === 'error').map(f => f.id);
+  setProgress({ current: 0, total: pendingIds.length });
+  let completedCount = 0;
+
+  for (let i = 0; i < pendingIds.length; i += concurrencyLimit) {
+    const chunkIds = pendingIds.slice(i, i + concurrencyLimit);
+    let completedIds = new Set<string>();
+
+    setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'processing', error: undefined, attempt: 1, maxAttempts: sampling + 3, stageName: `Preparing Image...` } : f));
+
+    try {
+      const loadedImagesPromises = chunkIds.map(async (id) => {
+        const currentFile = filesByDay[currentDay]?.find(f => f.id === id) || files.find(f => f.id === id);
+        if (!currentFile) return null;
+
+        let fileObj = currentFile.file;
+        if (!fileObj) {
+          fileObj = await getImage(id);
+          if (!fileObj) return null;
+        }
+
+        if (autoCropEnabled) {
+          setFiles(prev => prev.map(f => f.id === id ? { ...f, stageName: 'Auto-Cropping (Lite)...' } : f));
+          const rawBase64 = await fileToBase64(fileObj);
+          try {
+            const cropData = await autoCropAndRotate(rawBase64, fileObj.type, keys, liteModel);
+            const w = cropData.xmax - cropData.xmin;
+            const h = cropData.ymax - cropData.ymin;
+            let finalRotation = cropData.rotation;
+
+            if (w > h && (finalRotation === 0 || finalRotation === 180)) {
+              finalRotation = (finalRotation + 90) % 360;
+            }
+
+            const { base64, mimeType } = await applyCropAndRotate(fileObj, cropData, finalRotation, imageResolution);
+
+            const croppedDataUrl = `data:${mimeType};base64,${base64}`;
+            const croppedFile = dataURLtoFile(croppedDataUrl, fileObj.name || 'image.jpg');
+            await saveImage(id, croppedFile);
+            const newPreviewUrl = URL.createObjectURL(croppedFile);
+
+            setFiles(prev => prev.map(f => f.id === id ? { ...f, file: croppedFile, previewUrl: newPreviewUrl } : f));
+
+            return { id, base64, mimeType, fileObj: croppedFile, extractedName: cropData.name };
+          } catch (error: any) {
+            console.error(`Auto-crop failed for ${id}, falling back to raw image.`, error);
+            const { base64, mimeType } = await processImage(fileObj, imageResolution, 0);
+            const fallbackName = await extractNameWithLite(base64, mimeType, keys, liteModel);
+            return { id, base64, mimeType, fileObj, extractedName: fallbackName };
+          }
+        } else {
+          const { base64, mimeType } = await processImage(fileObj, imageResolution, 0);
+          const extractedName = await extractNameWithLite(base64, mimeType, keys, liteModel);
+          return { id, base64, mimeType, fileObj, extractedName };
+        }
+      });
+
+      const loadedResults = await Promise.all(loadedImagesPromises);
+      const imagesToProcess = loadedResults.filter(Boolean) as { id: string, base64: string, mimeType: string, fileObj: File, extractedName?: string }[];
+
+      if (imagesToProcess.length === 0) continue;
+
+      let finalImagesToProcess: { id: string, base64: string, mimeType: string, fileObj: File, originalId: string, splitIndex?: number, extractedName?: string }[] = [];
+
+      for (const img of imagesToProcess) {
+        if (experimentalSplit && numQuestions > 100) {
+          setFiles(prev => prev.map(f => f.id === img.id ? { ...f, stageName: 'AI Splitting Image...' } : f));
+          try {
+            const splitRes = await aiSplitOMRImage(img.base64, img.mimeType, keys, liteModel, experimentalSplitPrompt);
+            const splitBoxes = splitRes.boxes || [];
+
+            let splitPreviews: string[] = [];
+            for (let idx = 0; idx < splitBoxes.length; idx++) {
+              const splitData = await applyCropAndRotate(img.fileObj, splitBoxes[idx], splitBoxes[idx].rotation, imageResolution);
+              const splitDataUrl = `data:${splitData.mimeType};base64,${splitData.base64}`;
+              const splitFile = dataURLtoFile(splitDataUrl, `split_${idx}_${img.fileObj.name || 'image.jpg'}`);
+              const splitUrl = URL.createObjectURL(splitFile);
+              splitPreviews.push(splitUrl);
+
+              finalImagesToProcess.push({
+                originalId: img.id,
+                id: `${img.id}_part${idx}`,
+                base64: splitData.base64,
+                mimeType: splitData.mimeType,
+                fileObj: splitFile,
+                splitIndex: idx,
+                extractedName: splitRes.name || img.extractedName
+              });
+            }
+
+            setFiles(prev => prev.map(f => f.id === img.id ? { ...f, splitPreviews } : f));
+          } catch (err) {
+            console.error('Failed to split, falling back to original');
+            finalImagesToProcess.push({ ...img, originalId: img.id });
+          }
+        } else {
+          finalImagesToProcess.push({ ...img, originalId: img.id });
+        }
+      }
+
+      let resultsHistory: Record<string, Array<{ answers: Record<string, string>, confidence: number }>> = {};
+      for (const img of imagesToProcess) {
+        resultsHistory[img.id] = [];
+      }
+
+      let targetMatches = sampling >= 2 ? 2 : 1;
+      let maxAttempts = sampling + 3;
+      let finalResults: Record<string, OMRResult> = {};
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        let stageName = attempt < sampling ? `Sampling ${attempt + 1}/${sampling}` : `Verification ${attempt - sampling + 1}`;
+
+        const remainingImages = finalImagesToProcess.filter(img => !completedIds.has(img.originalId));
+        if (remainingImages.length === 0) break;
+
+        setFiles(prev => prev.map(f => remainingImages.some(img => img.originalId === f.id) ? { ...f, attempt: attempt + 1, maxAttempts, stageName } : f));
+
+        const attemptStartTime = Date.now();
+
+        const allChunks = [];
+        for (let k = 0; k < remainingImages.length; k += baseConcurrency) {
+          allChunks.push(remainingImages.slice(k, k + baseConcurrency));
+        }
+
+        let rawBatchResults: any = {};
+
+        for (let m = 0; m < allChunks.length; m += totalConcurrentRequests) {
+          const activeChunks = allChunks.slice(m, m + totalConcurrentRequests);
+          const activePromises = activeChunks.map(chunk => {
+            return evaluateOMRBatch(chunk, keys, proModel, liteModel, numQuestions, numOptions).then(res => {
+              setFiles(prev => prev.map(f => {
+                if (chunk.some(img => img.originalId === f.id)) {
+                  return { ...f, stageName: `Evaluated (Attempt ${attempt + 1})` };
+                }
+                return f;
+              }));
+              return res;
+            });
+          });
+          const chunkResults = await Promise.all(activePromises);
+          const combined = chunkResults.reduce((acc, curr) => ({ ...acc, ...curr }), {});
+          rawBatchResults = { ...rawBatchResults, ...combined };
+        }
+
+        const batchMergedAnswers: Record<string, { answers: Record<string, string>, confidence: number, name: string }> = {};
+
+        // Merge parts if needed
+        for (const piece of remainingImages) {
+          const pieceResult = rawBatchResults[piece.id];
+          if (pieceResult) {
+            if (!batchMergedAnswers[piece.originalId]) {
+              batchMergedAnswers[piece.originalId] = {
+                answers: {},
+                confidence: pieceResult.confidence,
+                name: piece.extractedName || 'Unknown'
+              };
+            }
+            const merged = batchMergedAnswers[piece.originalId];
+            merged.confidence = Math.min(merged.confidence, pieceResult.confidence);
+            
+            // Prioritize extracted name
+            if (piece.extractedName && piece.extractedName !== 'Unknown' && (!merged.name || merged.name === 'Unknown')) {
+              merged.name = piece.extractedName;
+            }
+
+            for (let q = 1; q <= numQuestions; q++) {
+              const qKeyStr = q.toString();
+              if (pieceResult.answers[qKeyStr]) {
+                merged.answers[qKeyStr] = pieceResult.answers[qKeyStr];
+              }
+            }
+          }
+        }
+
+        const elapsed = Date.now() - attemptStartTime;
+        averageTimeRef.current = (averageTimeRef.current * 4 + elapsed) / 5;
+
+        for (const img of imagesToProcess) {
+          if (batchMergedAnswers[img.id]) {
+            resultsHistory[img.id].push({
+              answers: batchMergedAnswers[img.id].answers,
+              confidence: batchMergedAnswers[img.id].confidence
+            });
+          }
+
+          if (attempt >= targetMatches - 1) {
+            const counts = new Map<string, number>();
+            let bestResult: { answers: Record<string, string>, confidence: number } | null = null;
+
+            for (const r of resultsHistory[img.id]) {
+              const keyStr = JSON.stringify(r.answers);
+              counts.set(keyStr, (counts.get(keyStr) || 0) + 1);
+              if (counts.get(keyStr)! >= targetMatches) {
+                bestResult = resultsHistory[img.id].find(res => JSON.stringify(res.answers) === keyStr) || r;
+                break;
+              }
+            }
+
+            // Only grade the best/final result once it's locked in
+            if (bestResult || attempt === maxAttempts - 1) {
+              const targetResult = bestResult || resultsHistory[img.id][resultsHistory[img.id].length - 1];
+              
+              if (targetResult) {
+                const graded = gradeAnswers(targetResult.answers, answerKey, numQuestions);
+                finalResults[img.id] = {
+                  name: batchMergedAnswers[img.id]?.name || img.extractedName || 'Unknown',
+                  right: graded.right,
+                  wrong: graded.wrong,
+                  scores: graded.scores,
+                  answers: targetResult.answers, // Optional storage for UI reference
+                  confidence: targetResult.confidence,
+                  confidences: resultsHistory[img.id].map(r => r.confidence)
+                };
+
+                if (!completedIds.has(img.id)) {
+                  completedIds.add(img.id);
+                  completedCount++;
+                  setProgress(p => ({ ...p, current: completedCount }));
+                }
+              }
+            }
+          }
+        }
+      }
+
+      setFiles(prev => prev.map(f => {
+        if (finalResults[f.id]) {
+          return { ...f, status: 'success', result: finalResults[f.id] };
+        }
+        if (chunkIds.includes(f.id) && !finalResults[f.id]) {
+          return { ...f, status: 'error', error: 'Failed to evaluate' };
+        }
+        return f;
+      }));
+
+    } catch (error: any) {
+      setFiles(prev => prev.map(f => chunkIds.includes(f.id) ? { ...f, status: 'error', error: error.message } : f));
+    } finally {
+      const failedInChunk = chunkIds.filter(id => !completedIds.has(id));
+      completedCount += failedInChunk.length;
+      setProgress(p => ({ ...p, current: completedCount }));
+    }
+  }
+}
+--- END OF FILE src/utils/omrProcessor.ts ---
 
 --- START OF FILE src/utils/topicParser.ts ---
 export interface Topic {

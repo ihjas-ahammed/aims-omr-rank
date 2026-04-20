@@ -1,8 +1,7 @@
 Make the following changes:
 
-    * Update OMR Sheet Evaluation:
-        In some exams we might have five options like in KEAM and also like 150 question, in settings make it possible I can set no of options, also prepare the ui to fit as much as question we can.. (without losing original style)
-
+    * Update Fee Logger:
+        Make it possible I can export the data as excel like in the given image (blue for gpay) even with the color background
 
 
 
