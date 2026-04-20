@@ -1,54 +1,4 @@
-Make the following changes:
-
-* Update the QP maker:
-    Remove current version and replace with what I explained below:
-        Old prompt:
-```txt
-            You are about to create daily exam question papers for 20/04/2026 - 30 Minutes for 15 marks
-
-Use the logo saved at logo1.png (also use as water mark, and heading (its a title logo with white background)
-
-Each paper have questions as given in the images
-
-There will be six question papers u have to create, use html with svg (or canvas2d for diagrams) and mathjax for latex
-
-write six html entries (write the classname along with set letter):
-
-B1 - A
-B2 - A
-B3 - A
-
-like that B
-thast how eachs sets)
-
-make sure to allocate the right questions and you can change mark if needed each subject must have 5,5,5
-
-take insight from brlow file descriptions:
-
-file1: PHYSICS (for all class, set A, set B (change values))
-B1, B2
-B3
-
-file2:  Maths ( for all class, set A, set B (similar question))
-B1
-B2, B3
-
-file3: bio (for all class, both sets)
-
-B1,B2 - set a and b
-B3 - set A and B
-```
-
-Above is my old prompt, I used to write this on every run and upload the image of handwritten questions given to me by teachers
-
-our QP maker is supposed to help me automate it
-
-the inpuits will be: the date and the input files, each file i give each desciptrion and create qp based on that
-
-Also save this template given below:
-
-```html
-<!DOCTYPE html>
+export const QP_HTML_TEMPLATE = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -113,26 +63,26 @@ Also save this template given below:
                 <div class="sec-badge">I</div><div class="sec-title">Chemistry</div><div class="sec-line"></div><div class="sec-marks">5 marks</div>
             </div>
             <div class="question">
-                <div class="q-num">1.</div><div class="q-text">\(5.85\text{g NaCl}\) is dissolved in \(180\text{g H}_2\text{O}\). Calculate the mole fraction of \(\text{NaCl}\) and \(\text{H}_2\text{O}\)? <span class="mark-badge">2.5</span></div>
+                <div class="q-num">1.</div><div class="q-text">\\(5.85\\text{g NaCl}\\) is dissolved in \\(180\\text{g H}_2\\text{O}\\). Calculate the mole fraction of \\(\\text{NaCl}\\) and \\(\\text{H}_2\\text{O}\\)? <span class="mark-badge">2.5</span></div>
             </div>
             <div class="question">
-                <div class="q-num">2.</div><div class="q-text">A \(5\text{M}\) solution of \(\text{NaOH}\) with volume \(20\text{ml}\) is diluted to \(1000\text{ml}\). Calculate its Molarity? <span class="mark-badge">1.5</span></div>
+                <div class="q-num">2.</div><div class="q-text">A \\(5\\text{M}\\) solution of \\(\\text{NaOH}\\) with volume \\(20\\text{ml}\\) is diluted to \\(1000\\text{ml}\\). Calculate its Molarity? <span class="mark-badge">1.5</span></div>
             </div>
             <div class="question">
-                <div class="q-num">3.</div><div class="q-text">Aqueous solution of \(\text{NaOH}\) has mass by volume percent \(15\). What does it mean? <span class="mark-badge">1</span></div>
+                <div class="q-num">3.</div><div class="q-text">Aqueous solution of \\(\\text{NaOH}\\) has mass by volume percent \\(15\\). What does it mean? <span class="mark-badge">1</span></div>
             </div>
 
             <div class="section">
                 <div class="sec-badge">II</div><div class="sec-title">Mathematics</div><div class="sec-line"></div><div class="sec-marks">5 marks</div>
             </div>
             <div class="question">
-                <div class="q-num">4.</div><div class="q-text">Find the derivative of \(f(x) = \sin(\sqrt{\tan x})\). <span class="mark-badge">1.5</span></div>
+                <div class="q-num">4.</div><div class="q-text">Find the derivative of \\(f(x) = \\sin(\\sqrt{\\tan x})\\). <span class="mark-badge">1.5</span></div>
             </div>
             <div class="question">
-                <div class="q-num">5.</div><div class="q-text">Find the derivative of \(f(x) = \tan(3^{\sin x})\). <span class="mark-badge">1.5</span></div>
+                <div class="q-num">5.</div><div class="q-text">Find the derivative of \\(f(x) = \\tan(3^{\\sin x})\\). <span class="mark-badge">1.5</span></div>
             </div>
             <div class="question">
-                <div class="q-num">6.</div><div class="q-text">Find \(\frac{dy}{dx}\) if \(x^2 + 3y = \cos y\). <span class="mark-badge">2</span></div>
+                <div class="q-num">6.</div><div class="q-text">Find \\(\\frac{dy}{dx}\\) if \\(x^2 + 3y = \\cos y\\). <span class="mark-badge">2</span></div>
             </div>
 
             <div class="section">
@@ -150,20 +100,34 @@ Also save this template given below:
         </div>
     </div>
 </body>
-</html>
-```
+</html>`;
 
-the above is the default QP template
+export const DEFAULT_QP_PROMPT = `You are about to create daily exam question papers for [DATE] - 30 Minutes for 15 marks.
 
+Each paper must have questions as given in the provided images.
 
-Apply changes to both mobile view and desktop (movbile view is the priority)
+There will be six question papers you have to create. Use the exact HTML structure provided in the template, retaining MathJax for LaTeX equations. Write the batch name along with the set letter.
 
-After applying the changes recreate project_snapshot.txt only for new files and files with changes, each time improve modularity of the program by introducing new component files (only on modified or new files), don't modify system files like pubspec, if we need new packages, or file path changes, removal etc, give the command for bash
+Create six HTML entries for:
+B1 - A
+B2 - A
+B3 - A
+B1 - B
+B2 - B
+B3 - B
 
+Make sure to allocate the right questions and you can change the marks if needed. Each subject must have 5, 5, 5 (total 15 marks).
 
-Thoroughly check for ui sizing errors before writing the code
-Note: as output only give project_snapshot and commands if needed
+Take insight from the file descriptions below:
 
+file1: PHYSICS (for all class, set A, set B (change values))
+B1, B2
+B3
 
+file2: Maths (for all class, set A, set B (similar question))
+B1
+B2, B3
 
-also if ur editing a big file, split it into smaller ones to improve modularity
+file3: Bio (for all class, both sets)
+B1, B2 - set A and B
+B3 - set A and B`;
