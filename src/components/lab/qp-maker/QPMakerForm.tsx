@@ -1,13 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, Trash2, Calendar, Loader2, Sparkles, Clock, Target, Layers } from 'lucide-react';
+import { Upload, FileText, Calendar, Loader2, Sparkles, Clock, Target, Layers } from 'lucide-react';
 import { format } from 'date-fns';
-
-interface UploadedFile {
-  id: string;
-  file: File;
-  description: string;
-  previewUrl: string;
-}
+import { UploadedFile } from './types';
+import QPMakerImageCard from './QPMakerImageCard';
 
 interface QPMakerFormProps {
   isGenerating: boolean;
@@ -85,7 +80,7 @@ ${extraInstructions}
         <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
           <Target className="w-5 h-5 text-indigo-600" /> Exam Parameters
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
               <Calendar className="w-4 h-4 text-indigo-500" /> Date
@@ -95,7 +90,7 @@ ${extraInstructions}
               value={date}
               onChange={(e) => setDate(e.target.value)}
               placeholder="DD/MM/YYYY"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
+              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
             />
           </div>
           <div>
@@ -107,10 +102,10 @@ ${extraInstructions}
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
               placeholder="e.g. 30"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
+              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
             />
           </div>
-          <div>
+          <div className="sm:col-span-2 md:col-span-2">
             <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
               <Target className="w-4 h-4 text-indigo-500" /> Total Marks
             </label>
@@ -119,7 +114,7 @@ ${extraInstructions}
               value={totalMarks}
               onChange={(e) => setTotalMarks(e.target.value)}
               placeholder="e.g. 15"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
+              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
             />
           </div>
           <div className="md:col-span-4">
@@ -131,7 +126,7 @@ ${extraInstructions}
               value={subjectDivision}
               onChange={(e) => setSubjectDivision(e.target.value)}
               placeholder="e.g. Chemistry: 5, Mathematics: 5, Biology: 5"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
+              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
             />
           </div>
         </div>
@@ -154,7 +149,7 @@ ${extraInstructions}
 
       {/* 3. Image Uploads and Side-by-Side Descriptions */}
       <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50/30">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
           <div>
             <h3 className="font-bold text-gray-900 flex items-center gap-2">
               <Upload className="w-5 h-5 text-indigo-600" /> Uploaded Questions & Mapping
@@ -163,7 +158,7 @@ ${extraInstructions}
           </div>
           <button 
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm text-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-bold sm:font-medium hover:bg-gray-50 transition-colors shadow-sm text-sm w-full sm:w-auto"
           >
             <Upload className="w-4 h-4" /> Add Files
           </button>
@@ -185,30 +180,13 @@ ${extraInstructions}
             </div>
           ) : (
             uploadedFiles.map((f, i) => (
-              <div key={f.id} className="flex flex-col sm:flex-row gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-                <div className="relative w-full sm:w-32 h-40 shrink-0 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden group">
-                  <img src={f.previewUrl} alt={`Upload ${i+1}`} className="w-full h-full object-cover" />
-                  <div className="absolute top-0 left-0 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg">
-                    File {i+1}
-                  </div>
-                  <button 
-                    onClick={() => removeFile(f.id)}
-                    className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                    title="Remove Image"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-                <div className="flex-1 flex flex-col">
-                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Description / Mapping Instructions</label>
-                  <textarea
-                    value={f.description}
-                    onChange={(e) => updateFileDescription(f.id, e.target.value)}
-                    placeholder="e.g. Physics (for all class, set A, set B). Change values for Set B."
-                    className="w-full flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm resize-none outline-none"
-                  />
-                </div>
-              </div>
+              <QPMakerImageCard 
+                key={f.id}
+                fileData={f}
+                index={i}
+                onRemove={removeFile}
+                onUpdateDescription={updateFileDescription}
+              />
             ))
           )}
         </div>

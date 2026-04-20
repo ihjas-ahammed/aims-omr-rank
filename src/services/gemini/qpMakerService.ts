@@ -7,6 +7,38 @@ export interface GeneratedQP {
   htmlContent: string;
 }
 
+export async function generateImageDescription(
+  fileBase64: string,
+  mimeType: string,
+  apiKeys: string[],
+  modelName: string
+): Promise<string> {
+  const keys = apiKeys.filter(k => k.trim());
+  if (keys.length === 0) throw new Error('No API keys provided. Please configure them in Settings.');
+  
+  const prompt = `Briefly describe the contents of this question paper image. Specifically, mention the subject, target class/batch if visible, and question numbers present (e.g., 'Physics questions 1 to 5'). Keep it concise and suitable for mapping instructions.`;
+  
+  let lastError: any;
+  for (const key of keys) {
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      const response = await ai.models.generateContent({
+        model: modelName || 'gemini-3.1-flash-lite-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: fileBase64, mimeType } }
+        ]
+      });
+      
+      if (!response.text) throw new Error('Empty response');
+      return response.text.trim();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError || new Error('Failed to generate description.');
+}
+
 export async function generateQuestionPapers(
   files: File[],
   date: string, // Kept for backwards compatibility if needed, but compiledInstructions handles everything
@@ -29,6 +61,8 @@ HTML TEMPLATE TO USE AS A GUIDE FOR STYLING AND STRUCTURE:
 \`\`\`html
 ${QP_HTML_TEMPLATE}
 \`\`\`
+
+CRITICAL REQUIREMENT: Keep the logo IMG tag (\`<img src="logo1.png" ...>\`) exactly as it is in the template! Do not remove or change it. Ensure it remains in the final HTML.
 
 Output a JSON array where each object contains a 'filename' (e.g., 'B1_Set_A.html') and 'htmlContent' (the fully generated HTML string for that paper, using the exact styling and structure of the template, integrating MathJax for equations). 
 Ensure the HTML is perfectly valid and properly escapes quotes if needed for JSON.`;

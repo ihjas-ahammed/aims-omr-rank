@@ -1,123 +1,98 @@
+```bash
+# No new packages or path changes are required for this update.
+```
 
---- START OF FILE project_snapshot_out.txt ---
-
---- START OF FILE src/components/lab/qp-maker/constants.ts ---
-export const QP_HTML_TEMPLATE = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Batch B3 - Set B - Daily Examination</title>
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <style>
-        body { font-family: 'Georgia', 'Times New Roman', serif; background-color: #fafafa; color: #222; margin: 0; padding: 40px; display: flex; justify-content: center; }
-        .page { background-color: #fff; width: 800px; padding: 50px 60px; box-shadow: 0 0 10px rgba(0,0,0,0.05); position: relative; }
-        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); opacity: 0.04; width: 70%; pointer-events: none; z-index: 0; }
-        .header-content { position: relative; z-index: 1; }
-        .logo-header { text-align: center; margin-bottom: 10px; }
-        .logo-header img { height: 60px; }
-        .main-title { text-align: center; margin-bottom: 25px; }
-        .main-title .sub { font-size: 13px; font-weight: bold; color: #555; letter-spacing: 0.5px; }
-        .main-title .main { font-size: 16px; font-weight: bold; letter-spacing: 0.5px; margin-top: 3px; }
-        .meta-box { display: flex; background-color: #f7f7f5; border: 1px solid #c0c0c0; border-radius: 6px; padding: 15px 0; margin-bottom: 25px; }
-        .meta-col { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; }
-        .meta-col:not(:last-child) { border-right: 1px solid #d0d0d0; }
-        .meta-item { margin: 6px 0; }
-        .meta-label { font-size: 10px; font-weight: bold; color: #666; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
-        .meta-value { font-size: 14px; font-weight: bold; color: #111; }
-        .divider { border-top: 2px solid #111; margin: 0 0 25px 0; }
-        .section { display: flex; align-items: center; margin: 30px 0 15px 0; }
-        .sec-badge { width: 24px; height: 24px; background-color: #222; color: #fff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; }
-        .sec-title { font-weight: bold; font-size: 16px; margin-left: 12px; }
-        .sec-line { flex-grow: 1; border-bottom: 1px solid #ccc; margin: 0 15px; }
-        .sec-marks { font-size: 13px; color: #444; }
-        .question { display: grid; grid-template-columns: 35px 1fr; padding: 15px 0; border-bottom: 1px solid #eaeaea; font-size: 14.5px; line-height: 1.6; }
-        .question:last-child { border-bottom: none; }
-        .q-num { font-weight: bold; }
-        .mark-badge { display: inline-flex; justify-content: center; align-items: center; min-width: 18px; padding: 0 4px; height: 18px; background-color: #333; color: white; border-radius: 9px; font-size: 11px; font-weight: bold; margin-left: 8px; vertical-align: middle; }
-    </style>
-</head>
-<body>
-    <div class="page">
-        <img src="logo1.png" class="watermark" alt="Watermark">
-        <div class="header-content">
-            <div class="logo-header"><img src="logo1.png" alt="Institution Logo"></div>
-            <div class="main-title">
-                <div class="sub">DAILY EXAMINATION</div>
-                <div class="main">CHEMISTRY, MATHEMATICS & BIOLOGY</div>
-            </div>
-            <div class="meta-box">
-                <div class="meta-col">
-                    <div class="meta-item"><div class="meta-label">Date</div><div class="meta-value">18 / 04 / 2026</div></div>
-                    <div class="meta-item"><div class="meta-label">Duration</div><div class="meta-value">30 minutes</div></div>
-                </div>
-                <div class="meta-col">
-                    <div class="meta-item"><div class="meta-label">Set</div><div class="meta-value">B</div></div>
-                    <div class="meta-item"><div class="meta-label">Max Marks</div><div class="meta-value">15</div></div>
-                </div>
-                <div class="meta-col">
-                    <div class="meta-item"><div class="meta-label">Batch</div><div class="meta-value">B3</div></div>
-                    <div class="meta-item"><div class="meta-label">Instructions</div><div class="meta-value">Attempt all questions</div></div>
-                </div>
-            </div>
-            <div class="divider"></div>
-
-            <div class="section">
-                <div class="sec-badge">I</div><div class="sec-title">Chemistry</div><div class="sec-line"></div><div class="sec-marks">5 marks</div>
-            </div>
-            <div class="question">
-                <div class="q-num">1.</div><div class="q-text">\\(5.85\\text{g NaCl}\\) is dissolved in \\(180\\text{g H}_2\\text{O}\\). Calculate the mole fraction of \\(\\text{NaCl}\\) and \\(\\text{H}_2\\text{O}\\)? <span class="mark-badge">2.5</span></div>
-            </div>
-            <div class="question">
-                <div class="q-num">2.</div><div class="q-text">A \\(5\\text{M}\\) solution of \\(\\text{NaOH}\\) with volume \\(20\\text{ml}\\) is diluted to \\(1000\\text{ml}\\). Calculate its Molarity? <span class="mark-badge">1.5</span></div>
-            </div>
-            <div class="question">
-                <div class="q-num">3.</div><div class="q-text">Aqueous solution of \\(\\text{NaOH}\\) has mass by volume percent \\(15\\). What does it mean? <span class="mark-badge">1</span></div>
-            </div>
-
-            <div class="section">
-                <div class="sec-badge">II</div><div class="sec-title">Mathematics</div><div class="sec-line"></div><div class="sec-marks">5 marks</div>
-            </div>
-            <div class="question">
-                <div class="q-num">4.</div><div class="q-text">Find the derivative of \\(f(x) = \\sin(\\sqrt{\\tan x})\\). <span class="mark-badge">1.5</span></div>
-            </div>
-            <div class="question">
-                <div class="q-num">5.</div><div class="q-text">Find the derivative of \\(f(x) = \\tan(3^{\\sin x})\\). <span class="mark-badge">1.5</span></div>
-            </div>
-            <div class="question">
-                <div class="q-num">6.</div><div class="q-text">Find \\(\\frac{dy}{dx}\\) if \\(x^2 + 3y = \\cos y\\). <span class="mark-badge">2</span></div>
-            </div>
-
-            <div class="section">
-                <div class="sec-badge">III</div><div class="sec-title">Biology</div><div class="sec-line"></div><div class="sec-marks">5 marks</div>
-            </div>
-            <div class="question">
-                <div class="q-num">7.</div><div class="q-text">Proximal end of stamen connected with _________ and _________. <span class="mark-badge">2</span></div>
-            </div>
-            <div class="question">
-                <div class="q-num">8.</div><div class="q-text">What is sporogeneous tissue? <span class="mark-badge">2</span></div>
-            </div>
-            <div class="question">
-                <div class="q-num">9.</div><div class="q-text">Stamen represent _________. <span class="mark-badge">1</span></div>
-            </div>
-        </div>
-    </div>
-</body>
-</html>`;
---- END OF FILE src/components/lab/qp-maker/constants.ts ---
-
---- START OF FILE src/components/lab/qp-maker/QPMakerForm.tsx ---
-import React, { useState, useRef } from 'react';
-import { Upload, FileText, Trash2, Calendar, Loader2, Sparkles, Clock, Target, Layers } from 'lucide-react';
-import { format } from 'date-fns';
-
-interface UploadedFile {
+--- START OF FILE src/components/lab/qp-maker/types.ts ---
+export interface UploadedFile {
   id: string;
   file: File;
   description: string;
   previewUrl: string;
 }
+--- END OF FILE src/components/lab/qp-maker/types.ts ---
+
+--- START OF FILE src/components/lab/qp-maker/QPMakerImageCard.tsx ---
+import React, { useState } from 'react';
+import { Trash2, Sparkles, Loader2 } from 'lucide-react';
+import { UploadedFile } from './types';
+import { fileToBase64 } from '../../../utils/imageProcessing';
+import { generateImageDescription } from '../../../services/gemini/qpMakerService';
+
+interface QPMakerImageCardProps {
+  fileData: UploadedFile;
+  index: number;
+  onRemove: (id: string) => void;
+  onUpdateDescription: (id: string, description: string) => void;
+}
+
+export default function QPMakerImageCard({ fileData, index, onRemove, onUpdateDescription }: QPMakerImageCardProps) {
+  const [isDescribing, setIsDescribing] = useState(false);
+
+  const handleAutoDescribe = async () => {
+    setIsDescribing(true);
+    try {
+      const apiKeysStr = localStorage.getItem('omr_apiKeysList');
+      const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) : [];
+      const liteModel = localStorage.getItem('omr_liteModel') || 'gemini-3.1-flash-lite-preview';
+
+      const base64 = await fileToBase64(fileData.file);
+      const description = await generateImageDescription(base64, fileData.file.type, apiKeys, liteModel);
+      
+      onUpdateDescription(fileData.id, description);
+    } catch (error: any) {
+      alert(`Failed to auto-describe: ${error.message}`);
+    } finally {
+      setIsDescribing(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+      <div className="relative w-full sm:w-32 h-48 sm:h-40 shrink-0 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden group">
+        <img src={fileData.previewUrl} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
+        <div className="absolute top-0 left-0 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg">
+          File {index + 1}
+        </div>
+        <button 
+          onClick={() => onRemove(fileData.id)}
+          className="absolute top-2 right-2 sm:top-1 sm:right-1 bg-red-500 text-white p-2 sm:p-1.5 rounded-full opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+          title="Remove Image"
+        >
+          <Trash2 className="w-4 h-4 sm:w-3 sm:h-3" />
+        </button>
+      </div>
+      <div className="flex-1 flex flex-col">
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-wider">
+            Description / Mapping Instructions
+          </label>
+          <button
+            onClick={handleAutoDescribe}
+            disabled={isDescribing}
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors disabled:opacity-50 border border-indigo-100 shadow-sm sm:shadow-none"
+          >
+            {isDescribing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            Auto-Describe
+          </button>
+        </div>
+        <textarea
+          value={fileData.description}
+          onChange={(e) => onUpdateDescription(fileData.id, e.target.value)}
+          placeholder="e.g. Physics (for all class, set A, set B). Change values for Set B."
+          className="w-full flex-1 px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm resize-none outline-none min-h-[100px] sm:min-h-0"
+        />
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/qp-maker/QPMakerImageCard.tsx ---
+
+--- START OF FILE src/components/lab/qp-maker/QPMakerForm.tsx ---
+import React, { useState, useRef } from 'react';
+import { Upload, FileText, Calendar, Loader2, Sparkles, Clock, Target, Layers } from 'lucide-react';
+import { format } from 'date-fns';
+import { UploadedFile } from './types';
+import QPMakerImageCard from './QPMakerImageCard';
 
 interface QPMakerFormProps {
   isGenerating: boolean;
@@ -195,7 +170,7 @@ ${extraInstructions}
         <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
           <Target className="w-5 h-5 text-indigo-600" /> Exam Parameters
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
           <div>
             <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
               <Calendar className="w-4 h-4 text-indigo-500" /> Date
@@ -205,7 +180,7 @@ ${extraInstructions}
               value={date}
               onChange={(e) => setDate(e.target.value)}
               placeholder="DD/MM/YYYY"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
+              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
             />
           </div>
           <div>
@@ -217,10 +192,10 @@ ${extraInstructions}
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
               placeholder="e.g. 30"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
+              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
             />
           </div>
-          <div>
+          <div className="sm:col-span-2 md:col-span-2">
             <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
               <Target className="w-4 h-4 text-indigo-500" /> Total Marks
             </label>
@@ -229,7 +204,7 @@ ${extraInstructions}
               value={totalMarks}
               onChange={(e) => setTotalMarks(e.target.value)}
               placeholder="e.g. 15"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
+              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
             />
           </div>
           <div className="md:col-span-4">
@@ -241,7 +216,7 @@ ${extraInstructions}
               value={subjectDivision}
               onChange={(e) => setSubjectDivision(e.target.value)}
               placeholder="e.g. Chemistry: 5, Mathematics: 5, Biology: 5"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
+              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
             />
           </div>
         </div>
@@ -264,7 +239,7 @@ ${extraInstructions}
 
       {/* 3. Image Uploads and Side-by-Side Descriptions */}
       <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50/30">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
           <div>
             <h3 className="font-bold text-gray-900 flex items-center gap-2">
               <Upload className="w-5 h-5 text-indigo-600" /> Uploaded Questions & Mapping
@@ -273,7 +248,7 @@ ${extraInstructions}
           </div>
           <button 
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm text-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-bold sm:font-medium hover:bg-gray-50 transition-colors shadow-sm text-sm w-full sm:w-auto"
           >
             <Upload className="w-4 h-4" /> Add Files
           </button>
@@ -295,30 +270,13 @@ ${extraInstructions}
             </div>
           ) : (
             uploadedFiles.map((f, i) => (
-              <div key={f.id} className="flex flex-col sm:flex-row gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-                <div className="relative w-full sm:w-32 h-40 shrink-0 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden group">
-                  <img src={f.previewUrl} alt={`Upload ${i+1}`} className="w-full h-full object-cover" />
-                  <div className="absolute top-0 left-0 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg">
-                    File {i+1}
-                  </div>
-                  <button 
-                    onClick={() => removeFile(f.id)}
-                    className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                    title="Remove Image"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-                <div className="flex-1 flex flex-col">
-                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Description / Mapping Instructions</label>
-                  <textarea
-                    value={f.description}
-                    onChange={(e) => updateFileDescription(f.id, e.target.value)}
-                    placeholder="e.g. Physics (for all class, set A, set B). Change values for Set B."
-                    className="w-full flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm resize-none outline-none"
-                  />
-                </div>
-              </div>
+              <QPMakerImageCard 
+                key={f.id}
+                fileData={f}
+                index={i}
+                onRemove={removeFile}
+                onUpdateDescription={updateFileDescription}
+              />
             ))
           )}
         </div>
@@ -353,80 +311,6 @@ ${extraInstructions}
 }
 --- END OF FILE src/components/lab/qp-maker/QPMakerForm.tsx ---
 
---- START OF FILE src/components/lab/qp-maker/QPMaker.tsx ---
-import React, { useState } from 'react';
-import { ArrowLeft, FileText } from 'lucide-react';
-import QPMakerForm from './QPMakerForm';
-import QPMakerResults from './QPMakerResults';
-import { generateQuestionPapers, GeneratedQP } from '../../../services/gemini/qpMakerService';
-
-interface QPMakerProps {
-  onBack: () => void;
-}
-
-export default function QPMaker({ onBack }: QPMakerProps) {
-  const [generatedPapers, setGeneratedPapers] = useState<GeneratedQP[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleGenerate = async (files: File[], compiledInstructions: string) => {
-    setIsGenerating(true);
-    try {
-      const apiKeysStr = localStorage.getItem('omr_apiKeysList');
-      const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) : [];
-      const model = localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview';
-
-      // Send the fully compiled instructions instead of combining it inside the service
-      const results = await generateQuestionPapers(files, '', compiledInstructions, apiKeys, model);
-      setGeneratedPapers(results);
-    } catch (error: any) {
-      alert(`Error: ${error.message}`);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleReset = () => {
-    if (window.confirm("Are you sure you want to discard these generated papers?")) {
-      setGeneratedPapers([]);
-    }
-  };
-
-  return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors border border-gray-200 bg-white shadow-sm">
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </button>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
-              <FileText className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">AI QP Maker</h2>
-              <p className="text-sm text-gray-500 font-medium">Automated HTML Question Paper Generation</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {generatedPapers.length === 0 ? (
-        <QPMakerForm 
-          isGenerating={isGenerating} 
-          onGenerate={handleGenerate} 
-        />
-      ) : (
-        <QPMakerResults 
-          results={generatedPapers} 
-          onReset={handleReset} 
-        />
-      )}
-    </div>
-  );
-}
---- END OF FILE src/components/lab/qp-maker/QPMaker.tsx ---
-
 --- START OF FILE src/services/gemini/qpMakerService.ts ---
 import { GoogleGenAI, Type } from '@google/genai';
 import { fileToBase64 } from '../../utils/imageProcessing';
@@ -435,6 +319,38 @@ import { QP_HTML_TEMPLATE } from '../../components/lab/qp-maker/constants';
 export interface GeneratedQP {
   filename: string;
   htmlContent: string;
+}
+
+export async function generateImageDescription(
+  fileBase64: string,
+  mimeType: string,
+  apiKeys: string[],
+  modelName: string
+): Promise<string> {
+  const keys = apiKeys.filter(k => k.trim());
+  if (keys.length === 0) throw new Error('No API keys provided. Please configure them in Settings.');
+  
+  const prompt = `Briefly describe the contents of this question paper image. Specifically, mention the subject, target class/batch if visible, and question numbers present (e.g., 'Physics questions 1 to 5'). Keep it concise and suitable for mapping instructions.`;
+  
+  let lastError: any;
+  for (const key of keys) {
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      const response = await ai.models.generateContent({
+        model: modelName || 'gemini-3.1-flash-lite-preview',
+        contents: [
+          { text: prompt },
+          { inlineData: { data: fileBase64, mimeType } }
+        ]
+      });
+      
+      if (!response.text) throw new Error('Empty response');
+      return response.text.trim();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError || new Error('Failed to generate description.');
 }
 
 export async function generateQuestionPapers(
@@ -459,6 +375,8 @@ HTML TEMPLATE TO USE AS A GUIDE FOR STYLING AND STRUCTURE:
 \`\`\`html
 ${QP_HTML_TEMPLATE}
 \`\`\`
+
+CRITICAL REQUIREMENT: Keep the logo IMG tag (\`<img src="logo1.png" ...>\`) exactly as it is in the template! Do not remove or change it. Ensure it remains in the final HTML.
 
 Output a JSON array where each object contains a 'filename' (e.g., 'B1_Set_A.html') and 'htmlContent' (the fully generated HTML string for that paper, using the exact styling and structure of the template, integrating MathJax for equations). 
 Ensure the HTML is perfectly valid and properly escapes quotes if needed for JSON.`;
@@ -514,5 +432,3 @@ Ensure the HTML is perfectly valid and properly escapes quotes if needed for JSO
   throw lastError || new Error('Failed to generate Question Papers with the provided API keys.');
 }
 --- END OF FILE src/services/gemini/qpMakerService.ts ---
-
---- END OF FILE project_snapshot_out.txt ---

@@ -1,8 +1,9 @@
 Make the following changes:
 
 * Update the QP maker:
-    
+    Add a button inm each image uploads to auto generate their description wuith lite model
 
+    Ask AI to keep logo IMG tag :)
 
 Apply changes to both mobile view and desktop (movbile view is the priority)
 
