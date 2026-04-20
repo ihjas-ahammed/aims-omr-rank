@@ -101,33 +101,3 @@ export const QP_HTML_TEMPLATE = `<!DOCTYPE html>
     </div>
 </body>
 </html>`;
-
-export const DEFAULT_QP_PROMPT = `You are about to create daily exam question papers for [DATE] - 30 Minutes for 15 marks.
-
-Each paper must have questions as given in the provided images.
-
-There will be six question papers you have to create. Use the exact HTML structure provided in the template, retaining MathJax for LaTeX equations. Write the batch name along with the set letter.
-
-Create six HTML entries for:
-B1 - A
-B2 - A
-B3 - A
-B1 - B
-B2 - B
-B3 - B
-
-Make sure to allocate the right questions and you can change the marks if needed. Each subject must have 5, 5, 5 (total 15 marks).
-
-Take insight from the file descriptions below:
-
-file1: PHYSICS (for all class, set A, set B (change values))
-B1, B2
-B3
-
-file2: Maths (for all class, set A, set B (similar question))
-B1
-B2, B3
-
-file3: Bio (for all class, both sets)
-B1, B2 - set A and B
-B3 - set A and B`;

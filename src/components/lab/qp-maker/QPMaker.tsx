@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, FileText, Settings } from 'lucide-react';
+import { ArrowLeft, FileText } from 'lucide-react';
 import QPMakerForm from './QPMakerForm';
 import QPMakerResults from './QPMakerResults';
 import { generateQuestionPapers, GeneratedQP } from '../../../services/gemini/qpMakerService';
@@ -12,14 +12,15 @@ export default function QPMaker({ onBack }: QPMakerProps) {
   const [generatedPapers, setGeneratedPapers] = useState<GeneratedQP[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleGenerate = async (files: File[], date: string, instructions: string) => {
+  const handleGenerate = async (files: File[], compiledInstructions: string) => {
     setIsGenerating(true);
     try {
       const apiKeysStr = localStorage.getItem('omr_apiKeysList');
       const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) : [];
       const model = localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview';
 
-      const results = await generateQuestionPapers(files, date, instructions, apiKeys, model);
+      // Send the fully compiled instructions instead of combining it inside the service
+      const results = await generateQuestionPapers(files, '', compiledInstructions, apiKeys, model);
       setGeneratedPapers(results);
     } catch (error: any) {
       alert(`Error: ${error.message}`);

@@ -9,7 +9,7 @@ export interface GeneratedQP {
 
 export async function generateQuestionPapers(
   files: File[],
-  date: string,
+  date: string, // Kept for backwards compatibility if needed, but compiledInstructions handles everything
   instructions: string,
   apiKeys: string[],
   modelName: string
@@ -20,14 +20,12 @@ export async function generateQuestionPapers(
   }
 
   const prompt = `You are an expert exam question paper creator.
-I am providing images of handwritten questions and specific instructions on how to split them across different batches and sets.
-
-EXAM DATE: ${date}
+I am providing images of handwritten questions and specific instructions on how to parse and allocate them.
 
 INSTRUCTIONS:
 ${instructions}
 
-HTML TEMPLATE TO USE:
+HTML TEMPLATE TO USE AS A GUIDE FOR STYLING AND STRUCTURE:
 \`\`\`html
 ${QP_HTML_TEMPLATE}
 \`\`\`
@@ -41,7 +39,7 @@ Ensure the HTML is perfectly valid and properly escapes quotes if needed for JSO
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     const base64 = await fileToBase64(file);
-    contentsParts.push({ text: `File ${i + 1}: ${file.name}` });
+    contentsParts.push({ text: `Uploaded File ${i + 1}: ${file.name}` });
     contentsParts.push({ inlineData: { data: base64, mimeType: file.type } });
   }
 
