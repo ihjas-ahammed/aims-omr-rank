@@ -1,9 +1,8 @@
 Make the following changes:
 
 * Update the QP maker:
-    Add a button inm each image uploads to auto generate their description wuith lite model
-
-    Ask AI to keep logo IMG tag :)
+    Just like the omr sheet, make it remember each day question paper info (generated and typed), also ability to regenerate
+    Also make the score distribution input into something dynamic than a simple input text, like something with add remove and also subject selector (Biology, Physics, Math and Chemistry)
 
 Apply changes to both mobile view and desktop (movbile view is the priority)
 

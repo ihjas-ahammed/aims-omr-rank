@@ -9,7 +9,7 @@ interface QPMakerResultsProps {
 }
 
 export default function QPMakerResults({ results, onReset }: QPMakerResultsProps) {
-  const [previewFile, setPreviewFile] = useState<GeneratedQP | null>(null);
+  const[previewFile, setPreviewFile] = useState<GeneratedQP | null>(null);
 
   const handleDownload = (filename: string, content: string) => {
     const blob = new Blob([content], { type: 'text/html' });
@@ -48,7 +48,7 @@ export default function QPMakerResults({ results, onReset }: QPMakerResultsProps
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 border border-gray-200 rounded-lg font-medium hover:bg-gray-200 transition-colors shadow-sm"
             >
               <RotateCcw className="w-4 h-4" />
-              Start Over
+              Edit & Regenerate
             </button>
           </div>
         </div>

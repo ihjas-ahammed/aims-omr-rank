@@ -12,13 +12,17 @@ interface QPMakerImageCardProps {
 }
 
 export default function QPMakerImageCard({ fileData, index, onRemove, onUpdateDescription }: QPMakerImageCardProps) {
-  const [isDescribing, setIsDescribing] = useState(false);
+  const[isDescribing, setIsDescribing] = useState(false);
 
   const handleAutoDescribe = async () => {
+    if (!fileData.file) {
+      alert("Image file not available for auto-describe.");
+      return;
+    }
     setIsDescribing(true);
     try {
       const apiKeysStr = localStorage.getItem('omr_apiKeysList');
-      const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) : [];
+      const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) :[];
       const liteModel = localStorage.getItem('omr_liteModel') || 'gemini-3.1-flash-lite-preview';
 
       const base64 = await fileToBase64(fileData.file);
