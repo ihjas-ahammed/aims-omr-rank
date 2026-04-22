@@ -46,14 +46,21 @@ export default function QueueItem({ file, numQuestions, isProcessing, averageTim
         />
       </div>
 
-      {file.splitPreviews && file.splitPreviews.length > 0 ? (
+      {file.previewUrl ? (
+        <div className="relative shrink-0">
+          <img src={file.previewUrl} alt="Preview" className="w-24 h-24 object-contain rounded-lg border border-gray-200 bg-white" />
+          {file.splitPreviews && file.splitPreviews.length > 0 && (
+            <div className="absolute -top-2 -right-2 bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded border border-blue-200 shadow-sm">
+              Split
+            </div>
+          )}
+        </div>
+      ) : file.splitPreviews && file.splitPreviews.length > 0 ? (
         <div className="flex flex-col gap-1 shrink-0 h-24 overflow-y-auto custom-scrollbar pr-1">
           {file.splitPreviews.map((url, i) => (
              <img key={i} src={url} alt={`Split Preview ${i}`} className="w-24 object-contain rounded-lg border border-gray-200 bg-white" />
           ))}
         </div>
-      ) : file.previewUrl ? (
-        <img src={file.previewUrl} alt="Preview" className="w-24 h-24 object-contain rounded-lg border border-gray-200 shrink-0 bg-white" />
       ) : (
         <div className="w-24 h-24 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center shrink-0 text-gray-400">
           <FileImage className="w-8 h-8" />

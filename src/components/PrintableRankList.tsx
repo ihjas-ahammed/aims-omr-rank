@@ -20,11 +20,21 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
   const [dayNumber, setDayNumber] = useState('4');
   const [studentImages, setStudentImages] = useState<Record<string, string>>({});
   
-  // Print Customization Settings
   const [columnsPerPage, setColumnsPerPage] = useState<number>(10);
-  const [cardScale, setCardScale] = useState<number>(11); // base font size in px
+  const [cardScale, setCardScale] = useState<number>(11); 
   const [showTop3, setShowTop3] = useState<boolean>(true);
   const [showHeader, setShowHeader] = useState<boolean>(true);
+
+  // Dot Settings
+  const [dotCols, setDotCols] = useState<number>(() => Number(localStorage.getItem('omr_print_dotCols') || 5));
+  const [dotSize, setDotSize] = useState<number>(() => Number(localStorage.getItem('omr_print_dotSize') || 0.45));
+  const [dotGap, setDotGap] = useState<number>(() => Number(localStorage.getItem('omr_print_dotGap') || 0.08));
+
+  useEffect(() => {
+    localStorage.setItem('omr_print_dotCols', dotCols.toString());
+    localStorage.setItem('omr_print_dotSize', dotSize.toString());
+    localStorage.setItem('omr_print_dotGap', dotGap.toString());
+  }, [dotCols, dotSize, dotGap]);
 
   const chapters: Chapter[] = parsedTopicMapping || parseTopicMapping(topicMapping);
   
@@ -53,7 +63,6 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
     [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
   );
 
-  // Take up to 5 students that occupy rank 1, 2, or 3
   const podiumStudents = rankedResults.filter(r => r.rank <= 3).slice(0, 5);
 
   useEffect(() => {
@@ -70,7 +79,6 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
     loadImages();
   }, [rankedResults]);
 
-  // Reorder top podium to put highest ranks in the middle
   const displayPodium: Array<{ student: OMRResult, rank: number }> = [];
   [...podiumStudents].sort((a,b) => a.rank - b.rank).forEach((item, i) => {
     if (i % 2 === 0) displayPodium.push({ student: item.student, rank: item.rank });
@@ -79,7 +87,6 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
 
   const chapterTopicString = chapters.map(c => c.name).join(' · ');
   
-  // Adjust podium sizing if there are more than 3 cards
   const podiumScale = podiumStudents.length > 3 ? Math.max(cardScale * 0.75, 10) : Math.max(cardScale, 14);
 
   return (
@@ -97,6 +104,12 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
         setShowTop3={setShowTop3}
         showHeader={showHeader}
         setShowHeader={setShowHeader}
+        dotCols={dotCols}
+        setDotCols={setDotCols}
+        dotSize={dotSize}
+        setDotSize={setDotSize}
+        dotGap={dotGap}
+        setDotGap={setDotGap}
         onBack={onBack}
       />
 
@@ -122,6 +135,9 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
                   numQuestions={numQuestions}
                   imageUrl={studentImages[student.name]}
                   fontSizeScale={podiumScale} 
+                  dotCols={dotCols}
+                  dotSize={dotSize}
+                  dotGap={dotGap}
                 />
               ))}
             </div>
@@ -145,6 +161,9 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
                   score={score}
                   chapters={chapters}
                   numQuestions={numQuestions}
+                  dotCols={dotCols}
+                  dotSize={dotSize}
+                  dotGap={dotGap}
                 />
               </div>
             ))}

@@ -1,7 +1,7 @@
 import React from 'react';
 import { OMRResult } from '../../services/geminiService';
 import { Chapter } from '../../utils/topicParser';
-import CosmicDotGrid from './CosmicDotGrid';
+import CosmicDotGrid from '../common/CosmicDotGrid';
 import ChapterProgressBars from './ChapterProgressBars';
 
 interface StudentRankCardProps {
@@ -10,9 +10,12 @@ interface StudentRankCardProps {
   score: number;
   chapters: Chapter[];
   numQuestions: number;
+  dotCols: number;
+  dotSize: number;
+  dotGap: number;
 }
 
-export default function StudentRankCard({ student, rank, score, chapters, numQuestions }: StudentRankCardProps) {
+export default function StudentRankCard({ student, rank, score, chapters, numQuestions, dotCols, dotSize, dotGap }: StudentRankCardProps) {
   return (
     <div className="flex flex-col p-[0.4em] border border-gray-200 rounded-[0.6em] text-center bg-white shadow-sm relative overflow-hidden h-full break-inside-avoid">
       
@@ -32,10 +35,9 @@ export default function StudentRankCard({ student, rank, score, chapters, numQue
         <span className="text-red-700 bg-red-50 px-[0.4em] py-[0.1em] rounded border border-red-200">W:{student.wrong}</span>
       </div>
       
-      {/* Container for Dots (Left) and Progress Bars (Right) side by side */}
       <div className="mt-auto flex flex-row items-start w-full z-10 pt-[0.4em] border-t border-gray-100">
-        <div className="w-1/2 border-r border-gray-100 pr-[0.4em] shrink-0">
-          <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} />
+        <div className="w-1/2 border-r border-gray-100 pr-[0.4em] shrink-0 flex items-center justify-center">
+          <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}em`} gap={`${dotGap}em`} />
         </div>
         <div className="w-1/2 pl-[0.4em] flex flex-col justify-center">
           <ChapterProgressBars chapters={chapters} student={student} compact={true} />

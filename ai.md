@@ -1,8 +1,9 @@
 Make the following changes:
 
-* Update the QP maker:
-    Just like the omr sheet, make it remember each day question paper info (generated and typed), also ability to regenerate
-    Also make the score distribution input into something dynamic than a simple input text, like something with add remove and also subject selector (Biology, Physics, Math and Chemistry)
+* Update OMR Rank List:
+    For top students, use a circular progressbar with exact fit
+    Also add a manual entries in which I can set the dimensions of cosmic dots grid
+    
 
 Apply changes to both mobile view and desktop (movbile view is the priority)
 

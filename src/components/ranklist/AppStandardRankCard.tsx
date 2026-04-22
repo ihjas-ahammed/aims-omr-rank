@@ -1,17 +1,22 @@
 import React from 'react';
 import { OMRResult } from '../../services/geminiService';
 import { Chapter } from '../../utils/topicParser';
+import CosmicDotGrid from '../common/CosmicDotGrid';
 
 interface AppStandardRankCardProps {
   student: OMRResult;
   rank: number;
   score: number;
   chapters: Chapter[];
+  numQuestions: number;
   onClick: () => void;
+  dotCols: number;
+  dotSize: number;
+  dotGap: number;
 }
 
 export default function AppStandardRankCard({ 
-  student, rank, score, chapters, onClick 
+  student, rank, score, chapters, numQuestions, onClick, dotCols, dotSize, dotGap
 }: AppStandardRankCardProps) {
 
   const calculateChapterProgress = (studentData: OMRResult, chapter: Chapter) => {
@@ -47,26 +52,32 @@ export default function AppStandardRankCard({
         </div>
       </div>
 
-      <div className="space-y-3 mt-auto pt-4 border-t border-gray-100">
-        <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Chapter Progress</h4>
-        {chapters.map(chapter => {
-          if (chapter.questions.length === 0) return null;
-          const progress = calculateChapterProgress(student, chapter);
-          return (
-            <div key={chapter.name} className="space-y-1">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-gray-600 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
-                <span className="font-bold text-gray-700">{Math.round(progress)}%</span>
+      <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-4">
+        <div className="flex justify-center">
+          <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}px`} gap={`${dotGap}px`} />
+        </div>
+
+        <div className="space-y-3 pt-4 border-t border-gray-100">
+          <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Chapter Progress</h4>
+          {chapters.map(chapter => {
+            if (chapter.questions.length === 0) return null;
+            const progress = calculateChapterProgress(student, chapter);
+            return (
+              <div key={chapter.name} className="space-y-1">
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-gray-600 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
+                  <span className="font-bold text-gray-700">{Math.round(progress)}%</span>
+                </div>
+                <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-indigo-400 rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-indigo-400 rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

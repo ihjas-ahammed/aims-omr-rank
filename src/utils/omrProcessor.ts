@@ -123,16 +123,16 @@ export async function processOMRImages({
 
       if (imagesToProcess.length === 0) continue;
 
-      let finalImagesToProcess: { id: string, base64: string, mimeType: string, fileObj: File, originalId: string, splitIndex?: number, extractedName?: string }[] = [];
+      let finalImagesToProcess: { id: string, base64: string, mimeType: string, fileObj: File, originalId: string, splitIndex?: number, extractedName?: string }[] =[];
 
       for (const img of imagesToProcess) {
-        if (experimentalSplit && numQuestions > 100) {
+        if (experimentalSplit) {
           setFiles(prev => prev.map(f => f.id === img.id ? { ...f, stageName: 'AI Splitting Image...' } : f));
           try {
             const splitRes = await aiSplitOMRImage(img.base64, img.mimeType, keys, liteModel, experimentalSplitPrompt);
             const splitBoxes = splitRes.boxes || [];
 
-            let splitPreviews: string[] = [];
+            let splitPreviews: string[] =[];
             for (let idx = 0; idx < splitBoxes.length; idx++) {
               const splitData = await applyCropAndRotate(img.fileObj, splitBoxes[idx], splitBoxes[idx].rotation, imageResolution);
               const splitDataUrl = `data:${splitData.mimeType};base64,${splitData.base64}`;
@@ -163,7 +163,7 @@ export async function processOMRImages({
 
       let resultsHistory: Record<string, Array<{ answers: Record<string, string>, confidence: number }>> = {};
       for (const img of imagesToProcess) {
-        resultsHistory[img.id] = [];
+        resultsHistory[img.id] =[];
       }
 
       let targetMatches = sampling >= 2 ? 2 : 1;
@@ -180,7 +180,7 @@ export async function processOMRImages({
 
         const attemptStartTime = Date.now();
 
-        const allChunks = [];
+        const allChunks =[];
         for (let k = 0; k < remainingImages.length; k += baseConcurrency) {
           allChunks.push(remainingImages.slice(k, k + baseConcurrency));
         }

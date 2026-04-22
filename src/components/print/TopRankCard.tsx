@@ -1,8 +1,9 @@
 import React from 'react';
 import { OMRResult } from '../../services/geminiService';
 import { Chapter } from '../../utils/topicParser';
-import CosmicDotGrid from './CosmicDotGrid';
+import CosmicDotGrid from '../common/CosmicDotGrid';
 import ChapterProgressBars from './ChapterProgressBars';
+import CircularProgress from '../common/CircularProgress';
 
 interface TopRankCardProps {
   student: OMRResult;
@@ -12,9 +13,12 @@ interface TopRankCardProps {
   numQuestions: number;
   imageUrl?: string;
   fontSizeScale: number;
+  dotCols: number;
+  dotSize: number;
+  dotGap: number;
 }
 
-export default function TopRankCard({ student, rank, score, chapters, numQuestions, imageUrl, fontSizeScale }: TopRankCardProps) {
+export default function TopRankCard({ student, rank, score, chapters, numQuestions, imageUrl, fontSizeScale, dotCols, dotSize, dotGap }: TopRankCardProps) {
   let cardClasses = "flex flex-col items-center rounded-xl p-[0.8em] border shadow-md relative overflow-hidden break-inside-avoid ";
   let badgeClasses = "absolute -bottom-[0.5em] -right-[0.5em] w-[2.2em] h-[2.2em] rounded-full text-white flex items-center justify-center font-bold border-[0.15em] border-white z-20 text-[0.8em] shadow-sm ";
   let cardHeight = '18.5em';
@@ -37,16 +41,24 @@ export default function TopRankCard({ student, rank, score, chapters, numQuestio
     cardWidth = '14em';
   }
 
+  const pct = Math.max(0, Math.min(100, (score / (numQuestions * 4)) * 100));
+
   return (
     <div className={`${cardClasses}`} style={{ fontSize: `${fontSizeScale}px`, width: cardWidth, minHeight: cardHeight, height: cardHeight }}>
-      <div className="relative mb-[0.5em] mt-[0.3em]">
-        {imageUrl ? (
-          <img src={imageUrl} alt={student.name} className="w-[4.5em] h-[4.5em] rounded-full object-cover border-[0.2em] border-white shadow-sm" />
-        ) : (
-          <div className="w-[4.5em] h-[4.5em] rounded-full bg-gray-100 flex items-center justify-center border-[0.2em] border-white shadow-sm text-gray-500 font-bold text-[1.8em]">
-            {student.name.charAt(0)}
+      <div className="relative mb-[0.5em] mt-[0.3em] w-[6em] h-[6em]">
+        <CircularProgress 
+          percentage={pct} 
+          strokeWidth={6} 
+          colorClass={rank === 1 ? 'text-yellow-600' : rank === 2 ? 'text-slate-500' : 'text-orange-500'}
+        >
+          <div className="w-full h-full rounded-full bg-white border-[0.15em] border-white shadow-sm flex items-center justify-center overflow-hidden">
+            {imageUrl ? (
+              <img src={imageUrl} alt={student.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="text-gray-500 font-bold text-[2em]">{student.name.charAt(0)}</div>
+            )}
           </div>
-        )}
+        </CircularProgress>
         <div className={badgeClasses}>#{rank}</div>
       </div>
       
@@ -59,10 +71,11 @@ export default function TopRankCard({ student, rank, score, chapters, numQuestio
         </span>
         <span className="text-[0.7em] font-bold text-red-700 bg-red-50 px-[0.5em] py-[0.2em] rounded border border-red-200">W:{student.wrong}</span>
       </div>
+      
       <div className="mt-auto flex flex-row items-stretch w-full z-10 pt-[0.2em]">
         <div className="w-1/3 max-w-[5.2em] border-r border-gray-100 pr-[0.3em] shrink-0 flex items-center justify-center">
-          <div className="aspect-square h-full max-h-[11.5em] flex items-center justify-center">
-            <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} variant="top" />
+          <div className="w-full flex items-center justify-center">
+            <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}em`} gap={`${dotGap}em`} />
           </div>
         </div>
         <div className="flex-1 pl-[0.3em] flex flex-col justify-center">

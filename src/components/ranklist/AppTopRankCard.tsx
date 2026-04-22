@@ -2,20 +2,27 @@ import React from 'react';
 import { Camera, Image as ImageIcon } from 'lucide-react';
 import { OMRResult } from '../../services/geminiService';
 import { Chapter } from '../../utils/topicParser';
+import CosmicDotGrid from '../common/CosmicDotGrid';
+import CircularProgress from '../common/CircularProgress';
 
 interface AppTopRankCardProps {
   student: OMRResult;
   rank: number;
   score: number;
   chapters: Chapter[];
+  numQuestions: number;
   imageUrl?: string;
   onImageClick: (e: React.MouseEvent, name: string) => void;
   onClick: () => void;
   orderClass: string;
+  dotCols: number;
+  dotSize: number;
+  dotGap: number;
 }
 
 export default function AppTopRankCard({ 
-  student, rank, score, chapters, imageUrl, onImageClick, onClick, orderClass 
+  student, rank, score, chapters, numQuestions, imageUrl, onImageClick, onClick, orderClass,
+  dotCols, dotSize, dotGap
 }: AppTopRankCardProps) {
   
   const calculateChapterProgress = (studentData: OMRResult, chapter: Chapter) => {
@@ -52,6 +59,8 @@ export default function AppTopRankCard({
     onImageClick(e, student.name);
   };
 
+  const pct = Math.max(0, Math.min(100, (score / (numQuestions * 4)) * 100));
+
   return (
     <div 
       onClick={onClick}
@@ -61,30 +70,37 @@ export default function AppTopRankCard({
         #{rank}
       </div>
 
-      <div className="flex flex-col items-center gap-4 mb-4 mt-2">
+      <div className="flex flex-col md:flex-row items-center gap-4 mb-4 mt-2">
         <div 
-          className={`relative rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center overflow-hidden group shrink-0 ${rank === 1 ? 'w-28 h-28' : 'w-24 h-24'}`}
+          className={`relative group shrink-0 ${rank === 1 ? 'w-32 h-32' : 'w-28 h-28'}`}
           onClick={handleImageClick}
         >
-          {imageUrl ? (
-            <>
-              <img src={imageUrl} alt={student.name} className="w-full h-full object-cover" />
+          <CircularProgress 
+            percentage={pct} 
+            strokeWidth={6} 
+            colorClass={rank === 1 ? 'text-yellow-500' : rank === 2 ? 'text-gray-500' : 'text-orange-500'}
+            trackColorClass="text-black/10"
+          >
+            <div className="w-full h-full rounded-full bg-white border-[3px] border-white shadow-sm flex items-center justify-center overflow-hidden relative">
+              {imageUrl ? (
+                <img src={imageUrl} alt={student.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center justify-center w-full h-full bg-gray-100 group-hover:bg-gray-200 transition-colors">
+                  <ImageIcon className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                </div>
+              )}
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Camera className="w-6 h-6 text-white" />
               </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center w-full h-full bg-gray-100 group-hover:bg-gray-200 transition-colors">
-              <ImageIcon className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
             </div>
-          )}
+          </CircularProgress>
         </div>
         
-        <div className="text-center w-full">
-          <h3 className={`${rank === 1 ? 'text-2xl' : 'text-xl'} font-bold text-gray-900 truncate px-2`} title={student.name}>
+        <div className="text-center md:text-left w-full flex-1">
+          <h3 className={`${rank === 1 ? 'text-2xl' : 'text-xl'} font-bold text-gray-900 truncate px-2 md:px-0`} title={student.name}>
             {student.name}
           </h3>
-          <div className="flex items-center justify-center gap-3 mt-2 text-sm">
+          <div className="flex items-center justify-center md:justify-start gap-3 mt-2 text-sm">
             <span className="font-medium text-green-700 bg-green-100/80 px-2 py-0.5 rounded border border-green-200/50">C: {student.right}</span>
             <span className="font-medium text-red-700 bg-red-100/80 px-2 py-0.5 rounded border border-red-200/50">W: {student.wrong}</span>
           </div>
@@ -94,7 +110,12 @@ export default function AppTopRankCard({
         </div>
       </div>
 
-      <div className={`space-y-3 mt-auto pt-4 border-t ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
+      <div className={`mt-auto border-t pt-4 ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center mb-3">Response Grid</h4>
+        <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}px`} gap={`${dotGap}px`} />
+      </div>
+
+      <div className={`space-y-3 mt-4 pt-4 border-t ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
         <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Chapter Progress</h4>
         {chapters.map(chapter => {
           if (chapter.questions.length === 0) return null;

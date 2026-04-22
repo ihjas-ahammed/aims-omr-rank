@@ -1,744 +1,1021 @@
 
-
---- START OF FILE project_snapshot_out.txt ---
-
---- START OF FILE src/components/lab/qp-maker/types.ts ---
-import { GeneratedQP } from '../../../services/gemini/qpMakerService';
-
-export interface UploadedFile {
-  id: string;
-  file?: File;
-  description: string;
-  previewUrl?: string;
-}
-
-export interface SubjectDivision {
-  id: string;
-  subject: string;
-  marks: string;
-}
-
-export interface QPMakerDayData {
-  date: string;
-  duration: string;
-  totalMarks: string;
-  subjectDivisions: SubjectDivision[];
-  batchesAndSets: string;
-  extraInstructions: string;
-  uploadedFiles: UploadedFile[];
-  generatedPapers: GeneratedQP[];
-}
---- END OF FILE src/components/lab/qp-maker/types.ts ---
-
---- START OF FILE src/components/lab/qp-maker/SubjectDivisionInput.tsx ---
+--- START OF FILE src/components/common/CircularProgress.tsx ---
 import React from 'react';
-import { Plus, Trash2 } from 'lucide-react';
-import { SubjectDivision } from './types';
 
-interface Props {
-  divisions: SubjectDivision[];
-  onChange: (divs: SubjectDivision[]) => void;
+interface CircularProgressProps {
+  percentage: number;
+  strokeWidth?: number;
+  children?: React.ReactNode;
+  colorClass?: string;
+  trackColorClass?: string;
 }
 
-export default function SubjectDivisionInput({ divisions, onChange }: Props) {
-  const handleAdd = () => {
-    onChange([...divisions, { id: Math.random().toString(36).substring(7), subject: 'Physics', marks: '' }]);
-  };
-  
-  const handleRemove = (id: string) => {
-    onChange(divisions.filter(d => d.id !== id));
-  };
-  
-  const handleChange = (id: string, field: keyof SubjectDivision, value: string) => {
-    onChange(divisions.map(d => d.id === id ? { ...d, [field]: value } : d));
-  };
-
-  const subjects =['Physics', 'Chemistry', 'Mathematics', 'Biology', 'Botany', 'Zoology', 'General'];
+export default function CircularProgress({
+  percentage,
+  strokeWidth = 6,
+  children,
+  colorClass = 'text-green-500',
+  trackColorClass = 'text-black/5'
+}: CircularProgressProps) {
+  const radius = 50 - strokeWidth / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="space-y-3">
-      <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-        Subjects & Marks Division
-      </label>
-      {divisions.map((div, i) => (
-        <div key={div.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <select 
-            value={div.subject} 
-            onChange={e => handleChange(div.id, 'subject', e.target.value)}
-            className="flex-1 px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm outline-none bg-white font-medium text-gray-800"
+    <div className="relative w-full h-full flex items-center justify-center">
+      <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+        <circle
+          className={`${trackColorClass} stroke-current`}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          r={radius}
+          cx="50"
+          cy="50"
+        />
+        <circle
+          className={`${colorClass} stroke-current transition-all duration-1000 ease-out`}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          fill="transparent"
+          r={radius}
+          cx="50"
+          cy="50"
+        />
+      </svg>
+      <div 
+        className="w-full h-full rounded-full overflow-hidden flex items-center justify-center relative z-10" 
+        style={{ padding: `${strokeWidth / 2 + 1}%` }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/common/CircularProgress.tsx ---
+
+--- START OF FILE src/components/common/CosmicDotGrid.tsx ---
+import React from 'react';
+
+interface CosmicDotGridProps {
+  scores: Record<string, number>;
+  numQuestions: number;
+  columns?: number;
+  dotSize?: string;
+  gap?: string;
+}
+
+export default function CosmicDotGrid({ 
+  scores, 
+  numQuestions, 
+  columns = 5, 
+  dotSize = '0.55em', 
+  gap = '0.05em' 
+}: CosmicDotGridProps) {
+  return (
+    <div 
+      className="grid justify-center items-center mx-auto"
+      style={{ 
+        gap: gap, 
+        gridTemplateColumns: `repeat(${columns}, max-content)` 
+      }}
+    >
+      {Array.from({ length: numQuestions }, (_, i) => i + 1).map(qNum => {
+        const score = scores[`q${qNum}`] || 0;
+        let bgClass = 'bg-gray-200';
+        if (score === 1) bgClass = 'bg-green-500';
+        else if (score === -1) bgClass = 'bg-red-500';
+
+        return (
+          <div
+            key={qNum}
+            style={{ width: dotSize, height: dotSize }}
+            className={`rounded-sm ${bgClass} transition-colors`}
+            title={`Q${qNum}: ${score === 1 ? 'Correct' : score === -1 ? 'Wrong' : 'Blank'}`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+--- END OF FILE src/components/common/CosmicDotGrid.tsx ---
+
+--- START OF FILE src/components/ranklist/AppTopRankCard.tsx ---
+import React from 'react';
+import { Camera, Image as ImageIcon } from 'lucide-react';
+import { OMRResult } from '../../services/geminiService';
+import { Chapter } from '../../utils/topicParser';
+import CosmicDotGrid from '../common/CosmicDotGrid';
+import CircularProgress from '../common/CircularProgress';
+
+interface AppTopRankCardProps {
+  student: OMRResult;
+  rank: number;
+  score: number;
+  chapters: Chapter[];
+  numQuestions: number;
+  imageUrl?: string;
+  onImageClick: (e: React.MouseEvent, name: string) => void;
+  onClick: () => void;
+  orderClass: string;
+  dotCols: number;
+  dotSize: number;
+  dotGap: number;
+}
+
+export default function AppTopRankCard({ 
+  student, rank, score, chapters, numQuestions, imageUrl, onImageClick, onClick, orderClass,
+  dotCols, dotSize, dotGap
+}: AppTopRankCardProps) {
+  
+  const calculateChapterProgress = (studentData: OMRResult, chapter: Chapter) => {
+    if (chapter.questions.length === 0) return 0;
+    let correct = 0;
+    chapter.questions.forEach(q => {
+      if (studentData.scores[`q${q}`] === 1) correct++;
+    });
+    return (correct / chapter.questions.length) * 100;
+  };
+
+  let cardBg = 'bg-white border-gray-200';
+  let rankColor = 'text-gray-500';
+  let progressBg = 'bg-blue-500';
+  let sizeClass = 'w-full md:w-[280px]'; // Standard podium size
+  
+  if (rank === 1) {
+    cardBg = 'bg-gradient-to-br from-yellow-100 to-yellow-200 border-yellow-400 shadow-yellow-100';
+    rankColor = 'text-yellow-700';
+    progressBg = 'bg-yellow-500';
+    sizeClass = 'w-full md:w-[320px] md:scale-105 z-10'; // Make Rank 1 slightly larger on desktop
+  } else if (rank === 2) {
+    cardBg = 'bg-gradient-to-br from-gray-100 to-gray-200 border-gray-400 shadow-gray-100';
+    rankColor = 'text-gray-700';
+    progressBg = 'bg-gray-500';
+  } else if (rank === 3) {
+    cardBg = 'bg-gradient-to-br from-orange-100 to-orange-200 border-orange-400 shadow-orange-100';
+    rankColor = 'text-orange-700';
+    progressBg = 'bg-orange-500';
+  }
+
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onImageClick(e, student.name);
+  };
+
+  const pct = Math.max(0, Math.min(100, (score / (numQuestions * 4)) * 100));
+
+  return (
+    <div 
+      onClick={onClick}
+      className={`relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col ${cardBg} ${sizeClass} ${orderClass}`}
+    >
+      <div className={`absolute top-0 right-0 bg-black/5 px-4 py-1.5 rounded-bl-xl font-black text-lg ${rankColor}`}>
+        #{rank}
+      </div>
+
+      <div className="flex flex-col md:flex-row items-center gap-4 mb-4 mt-2">
+        <div 
+          className={`relative group shrink-0 ${rank === 1 ? 'w-32 h-32' : 'w-28 h-28'}`}
+          onClick={handleImageClick}
+        >
+          <CircularProgress 
+            percentage={pct} 
+            strokeWidth={6} 
+            colorClass={rank === 1 ? 'text-yellow-500' : rank === 2 ? 'text-gray-500' : 'text-orange-500'}
+            trackColorClass="text-black/10"
           >
-            {subjects.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <div className="flex gap-2">
-            <input 
-              type="number" 
-              value={div.marks} 
-              onChange={e => handleChange(div.id, 'marks', e.target.value)}
-              placeholder="Marks"
-              className="w-full sm:w-24 px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm outline-none font-medium"
-            />
-            <button 
-              onClick={() => handleRemove(div.id)} 
-              className="p-2.5 sm:p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-gray-200 sm:border-transparent bg-white sm:bg-transparent"
-              title="Remove Subject"
-            >
-              <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
-            </button>
+            <div className="w-full h-full rounded-full bg-white border-[3px] border-white shadow-sm flex items-center justify-center overflow-hidden relative">
+              {imageUrl ? (
+                <img src={imageUrl} alt={student.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center justify-center w-full h-full bg-gray-100 group-hover:bg-gray-200 transition-colors">
+                  <ImageIcon className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                </div>
+              )}
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="w-6 h-6 text-white" />
+              </div>
+            </div>
+          </CircularProgress>
+        </div>
+        
+        <div className="text-center md:text-left w-full flex-1">
+          <h3 className={`${rank === 1 ? 'text-2xl' : 'text-xl'} font-bold text-gray-900 truncate px-2 md:px-0`} title={student.name}>
+            {student.name}
+          </h3>
+          <div className="flex items-center justify-center md:justify-start gap-3 mt-2 text-sm">
+            <span className="font-medium text-green-700 bg-green-100/80 px-2 py-0.5 rounded border border-green-200/50">C: {student.right}</span>
+            <span className="font-medium text-red-700 bg-red-100/80 px-2 py-0.5 rounded border border-red-200/50">W: {student.wrong}</span>
+          </div>
+          <div className={`${rank === 1 ? 'text-4xl' : 'text-3xl'} font-black mt-3 text-gray-800`}>
+            {score} <span className="text-sm font-medium text-gray-500">pts</span>
           </div>
         </div>
-      ))}
-      <button 
-        onClick={handleAdd} 
-        className="flex items-center justify-center sm:justify-start gap-1 w-full sm:w-auto px-4 py-2.5 sm:p-0 text-sm text-indigo-600 hover:text-indigo-800 font-bold sm:font-medium bg-indigo-50 sm:bg-transparent rounded-lg transition-colors"
-      >
-        <Plus className="w-4 h-4" /> Add Subject
-      </button>
+      </div>
+
+      <div className={`mt-auto border-t pt-4 ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center mb-3">Response Grid</h4>
+        <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}px`} gap={`${dotGap}px`} />
+      </div>
+
+      <div className={`space-y-3 mt-4 pt-4 border-t ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Chapter Progress</h4>
+        {chapters.map(chapter => {
+          if (chapter.questions.length === 0) return null;
+          const progress = calculateChapterProgress(student, chapter);
+          return (
+            <div key={chapter.name} className="space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-700 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
+                <span className="font-bold text-gray-900">{Math.round(progress)}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
+                <div 
+                  className={`h-full rounded-full transition-all duration-500 ${progressBg}`}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
---- END OF FILE src/components/lab/qp-maker/SubjectDivisionInput.tsx ---
+--- END OF FILE src/components/ranklist/AppTopRankCard.tsx ---
 
---- START OF FILE src/components/lab/qp-maker/QPMakerDaySelector.tsx ---
+--- START OF FILE src/components/ranklist/AppStandardRankCard.tsx ---
 import React from 'react';
-import { Plus, X } from 'lucide-react';
+import { OMRResult } from '../../services/geminiService';
+import { Chapter } from '../../utils/topicParser';
+import CosmicDotGrid from '../common/CosmicDotGrid';
 
-interface Props {
-  days: number[];
-  currentDay: number;
-  onSetCurrentDay: (day: number) => void;
-  onAddDay: () => void;
-  onRemoveDay: (day: number) => void;
+interface AppStandardRankCardProps {
+  student: OMRResult;
+  rank: number;
+  score: number;
+  chapters: Chapter[];
+  numQuestions: number;
+  onClick: () => void;
+  dotCols: number;
+  dotSize: number;
+  dotGap: number;
 }
 
-export default function QPMakerDaySelector({ days, currentDay, onSetCurrentDay, onAddDay, onRemoveDay }: Props) {
+export default function AppStandardRankCard({ 
+  student, rank, score, chapters, numQuestions, onClick, dotCols, dotSize, dotGap
+}: AppStandardRankCardProps) {
+
+  const calculateChapterProgress = (studentData: OMRResult, chapter: Chapter) => {
+    if (chapter.questions.length === 0) return 0;
+    let correct = 0;
+    chapter.questions.forEach(q => {
+      if (studentData.scores[`q${q}`] === 1) correct++;
+    });
+    return (correct / chapter.questions.length) * 100;
+  };
+
   return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-      {days.map(day => (
-        <div key={day} className="flex items-center shrink-0">
-          <button
-            onClick={() => onSetCurrentDay(day)}
-            className={`px-4 py-2 rounded-l-md font-medium text-sm transition-colors ${currentDay === day ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'}`}
-          >
-            Day {day}
-          </button>
-          {days.length > 1 && (
-            <button
-              onClick={() => onRemoveDay(day)}
-              className={`px-2 py-2 rounded-r-md border-y border-r text-sm transition-colors ${currentDay === day ? 'bg-indigo-700 text-white border-indigo-700 hover:bg-indigo-800' : 'bg-white text-gray-400 border-gray-200 hover:bg-red-50 hover:text-red-500'}`}
-              title="Delete Day"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+    <div 
+      onClick={onClick}
+      className="relative rounded-2xl border p-5 shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden bg-white border-gray-200 flex flex-col h-full"
+    >
+      <div className="absolute top-0 right-0 bg-black/5 px-4 py-1.5 rounded-bl-xl font-black text-lg text-gray-500">
+        #{rank}
+      </div>
+
+      <div className="flex items-center gap-4 mb-4">
+        <div className="flex-1 min-w-0 pr-8">
+          <h3 className="text-lg font-bold text-gray-900 truncate" title={student.name}>
+            {student.name}
+          </h3>
+          <div className="flex items-center gap-3 mt-2 text-sm">
+            <span className="font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-100">C: {student.right}</span>
+            <span className="font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded border border-red-100">W: {student.wrong}</span>
+          </div>
+          <div className="text-2xl font-black mt-2 text-gray-800">
+            {score} <span className="text-sm font-medium text-gray-500">pts</span>
+          </div>
         </div>
-      ))}
-      <button
-        onClick={onAddDay}
-        className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium shrink-0"
-      >
-        <Plus className="w-4 h-4" /> Add Day
-      </button>
+      </div>
+
+      <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-4">
+        <div className="flex justify-center">
+          <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}px`} gap={`${dotGap}px`} />
+        </div>
+
+        <div className="space-y-3 pt-4 border-t border-gray-100">
+          <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Chapter Progress</h4>
+          {chapters.map(chapter => {
+            if (chapter.questions.length === 0) return null;
+            const progress = calculateChapterProgress(student, chapter);
+            return (
+              <div key={chapter.name} className="space-y-1">
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-gray-600 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
+                  <span className="font-bold text-gray-700">{Math.round(progress)}%</span>
+                </div>
+                <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-indigo-400 rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
---- END OF FILE src/components/lab/qp-maker/QPMakerDaySelector.tsx ---
+--- END OF FILE src/components/ranklist/AppStandardRankCard.tsx ---
 
---- START OF FILE src/components/lab/qp-maker/QPMaker.tsx ---
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, FileText } from 'lucide-react';
-import QPMakerForm from './QPMakerForm';
-import QPMakerResults from './QPMakerResults';
-import QPMakerDaySelector from './QPMakerDaySelector';
-import { QPMakerDayData } from './types';
-import { format } from 'date-fns';
-import { getImage, deleteImage } from '../../../services/db';
+--- START OF FILE src/components/RankList.tsx ---
+import React, { useState, useEffect, useRef } from 'react';
+import { OMRResult } from '../services/geminiService';
+import { parseTopicMapping, Chapter } from '../utils/topicParser';
+import { getStudentImage, saveStudentImage } from '../services/db';
+import { ArrowLeft, Printer, Search, Settings2 } from 'lucide-react';
+import AppTopRankCard from './ranklist/AppTopRankCard';
+import AppStandardRankCard from './ranklist/AppStandardRankCard';
+import ClassDashboard from './ranklist/ClassDashboard';
 
-const defaultDayData: QPMakerDayData = {
-  date: format(new Date(), 'dd/MM/yyyy'),
-  duration: '30',
-  totalMarks: '15',
-  subjectDivisions:[{ id: '1', subject: 'Physics', marks: '15' }],
-  batchesAndSets: 'B1: Set A, Set B\nB2: Set A, Set B',
-  extraInstructions: 'Make sure to allocate the right questions. Change values for mathematical/physics problems to create Set B variations.',
-  uploadedFiles: [],
-  generatedPapers:[]
-};
+interface RankListProps {
+  files: { result?: OMRResult }[];
+  topicMapping: string;
+  parsedTopicMapping?: any;
+  numQuestions: number;
+  onBack: () => void;
+  onStudentClick: (student: OMRResult) => void;
+  onPrintableClick: () => void;
+}
 
-export default function QPMaker({ onBack }: { onBack: () => void }) {
-  const [days, setDays] = useState<number[]>(() => {
-    const saved = localStorage.getItem('qp_days');
-    return saved ? JSON.parse(saved) : [1];
-  });
-  const [currentDay, setCurrentDay] = useState<number>(() => {
-    const saved = localStorage.getItem('qp_currentDay');
-    return saved ? parseInt(saved, 10) : 1;
-  });
-  const [dataByDay, setDataByDay] = useState<Record<number, QPMakerDayData>>({});
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
+export default function RankList({ files, topicMapping, parsedTopicMapping, numQuestions, onBack, onStudentClick, onPrintableClick }: RankListProps) {
+  const [studentImages, setStudentImages] = useState<Record<string, string>>({});
+  const [searchQuery, setSearchQuery] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedStudentForImage, setSelectedStudentForImage] = useState<string | null>(null);
+
+  // Cosmic Dot Settings
+  const [dotCols, setDotCols] = useState(() => Number(localStorage.getItem('omr_dotCols') || 5));
+  const [dotSize, setDotSize] = useState(() => Number(localStorage.getItem('omr_dotSize') || 10));
+  const [dotGap, setDotGap] = useState(() => Number(localStorage.getItem('omr_dotGap') || 3));
+  const [showGridSettings, setShowGridSettings] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('qp_days', JSON.stringify(days));
-    localStorage.setItem('qp_currentDay', currentDay.toString());
-  }, [days, currentDay]);
+    localStorage.setItem('omr_dotCols', dotCols.toString());
+    localStorage.setItem('omr_dotSize', dotSize.toString());
+    localStorage.setItem('omr_dotGap', dotGap.toString());
+  }, [dotCols, dotSize, dotGap]);
+
+  const chapters: Chapter[] = parsedTopicMapping || parseTopicMapping(topicMapping);
+  
+  const calculateScore = (student: OMRResult) => (student.right * 4) - student.wrong;
+
+  const sortedResults = files
+    .filter(f => f.result)
+    .map(f => f.result!)
+    .sort((a, b) => {
+      const scoreDiff = calculateScore(b) - calculateScore(a);
+      return scoreDiff !== 0 ? scoreDiff : a.name.localeCompare(b.name);
+    });
+
+  const rankedResults = sortedResults.reduce(
+    (acc, student, index) => {
+      const score = calculateScore(student);
+      const previous = acc[index - 1];
+      const rank = previous
+        ? previous.score === score
+          ? previous.rank
+          : previous.rank + 1
+        : 1;
+      acc.push({ student, score, rank });
+      return acc;
+    },
+    [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
+  );
+
+  const filteredResults = rankedResults.filter(r => r.student.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const podiumStudents = filteredResults.filter(r => r.rank <= 3).slice(0, 5);
+  const standardStudents = filteredResults.slice(podiumStudents.length);
 
   useEffect(() => {
-    const loadData = async () => {
-      const loadedData: Record<number, QPMakerDayData> = {};
-      for (const day of days) {
-        const saved = localStorage.getItem(`qp_data_${day}`);
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved) as QPMakerDayData;
-            // Load images from DB
-            const filesWithPreview = await Promise.all(parsed.uploadedFiles.map(async f => {
-              const fileObj = await getImage(f.id);
-              if (fileObj) {
-                return { ...f, file: fileObj, previewUrl: URL.createObjectURL(fileObj) };
-              }
-              return f;
-            }));
-            parsed.uploadedFiles = filesWithPreview;
-            loadedData[day] = parsed;
-          } catch (e) {
-            loadedData[day] = { ...defaultDayData };
-          }
-        } else {
-          loadedData[day] = { ...defaultDayData };
+    const loadImages = async () => {
+      const images: Record<string, string> = {};
+      for (const item of podiumStudents) {
+        const file = await getStudentImage(item.student.name);
+        if (file) {
+          images[item.student.name] = URL.createObjectURL(file);
         }
       }
-      setDataByDay(loadedData);
-      setIsLoaded(true);
+      setStudentImages(images);
     };
-    loadData();
-  },[]);
+    loadImages();
+  }, [rankedResults, searchQuery]); 
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    // Save current state to local storage without file objects/previewUrls
-    Object.entries(dataByDay).forEach(([day, data]) => {
-      const dataToSave = {
-        ...data,
-        uploadedFiles: data.uploadedFiles.map(f => ({ id: f.id, description: f.description }))
-      };
-      localStorage.setItem(`qp_data_${day}`, JSON.stringify(dataToSave));
-    });
-  }, [dataByDay, isLoaded]);
-
-  const addDay = () => {
-    const newDay = Math.max(...days, 0) + 1;
-    setDays([...days, newDay]);
-    setDataByDay({ ...dataByDay, [newDay]: { ...defaultDayData } });
-    setCurrentDay(newDay);
-  };
-
-  const removeDay = async (dayToRemove: number) => {
-    if (days.length <= 1) return;
-    if (!window.confirm(`Are you sure you want to delete Day ${dayToRemove}?`)) return;
-
-    // cleanup images
-    const files = dataByDay[dayToRemove]?.uploadedFiles ||[];
-    for (const f of files) {
-      if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
-      await deleteImage(f.id);
-    }
-
-    const newDays = days.filter(d => d !== dayToRemove);
-    setDays(newDays);
-    
-    const newData = { ...dataByDay };
-    delete newData[dayToRemove];
-    setDataByDay(newData);
-    
-    localStorage.removeItem(`qp_data_${dayToRemove}`);
-    
-    if (currentDay === dayToRemove) {
-      setCurrentDay(newDays[0]);
-    }
-  };
-
-  const updateCurrentDayData = (newData: Partial<QPMakerDayData>) => {
-    setDataByDay(prev => ({
-      ...prev,
-      [currentDay]: { ...prev[currentDay], ...newData }
-    }));
-  };
-
-  const handleGenerate = async (compiledInstructions: string) => {
-    const currentData = dataByDay[currentDay];
-    if (!currentData || currentData.uploadedFiles.length === 0) {
-      alert("Please upload at least one image.");
-      return;
-    }
-    const files = currentData.uploadedFiles.map(f => f.file).filter(Boolean) as File[];
-    if (files.length === 0) return;
-
-    setIsGenerating(true);
-    try {
-      const apiKeysStr = localStorage.getItem('omr_apiKeysList');
-      const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) :[];
-      const model = localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview';
-
-      const { generateQuestionPapers } = await import('../../../services/gemini/qpMakerService');
-      const results = await generateQuestionPapers(files, '', compiledInstructions, apiKeys, model);
-      updateCurrentDayData({ generatedPapers: results });
-    } catch (error: any) {
-      alert(`Error: ${error.message}`);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  if (!isLoaded) return <div className="p-10 text-center text-gray-500">Loading...</div>;
-
-  const currentData = dataByDay[currentDay] || defaultDayData;
-
-  return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors border border-gray-200 bg-white shadow-sm">
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </button>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
-              <FileText className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">AI QP Maker</h2>
-              <p className="text-sm text-gray-500 font-medium">Automated HTML Question Paper Generation</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <QPMakerDaySelector 
-        days={days}
-        currentDay={currentDay}
-        onSetCurrentDay={setCurrentDay}
-        onAddDay={addDay}
-        onRemoveDay={removeDay}
-      />
-
-      {currentData.generatedPapers.length === 0 ? (
-        <QPMakerForm 
-          data={currentData}
-          onUpdate={updateCurrentDayData}
-          isGenerating={isGenerating} 
-          onGenerate={handleGenerate} 
-        />
-      ) : (
-        <QPMakerResults 
-          results={currentData.generatedPapers} 
-          onReset={() => {
-            if(window.confirm("Discard generated papers and edit?")) {
-              updateCurrentDayData({ generatedPapers:[] });
-            }
-          }} 
-        />
-      )}
-    </div>
-  );
-}
---- END OF FILE src/components/lab/qp-maker/QPMaker.tsx ---
-
---- START OF FILE src/components/lab/qp-maker/QPMakerForm.tsx ---
-import React, { useRef } from 'react';
-import { Upload, FileText, Calendar, Loader2, Sparkles, Clock, Target, Layers } from 'lucide-react';
-import { QPMakerDayData } from './types';
-import QPMakerImageCard from './QPMakerImageCard';
-import SubjectDivisionInput from './SubjectDivisionInput';
-import { saveImage, deleteImage } from '../../../services/db';
-
-interface QPMakerFormProps {
-  data: QPMakerDayData;
-  onUpdate: (data: Partial<QPMakerDayData>) => void;
-  isGenerating: boolean;
-  onGenerate: (compiledInstructions: string) => void;
-}
-
-export default function QPMakerForm({ data, onUpdate, isGenerating, onGenerate }: QPMakerFormProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files).map(file => ({
-        id: Math.random().toString(36).substring(7),
-        file,
-        description: '',
-        previewUrl: URL.createObjectURL(file)
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0] && selectedStudentForImage) {
+      const file = event.target.files[0];
+      await saveStudentImage(selectedStudentForImage, file);
+      setStudentImages(prev => ({
+        ...prev,
+        [selectedStudentForImage]: URL.createObjectURL(file)
       }));
-      // Save to IndexedDB
-      for(const f of newFiles) {
-        await saveImage(f.id, f.file);
-      }
-      onUpdate({ uploadedFiles:[...data.uploadedFiles, ...newFiles] });
     }
     if (fileInputRef.current) fileInputRef.current.value = '';
+    setSelectedStudentForImage(null);
   };
 
-  const removeFile = async (id: string) => {
-    const toRemove = data.uploadedFiles.find(f => f.id === id);
-    if (toRemove && toRemove.previewUrl) {
-      URL.revokeObjectURL(toRemove.previewUrl);
-    }
-    await deleteImage(id);
-    onUpdate({ uploadedFiles: data.uploadedFiles.filter(f => f.id !== id) });
+  const triggerImageUpload = (e: React.MouseEvent, studentName: string) => {
+    e.stopPropagation();
+    setSelectedStudentForImage(studentName);
+    fileInputRef.current?.click();
   };
 
-  const updateFileDescription = (id: string, description: string) => {
-    onUpdate({
-      uploadedFiles: data.uploadedFiles.map(f => f.id === id ? { ...f, description } : f)
-    });
-  };
-
-  const handleSubmit = () => {
-    if (data.uploadedFiles.length === 0) {
-      alert('Please upload at least one image containing the questions.');
-      return;
-    }
-    
-    const subjectsStr = data.subjectDivisions.map(d => `${d.subject}: ${d.marks}`).join(', ');
-
-    const compiledInstructions = `
-EXAM DATE: ${data.date}
-DURATION: ${data.duration} minutes
-MAXIMUM MARKS: ${data.totalMarks}
-SUBJECTS & MARKS DIVISION: ${subjectsStr}
-
-REQUIRED OUTPUT FILES (Batches & Sets):
-${data.batchesAndSets}
-
-UPLOADED FILES & THEIR MAPPING DESCRIPTIONS:
-${data.uploadedFiles.map((f, i) => `File ${i + 1} (${f.file?.name || 'Image'}): ${f.description}`).join('\n\n')}
-
-ADDITIONAL INSTRUCTIONS:
-${data.extraInstructions}
-    `.trim();
-
-    onGenerate(compiledInstructions);
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      {/* 1. Exam Parameters */}
-      <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50/50">
-        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <Target className="w-5 h-5 text-indigo-600" /> Exam Parameters
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-              <Calendar className="w-4 h-4 text-indigo-500" /> Date
-            </label>
-            <input
-              type="text"
-              value={data.date}
-              onChange={(e) => onUpdate({ date: e.target.value })}
-              placeholder="DD/MM/YYYY"
-              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
-            />
-          </div>
-          <div>
-            <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-              <Clock className="w-4 h-4 text-indigo-500" /> Duration (Mins)
-            </label>
-            <input
-              type="text"
-              value={data.duration}
-              onChange={(e) => onUpdate({ duration: e.target.value })}
-              placeholder="e.g. 30"
-              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
-            />
-          </div>
-          <div className="sm:col-span-2 md:col-span-2">
-            <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-              <Target className="w-4 h-4 text-indigo-500" /> Total Marks
-            </label>
-            <input
-              type="text"
-              value={data.totalMarks}
-              onChange={(e) => onUpdate({ totalMarks: e.target.value })}
-              placeholder="e.g. 15"
-              className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
-            />
-          </div>
-          <div className="md:col-span-4">
-            <SubjectDivisionInput 
-              divisions={data.subjectDivisions} 
-              onChange={(divs) => onUpdate({ subjectDivisions: divs })} 
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Batches & Sets Config */}
-      <div className="p-4 md:p-6 border-b border-gray-200">
-        <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-          <Layers className="w-5 h-5 text-indigo-600" /> Batches & Sets
-        </h3>
-        <p className="text-xs text-gray-500 mb-4">Define exactly which batches and sets the AI should output HTML files for.</p>
-        <textarea
-          value={data.batchesAndSets}
-          onChange={(e) => onUpdate({ batchesAndSets: e.target.value })}
-          rows={4}
-          placeholder="B1: Set A, Set B&#10;B2: Set A, Set B"
-          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono text-sm leading-relaxed transition-shadow shadow-sm resize-y outline-none"
-        />
-      </div>
-
-      {/* 3. Image Uploads and Side-by-Side Descriptions */}
-      <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50/30">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
-          <div>
-            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <Upload className="w-5 h-5 text-indigo-600" /> Uploaded Questions & Mapping
-            </h3>
-            <p className="text-xs text-gray-500 mt-1">Upload files and write specific instructions next to each (e.g., "Physics for B1, B2 (Set A and B)")</p>
-          </div>
-          <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-bold sm:font-medium hover:bg-gray-50 transition-colors shadow-sm text-sm w-full sm:w-auto"
-          >
-            <Upload className="w-4 h-4" /> Add Files
-          </button>
-          <input 
-            type="file" 
-            multiple 
-            accept="image/*" 
-            className="hidden" 
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-          />
-        </div>
-
-        <div className="space-y-4">
-          {data.uploadedFiles.length === 0 ? (
-            <div className="text-center py-10 bg-white border-2 border-dashed border-gray-200 rounded-xl">
-              <Upload className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm font-medium text-gray-500">No images uploaded yet.</p>
-            </div>
-          ) : (
-            data.uploadedFiles.map((f, i) => (
-              <QPMakerImageCard 
-                key={f.id}
-                fileData={f}
-                index={i}
-                onRemove={removeFile}
-                onUpdateDescription={updateFileDescription}
-              />
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* 4. Extra Instructions */}
-      <div className="p-4 md:p-6">
-        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-          <FileText className="w-4 h-4 text-indigo-500" /> Global / Additional Instructions
-        </label>
-        <textarea
-          value={data.extraInstructions}
-          onChange={(e) => onUpdate({ extraInstructions: e.target.value })}
-          rows={3}
-          placeholder="Any global rules for the AI..."
-          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono text-sm leading-relaxed transition-shadow shadow-sm resize-y outline-none"
-        />
-      </div>
-      
-      <div className="p-4 md:p-6 bg-gray-50 border-t border-gray-200">
-        <button
-          onClick={handleSubmit}
-          disabled={isGenerating || data.uploadedFiles.length === 0}
-          className="w-full flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:active:scale-100"
-        >
-          {isGenerating ? <Loader2 className="w-6 h-6 animate-spin" /> : <Sparkles className="w-6 h-6" />}
-          {isGenerating ? 'AI is generating papers...' : 'Generate Question Papers'}
-        </button>
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/lab/qp-maker/QPMakerForm.tsx ---
-
---- START OF FILE src/components/lab/qp-maker/QPMakerImageCard.tsx ---
-import React, { useState } from 'react';
-import { Trash2, Sparkles, Loader2 } from 'lucide-react';
-import { UploadedFile } from './types';
-import { fileToBase64 } from '../../../utils/imageProcessing';
-import { generateImageDescription } from '../../../services/gemini/qpMakerService';
-
-interface QPMakerImageCardProps {
-  fileData: UploadedFile;
-  index: number;
-  onRemove: (id: string) => void;
-  onUpdateDescription: (id: string, description: string) => void;
-}
-
-export default function QPMakerImageCard({ fileData, index, onRemove, onUpdateDescription }: QPMakerImageCardProps) {
-  const[isDescribing, setIsDescribing] = useState(false);
-
-  const handleAutoDescribe = async () => {
-    if (!fileData.file) {
-      alert("Image file not available for auto-describe.");
-      return;
-    }
-    setIsDescribing(true);
-    try {
-      const apiKeysStr = localStorage.getItem('omr_apiKeysList');
-      const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) :[];
-      const liteModel = localStorage.getItem('omr_liteModel') || 'gemini-3.1-flash-lite-preview';
-
-      const base64 = await fileToBase64(fileData.file);
-      const description = await generateImageDescription(base64, fileData.file.type, apiKeys, liteModel);
-      
-      onUpdateDescription(fileData.id, description);
-    } catch (error: any) {
-      alert(`Failed to auto-describe: ${error.message}`);
-    } finally {
-      setIsDescribing(false);
-    }
-  };
-
-  return (
-    <div className="flex flex-col sm:flex-row gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-      <div className="relative w-full sm:w-32 h-48 sm:h-40 shrink-0 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden group">
-        <img src={fileData.previewUrl} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
-        <div className="absolute top-0 left-0 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg">
-          File {index + 1}
-        </div>
-        <button 
-          onClick={() => onRemove(fileData.id)}
-          className="absolute top-2 right-2 sm:top-1 sm:right-1 bg-red-500 text-white p-2 sm:p-1.5 rounded-full opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-          title="Remove Image"
-        >
-          <Trash2 className="w-4 h-4 sm:w-3 sm:h-3" />
-        </button>
-      </div>
-      <div className="flex-1 flex flex-col">
-        <div className="flex items-center justify-between mb-2">
-          <label className="block text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-wider">
-            Description / Mapping Instructions
-          </label>
-          <button
-            onClick={handleAutoDescribe}
-            disabled={isDescribing}
-            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-2.5 sm:py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors disabled:opacity-50 border border-indigo-100 shadow-sm sm:shadow-none"
-          >
-            {isDescribing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-            Auto-Describe
-          </button>
-        </div>
-        <textarea
-          value={fileData.description}
-          onChange={(e) => onUpdateDescription(fileData.id, e.target.value)}
-          placeholder="e.g. Physics (for all class, set A, set B). Change values for Set B."
-          className="w-full flex-1 px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm resize-none outline-none min-h-[100px] sm:min-h-0"
-        />
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/lab/qp-maker/QPMakerImageCard.tsx ---
-
---- START OF FILE src/components/lab/qp-maker/QPMakerResults.tsx ---
-import React, { useState } from 'react';
-import { GeneratedQP } from '../../../services/gemini/qpMakerService';
-import { Download, FileCode, Printer, RotateCcw, Eye } from 'lucide-react';
-import QPPreviewModal from './QPPreviewModal';
-
-interface QPMakerResultsProps {
-  results: GeneratedQP[];
-  onReset: () => void;
-}
-
-export default function QPMakerResults({ results, onReset }: QPMakerResultsProps) {
-  const[previewFile, setPreviewFile] = useState<GeneratedQP | null>(null);
-
-  const handleDownload = (filename: string, content: string) => {
-    const blob = new Blob([content], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const handleDownloadAll = () => {
-    results.forEach(res => {
-      handleDownload(res.filename, res.htmlContent);
-    });
+  const getDesktopOrderClass = (index: number, total: number) => {
+    const orders: Record<number, number[]> = {
+      1: [1],
+      2: [2, 1],
+      3: [2, 1, 3],
+      4: [3, 2, 4, 1],
+      5: [3, 2, 4, 1, 5]
+    };
+    const order = orders[total]?.[index] || index + 1;
+    const map: Record<number, string> = {
+      1: 'md:order-1',
+      2: 'md:order-2',
+      3: 'md:order-3',
+      4: 'md:order-4',
+      5: 'md:order-5'
+    };
+    return map[order] || '';
   };
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h3 className="text-xl font-bold text-gray-900">Generated Question Papers</h3>
-            <p className="text-sm text-gray-500 mt-1">Successfully created {results.length} files.</p>
-          </div>
-          <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-            <button
-              onClick={handleDownloadAll}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"
-            >
-              <Download className="w-4 h-4" />
-              Download All
-            </button>
-            <button
-              onClick={onReset}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 border border-gray-200 rounded-lg font-medium hover:bg-gray-200 transition-colors shadow-sm"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Edit & Regenerate
-            </button>
-          </div>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h2 className="text-2xl font-bold">Rank List</h2>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {results.map((res, i) => (
-            <div key={i} className="flex flex-col bg-gray-50 rounded-xl border border-gray-200 p-4 hover:border-indigo-300 transition-colors shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg shrink-0">
-                  <FileCode className="w-6 h-6" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-bold text-gray-900 truncate" title={res.filename}>{res.filename}</h4>
-                  <p className="text-xs text-gray-500 uppercase font-medium mt-0.5">HTML Document</p>
-                </div>
-              </div>
-              <div className="mt-auto flex gap-2">
-                <button
-                  onClick={() => setPreviewFile(res)}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-                >
-                  <Eye className="w-4 h-4" /> Preview
-                </button>
-                <button
-                  onClick={() => handleDownload(res.filename, res.htmlContent)}
-                  className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium"
-                >
-                  <Download className="w-4 h-4" /> Save
-                </button>
-              </div>
-            </div>
-          ))}
+        
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <button 
+            onClick={() => setShowGridSettings(!showGridSettings)} 
+            className="p-2 bg-white text-gray-700 rounded-md border border-gray-300 font-medium hover:bg-gray-50 transition-colors shrink-0"
+            title="Grid Settings"
+          >
+            <Settings2 className="w-5 h-5" />
+          </button>
+          <div className="relative w-full md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Search students..." 
+              value={searchQuery} 
+              onChange={(e) => setSearchQuery(e.target.value)} 
+              className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" 
+            />
+          </div>
+          <button
+            onClick={onPrintableClick}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-colors shrink-0"
+          >
+            <Printer className="w-4 h-4" />
+            <span className="hidden sm:inline">Printable List</span>
+            <span className="sm:hidden">Print</span>
+          </button>
         </div>
       </div>
 
-      {previewFile && (
-        <QPPreviewModal
-          filename={previewFile.filename}
-          htmlContent={previewFile.htmlContent}
-          onClose={() => setPreviewFile(null)}
-        />
+      {showGridSettings && (
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Grid Columns</label>
+            <input type="number" value={dotCols} onChange={e => setDotCols(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm font-medium" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Size (px)</label>
+            <input type="number" value={dotSize} onChange={e => setDotSize(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm font-medium" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Gap (px)</label>
+            <input type="number" value={dotGap} onChange={e => setDotGap(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm font-medium" />
+          </div>
+        </div>
+      )}
+
+      <input 
+        type="file" 
+        accept="image/*" 
+        className="hidden" 
+        ref={fileInputRef}
+        onChange={handleImageUpload}
+      />
+
+      {podiumStudents.length === 0 && standardStudents.length === 0 ? (
+        <div className="py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200 shadow-sm">
+          No students found matching your search.
+        </div>
+      ) : (
+        <>
+          <ClassDashboard results={sortedResults} chapters={chapters} numQuestions={numQuestions} />
+
+          {podiumStudents.length > 0 && (
+            <div className="flex flex-col md:flex-row flex-wrap justify-center items-center md:items-end gap-6 mb-12 mt-4">
+              {podiumStudents.map((item, index) => (
+                <AppTopRankCard
+                  key={`${item.student.name}-${item.rank}`}
+                  student={item.student}
+                  rank={item.rank}
+                  score={item.score}
+                  chapters={chapters}
+                  numQuestions={numQuestions}
+                  imageUrl={studentImages[item.student.name]}
+                  onImageClick={triggerImageUpload}
+                  onClick={() => onStudentClick(item.student)}
+                  orderClass={getDesktopOrderClass(index, podiumStudents.length)}
+                  dotCols={dotCols}
+                  dotSize={dotSize}
+                  dotGap={dotGap}
+                />
+              ))}
+            </div>
+          )}
+
+          {standardStudents.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {standardStudents.map(item => (
+                <AppStandardRankCard
+                  key={`${item.student.name}-${item.rank}`}
+                  student={item.student}
+                  rank={item.rank}
+                  score={item.score}
+                  chapters={chapters}
+                  numQuestions={numQuestions}
+                  onClick={() => onStudentClick(item.student)}
+                  dotCols={dotCols}
+                  dotSize={dotSize}
+                  dotGap={dotGap}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
---- END OF FILE src/components/lab/qp-maker/QPMakerResults.tsx ---
+--- END OF FILE src/components/RankList.tsx ---
 
---- END OF FILE project_snapshot_out.txt ---
+--- START OF FILE src/components/print/PrintSettingsBar.tsx ---
+import React from 'react';
+import { ArrowLeft, Printer, Settings2 } from 'lucide-react';
+
+interface PrintSettingsBarProps {
+  subjectName: string;
+  setSubjectName: (v: string) => void;
+  dayNumber: string;
+  setDayNumber: (v: string) => void;
+  columnsPerPage: number;
+  setColumnsPerPage: (v: number) => void;
+  cardScale: number;
+  setCardScale: (v: number) => void;
+  showTop3: boolean;
+  setShowTop3: (v: boolean) => void;
+  showHeader: boolean;
+  setShowHeader: (v: boolean) => void;
+  dotCols: number;
+  setDotCols: (v: number) => void;
+  dotSize: number;
+  setDotSize: (v: number) => void;
+  dotGap: number;
+  setDotGap: (v: number) => void;
+  onBack: () => void;
+}
+
+export default function PrintSettingsBar({
+  subjectName, setSubjectName, dayNumber, setDayNumber,
+  columnsPerPage, setColumnsPerPage, cardScale, setCardScale,
+  showTop3, setShowTop3, showHeader, setShowHeader,
+  dotCols, setDotCols, dotSize, setDotSize, dotGap, setDotGap,
+  onBack
+}: PrintSettingsBarProps) {
+  return (
+    <div className="print:hidden mb-4 p-4 md:p-6 bg-white border-b border-gray-200 text-gray-900 shadow-sm sticky top-0 z-50">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Settings2 className="w-5 h-5 text-indigo-600" />
+            Advanced Print Setup
+          </h2>
+        </div>
+        <div className="flex items-center gap-4">
+          <p className="text-xs text-gray-500 hidden md:block">
+            (Tip: Set Background Graphics to "ON" in your print dialog to keep the dark cards)
+          </p>
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-colors shadow-sm"
+          >
+            <Printer className="w-4 h-4" />
+            Print List
+          </button>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-4 items-end bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <div className="col-span-2 lg:col-span-1">
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Subject</label>
+          <input
+            type="text"
+            value={subjectName}
+            onChange={(e) => setSubjectName(e.target.value)}
+            className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
+          />
+        </div>
+        <div className="col-span-2 lg:col-span-1">
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Day</label>
+          <input
+            type="text"
+            value={dayNumber}
+            onChange={(e) => setDayNumber(e.target.value)}
+            className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" title="Cards per row">Columns</label>
+          <input
+            type="number"
+            min="1"
+            max="20"
+            value={columnsPerPage}
+            onChange={(e) => setColumnsPerPage(Number(e.target.value))}
+            className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" title="Adjust to fit more cards">Scale (px)</label>
+          <input
+            type="number"
+            min="4"
+            max="32"
+            value={cardScale}
+            onChange={(e) => setCardScale(Number(e.target.value))}
+            className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Cols</label>
+          <input type="number" value={dotCols} onChange={(e) => setDotCols(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 text-sm font-medium" />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Size(em)</label>
+          <input type="number" step="0.01" value={dotSize} onChange={(e) => setDotSize(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 text-sm font-medium" />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Gap(em)</label>
+          <input type="number" step="0.01" value={dotGap} onChange={(e) => setDotGap(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 text-sm font-medium" />
+        </div>
+        <div className="col-span-2 lg:col-span-1 flex flex-col gap-2 pt-1">
+          <label className="flex items-center gap-2 text-[10px] font-medium text-gray-700 cursor-pointer whitespace-nowrap">
+            <input type="checkbox" checked={showTop3} onChange={(e) => setShowTop3(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-3 h-3 cursor-pointer" /> 
+            Show Podium
+          </label>
+          <label className="flex items-center gap-2 text-[10px] font-medium text-gray-700 cursor-pointer whitespace-nowrap">
+            <input type="checkbox" checked={showHeader} onChange={(e) => setShowHeader(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-3 h-3 cursor-pointer" /> 
+            Show Header
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/print/PrintSettingsBar.tsx ---
+
+--- START OF FILE src/components/PrintableRankList.tsx ---
+import React, { useState, useEffect } from 'react';
+import { OMRResult } from '../services/geminiService';
+import { parseTopicMapping, Chapter } from '../utils/topicParser';
+import { getStudentImage } from '../services/db';
+import StudentRankCard from './print/StudentRankCard';
+import TopRankCard from './print/TopRankCard';
+import PrintSettingsBar from './print/PrintSettingsBar';
+import PrintHeader from './print/PrintHeader';
+
+interface PrintableRankListProps {
+  files: { result?: OMRResult }[];
+  topicMapping: string;
+  parsedTopicMapping?: any;
+  numQuestions: number;
+  onBack: () => void;
+}
+
+export default function PrintableRankList({ files, topicMapping, parsedTopicMapping, numQuestions, onBack }: PrintableRankListProps) {
+  const [subjectName, setSubjectName] = useState('PHYSICS');
+  const [dayNumber, setDayNumber] = useState('4');
+  const [studentImages, setStudentImages] = useState<Record<string, string>>({});
+  
+  const [columnsPerPage, setColumnsPerPage] = useState<number>(10);
+  const [cardScale, setCardScale] = useState<number>(11); 
+  const [showTop3, setShowTop3] = useState<boolean>(true);
+  const [showHeader, setShowHeader] = useState<boolean>(true);
+
+  // Dot Settings
+  const [dotCols, setDotCols] = useState<number>(() => Number(localStorage.getItem('omr_print_dotCols') || 5));
+  const [dotSize, setDotSize] = useState<number>(() => Number(localStorage.getItem('omr_print_dotSize') || 0.45));
+  const [dotGap, setDotGap] = useState<number>(() => Number(localStorage.getItem('omr_print_dotGap') || 0.08));
+
+  useEffect(() => {
+    localStorage.setItem('omr_print_dotCols', dotCols.toString());
+    localStorage.setItem('omr_print_dotSize', dotSize.toString());
+    localStorage.setItem('omr_print_dotGap', dotGap.toString());
+  }, [dotCols, dotSize, dotGap]);
+
+  const chapters: Chapter[] = parsedTopicMapping || parseTopicMapping(topicMapping);
+  
+  const calculateScore = (student: OMRResult) => (student.right * 4) - student.wrong;
+
+  const sortedResults = files
+    .filter(f => f.result)
+    .map(f => f.result!)
+    .sort((a, b) => {
+      const scoreDiff = calculateScore(b) - calculateScore(a);
+      return scoreDiff !== 0 ? scoreDiff : a.name.localeCompare(b.name);
+    });
+
+  const rankedResults = sortedResults.reduce(
+    (acc, student, index) => {
+      const score = calculateScore(student);
+      const previous = acc[index - 1];
+      const rank = previous
+        ? previous.score === score
+          ? previous.rank
+          : previous.rank + 1
+        : 1;
+      acc.push({ student, score, rank });
+      return acc;
+    },
+    [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
+  );
+
+  const podiumStudents = rankedResults.filter(r => r.rank <= 3).slice(0, 5);
+
+  useEffect(() => {
+    const loadImages = async () => {
+      const images: Record<string, string> = {};
+      for (const item of podiumStudents) {
+        const file = await getStudentImage(item.student.name);
+        if (file) {
+          images[item.student.name] = URL.createObjectURL(file);
+        }
+      }
+      setStudentImages(images);
+    };
+    loadImages();
+  }, [rankedResults]);
+
+  const displayPodium: Array<{ student: OMRResult, rank: number }> = [];
+  [...podiumStudents].sort((a,b) => a.rank - b.rank).forEach((item, i) => {
+    if (i % 2 === 0) displayPodium.push({ student: item.student, rank: item.rank });
+    else displayPodium.unshift({ student: item.student, rank: item.rank });
+  });
+
+  const chapterTopicString = chapters.map(c => c.name).join(' · ');
+  
+  const podiumScale = podiumStudents.length > 3 ? Math.max(cardScale * 0.75, 10) : Math.max(cardScale, 14);
+
+  return (
+    <div className="min-h-screen bg-white text-black">
+      <PrintSettingsBar
+        subjectName={subjectName}
+        setSubjectName={setSubjectName}
+        dayNumber={dayNumber}
+        setDayNumber={setDayNumber}
+        columnsPerPage={columnsPerPage}
+        setColumnsPerPage={setColumnsPerPage}
+        cardScale={cardScale}
+        setCardScale={setCardScale}
+        showTop3={showTop3}
+        setShowTop3={setShowTop3}
+        showHeader={showHeader}
+        setShowHeader={setShowHeader}
+        dotCols={dotCols}
+        setDotCols={setDotCols}
+        dotSize={dotSize}
+        setDotSize={setDotSize}
+        dotGap={dotGap}
+        setDotGap={setDotGap}
+        onBack={onBack}
+      />
+
+      <div className="print:m-0 p-4 md:p-8 pt-0">
+        {showHeader && (
+          <PrintHeader 
+            subjectName={subjectName} 
+            dayNumber={dayNumber} 
+            chapterTopicString={chapterTopicString} 
+          />
+        )}
+
+        {showTop3 && displayPodium.length > 0 && (
+          <div className="mb-10">
+            <div className="flex flex-wrap justify-center items-end gap-4 md:gap-8">
+              {displayPodium.map(({ student, rank }) => (
+                <TopRankCard 
+                  key={`top-${student.name}-${rank}`}
+                  student={student}
+                  rank={rank}
+                  score={calculateScore(student)}
+                  chapters={chapters}
+                  numQuestions={numQuestions}
+                  imageUrl={studentImages[student.name]}
+                  fontSizeScale={podiumScale} 
+                  dotCols={dotCols}
+                  dotSize={dotSize}
+                  dotGap={dotGap}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div>
+          {showHeader && <h2 className="text-lg font-bold mb-4 border-b pb-2 border-gray-200">All Students</h2>}
+          <div 
+            className="grid gap-[0.2em] print:gap-[0.2em] items-stretch justify-items-center"
+            style={{ 
+              gridTemplateColumns: `repeat(${columnsPerPage}, minmax(0, 1fr))`,
+              fontSize: `${cardScale}px` 
+            }}
+          >
+            {rankedResults.map(({ student, rank, score }) => (
+              <div key={`${student.name}-${rank}`} className="w-full h-full">
+                <StudentRankCard 
+                  student={student} 
+                  rank={rank} 
+                  score={score}
+                  chapters={chapters}
+                  numQuestions={numQuestions}
+                  dotCols={dotCols}
+                  dotSize={dotSize}
+                  dotGap={dotGap}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/PrintableRankList.tsx ---
+
+--- START OF FILE src/components/print/StudentRankCard.tsx ---
+import React from 'react';
+import { OMRResult } from '../../services/geminiService';
+import { Chapter } from '../../utils/topicParser';
+import CosmicDotGrid from '../common/CosmicDotGrid';
+import ChapterProgressBars from './ChapterProgressBars';
+
+interface StudentRankCardProps {
+  student: OMRResult;
+  rank: number;
+  score: number;
+  chapters: Chapter[];
+  numQuestions: number;
+  dotCols: number;
+  dotSize: number;
+  dotGap: number;
+}
+
+export default function StudentRankCard({ student, rank, score, chapters, numQuestions, dotCols, dotSize, dotGap }: StudentRankCardProps) {
+  return (
+    <div className="flex flex-col p-[0.4em] border border-gray-200 rounded-[0.6em] text-center bg-white shadow-sm relative overflow-hidden h-full break-inside-avoid">
+      
+      <div className="flex justify-between items-center mb-[0.2em] z-10">
+        <span className="text-[0.55em] font-bold text-gray-500 bg-gray-100 px-[0.4em] py-[0.1em] rounded border border-gray-200">#{rank}</span>
+      </div>
+      
+      <h4 className="text-[0.65em] font-bold break-words leading-tight mb-[0.4em] px-[0.1em] text-gray-900 z-10 tracking-tight" title={student.name}>
+        {student.name}
+      </h4>
+      
+      <div className="flex justify-center items-center gap-[0.3em] text-[0.55em] font-bold mb-[0.4em] z-10">
+        <span className="text-green-700 bg-green-50 px-[0.4em] py-[0.1em] rounded border border-green-200">C:{student.right}</span>
+        <span className="text-[1.4em] font-black text-indigo-600 leading-none mx-[0.1em]">
+          {score}
+        </span>
+        <span className="text-red-700 bg-red-50 px-[0.4em] py-[0.1em] rounded border border-red-200">W:{student.wrong}</span>
+      </div>
+      
+      <div className="mt-auto flex flex-row items-start w-full z-10 pt-[0.4em] border-t border-gray-100">
+        <div className="w-1/2 border-r border-gray-100 pr-[0.4em] shrink-0 flex items-center justify-center">
+          <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}em`} gap={`${dotGap}em`} />
+        </div>
+        <div className="w-1/2 pl-[0.4em] flex flex-col justify-center">
+          <ChapterProgressBars chapters={chapters} student={student} compact={true} />
+        </div>
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/print/StudentRankCard.tsx ---
+
+--- START OF FILE src/components/print/TopRankCard.tsx ---
+import React from 'react';
+import { OMRResult } from '../../services/geminiService';
+import { Chapter } from '../../utils/topicParser';
+import CosmicDotGrid from '../common/CosmicDotGrid';
+import ChapterProgressBars from './ChapterProgressBars';
+import CircularProgress from '../common/CircularProgress';
+
+interface TopRankCardProps {
+  student: OMRResult;
+  rank: number;
+  score: number;
+  chapters: Chapter[];
+  numQuestions: number;
+  imageUrl?: string;
+  fontSizeScale: number;
+  dotCols: number;
+  dotSize: number;
+  dotGap: number;
+}
+
+export default function TopRankCard({ student, rank, score, chapters, numQuestions, imageUrl, fontSizeScale, dotCols, dotSize, dotGap }: TopRankCardProps) {
+  let cardClasses = "flex flex-col items-center rounded-xl p-[0.8em] border shadow-md relative overflow-hidden break-inside-avoid ";
+  let badgeClasses = "absolute -bottom-[0.5em] -right-[0.5em] w-[2.2em] h-[2.2em] rounded-full text-white flex items-center justify-center font-bold border-[0.15em] border-white z-20 text-[0.8em] shadow-sm ";
+  let cardHeight = '18.5em';
+  let cardWidth = '14em';
+
+  if (rank === 1) {
+    cardClasses += "bg-gradient-to-br from-yellow-100 via-amber-100 to-orange-100 border-yellow-200 text-slate-900 z-10 ";
+    badgeClasses += "bg-yellow-600";
+    cardHeight = '20em';
+    cardWidth = '15em';
+  } else if (rank === 2) {
+    cardClasses += "bg-gradient-to-br from-slate-100 via-slate-200 to-slate-300 border-slate-300 text-slate-900 ";
+    badgeClasses += "bg-slate-600";
+    cardHeight = '18.5em';
+    cardWidth = '14em';
+  } else {
+    cardClasses += "bg-gradient-to-br from-orange-100 via-orange-200 to-amber-100 border-orange-300 text-slate-900 ";
+    badgeClasses += "bg-orange-600";
+    cardHeight = '18.5em';
+    cardWidth = '14em';
+  }
+
+  const pct = Math.max(0, Math.min(100, (score / (numQuestions * 4)) * 100));
+
+  return (
+    <div className={`${cardClasses}`} style={{ fontSize: `${fontSizeScale}px`, width: cardWidth, minHeight: cardHeight, height: cardHeight }}>
+      <div className="relative mb-[0.5em] mt-[0.3em] w-[6em] h-[6em]">
+        <CircularProgress 
+          percentage={pct} 
+          strokeWidth={6} 
+          colorClass={rank === 1 ? 'text-yellow-600' : rank === 2 ? 'text-slate-500' : 'text-orange-500'}
+        >
+          <div className="w-full h-full rounded-full bg-white border-[0.15em] border-white shadow-sm flex items-center justify-center overflow-hidden">
+            {imageUrl ? (
+              <img src={imageUrl} alt={student.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="text-gray-500 font-bold text-[2em]">{student.name.charAt(0)}</div>
+            )}
+          </div>
+        </CircularProgress>
+        <div className={badgeClasses}>#{rank}</div>
+      </div>
+      
+      <h3 className="text-[1.1em] font-bold text-center break-words leading-tight w-full px-[0.2em] text-gray-900 tracking-tight">{student.name}</h3>
+      
+      <div className="flex items-center justify-center gap-[0.6em] mt-[0.6em] mb-[0.6em] w-full">
+        <span className="text-[0.7em] font-bold text-green-700 bg-green-50 px-[0.5em] py-[0.2em] rounded border border-green-200">C:{student.right}</span>
+        <span className="text-[1.8em] font-black text-indigo-600 leading-none drop-shadow-sm">
+          {score}<span className="text-[0.35em] ml-[0.1em] text-indigo-400 uppercase align-middle">pts</span>
+        </span>
+        <span className="text-[0.7em] font-bold text-red-700 bg-red-50 px-[0.5em] py-[0.2em] rounded border border-red-200">W:{student.wrong}</span>
+      </div>
+      
+      <div className="mt-auto flex flex-row items-stretch w-full z-10 pt-[0.2em]">
+        <div className="w-1/3 max-w-[5.2em] border-r border-gray-100 pr-[0.3em] shrink-0 flex items-center justify-center">
+          <div className="w-full flex items-center justify-center">
+            <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}em`} gap={`${dotGap}em`} />
+          </div>
+        </div>
+        <div className="flex-1 pl-[0.3em] flex flex-col justify-center">
+          <ChapterProgressBars chapters={chapters} student={student} compact={false} showPercent={false} showNames={false} />
+        </div>
+      </div>  
+    </div>
+  );
+}
+--- END OF FILE src/components/print/TopRankCard.tsx ---

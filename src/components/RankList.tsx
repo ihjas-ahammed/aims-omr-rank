@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { OMRResult } from '../services/geminiService';
 import { parseTopicMapping, Chapter } from '../utils/topicParser';
 import { getStudentImage, saveStudentImage } from '../services/db';
-import { ArrowLeft, Printer, Search } from 'lucide-react';
+import { ArrowLeft, Printer, Search, Settings2 } from 'lucide-react';
 import AppTopRankCard from './ranklist/AppTopRankCard';
 import AppStandardRankCard from './ranklist/AppStandardRankCard';
 import ClassDashboard from './ranklist/ClassDashboard';
@@ -22,6 +22,18 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
   const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedStudentForImage, setSelectedStudentForImage] = useState<string | null>(null);
+
+  // Cosmic Dot Settings
+  const [dotCols, setDotCols] = useState(() => Number(localStorage.getItem('omr_dotCols') || 5));
+  const [dotSize, setDotSize] = useState(() => Number(localStorage.getItem('omr_dotSize') || 10));
+  const [dotGap, setDotGap] = useState(() => Number(localStorage.getItem('omr_dotGap') || 3));
+  const [showGridSettings, setShowGridSettings] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('omr_dotCols', dotCols.toString());
+    localStorage.setItem('omr_dotSize', dotSize.toString());
+    localStorage.setItem('omr_dotGap', dotGap.toString());
+  }, [dotCols, dotSize, dotGap]);
 
   const chapters: Chapter[] = parsedTopicMapping || parseTopicMapping(topicMapping);
   
@@ -52,15 +64,12 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
 
   const filteredResults = rankedResults.filter(r => r.student.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  // Podium contains all students with rank 1, 2, or 3 (up to 5 max)
   const podiumStudents = filteredResults.filter(r => r.rank <= 3).slice(0, 5);
-  // The rest go into the standard grid
   const standardStudents = filteredResults.slice(podiumStudents.length);
 
   useEffect(() => {
     const loadImages = async () => {
       const images: Record<string, string> = {};
-      // Only load images for those who actually appear in the podium
       for (const item of podiumStudents) {
         const file = await getStudentImage(item.student.name);
         if (file) {
@@ -91,7 +100,6 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
     fileInputRef.current?.click();
   };
 
-  // Helper to visually arrange podium so highest ranks are in the center on desktop
   const getDesktopOrderClass = (index: number, total: number) => {
     const orders: Record<number, number[]> = {
       1: [1],
@@ -121,7 +129,14 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
           <h2 className="text-2xl font-bold">Rank List</h2>
         </div>
         
-        <div className="flex items-center gap-4 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <button 
+            onClick={() => setShowGridSettings(!showGridSettings)} 
+            className="p-2 bg-white text-gray-700 rounded-md border border-gray-300 font-medium hover:bg-gray-50 transition-colors shrink-0"
+            title="Grid Settings"
+          >
+            <Settings2 className="w-5 h-5" />
+          </button>
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input 
@@ -142,6 +157,23 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
           </button>
         </div>
       </div>
+
+      {showGridSettings && (
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Grid Columns</label>
+            <input type="number" value={dotCols} onChange={e => setDotCols(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm font-medium" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Size (px)</label>
+            <input type="number" value={dotSize} onChange={e => setDotSize(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm font-medium" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Gap (px)</label>
+            <input type="number" value={dotGap} onChange={e => setDotGap(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm font-medium" />
+          </div>
+        </div>
+      )}
 
       <input 
         type="file" 
@@ -173,6 +205,9 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
                   onImageClick={triggerImageUpload}
                   onClick={() => onStudentClick(item.student)}
                   orderClass={getDesktopOrderClass(index, podiumStudents.length)}
+                  dotCols={dotCols}
+                  dotSize={dotSize}
+                  dotGap={dotGap}
                 />
               ))}
             </div>
@@ -187,7 +222,11 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
                   rank={item.rank}
                   score={item.score}
                   chapters={chapters}
+                  numQuestions={numQuestions}
                   onClick={() => onStudentClick(item.student)}
+                  dotCols={dotCols}
+                  dotSize={dotSize}
+                  dotGap={dotGap}
                 />
               ))}
             </div>

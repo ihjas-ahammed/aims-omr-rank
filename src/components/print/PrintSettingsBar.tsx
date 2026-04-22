@@ -14,13 +14,21 @@ interface PrintSettingsBarProps {
   setShowTop3: (v: boolean) => void;
   showHeader: boolean;
   setShowHeader: (v: boolean) => void;
+  dotCols: number;
+  setDotCols: (v: number) => void;
+  dotSize: number;
+  setDotSize: (v: number) => void;
+  dotGap: number;
+  setDotGap: (v: number) => void;
   onBack: () => void;
 }
 
 export default function PrintSettingsBar({
   subjectName, setSubjectName, dayNumber, setDayNumber,
   columnsPerPage, setColumnsPerPage, cardScale, setCardScale,
-  showTop3, setShowTop3, showHeader, setShowHeader, onBack
+  showTop3, setShowTop3, showHeader, setShowHeader,
+  dotCols, setDotCols, dotSize, setDotSize, dotGap, setDotGap,
+  onBack
 }: PrintSettingsBarProps) {
   return (
     <div className="print:hidden mb-4 p-4 md:p-6 bg-white border-b border-gray-200 text-gray-900 shadow-sm sticky top-0 z-50">
@@ -48,9 +56,9 @@ export default function PrintSettingsBar({
         </div>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 items-end bg-gray-50 p-4 rounded-xl border border-gray-200">
-        <div className="col-span-2 md:col-span-1">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Subject</label>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-4 items-end bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <div className="col-span-2 lg:col-span-1">
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Subject</label>
           <input
             type="text"
             value={subjectName}
@@ -58,8 +66,8 @@ export default function PrintSettingsBar({
             className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
           />
         </div>
-        <div className="col-span-2 md:col-span-1">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Day</label>
+        <div className="col-span-2 lg:col-span-1">
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Day</label>
           <input
             type="text"
             value={dayNumber}
@@ -68,7 +76,7 @@ export default function PrintSettingsBar({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1" title="Cards per row">Columns</label>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" title="Cards per row">Columns</label>
           <input
             type="number"
             min="1"
@@ -79,7 +87,7 @@ export default function PrintSettingsBar({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1" title="Adjust to fit more cards">Scale (px)</label>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" title="Adjust to fit more cards">Scale (px)</label>
           <input
             type="number"
             min="4"
@@ -89,13 +97,25 @@ export default function PrintSettingsBar({
             className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
           />
         </div>
-        <div className="col-span-2 flex flex-col gap-2 pt-1">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
-            <input type="checkbox" checked={showTop3} onChange={(e) => setShowTop3(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer" /> 
-            Show Top 3 Podium
+        <div>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Cols</label>
+          <input type="number" value={dotCols} onChange={(e) => setDotCols(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 text-sm font-medium" />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Size(em)</label>
+          <input type="number" step="0.01" value={dotSize} onChange={(e) => setDotSize(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 text-sm font-medium" />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Gap(em)</label>
+          <input type="number" step="0.01" value={dotGap} onChange={(e) => setDotGap(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 text-sm font-medium" />
+        </div>
+        <div className="col-span-2 lg:col-span-1 flex flex-col gap-2 pt-1">
+          <label className="flex items-center gap-2 text-[10px] font-medium text-gray-700 cursor-pointer whitespace-nowrap">
+            <input type="checkbox" checked={showTop3} onChange={(e) => setShowTop3(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-3 h-3 cursor-pointer" /> 
+            Show Podium
           </label>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
-            <input type="checkbox" checked={showHeader} onChange={(e) => setShowHeader(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer" /> 
+          <label className="flex items-center gap-2 text-[10px] font-medium text-gray-700 cursor-pointer whitespace-nowrap">
+            <input type="checkbox" checked={showHeader} onChange={(e) => setShowHeader(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-3 h-3 cursor-pointer" /> 
             Show Header
           </label>
         </div>

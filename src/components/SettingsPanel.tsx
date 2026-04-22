@@ -287,7 +287,7 @@ export default function SettingsPanel({
                   onChange={(e) => setExperimentalSplit(e.target.checked)}
                   className="w-4 h-4 text-orange-600 bg-white border-orange-300 rounded focus:ring-orange-500 cursor-pointer"
                 />
-                Experimental: AI Split for &gt;100 Qs
+                Experimental: AI Split Image
               </label>
               <p className="text-xs text-orange-700 mt-1 ml-6">
                 Uses AI to discover question blocks and splits the image into multiple pieces automatically. (Also extracts Name).
