@@ -5811,9 +5811,9 @@ export default defineConfig(({mode}) => {
 --- START OF FILE .firebase/hosting.ZGlzdA.cache ---
 logo2.png,1775390029907,ef4f5b4add3c8a95340db2ec4e6a5efb84d051ed119c762298defde1aa2067f3
 logo1.png,1775390029905,def463d27097d677effeb7dc6bc5c9d36f76919b30a370bd91fc43e633928ba8
-index.html,1776766087177,037a1efb4be6da4575c36268669e0f03d2751aadd8b69309e0963c72be943fe4
-assets/index-CXdXXfQ-.css,1776766087177,15913f4716d1df630ceb05e1c58e081a0435d23c62b27ce17b077f3eb0880148
-assets/index-C5t_-Kb6.js,1776766087177,5a515969e43d7647376ea6672e06137f0fce8c4e25868c7ff30218a93f5b93a6
+index.html,1776840309106,21a82fddf7ee6eabcc066f475f2eba624fb15a8bf93c1ad93ed17aa345c3b373
+assets/index-C_wtAV6g.css,1776840309106,e0ce3f3a953ff06c75674c6187174a6bd8d5ed6c5101aa6ed5c0de03a39e79ea
+assets/index-BJOluyOp.js,1776840309108,c319613c3bc758618ba6bfe02098174914b388ade353c4d2e8592bff1f505bed
 
 --- END OF FILE .firebase/hosting.ZGlzdA.cache ---
 
@@ -7441,11 +7441,21 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
   const [dayNumber, setDayNumber] = useState('4');
   const [studentImages, setStudentImages] = useState<Record<string, string>>({});
   
-  // Print Customization Settings
   const [columnsPerPage, setColumnsPerPage] = useState<number>(10);
-  const [cardScale, setCardScale] = useState<number>(11); // base font size in px
+  const [cardScale, setCardScale] = useState<number>(11); 
   const [showTop3, setShowTop3] = useState<boolean>(true);
   const [showHeader, setShowHeader] = useState<boolean>(true);
+
+  // Dot Settings
+  const [dotCols, setDotCols] = useState<number>(() => Number(localStorage.getItem('omr_print_dotCols') || 5));
+  const [dotSize, setDotSize] = useState<number>(() => Number(localStorage.getItem('omr_print_dotSize') || 0.45));
+  const [dotGap, setDotGap] = useState<number>(() => Number(localStorage.getItem('omr_print_dotGap') || 0.08));
+
+  useEffect(() => {
+    localStorage.setItem('omr_print_dotCols', dotCols.toString());
+    localStorage.setItem('omr_print_dotSize', dotSize.toString());
+    localStorage.setItem('omr_print_dotGap', dotGap.toString());
+  }, [dotCols, dotSize, dotGap]);
 
   const chapters: Chapter[] = parsedTopicMapping || parseTopicMapping(topicMapping);
   
@@ -7474,7 +7484,6 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
     [] as Array<{ student: typeof sortedResults[number]; score: number; rank: number }>
   );
 
-  // Take up to 5 students that occupy rank 1, 2, or 3
   const podiumStudents = rankedResults.filter(r => r.rank <= 3).slice(0, 5);
 
   useEffect(() => {
@@ -7491,7 +7500,6 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
     loadImages();
   }, [rankedResults]);
 
-  // Reorder top podium to put highest ranks in the middle
   const displayPodium: Array<{ student: OMRResult, rank: number }> = [];
   [...podiumStudents].sort((a,b) => a.rank - b.rank).forEach((item, i) => {
     if (i % 2 === 0) displayPodium.push({ student: item.student, rank: item.rank });
@@ -7500,7 +7508,6 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
 
   const chapterTopicString = chapters.map(c => c.name).join(' · ');
   
-  // Adjust podium sizing if there are more than 3 cards
   const podiumScale = podiumStudents.length > 3 ? Math.max(cardScale * 0.75, 10) : Math.max(cardScale, 14);
 
   return (
@@ -7518,6 +7525,12 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
         setShowTop3={setShowTop3}
         showHeader={showHeader}
         setShowHeader={setShowHeader}
+        dotCols={dotCols}
+        setDotCols={setDotCols}
+        dotSize={dotSize}
+        setDotSize={setDotSize}
+        dotGap={dotGap}
+        setDotGap={setDotGap}
         onBack={onBack}
       />
 
@@ -7543,6 +7556,9 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
                   numQuestions={numQuestions}
                   imageUrl={studentImages[student.name]}
                   fontSizeScale={podiumScale} 
+                  dotCols={dotCols}
+                  dotSize={dotSize}
+                  dotGap={dotGap}
                 />
               ))}
             </div>
@@ -7566,6 +7582,9 @@ export default function PrintableRankList({ files, topicMapping, parsedTopicMapp
                   score={score}
                   chapters={chapters}
                   numQuestions={numQuestions}
+                  dotCols={dotCols}
+                  dotSize={dotSize}
+                  dotGap={dotGap}
                 />
               </div>
             ))}
@@ -7962,7 +7981,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { OMRResult } from '../services/geminiService';
 import { parseTopicMapping, Chapter } from '../utils/topicParser';
 import { getStudentImage, saveStudentImage } from '../services/db';
-import { ArrowLeft, Printer, Search } from 'lucide-react';
+import { ArrowLeft, Printer, Search, Settings2 } from 'lucide-react';
 import AppTopRankCard from './ranklist/AppTopRankCard';
 import AppStandardRankCard from './ranklist/AppStandardRankCard';
 import ClassDashboard from './ranklist/ClassDashboard';
@@ -7982,6 +8001,18 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
   const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedStudentForImage, setSelectedStudentForImage] = useState<string | null>(null);
+
+  // Cosmic Dot Settings
+  const [dotCols, setDotCols] = useState(() => Number(localStorage.getItem('omr_dotCols') || 5));
+  const [dotSize, setDotSize] = useState(() => Number(localStorage.getItem('omr_dotSize') || 10));
+  const [dotGap, setDotGap] = useState(() => Number(localStorage.getItem('omr_dotGap') || 3));
+  const [showGridSettings, setShowGridSettings] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('omr_dotCols', dotCols.toString());
+    localStorage.setItem('omr_dotSize', dotSize.toString());
+    localStorage.setItem('omr_dotGap', dotGap.toString());
+  }, [dotCols, dotSize, dotGap]);
 
   const chapters: Chapter[] = parsedTopicMapping || parseTopicMapping(topicMapping);
   
@@ -8012,15 +8043,12 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
 
   const filteredResults = rankedResults.filter(r => r.student.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  // Podium contains all students with rank 1, 2, or 3 (up to 5 max)
   const podiumStudents = filteredResults.filter(r => r.rank <= 3).slice(0, 5);
-  // The rest go into the standard grid
   const standardStudents = filteredResults.slice(podiumStudents.length);
 
   useEffect(() => {
     const loadImages = async () => {
       const images: Record<string, string> = {};
-      // Only load images for those who actually appear in the podium
       for (const item of podiumStudents) {
         const file = await getStudentImage(item.student.name);
         if (file) {
@@ -8051,7 +8079,6 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
     fileInputRef.current?.click();
   };
 
-  // Helper to visually arrange podium so highest ranks are in the center on desktop
   const getDesktopOrderClass = (index: number, total: number) => {
     const orders: Record<number, number[]> = {
       1: [1],
@@ -8081,7 +8108,14 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
           <h2 className="text-2xl font-bold">Rank List</h2>
         </div>
         
-        <div className="flex items-center gap-4 w-full md:w-auto">
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <button 
+            onClick={() => setShowGridSettings(!showGridSettings)} 
+            className="p-2 bg-white text-gray-700 rounded-md border border-gray-300 font-medium hover:bg-gray-50 transition-colors shrink-0"
+            title="Grid Settings"
+          >
+            <Settings2 className="w-5 h-5" />
+          </button>
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input 
@@ -8102,6 +8136,23 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
           </button>
         </div>
       </div>
+
+      {showGridSettings && (
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Grid Columns</label>
+            <input type="number" value={dotCols} onChange={e => setDotCols(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm font-medium" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Size (px)</label>
+            <input type="number" value={dotSize} onChange={e => setDotSize(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm font-medium" />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Gap (px)</label>
+            <input type="number" value={dotGap} onChange={e => setDotGap(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500 text-sm font-medium" />
+          </div>
+        </div>
+      )}
 
       <input 
         type="file" 
@@ -8133,6 +8184,9 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
                   onImageClick={triggerImageUpload}
                   onClick={() => onStudentClick(item.student)}
                   orderClass={getDesktopOrderClass(index, podiumStudents.length)}
+                  dotCols={dotCols}
+                  dotSize={dotSize}
+                  dotGap={dotGap}
                 />
               ))}
             </div>
@@ -8147,7 +8201,11 @@ export default function RankList({ files, topicMapping, parsedTopicMapping, numQ
                   rank={item.rank}
                   score={item.score}
                   chapters={chapters}
+                  numQuestions={numQuestions}
                   onClick={() => onStudentClick(item.student)}
+                  dotCols={dotCols}
+                  dotSize={dotSize}
+                  dotGap={dotGap}
                 />
               ))}
             </div>
@@ -8970,6 +9028,108 @@ export default function TopicEditor({ parsedTopicMapping, onUpdate }: TopicEdito
 }
 
 --- END OF FILE src/components/TopicEditor.tsx ---
+
+--- START OF FILE src/components/common/CircularProgress.tsx ---
+import React from 'react';
+
+interface CircularProgressProps {
+  percentage: number;
+  strokeWidth?: number;
+  children?: React.ReactNode;
+  colorClass?: string;
+  trackColorClass?: string;
+}
+
+export default function CircularProgress({
+  percentage,
+  strokeWidth = 6,
+  children,
+  colorClass = 'text-green-500',
+  trackColorClass = 'text-black/5'
+}: CircularProgressProps) {
+  const radius = 50 - strokeWidth / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+        <circle
+          className={`${trackColorClass} stroke-current`}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          r={radius}
+          cx="50"
+          cy="50"
+        />
+        <circle
+          className={`${colorClass} stroke-current transition-all duration-1000 ease-out`}
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          fill="transparent"
+          r={radius}
+          cx="50"
+          cy="50"
+        />
+      </svg>
+      <div 
+        className="w-full h-full rounded-full overflow-hidden flex items-center justify-center relative z-10" 
+        style={{ padding: `${strokeWidth / 2 + 1}%` }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/common/CircularProgress.tsx ---
+
+--- START OF FILE src/components/common/CosmicDotGrid.tsx ---
+import React from 'react';
+
+interface CosmicDotGridProps {
+  scores: Record<string, number>;
+  numQuestions: number;
+  columns?: number;
+  dotSize?: string;
+  gap?: string;
+}
+
+export default function CosmicDotGrid({ 
+  scores, 
+  numQuestions, 
+  columns = 5, 
+  dotSize = '0.55em', 
+  gap = '0.05em' 
+}: CosmicDotGridProps) {
+  return (
+    <div 
+      className="grid justify-center items-center mx-auto"
+      style={{ 
+        gap: gap, 
+        gridTemplateColumns: `repeat(${columns}, max-content)` 
+      }}
+    >
+      {Array.from({ length: numQuestions }, (_, i) => i + 1).map(qNum => {
+        const score = scores[`q${qNum}`] || 0;
+        let bgClass = 'bg-gray-200';
+        if (score === 1) bgClass = 'bg-green-500';
+        else if (score === -1) bgClass = 'bg-red-500';
+
+        return (
+          <div
+            key={qNum}
+            style={{ width: dotSize, height: dotSize }}
+            className={`rounded-sm ${bgClass} transition-colors`}
+            title={`Q${qNum}: ${score === 1 ? 'Correct' : score === -1 ? 'Wrong' : 'Blank'}`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+--- END OF FILE src/components/common/CosmicDotGrid.tsx ---
 
 --- START OF FILE src/components/lab/AutoCropTool.tsx ---
 import React, { useState, useRef } from 'react';
@@ -20253,56 +20413,6 @@ export default function ChapterProgressBars({ chapters, student, compact = false
 
 --- END OF FILE src/components/print/ChapterProgressBars.tsx ---
 
---- START OF FILE src/components/print/CosmicDotGrid.tsx ---
-import React from 'react';
-
-interface CosmicDotGridProps {
-  scores: Record<string, number>;
-  numQuestions: number;
-  variant?: 'default' | 'top';
-}
-
-export default function CosmicDotGrid({ scores, numQuestions, variant = 'default' }: CosmicDotGridProps) {
-  let dotSize = variant === 'top' ? 0.55 : 0.45;
-  let gap = variant === 'top' ? 0.05 : 0.08;
-
-  if (numQuestions > 100) {
-    dotSize *= 0.6;
-    gap *= 0.6;
-  } else if (numQuestions > 50) {
-    dotSize *= 0.75;
-    gap *= 0.75;
-  }
-
-  return (
-    <div 
-      className="flex flex-wrap justify-center mx-auto w-full"
-      style={{ gap: `${gap}em` }}
-    >
-      {Array.from({ length: numQuestions }, (_, i) => i + 1).map(qNum => {
-        const score = scores[`q${qNum}`] || 0;
-        let bgClass = 'bg-gray-200'; // Blank / No Answer
-
-        if (score === 1) {
-          bgClass = 'bg-green-500';
-        } else if (score === -1) {
-          bgClass = 'bg-red-500';
-        }
-
-        return (
-          <div
-            key={qNum}
-            style={{ width: `${dotSize}em`, height: `${dotSize}em` }}
-            className={`rounded-sm ${bgClass} transition-colors`}
-            title={`Q${qNum}: ${score === 1 ? 'Correct' : score === -1 ? 'Wrong' : 'Blank'}`}
-          />
-        );
-      })}
-    </div>
-  );
-}
---- END OF FILE src/components/print/CosmicDotGrid.tsx ---
-
 --- START OF FILE src/components/print/PrintHeader.tsx ---
 import React from 'react';
 
@@ -20351,13 +20461,21 @@ interface PrintSettingsBarProps {
   setShowTop3: (v: boolean) => void;
   showHeader: boolean;
   setShowHeader: (v: boolean) => void;
+  dotCols: number;
+  setDotCols: (v: number) => void;
+  dotSize: number;
+  setDotSize: (v: number) => void;
+  dotGap: number;
+  setDotGap: (v: number) => void;
   onBack: () => void;
 }
 
 export default function PrintSettingsBar({
   subjectName, setSubjectName, dayNumber, setDayNumber,
   columnsPerPage, setColumnsPerPage, cardScale, setCardScale,
-  showTop3, setShowTop3, showHeader, setShowHeader, onBack
+  showTop3, setShowTop3, showHeader, setShowHeader,
+  dotCols, setDotCols, dotSize, setDotSize, dotGap, setDotGap,
+  onBack
 }: PrintSettingsBarProps) {
   return (
     <div className="print:hidden mb-4 p-4 md:p-6 bg-white border-b border-gray-200 text-gray-900 shadow-sm sticky top-0 z-50">
@@ -20385,9 +20503,9 @@ export default function PrintSettingsBar({
         </div>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 items-end bg-gray-50 p-4 rounded-xl border border-gray-200">
-        <div className="col-span-2 md:col-span-1">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Subject</label>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-4 items-end bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <div className="col-span-2 lg:col-span-1">
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Subject</label>
           <input
             type="text"
             value={subjectName}
@@ -20395,8 +20513,8 @@ export default function PrintSettingsBar({
             className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
           />
         </div>
-        <div className="col-span-2 md:col-span-1">
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Day</label>
+        <div className="col-span-2 lg:col-span-1">
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Day</label>
           <input
             type="text"
             value={dayNumber}
@@ -20405,7 +20523,7 @@ export default function PrintSettingsBar({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1" title="Cards per row">Columns</label>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" title="Cards per row">Columns</label>
           <input
             type="number"
             min="1"
@@ -20416,7 +20534,7 @@ export default function PrintSettingsBar({
           />
         </div>
         <div>
-          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1" title="Adjust to fit more cards">Scale (px)</label>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1" title="Adjust to fit more cards">Scale (px)</label>
           <input
             type="number"
             min="4"
@@ -20426,13 +20544,25 @@ export default function PrintSettingsBar({
             className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium"
           />
         </div>
-        <div className="col-span-2 flex flex-col gap-2 pt-1">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
-            <input type="checkbox" checked={showTop3} onChange={(e) => setShowTop3(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer" /> 
-            Show Top 3 Podium
+        <div>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Cols</label>
+          <input type="number" value={dotCols} onChange={(e) => setDotCols(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 text-sm font-medium" />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Size(em)</label>
+          <input type="number" step="0.01" value={dotSize} onChange={(e) => setDotSize(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 text-sm font-medium" />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Dot Gap(em)</label>
+          <input type="number" step="0.01" value={dotGap} onChange={(e) => setDotGap(Number(e.target.value))} className="w-full px-3 py-1.5 border border-gray-300 rounded focus:ring-indigo-500 text-sm font-medium" />
+        </div>
+        <div className="col-span-2 lg:col-span-1 flex flex-col gap-2 pt-1">
+          <label className="flex items-center gap-2 text-[10px] font-medium text-gray-700 cursor-pointer whitespace-nowrap">
+            <input type="checkbox" checked={showTop3} onChange={(e) => setShowTop3(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-3 h-3 cursor-pointer" /> 
+            Show Podium
           </label>
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
-            <input type="checkbox" checked={showHeader} onChange={(e) => setShowHeader(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer" /> 
+          <label className="flex items-center gap-2 text-[10px] font-medium text-gray-700 cursor-pointer whitespace-nowrap">
+            <input type="checkbox" checked={showHeader} onChange={(e) => setShowHeader(e.target.checked)} className="rounded text-indigo-600 focus:ring-indigo-500 w-3 h-3 cursor-pointer" /> 
             Show Header
           </label>
         </div>
@@ -20440,14 +20570,13 @@ export default function PrintSettingsBar({
     </div>
   );
 }
-
 --- END OF FILE src/components/print/PrintSettingsBar.tsx ---
 
 --- START OF FILE src/components/print/StudentRankCard.tsx ---
 import React from 'react';
 import { OMRResult } from '../../services/geminiService';
 import { Chapter } from '../../utils/topicParser';
-import CosmicDotGrid from './CosmicDotGrid';
+import CosmicDotGrid from '../common/CosmicDotGrid';
 import ChapterProgressBars from './ChapterProgressBars';
 
 interface StudentRankCardProps {
@@ -20456,9 +20585,12 @@ interface StudentRankCardProps {
   score: number;
   chapters: Chapter[];
   numQuestions: number;
+  dotCols: number;
+  dotSize: number;
+  dotGap: number;
 }
 
-export default function StudentRankCard({ student, rank, score, chapters, numQuestions }: StudentRankCardProps) {
+export default function StudentRankCard({ student, rank, score, chapters, numQuestions, dotCols, dotSize, dotGap }: StudentRankCardProps) {
   return (
     <div className="flex flex-col p-[0.4em] border border-gray-200 rounded-[0.6em] text-center bg-white shadow-sm relative overflow-hidden h-full break-inside-avoid">
       
@@ -20478,10 +20610,9 @@ export default function StudentRankCard({ student, rank, score, chapters, numQue
         <span className="text-red-700 bg-red-50 px-[0.4em] py-[0.1em] rounded border border-red-200">W:{student.wrong}</span>
       </div>
       
-      {/* Container for Dots (Left) and Progress Bars (Right) side by side */}
       <div className="mt-auto flex flex-row items-start w-full z-10 pt-[0.4em] border-t border-gray-100">
-        <div className="w-1/2 border-r border-gray-100 pr-[0.4em] shrink-0">
-          <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} />
+        <div className="w-1/2 border-r border-gray-100 pr-[0.4em] shrink-0 flex items-center justify-center">
+          <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}em`} gap={`${dotGap}em`} />
         </div>
         <div className="w-1/2 pl-[0.4em] flex flex-col justify-center">
           <ChapterProgressBars chapters={chapters} student={student} compact={true} />
@@ -20496,8 +20627,9 @@ export default function StudentRankCard({ student, rank, score, chapters, numQue
 import React from 'react';
 import { OMRResult } from '../../services/geminiService';
 import { Chapter } from '../../utils/topicParser';
-import CosmicDotGrid from './CosmicDotGrid';
+import CosmicDotGrid from '../common/CosmicDotGrid';
 import ChapterProgressBars from './ChapterProgressBars';
+import CircularProgress from '../common/CircularProgress';
 
 interface TopRankCardProps {
   student: OMRResult;
@@ -20507,9 +20639,12 @@ interface TopRankCardProps {
   numQuestions: number;
   imageUrl?: string;
   fontSizeScale: number;
+  dotCols: number;
+  dotSize: number;
+  dotGap: number;
 }
 
-export default function TopRankCard({ student, rank, score, chapters, numQuestions, imageUrl, fontSizeScale }: TopRankCardProps) {
+export default function TopRankCard({ student, rank, score, chapters, numQuestions, imageUrl, fontSizeScale, dotCols, dotSize, dotGap }: TopRankCardProps) {
   let cardClasses = "flex flex-col items-center rounded-xl p-[0.8em] border shadow-md relative overflow-hidden break-inside-avoid ";
   let badgeClasses = "absolute -bottom-[0.5em] -right-[0.5em] w-[2.2em] h-[2.2em] rounded-full text-white flex items-center justify-center font-bold border-[0.15em] border-white z-20 text-[0.8em] shadow-sm ";
   let cardHeight = '18.5em';
@@ -20532,16 +20667,24 @@ export default function TopRankCard({ student, rank, score, chapters, numQuestio
     cardWidth = '14em';
   }
 
+  const pct = Math.max(0, Math.min(100, (score / (numQuestions * 4)) * 100));
+
   return (
     <div className={`${cardClasses}`} style={{ fontSize: `${fontSizeScale}px`, width: cardWidth, minHeight: cardHeight, height: cardHeight }}>
-      <div className="relative mb-[0.5em] mt-[0.3em]">
-        {imageUrl ? (
-          <img src={imageUrl} alt={student.name} className="w-[4.5em] h-[4.5em] rounded-full object-cover border-[0.2em] border-white shadow-sm" />
-        ) : (
-          <div className="w-[4.5em] h-[4.5em] rounded-full bg-gray-100 flex items-center justify-center border-[0.2em] border-white shadow-sm text-gray-500 font-bold text-[1.8em]">
-            {student.name.charAt(0)}
+      <div className="relative mb-[0.5em] mt-[0.3em] w-[6em] h-[6em]">
+        <CircularProgress 
+          percentage={pct} 
+          strokeWidth={6} 
+          colorClass={rank === 1 ? 'text-yellow-600' : rank === 2 ? 'text-slate-500' : 'text-orange-500'}
+        >
+          <div className="w-full h-full rounded-full bg-white border-[0.15em] border-white shadow-sm flex items-center justify-center overflow-hidden">
+            {imageUrl ? (
+              <img src={imageUrl} alt={student.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="text-gray-500 font-bold text-[2em]">{student.name.charAt(0)}</div>
+            )}
           </div>
-        )}
+        </CircularProgress>
         <div className={badgeClasses}>#{rank}</div>
       </div>
       
@@ -20554,10 +20697,11 @@ export default function TopRankCard({ student, rank, score, chapters, numQuestio
         </span>
         <span className="text-[0.7em] font-bold text-red-700 bg-red-50 px-[0.5em] py-[0.2em] rounded border border-red-200">W:{student.wrong}</span>
       </div>
+      
       <div className="mt-auto flex flex-row items-stretch w-full z-10 pt-[0.2em]">
         <div className="w-1/3 max-w-[5.2em] border-r border-gray-100 pr-[0.3em] shrink-0 flex items-center justify-center">
-          <div className="aspect-square h-full max-h-[11.5em] flex items-center justify-center">
-            <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} variant="top" />
+          <div className="w-full flex items-center justify-center">
+            <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}em`} gap={`${dotGap}em`} />
           </div>
         </div>
         <div className="flex-1 pl-[0.3em] flex flex-col justify-center">
@@ -20573,17 +20717,22 @@ export default function TopRankCard({ student, rank, score, chapters, numQuestio
 import React from 'react';
 import { OMRResult } from '../../services/geminiService';
 import { Chapter } from '../../utils/topicParser';
+import CosmicDotGrid from '../common/CosmicDotGrid';
 
 interface AppStandardRankCardProps {
   student: OMRResult;
   rank: number;
   score: number;
   chapters: Chapter[];
+  numQuestions: number;
   onClick: () => void;
+  dotCols: number;
+  dotSize: number;
+  dotGap: number;
 }
 
 export default function AppStandardRankCard({ 
-  student, rank, score, chapters, onClick 
+  student, rank, score, chapters, numQuestions, onClick, dotCols, dotSize, dotGap
 }: AppStandardRankCardProps) {
 
   const calculateChapterProgress = (studentData: OMRResult, chapter: Chapter) => {
@@ -20619,26 +20768,32 @@ export default function AppStandardRankCard({
         </div>
       </div>
 
-      <div className="space-y-3 mt-auto pt-4 border-t border-gray-100">
-        <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Chapter Progress</h4>
-        {chapters.map(chapter => {
-          if (chapter.questions.length === 0) return null;
-          const progress = calculateChapterProgress(student, chapter);
-          return (
-            <div key={chapter.name} className="space-y-1">
-              <div className="flex justify-between text-[11px]">
-                <span className="text-gray-600 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
-                <span className="font-bold text-gray-700">{Math.round(progress)}%</span>
+      <div className="mt-auto pt-4 border-t border-gray-100 flex flex-col gap-4">
+        <div className="flex justify-center">
+          <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}px`} gap={`${dotGap}px`} />
+        </div>
+
+        <div className="space-y-3 pt-4 border-t border-gray-100">
+          <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Chapter Progress</h4>
+          {chapters.map(chapter => {
+            if (chapter.questions.length === 0) return null;
+            const progress = calculateChapterProgress(student, chapter);
+            return (
+              <div key={chapter.name} className="space-y-1">
+                <div className="flex justify-between text-[11px]">
+                  <span className="text-gray-600 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
+                  <span className="font-bold text-gray-700">{Math.round(progress)}%</span>
+                </div>
+                <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-indigo-400 rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-indigo-400 rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -20650,20 +20805,27 @@ import React from 'react';
 import { Camera, Image as ImageIcon } from 'lucide-react';
 import { OMRResult } from '../../services/geminiService';
 import { Chapter } from '../../utils/topicParser';
+import CosmicDotGrid from '../common/CosmicDotGrid';
+import CircularProgress from '../common/CircularProgress';
 
 interface AppTopRankCardProps {
   student: OMRResult;
   rank: number;
   score: number;
   chapters: Chapter[];
+  numQuestions: number;
   imageUrl?: string;
   onImageClick: (e: React.MouseEvent, name: string) => void;
   onClick: () => void;
   orderClass: string;
+  dotCols: number;
+  dotSize: number;
+  dotGap: number;
 }
 
 export default function AppTopRankCard({ 
-  student, rank, score, chapters, imageUrl, onImageClick, onClick, orderClass 
+  student, rank, score, chapters, numQuestions, imageUrl, onImageClick, onClick, orderClass,
+  dotCols, dotSize, dotGap
 }: AppTopRankCardProps) {
   
   const calculateChapterProgress = (studentData: OMRResult, chapter: Chapter) => {
@@ -20700,6 +20862,8 @@ export default function AppTopRankCard({
     onImageClick(e, student.name);
   };
 
+  const pct = Math.max(0, Math.min(100, (score / (numQuestions * 4)) * 100));
+
   return (
     <div 
       onClick={onClick}
@@ -20709,30 +20873,37 @@ export default function AppTopRankCard({
         #{rank}
       </div>
 
-      <div className="flex flex-col items-center gap-4 mb-4 mt-2">
+      <div className="flex flex-col md:flex-row items-center gap-4 mb-4 mt-2">
         <div 
-          className={`relative rounded-full bg-white border-4 border-white shadow-md flex items-center justify-center overflow-hidden group shrink-0 ${rank === 1 ? 'w-28 h-28' : 'w-24 h-24'}`}
+          className={`relative group shrink-0 ${rank === 1 ? 'w-32 h-32' : 'w-28 h-28'}`}
           onClick={handleImageClick}
         >
-          {imageUrl ? (
-            <>
-              <img src={imageUrl} alt={student.name} className="w-full h-full object-cover" />
+          <CircularProgress 
+            percentage={pct} 
+            strokeWidth={6} 
+            colorClass={rank === 1 ? 'text-yellow-500' : rank === 2 ? 'text-gray-500' : 'text-orange-500'}
+            trackColorClass="text-black/10"
+          >
+            <div className="w-full h-full rounded-full bg-white border-[3px] border-white shadow-sm flex items-center justify-center overflow-hidden relative">
+              {imageUrl ? (
+                <img src={imageUrl} alt={student.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center justify-center w-full h-full bg-gray-100 group-hover:bg-gray-200 transition-colors">
+                  <ImageIcon className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                </div>
+              )}
               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Camera className="w-6 h-6 text-white" />
               </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center w-full h-full bg-gray-100 group-hover:bg-gray-200 transition-colors">
-              <ImageIcon className="w-8 h-8 text-gray-400 group-hover:text-blue-500 transition-colors" />
             </div>
-          )}
+          </CircularProgress>
         </div>
         
-        <div className="text-center w-full">
-          <h3 className={`${rank === 1 ? 'text-2xl' : 'text-xl'} font-bold text-gray-900 truncate px-2`} title={student.name}>
+        <div className="text-center md:text-left w-full flex-1">
+          <h3 className={`${rank === 1 ? 'text-2xl' : 'text-xl'} font-bold text-gray-900 truncate px-2 md:px-0`} title={student.name}>
             {student.name}
           </h3>
-          <div className="flex items-center justify-center gap-3 mt-2 text-sm">
+          <div className="flex items-center justify-center md:justify-start gap-3 mt-2 text-sm">
             <span className="font-medium text-green-700 bg-green-100/80 px-2 py-0.5 rounded border border-green-200/50">C: {student.right}</span>
             <span className="font-medium text-red-700 bg-red-100/80 px-2 py-0.5 rounded border border-red-200/50">W: {student.wrong}</span>
           </div>
@@ -20742,7 +20913,12 @@ export default function AppTopRankCard({
         </div>
       </div>
 
-      <div className={`space-y-3 mt-auto pt-4 border-t ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
+      <div className={`mt-auto border-t pt-4 ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center mb-3">Response Grid</h4>
+        <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}px`} gap={`${dotGap}px`} />
+      </div>
+
+      <div className={`space-y-3 mt-4 pt-4 border-t ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
         <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Chapter Progress</h4>
         {chapters.map(chapter => {
           if (chapter.questions.length === 0) return null;

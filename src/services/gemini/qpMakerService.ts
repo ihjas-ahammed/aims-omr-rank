@@ -1,6 +1,5 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { fileToBase64 } from '../../utils/imageProcessing';
-import { QP_HTML_TEMPLATE } from '../../components/lab/qp-maker/constants';
 
 export interface GeneratedQP {
   filename: string;
@@ -24,7 +23,7 @@ export async function generateImageDescription(
       const ai = new GoogleGenAI({ apiKey: key });
       const response = await ai.models.generateContent({
         model: modelName || 'gemini-3.1-flash-lite-preview',
-        contents: [
+        contents:[
           { text: prompt },
           { inlineData: { data: fileBase64, mimeType } }
         ]
@@ -41,8 +40,8 @@ export async function generateImageDescription(
 
 export async function generateQuestionPapers(
   files: File[],
-  date: string, // Kept for backwards compatibility if needed, but compiledInstructions handles everything
   instructions: string,
+  templateHtml: string,
   apiKeys: string[],
   modelName: string
 ): Promise<GeneratedQP[]> {
@@ -59,7 +58,7 @@ ${instructions}
 
 HTML TEMPLATE TO USE AS A GUIDE FOR STYLING AND STRUCTURE:
 \`\`\`html
-${QP_HTML_TEMPLATE}
+${templateHtml}
 \`\`\`
 
 CRITICAL REQUIREMENT: Keep the logo IMG tag (\`<img src="logo1.png" ...>\`) exactly as it is in the template! Do not remove or change it. Ensure it remains in the final HTML.
@@ -69,7 +68,6 @@ Ensure the HTML is perfectly valid and properly escapes quotes if needed for JSO
 
   const contentsParts: any[] = [{ text: prompt }];
 
-  // Read files and add to prompt
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     const base64 = await fileToBase64(file);
@@ -79,7 +77,6 @@ Ensure the HTML is perfectly valid and properly escapes quotes if needed for JSO
 
   let lastError: any;
 
-  // Try each key until one succeeds
   for (const key of keys) {
     try {
       const ai = new GoogleGenAI({ apiKey: key });

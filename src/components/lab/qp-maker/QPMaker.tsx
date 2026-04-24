@@ -6,6 +6,7 @@ import QPMakerDaySelector from './QPMakerDaySelector';
 import { QPMakerDayData } from './types';
 import { format } from 'date-fns';
 import { getImage, deleteImage } from '../../../services/db';
+import { QP_TEMPLATES } from './constants';
 
 const defaultDayData: QPMakerDayData = {
   date: format(new Date(), 'dd/MM/yyyy'),
@@ -14,7 +15,8 @@ const defaultDayData: QPMakerDayData = {
   subjectDivisions:[{ id: '1', subject: 'Physics', marks: '15' }],
   batchesAndSets: 'B1: Set A, Set B\nB2: Set A, Set B',
   extraInstructions: 'Make sure to allocate the right questions. Change values for mathematical/physics problems to create Set B variations.',
-  uploadedFiles: [],
+  templateId: 'default',
+  uploadedFiles:[],
   generatedPapers:[]
 };
 
@@ -132,9 +134,11 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
       const apiKeysStr = localStorage.getItem('omr_apiKeysList');
       const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) :[];
       const model = localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview';
+      
+      const templateHtml = QP_TEMPLATES.find(t => t.id === currentData.templateId)?.html || QP_TEMPLATES[0].html;
 
       const { generateQuestionPapers } = await import('../../../services/gemini/qpMakerService');
-      const results = await generateQuestionPapers(files, '', compiledInstructions, apiKeys, model);
+      const results = await generateQuestionPapers(files, compiledInstructions, templateHtml, apiKeys, model);
       updateCurrentDayData({ generatedPapers: results });
     } catch (error: any) {
       alert(`Error: ${error.message}`);

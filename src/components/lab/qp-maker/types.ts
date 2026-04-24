@@ -20,6 +20,7 @@ export interface QPMakerDayData {
   subjectDivisions: SubjectDivision[];
   batchesAndSets: string;
   extraInstructions: string;
+  templateId: string;
   uploadedFiles: UploadedFile[];
   generatedPapers: GeneratedQP[];
 }
