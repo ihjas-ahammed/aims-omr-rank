@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, Calendar } from 'lucide-react';
+import { Search, Calendar, Download } from 'lucide-react';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { FeeLogData } from '../../../services/firebaseService';
 import { StudentSummary, StudentFeeCard, StudentFeeTable, FeeStatsRow, StudentProgressCard, FeeTargetCSVImport } from './index';
 
@@ -106,6 +108,80 @@ export default function FeeDashboard({ logs, loading }: FeeDashboardProps) {
 
   const totalRevenue = studentSummaries.reduce((sum, s) => sum + s.totalPaid, 0);
 
+  const exportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Fee Details');
+
+    // Title Row
+    worksheet.addRow(['', 'FEE DETAILS AIMS PLUS 2024-25']);
+    
+    // Header Row
+    worksheet.addRow(['', 'NO', 'B/G', 'AD.NO', 'NAME', 'l', 'll', 'lll', 'IV', 'V', 'TOTAL', 'REMARKS']);
+
+    const studentsByClass = new Map<string, typeof filteredStudents>();
+    filteredStudents.forEach(student => {
+      const cls = student.studentClass || 'UNKNOWN CLASS';
+      if (!studentsByClass.has(cls)) {
+        studentsByClass.set(cls, []);
+      }
+      studentsByClass.get(cls)!.push(student);
+    });
+
+    const classes = Array.from(studentsByClass.keys()).sort();
+
+    classes.forEach(cls => {
+      worksheet.addRow(['', `${cls} 2024-25`]);
+      let index = 1;
+      const students = studentsByClass.get(cls)!;
+      
+      students.forEach(student => {
+        const allPayments: any[] = [];
+        Object.values(student.monthlyPayments).forEach(payments => {
+          allPayments.push(...payments);
+        });
+        
+        // Sort chronologically
+        allPayments.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        
+        const rowData = [
+          '', // empty col
+          index, // NO
+          index, // B/G (placeholder)
+          student.admissionNo,
+          student.studentName,
+          allPayments[0]?.amount || '',
+          allPayments[1]?.amount || '',
+          allPayments[2]?.amount || '',
+          allPayments[3]?.amount || '',
+          allPayments[4]?.amount || '',
+          student.totalPaid,
+          '' // REMARKS
+        ];
+        
+        const row = worksheet.addRow(rowData);
+        
+        // Apply blue background to GPay cells
+        for (let i = 0; i < 5; i++) {
+          if (allPayments[i] && allPayments[i].isGPay) {
+            const cell = row.getCell(6 + i); // 6th column is 'l' (1-based: A=1, B=2, C=3, D=4, E=5, F=6)
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FF93C5FD' } // Tailwind blue-300
+            };
+          }
+        }
+        index++;
+      });
+      
+      // Empty row after each class
+      worksheet.addRow([]);
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), 'AIMSPLUS_FEES.xlsx');
+  };
+
   if (loading) {
     return (
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-center items-center h-64">
@@ -161,15 +237,24 @@ export default function FeeDashboard({ logs, loading }: FeeDashboardProps) {
           <FeeTargetCSVImport onImport={handleImportTargets} />
         </div>
         
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by name, class, adm no..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-          />
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative w-full md:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name, class, adm no..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+            />
+          </div>
+          <button
+            onClick={exportToExcel}
+            title="Export to Excel"
+            className="flex items-center justify-center p-2 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 hover:border-green-300 transition-colors shrink-0"
+          >
+            <Download className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
