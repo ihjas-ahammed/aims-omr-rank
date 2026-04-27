@@ -627,7 +627,7 @@ export async function aiSplitOMRImage(
   const basePrompt = `
 You are an image processing assistant. Identify distinct, roughly equal vertical or horizontal sections (e.g. columns or halves) of questions on this OMR sheet.
 If there are multiple columns of questions, return a bounding box for each column. If the questions are split top and bottom, return bounding boxes for each half. 
-The goal is to split the image into multiple non-overlapping pieces so each piece contains a subset of questions.
+CRITICAL: Include generous margins/padding around each section to ensure no questions or options are cut off, even if it means the bounding boxes overlap with each other and the same questions appear in multiple boxes. Do NOT try to cut the image perfectly without overlaps.
 Return the coordinates of the bounding boxes normalized to a 0-1000 scale (ymin, xmin, ymax, xmax).
 Also return the required rotation needed to make the text upright (0, 90, 180, or 270). All pieces should typically have the same rotation.
 Additionally, extract the student's handwritten NAME from the top of the sheet (best effort).

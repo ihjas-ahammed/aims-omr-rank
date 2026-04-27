@@ -99,13 +99,21 @@ export default function App() {
     const saved = localStorage.getItem('omr_requestsPerKey');
     return saved ? parseInt(saved, 10) : 1;
   });
-  const [numQuestions, setNumQuestions] = useState<number>(() => {
-    const saved = localStorage.getItem('omr_numQuestions');
-    return saved ? parseInt(saved, 10) : 25;
+  const [numQuestionsByDay, setNumQuestionsByDay] = useState<Record<number, number>>(() => {
+    const saved = localStorage.getItem('omr_numQuestionsByDay');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    const oldSaved = localStorage.getItem('omr_numQuestions');
+    return { 1: oldSaved ? parseInt(oldSaved, 10) : 25 };
   });
-  const [numOptions, setNumOptions] = useState<number>(() => {
-    const saved = localStorage.getItem('omr_numOptions');
-    return saved ? parseInt(saved, 10) : 4;
+  const [numOptionsByDay, setNumOptionsByDay] = useState<Record<number, number>>(() => {
+    const saved = localStorage.getItem('omr_numOptionsByDay');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    const oldSaved = localStorage.getItem('omr_numOptions');
+    return { 1: oldSaved ? parseInt(oldSaved, 10) : 4 };
   });
   const [autoCropEnabled, setAutoCropEnabled] = useState<boolean>(() => {
     return localStorage.getItem('omr_autoCrop') === 'true';
@@ -118,7 +126,14 @@ export default function App() {
   });
 
   const [attendanceSheet, setAttendanceSheet] = useState<string>(() => localStorage.getItem('omr_attendance') || DEFAULT_ATTENDANCE);
-  const [answerKey, setAnswerKey] = useState<string>(() => localStorage.getItem('omr_answerKey') || DEFAULT_ANSWER_KEY);
+  const [answerKeyByDay, setAnswerKeyByDay] = useState<Record<number, string>>(() => {
+    const saved = localStorage.getItem('omr_answerKeyByDay');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    const oldSaved = localStorage.getItem('omr_answerKey');
+    return { 1: oldSaved || DEFAULT_ANSWER_KEY };
+  });
   const [topicMapping, setTopicMapping] = useState<string>(() => localStorage.getItem('omr_topicMapping') || DEFAULT_TOPIC_MAPPING);
   const [parsedTopicMapping, setParsedTopicMapping] = useState<any>(() => {
     const saved = localStorage.getItem('omr_parsedTopicMapping');
@@ -157,6 +172,20 @@ export default function App() {
     const saved = localStorage.getItem('omr_currentDay');
     return saved ? parseInt(saved, 10) : 1;
   });
+
+  const numQuestions = numQuestionsByDay[currentDay] || 25;
+  const numOptions = numOptionsByDay[currentDay] || 4;
+  const answerKey = answerKeyByDay[currentDay] || DEFAULT_ANSWER_KEY;
+
+  const setNumQuestions = (val: number) => {
+    setNumQuestionsByDay(prev => ({ ...prev, [currentDay]: val }));
+  };
+  const setNumOptions = (val: number) => {
+    setNumOptionsByDay(prev => ({ ...prev, [currentDay]: val }));
+  };
+  const setAnswerKey = (val: string) => {
+    setAnswerKeyByDay(prev => ({ ...prev, [currentDay]: val }));
+  };
   const [filesByDay, setFilesByDay] = useState<Record<number, ProcessedFile[]>>(() => {
     const savedDays = localStorage.getItem('omr_days');
     const daysList = savedDays ? JSON.parse(savedDays) : [1];
@@ -233,13 +262,13 @@ export default function App() {
   useEffect(() => { localStorage.setItem('omr_sampling', sampling.toString()); }, [sampling]);
   useEffect(() => { localStorage.setItem('omr_concurrency', concurrency.toString()); }, [concurrency]);
   useEffect(() => { localStorage.setItem('omr_requestsPerKey', requestsPerKey.toString()); }, [requestsPerKey]);
-  useEffect(() => { localStorage.setItem('omr_numQuestions', numQuestions.toString()); }, [numQuestions]);
-  useEffect(() => { localStorage.setItem('omr_numOptions', numOptions.toString()); }, [numOptions]);
+  useEffect(() => { localStorage.setItem('omr_numQuestionsByDay', JSON.stringify(numQuestionsByDay)); }, [numQuestionsByDay]);
+  useEffect(() => { localStorage.setItem('omr_numOptionsByDay', JSON.stringify(numOptionsByDay)); }, [numOptionsByDay]);
   useEffect(() => { localStorage.setItem('omr_autoCrop', autoCropEnabled.toString()); }, [autoCropEnabled]);
   useEffect(() => { localStorage.setItem('omr_experimentalSplit', experimentalSplit.toString()); }, [experimentalSplit]);
   useEffect(() => { localStorage.setItem('omr_experimentalSplitPrompt', experimentalSplitPrompt); }, [experimentalSplitPrompt]);
   useEffect(() => { localStorage.setItem('omr_attendance', attendanceSheet); }, [attendanceSheet]);
-  useEffect(() => { localStorage.setItem('omr_answerKey', answerKey); }, [answerKey]);
+  useEffect(() => { localStorage.setItem('omr_answerKeyByDay', JSON.stringify(answerKeyByDay)); }, [answerKeyByDay]);
   useEffect(() => { localStorage.setItem('omr_topicMapping', topicMapping); }, [topicMapping]);
   useEffect(() => {
     if (parsedTopicMapping) {
