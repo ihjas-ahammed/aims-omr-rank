@@ -1,7 +1,6 @@
 Make the following changes:
 
-    * Update OMR Sheets:
-      When using experimental splits, it looks like most of the time it cuts the entire image and this misses a lot of questions. Instead split by leaving space even if it overflows like even if same questions are shown twice in different images    
+       
 
 Apply changes to both mobile view and desktop (movbile view is the priority)
 

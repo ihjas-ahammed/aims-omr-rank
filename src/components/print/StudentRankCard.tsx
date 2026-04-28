@@ -36,12 +36,14 @@ export default function StudentRankCard({ student, rank, score, chapters, numQue
       </div>
       
       <div className="mt-auto flex flex-row items-start w-full z-10 pt-[0.4em] border-t border-gray-100">
-        <div className="w-1/2 border-r border-gray-100 pr-[0.4em] shrink-0 flex items-center justify-center">
+        <div className={`border-r border-gray-100 pr-[0.4em] shrink-0 flex items-center justify-center ${chapters.some(c => c.questions.length > 0) ? 'w-1/2' : 'w-full border-r-0'}`}>
           <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}em`} gap={`${dotGap}em`} />
         </div>
-        <div className="w-1/2 pl-[0.4em] flex flex-col justify-center">
-          <ChapterProgressBars chapters={chapters} student={student} compact={true} />
-        </div>
+        {chapters.some(c => c.questions.length > 0) && (
+          <div className="w-1/2 pl-[0.4em] flex flex-col justify-center">
+            <ChapterProgressBars chapters={chapters} student={student} compact={true} />
+          </div>
+        )}
       </div>
     </div>
   );

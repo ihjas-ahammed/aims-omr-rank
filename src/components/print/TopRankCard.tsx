@@ -73,14 +73,16 @@ export default function TopRankCard({ student, rank, score, chapters, numQuestio
       </div>
       
       <div className="mt-auto flex flex-row items-stretch w-full z-10 pt-[0.2em]">
-        <div className="w-1/3 max-w-[5.2em] border-r border-gray-100 pr-[0.3em] shrink-0 flex items-center justify-center">
+        <div className={`border-r border-gray-100 pr-[0.3em] shrink-0 flex items-center justify-center ${chapters.some(c => c.questions.length > 0) ? 'w-1/3 max-w-[5.2em]' : 'w-full max-w-none border-r-0'}`}>
           <div className="w-full flex items-center justify-center">
             <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}em`} gap={`${dotGap}em`} />
           </div>
         </div>
-        <div className="flex-1 pl-[0.3em] flex flex-col justify-center">
-          <ChapterProgressBars chapters={chapters} student={student} compact={false} showPercent={false} showNames={false} />
-        </div>
+        {chapters.some(c => c.questions.length > 0) && (
+          <div className="flex-1 pl-[0.3em] flex flex-col justify-center">
+            <ChapterProgressBars chapters={chapters} student={student} compact={false} showPercent={false} showNames={false} />
+          </div>
+        )}
       </div>  
     </div>
   );

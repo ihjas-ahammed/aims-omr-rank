@@ -115,27 +115,29 @@ export default function AppTopRankCard({
         <CosmicDotGrid scores={student.scores} numQuestions={numQuestions} columns={dotCols} dotSize={`${dotSize}px`} gap={`${dotGap}px`} />
       </div>
 
-      <div className={`space-y-3 mt-4 pt-4 border-t ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
-        <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Chapter Progress</h4>
-        {chapters.map(chapter => {
-          if (chapter.questions.length === 0) return null;
-          const progress = calculateChapterProgress(student, chapter);
-          return (
-            <div key={chapter.name} className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-700 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
-                <span className="font-bold text-gray-900">{Math.round(progress)}%</span>
+      {chapters.some(c => c.questions.length > 0) && (
+        <div className={`space-y-3 mt-4 pt-4 border-t ${rank === 1 ? 'border-yellow-300' : 'border-black/5'}`}>
+          <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 text-center">Chapter Progress</h4>
+          {chapters.map(chapter => {
+            if (chapter.questions.length === 0) return null;
+            const progress = calculateChapterProgress(student, chapter);
+            return (
+              <div key={chapter.name} className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-700 truncate pr-2 font-medium" title={chapter.name}>{chapter.name}</span>
+                  <span className="font-bold text-gray-900">{Math.round(progress)}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-500 ${progressBg}`}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-1.5 w-full bg-black/10 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all duration-500 ${progressBg}`}
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
