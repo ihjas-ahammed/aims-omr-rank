@@ -1,8 +1,10 @@
 import { GeneratedQP } from '../../../services/gemini/qpMakerService';
 
-export interface UploadedFile {
+export interface QPItem {
   id: string;
+  type: 'image' | 'text';
   file?: File;
+  textContent?: string;
   description: string;
   previewUrl?: string;
 }
@@ -21,6 +23,6 @@ export interface QPMakerDayData {
   batchesAndSets: string;
   extraInstructions: string;
   templateId: string;
-  uploadedFiles: UploadedFile[];
+  items: QPItem[];
   generatedPapers: GeneratedQP[];
 }

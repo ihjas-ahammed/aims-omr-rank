@@ -12,12 +12,12 @@ const defaultDayData: QPMakerDayData = {
   date: format(new Date(), 'dd/MM/yyyy'),
   duration: '30',
   totalMarks: '15',
-  subjectDivisions:[{ id: '1', subject: 'Physics', marks: '15' }],
+  subjectDivisions: [{ id: '1', subject: 'Physics', marks: '15' }],
   batchesAndSets: 'B1: Set A, Set B\nB2: Set A, Set B',
   extraInstructions: 'Make sure to allocate the right questions. Change values for mathematical/physics problems to create Set B variations.',
   templateId: 'default',
-  uploadedFiles:[],
-  generatedPapers:[]
+  items: [],
+  generatedPapers: []
 };
 
 export default function QPMaker({ onBack }: { onBack: () => void }) {
@@ -32,6 +32,7 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
   const [dataByDay, setDataByDay] = useState<Record<number, QPMakerDayData>>({});
   const [isLoaded, setIsLoaded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generateProgress, setGenerateProgress] = useState({ current: 0, total: 0, target: '' });
 
   useEffect(() => {
     localStorage.setItem('qp_days', JSON.stringify(days));
@@ -45,17 +46,22 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
         const saved = localStorage.getItem(`qp_data_${day}`);
         if (saved) {
           try {
-            const parsed = JSON.parse(saved) as QPMakerDayData;
-            // Load images from DB
-            const filesWithPreview = await Promise.all(parsed.uploadedFiles.map(async f => {
-              const fileObj = await getImage(f.id);
+            const parsed = JSON.parse(saved);
+            const items = parsed.items || parsed.uploadedFiles || [];
+            const loadedItems = await Promise.all(items.map(async (item: any) => {
+              if (item.type === 'text') return item;
+              const fileObj = await getImage(item.id);
               if (fileObj) {
-                return { ...f, file: fileObj, previewUrl: URL.createObjectURL(fileObj) };
+                return { ...item, type: 'image', file: fileObj, previewUrl: URL.createObjectURL(fileObj) };
               }
-              return f;
+              return { ...item, type: 'image' };
             }));
-            parsed.uploadedFiles = filesWithPreview;
-            loadedData[day] = parsed;
+            
+            loadedData[day] = {
+              ...defaultDayData,
+              ...parsed,
+              items: loadedItems
+            };
           } catch (e) {
             loadedData[day] = { ...defaultDayData };
           }
@@ -67,15 +73,19 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
       setIsLoaded(true);
     };
     loadData();
-  },[]);
+  }, []);
 
   useEffect(() => {
     if (!isLoaded) return;
-    // Save current state to local storage without file objects/previewUrls
     Object.entries(dataByDay).forEach(([day, data]) => {
       const dataToSave = {
         ...data,
-        uploadedFiles: data.uploadedFiles.map(f => ({ id: f.id, description: f.description }))
+        items: data.items.map(item => ({ 
+          id: item.id, 
+          type: item.type, 
+          description: item.description,
+          textContent: item.textContent 
+        }))
       };
       localStorage.setItem(`qp_data_${day}`, JSON.stringify(dataToSave));
     });
@@ -92,11 +102,10 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
     if (days.length <= 1) return;
     if (!window.confirm(`Are you sure you want to delete Day ${dayToRemove}?`)) return;
 
-    // cleanup images
-    const files = dataByDay[dayToRemove]?.uploadedFiles ||[];
-    for (const f of files) {
-      if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
-      await deleteImage(f.id);
+    const items = dataByDay[dayToRemove]?.items || [];
+    for (const item of items) {
+      if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      if (item.type === 'image') await deleteImage(item.id);
     }
 
     const newDays = days.filter(d => d !== dayToRemove);
@@ -120,25 +129,32 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
     }));
   };
 
-  const handleGenerate = async (compiledInstructions: string) => {
+  const handleGenerate = async (compiledInstructions: string, targets: string[]) => {
     const currentData = dataByDay[currentDay];
-    if (!currentData || currentData.uploadedFiles.length === 0) {
-      alert("Please upload at least one image.");
+    if (!currentData || currentData.items.length === 0) {
+      alert("Please add at least one image or text item.");
       return;
     }
-    const files = currentData.uploadedFiles.map(f => f.file).filter(Boolean) as File[];
-    if (files.length === 0) return;
 
     setIsGenerating(true);
+    setGenerateProgress({ current: 0, total: targets.length, target: targets[0] || '' });
+    
     try {
       const apiKeysStr = localStorage.getItem('omr_apiKeysList');
-      const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) :[];
+      const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) : [];
       const model = localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview';
       
       const templateHtml = QP_TEMPLATES.find(t => t.id === currentData.templateId)?.html || QP_TEMPLATES[0].html;
 
-      const { generateQuestionPapers } = await import('../../../services/gemini/qpMakerService');
-      const results = await generateQuestionPapers(files, compiledInstructions, templateHtml, apiKeys, model);
+      const { generateSingleQuestionPaper } = await import('../../../services/gemini/qpMakerService');
+      
+      const results = [];
+      for (let i = 0; i < targets.length; i++) {
+        setGenerateProgress({ current: i, total: targets.length, target: targets[i] });
+        const res = await generateSingleQuestionPaper(currentData.items, compiledInstructions, targets[i], templateHtml, apiKeys, model);
+        results.push(res);
+      }
+      
       updateCurrentDayData({ generatedPapers: results });
     } catch (error: any) {
       alert(`Error: ${error.message}`);
@@ -153,7 +169,6 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors border border-gray-200 bg-white shadow-sm">
@@ -164,8 +179,8 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
               <FileText className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">AI QP Maker</h2>
-              <p className="text-sm text-gray-500 font-medium">Automated HTML Question Paper Generation</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">AI QP Maker</h2>
+              <p className="text-xs sm:text-sm text-gray-500 font-medium">Automated HTML Question Paper Generation</p>
             </div>
           </div>
         </div>
@@ -183,7 +198,8 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
         <QPMakerForm 
           data={currentData}
           onUpdate={updateCurrentDayData}
-          isGenerating={isGenerating} 
+          isGenerating={isGenerating}
+          generateProgress={generateProgress}
           onGenerate={handleGenerate} 
         />
       ) : (
@@ -191,7 +207,7 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
           results={currentData.generatedPapers} 
           onReset={() => {
             if(window.confirm("Discard generated papers and edit?")) {
-              updateCurrentDayData({ generatedPapers:[] });
+              updateCurrentDayData({ generatedPapers: [] });
             }
           }} 
         />

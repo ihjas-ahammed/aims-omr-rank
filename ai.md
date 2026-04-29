@@ -1,5 +1,11 @@
 Make the following changes:
 
+    * Update QP Maker:
+        Add option to write question as text, along with images in the same view by using a + buttonm
+        Add two more qp design inspired based on existing ones
+        For the existing designs, remove the box shadow, body (tag) background color and max width
+
+        Do it as batches, create one set QP then create next as another request and so add a progressbar        
        
 
 Apply changes to both mobile view and desktop (movbile view is the priority)

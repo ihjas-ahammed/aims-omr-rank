@@ -1,12 +1,21 @@
+To implement these improvements, we'll split the QP Maker items into modular components (adding text support), update the Gemini service to process paper generations in batches (with a progress bar), and revamp the HTML templates to be more robust and adaptable.
 
+First, run this command to remove the old `QPMakerFiles` component as we'll replace it with a more modular structure:
 
+```bash
+
+```
+
+Here are the updated files:
 
 --- START OF FILE src/components/lab/qp-maker/types.ts ---
 import { GeneratedQP } from '../../../services/gemini/qpMakerService';
 
-export interface UploadedFile {
+export interface QPItem {
   id: string;
+  type: 'image' | 'text';
   file?: File;
+  textContent?: string;
   description: string;
   previewUrl?: string;
 }
@@ -25,14 +34,13 @@ export interface QPMakerDayData {
   batchesAndSets: string;
   extraInstructions: string;
   templateId: string;
-  uploadedFiles: UploadedFile[];
+  items: QPItem[];
   generatedPapers: GeneratedQP[];
 }
-
 --- END OF FILE src/components/lab/qp-maker/types.ts ---
 
 --- START OF FILE src/components/lab/qp-maker/constants.ts ---
-export const QP_TEMPLATES =[
+export const QP_TEMPLATES = [
   {
     id: 'default',
     name: 'Classic Minimal',
@@ -42,7 +50,7 @@ export const QP_TEMPLATES =[
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Examination - Question Paper</title>
+    <title>Question Paper</title>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
@@ -50,31 +58,22 @@ export const QP_TEMPLATES =[
             --primary-dark: #464646;
             --primary-light: #ffffff;
             --primary-gradient: linear-gradient(to right, #000000, #000000);
-            --bg-body: #e4eef6;
-            --bg-page: #ffffff;
             --text-main: #333333;
             --text-muted: #666666;
             --border-color: #e0e0e0;
         }
-
         body {
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             color: var(--text-main);
             margin: 0;
-            padding: 40px 20px;
-            display: flex;
-            justify-content: center;
+            padding: 20px;
         }
-
         .page {
-            background-color: var(--bg-page);
-            width: 850px;
+            width: 100%;
             position: relative;
             overflow: hidden;
             border-radius: 4px;
         }
-
-        /* Decorative top/bottom curves */
         .page::before {
             content: '';
             position: absolute;
@@ -85,75 +84,29 @@ export const QP_TEMPLATES =[
             pointer-events: none;
             z-index: 0;
         }
-
         .content-wrapper {
-            padding: 50px 60px 30px 60px;
             position: relative;
             z-index: 1;
         }
-
-        /* Top Header */
         .top-header {
             display: flex;
-            justify-content: cv;
             justify-content: center;
             align-items: center;
             margin-bottom: 30px;
         }
-
-        .logo-area {
-            display: flex;
-            align-items: center;
-        }
-
         .logo-area img {
-            height: 100px;
-            /* White background logo sits perfectly on the white page background */
+            height: 80px;
         }
-
-        .student-info {
-            text-align: right;
-            font-size: 14px;
-            color: var(--primary-dark);
-            margin-top: 10px;
-        }
-
-        .student-info div {
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-        }
-
-        .student-line {
-            display: inline-block;
-            width: 250px;
-            border-bottom: 1px solid var(--primary-dark);
-            margin-left: 10px;
-        }
-
-        /* Main Title */
         .main-title-container {
             text-align: center;
             margin-bottom: 25px;
         }
-
-        .main-title {
-            font-size: 42px;
-            font-weight: 900;
-            color: var(--primary-dark);
-            letter-spacing: 1px;
-            margin: 0 0 5px 0;
-        }
-
         .sub-title {
             font-size: 16px;
             color: var(--text-muted);
             font-weight: 600;
             letter-spacing: 0.5px;
         }
-
-        /* Meta Bar */
         .meta-bar {
             background: #000;
             color: white;
@@ -165,43 +118,31 @@ export const QP_TEMPLATES =[
             font-size: 13.5px;
             font-weight: 600;
             margin-bottom: 40px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
-        .meta-item {
-            display: flex;
-            align-items: center;
-        }
-        
+        .meta-item { display: flex; align-items: center; }
         .meta-divider {
             width: 1px;
             height: 16px;
             background-color: rgba(255,255,255,0.3);
             margin: 0 15px;
         }
-
         .meta-label {
             color: #ffffff;
             margin-right: 6px;
             font-weight: normal;
         }
-
-        /* Sections (Ribbon Style) */
         .section-container {
             margin-bottom: 30px;
             border-radius: 8px 8px 0 0;
             overflow: hidden;
-            box-shadow: 0 0 0 1px rgba(0,0,0,0.03);
             background-color: #fafbfc;
         }
-
         .section-header-bar {
             display: flex;
             background: var(--primary-gradient);
             color: white;
             position: relative;
         }
-
         .section-badge-wrapper {
             background-color: var(--primary-dark);
             padding: 10px 30px 10px 20px;
@@ -213,7 +154,6 @@ export const QP_TEMPLATES =[
             align-items: center;
             z-index: 2;
         }
-
         .section-title-wrapper {
             padding: 10px 20px;
             font-weight: 800;
@@ -224,9 +164,8 @@ export const QP_TEMPLATES =[
             text-transform: uppercase;
             font-size: 15px;
             z-index: 1;
-            margin-left: -15px; /* pull under clip-path */
+            margin-left: -15px;
         }
-
         .section-instruction {
             background-color: #f0f5fa;
             color: #444;
@@ -234,13 +173,10 @@ export const QP_TEMPLATES =[
             padding: 10px 20px;
             border-bottom: 1px solid var(--border-color);
         }
-
-        /* Questions */
         .questions-list {
             background-color: white;
             border-radius: 0 0 8px 8px;
         }
-
         .question-row {
             display: flex;
             padding: 16px 20px;
@@ -248,23 +184,14 @@ export const QP_TEMPLATES =[
             font-size: 14.5px;
             line-height: 1.6;
         }
-
-        .question-row:last-child {
-            border-bottom: none;
-        }
-
+        .question-row:last-child { border-bottom: none; }
         .question-num {
             font-weight: bold;
             width: 35px;
             flex-shrink: 0;
             color: var(--primary-dark);
         }
-
-        .question-text {
-            flex-grow: 1;
-            padding-right: 20px;
-        }
-
+        .question-text { flex-grow: 1; padding-right: 20px; }
         .question-mark {
             font-weight: 600;
             color: var(--text-muted);
@@ -276,177 +203,38 @@ export const QP_TEMPLATES =[
             align-items: flex-start;
             justify-content: flex-end;
         }
-        
         .mark-badge {
             background-color: #eee;
             padding: 2px 6px;
             border-radius: 4px;
             border: 1px solid #ddd;
         }
-
-        /* Footer Icons */
-        .footer-area {
-            background: #f8fbff;
-            border-top: 2px solid #e0ebf5;
-            padding: 30px 60px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            border-radius: 0 0 4px 4px;
-        }
-
-        .footer-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            color: var(--primary-dark);
-            max-width: 150px;
-        }
-
-        .icon-circle {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background-color: white;
-            box-shadow: 0 4px 10px rgba(25, 64, 101, 0.1);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 10px;
-            color: var(--primary-dark);
-        }
-
-        .icon-circle svg {
-            width: 24px;
-            height: 24px;
-        }
-        
-        .icon-circle.filled {
-            background-color: var(--primary-dark);
-            color: white;
-        }
-
-        .footer-text {
-            font-size: 12px;
-            font-weight: 600;
-            line-height: 1.4;
-        }
-
     </style>
 </head>
 <body>
     <div class="page">
         <div class="content-wrapper">
-            
             <div class="top-header">
                 <div class="logo-area">
-                    <img src="logo1.png" alt="Institution Logo">
+                    <img src="logo1.png" alt="Logo">
                 </div>
             </div>
-
             <div class="main-title-container">
-                <div class="sub-title">DAILY EXAMINATION - CHEMISTRY, MATHEMATICS & BIOLOGY</div>
+                <div class="sub-title">DAILY EXAMINATION</div>
             </div>
-
             <div class="meta-bar">
-                <div class="meta-item"><span class="meta-label">Batch:</span> B3</div>
+                <div class="meta-item"><span class="meta-label">Batch:</span> {BATCH}</div>
                 <div class="meta-divider"></div>
-                <div class="meta-item"><span class="meta-label">Set:</span> B</div>
+                <div class="meta-item"><span class="meta-label">Set:</span> {SET}</div>
                 <div class="meta-divider"></div>
-                <div class="meta-item"><span class="meta-label">Date:</span> 18th April 2026</div>
+                <div class="meta-item"><span class="meta-label">Date:</span> {DATE}</div>
                 <div class="meta-divider"></div>
-                <div class="meta-item"><span class="meta-label">Duration:</span> 30 Minutes</div>
+                <div class="meta-item"><span class="meta-label">Duration:</span> {DURATION} Mins</div>
                 <div class="meta-divider"></div>
-                <div class="meta-item"><span class="meta-label">Max Marks:</span> 15</div>
+                <div class="meta-item"><span class="meta-label">Max Marks:</span> {MAX_MARKS}</div>
             </div>
-
-            <!-- Section 1 -->
-            <div class="section-container">
-                <div class="section-header-bar">
-                    <div class="section-badge-wrapper">SECTION I</div>
-                    <div class="section-title-wrapper">CHEMISTRY</div>
-                </div>
-                <div class="section-instruction">
-                    Attempt all questions in this section. Total 5 marks.
-                </div>
-                <div class="questions-list">
-                    <div class="question-row">
-                        <div class="question-num">1.</div>
-                        <div class="question-text">\\(5.85\\text{g NaCl}\\) is dissolved in \\(180\\text{g H}_2\\text{O}\\). Calculate the mole fraction of \\(\\text{NaCl}\\) and \\(\\text{H}_2\\text{O}\\)?</div>
-                        <div class="question-mark"><span class="mark-badge">2.5</span></div>
-                    </div>
-                    <div class="question-row">
-                        <div class="question-num">2.</div>
-                        <div class="question-text">A \\(5\\text{M}\\) solution of \\(\\text{NaOH}\\) with volume \\(20\\text{ml}\\) is diluted to \\(1000\\text{ml}\\). Calculate its Molarity?</div>
-                        <div class="question-mark"><span class="mark-badge">1.5</span></div>
-                    </div>
-                    <div class="question-row">
-                        <div class="question-num">3.</div>
-                        <div class="question-text">Aqueous solution of \\(\\text{NaOH}\\) has mass by volume percent \\(15\\). What does it mean?</div>
-                        <div class="question-mark"><span class="mark-badge">1</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 2 -->
-            <div class="section-container">
-                <div class="section-header-bar">
-                    <div class="section-badge-wrapper">SECTION II</div>
-                    <div class="section-title-wrapper">MATHEMATICS</div>
-                </div>
-                <div class="section-instruction">
-                    Attempt all questions in this section. Total 5 marks.
-                </div>
-                <div class="questions-list">
-                    <div class="question-row">
-                        <div class="question-num">4.</div>
-                        <div class="question-text">Find the derivative of \\(f(x) = \\sin(\\sqrt{\\tan x})\\).</div>
-                        <div class="question-mark"><span class="mark-badge">1.5</span></div>
-                    </div>
-                    <div class="question-row">
-                        <div class="question-num">5.</div>
-                        <div class="question-text">Find the derivative of \\(f(x) = \\tan(3^{\\sin x})\\).</div>
-                        <div class="question-mark"><span class="mark-badge">1.5</span></div>
-                    </div>
-                    <div class="question-row">
-                        <div class="question-num">6.</div>
-                        <div class="question-text">Find \\(\\frac{dy}{dx}\\) if \\(x^2 + 3y = \\cos y\\).</div>
-                        <div class="question-mark"><span class="mark-badge">2</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 3 -->
-            <div class="section-container">
-                <div class="section-header-bar">
-                    <div class="section-badge-wrapper">SECTION III</div>
-                    <div class="section-title-wrapper">BIOLOGY</div>
-                </div>
-                <div class="section-instruction">
-                    Attempt all questions in this section. Total 5 marks.
-                </div>
-                <div class="questions-list">
-                    <div class="question-row">
-                        <div class="question-num">7.</div>
-                        <div class="question-text">Proximal end of stamen connected with _________ and _________.</div>
-                        <div class="question-mark"><span class="mark-badge">2</span></div>
-                    </div>
-                    <div class="question-row">
-                        <div class="question-num">8.</div>
-                        <div class="question-text">What is sporogeneous tissue?</div>
-                        <div class="question-mark"><span class="mark-badge"></span></div>
-                    </div>
-                    <div class="question-row">
-                        <div class="question-num">9.</div>
-                        <div class="question-text">Stamen represent _________.</div>
-                        <div class="question-mark"><span class="mark-badge">1</span></div>
-                    </div>
-                </div>
-            </div>
-
+            <!-- AI will generate sections and questions here -->
         </div>
-
     </div>
 </body>
 </html>`
@@ -460,61 +248,33 @@ export const QP_TEMPLATES =[
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AIMS PLUS – Daily Examination</title>
+<title>Question Paper</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
     --navy: #0d1b2a;
     --blue-accent: #1a4f8b;
-    --blue-light: #dbeafe;
-    --blue-mid: #93c5fd;
     --green-accent: #1a6b3a;
-    --green-light: #d1fae5;
-    --green-mid: #6ee7b7;
     --purple-accent: #5b21b6;
-    --purple-light: #ede9fe;
-    --purple-mid: #c4b5fd;
     --text: #111827;
     --muted: #6b7280;
     --border: #d1d5db;
     --white: #ffffff;
-    --page-w: 210mm;
-    --page-h: 297mm;
   }
-
-  html, body {
-    background: #e5e7eb;
+  body {
     font-family: 'Outfit', sans-serif;
     color: var(--text);
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    padding: 20px;
   }
-
-  /* ── PAGE WRAPPER ── */
   .page {
-    width: var(--page-w);
-    min-height: var(--page-h);
-    margin: 20px auto;
+    width: 100%;
     background: var(--white);
-    border: 1.5px solid #9ca3af;
-    padding: 10mm 12mm 10mm;
+    padding: 10mm 5mm;
     position: relative;
-    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
   }
-
-  /* thin outer frame */
-  .page::before {
-    content: '';
-    position: absolute;
-    inset: 4mm;
-    border: 0.6px solid #cbd5e1;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* ── HEADER ── */
   .header {
     display: flex;
     align-items: center;
@@ -523,21 +283,9 @@ export const QP_TEMPLATES =[
     border-bottom: 2px solid var(--navy);
     margin-bottom: 6px;
   }
-  .logo-box {
-    width: 62px;
-    height: 62px;
-    flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .logo-box img {
-    width: 62px;
-    height: 62px;
-    object-fit: contain;
-  }
-  .header-center {
-    flex: 1;
-    text-align: center;
-  }
+  .logo-box { width: 60px; display: flex; align-items: center; justify-content: center; }
+  .logo-box img { width: 60px; object-fit: contain; }
+  .header-center { flex: 1; text-align: center; }
   .institute-name {
     font-family: 'Outfit', sans-serif;
     font-weight: 800;
@@ -556,15 +304,6 @@ export const QP_TEMPLATES =[
     margin-top: 3px;
     text-transform: uppercase;
   }
-  .tagline-top {
-    font-size: 6.5pt;
-    color: var(--muted);
-    letter-spacing: 1px;
-    margin-top: 2px;
-    font-weight: 400;
-  }
-
-  /* ── INFO BAR ── */
   .info-bar {
     background: var(--navy);
     color: var(--white);
@@ -576,97 +315,36 @@ export const QP_TEMPLATES =[
     margin-bottom: 9px;
     font-size: 7.8pt;
     font-weight: 500;
-    letter-spacing: 0.4px;
   }
-  .info-field {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1px;
-  }
-  .info-label {
-    font-size: 5.5pt;
-    font-weight: 700;
-    color: #93c5fd;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .info-value {
-    font-size: 8pt;
-    font-weight: 600;
-    border-bottom: 1px solid rgba(255,255,255,0.3);
-    min-width: 60px;
-    text-align: center;
-    padding-bottom: 1px;
-  }
-  .info-divider {
-    width: 1px;
-    height: 28px;
-    background: rgba(255,255,255,0.2);
-  }
-
-  /* ── INSTRUCTIONS ── */
+  .info-field { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .info-label { font-size: 5.5pt; font-weight: 700; color: #93c5fd; text-transform: uppercase; }
+  .info-value { font-size: 8pt; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.3); min-width: 60px; text-align: center; }
+  .info-divider { width: 1px; height: 28px; background: rgba(255,255,255,0.2); }
   .instructions {
     background: #f8fafc;
     border-left: 3px solid var(--navy);
     padding: 5px 10px;
     font-size: 6.8pt;
     color: #374151;
-    margin-bottom: 9px;
+    margin-bottom: 15px;
     border-radius: 0 3px 3px 0;
-    line-height: 1.6;
   }
-  .instructions strong {
-    font-weight: 700;
-    color: var(--navy);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  /* ── SECTION PANEL ── */
   .section-panel {
     border-radius: 5px;
     overflow: hidden;
     margin-bottom: 10px;
     border: 1px solid #e2e8f0;
-    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
   }
-
   .section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 6px 14px;
-    position: relative;
+    background: var(--blue-accent);
   }
-  .section-header-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .section-roman {
-    font-family: 'Outfit', sans-serif;
-    font-size: 7pt;
-    font-weight: 700;
-    color: rgba(255,255,255,0.7);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  .section-title {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 800;
-    font-size: 11.5pt;
-    color: var(--white);
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-  }
-  .section-topic {
-    font-family: 'Playfair Display', serif;
-    font-style: italic;
-    font-size: 7pt;
-    color: rgba(255,255,255,0.85);
-    margin-top: 1px;
-  }
+  .section-header-left { display: flex; align-items: center; gap: 10px; }
+  .section-roman { font-size: 7pt; font-weight: 700; color: rgba(255,255,255,0.7); text-transform: uppercase; }
+  .section-title { font-weight: 800; font-size: 11.5pt; color: var(--white); text-transform: uppercase; }
   .marks-badge {
     background: rgba(255,255,255,0.18);
     border: 1.5px solid rgba(255,255,255,0.5);
@@ -675,97 +353,20 @@ export const QP_TEMPLATES =[
     font-weight: 700;
     padding: 3px 10px;
     border-radius: 20px;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
   }
-
-  /* Physics – blue */
-  .physics .section-header { background: var(--blue-accent); }
-  .physics .question-area { background: #f0f6ff; }
-  .physics .q-number-circle { background: var(--blue-accent); }
-  .physics .diff-dot.active { background: var(--blue-accent); }
-
-  /* Chemistry – green */
-  .chemistry .section-header { background: var(--green-accent); }
-  .chemistry .question-area { background: #f0fdf6; }
-  .chemistry .q-number-circle { background: var(--green-accent); }
-  .chemistry .diff-dot.active { background: var(--green-accent); }
-
-  /* Biology – purple */
-  .biology .section-header { background: var(--purple-accent); }
-  .biology .question-area { background: #f5f3ff; }
-  .biology .q-number-circle { background: var(--purple-accent); }
-  .biology .diff-dot.active { background: var(--purple-accent); }
-
-  .question-area {
-    padding: 8px 14px 4px;
-  }
-
-  /* ── QUESTION ROW ── */
-  .question-row {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 9px;
-    align-items: flex-start;
-  }
-  .q-meta {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-    min-width: 32px;
-  }
+  .question-area { padding: 8px 14px 4px; background: #f0f6ff; }
+  .question-row { display: flex; gap: 8px; margin-bottom: 15px; align-items: flex-start; }
   .q-number-circle {
-    width: 20px;
-    height: 20px;
+    width: 20px; height: 20px;
     border-radius: 50%;
+    background: var(--navy);
     color: white;
     font-size: 7.5pt;
     font-weight: 700;
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
   }
-  .diff-dots {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    align-items: center;
-  }
-  .diff-label {
-    font-size: 4.5pt;
-    color: var(--muted);
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    line-height: 1;
-    margin-top: 1px;
-  }
-  .diff-dot {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: #d1d5db;
-  }
-  .diff-dot.active { /* colored by parent */ }
-
-  .q-content {
-    flex: 1;
-  }
-  .q-type-tag {
-    display: inline-block;
-    font-size: 5.5pt;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    padding: 1.5px 6px;
-    border-radius: 3px;
-    margin-bottom: 3px;
-  }
-  .tag-deriv  { background: #dbeafe; color: var(--blue-accent); }
-  .tag-short  { background: #d1fae5; color: var(--green-accent); }
-  .tag-mcq    { background: #ede9fe; color: var(--purple-accent); }
-  .tag-fill   { background: #fef9c3; color: #92400e; }
-  .tag-long   { background: #ffe4e6; color: #9f1239; }
-
+  .q-content { flex: 1; }
   .q-marks {
     float: right;
     font-size: 6.5pt;
@@ -776,574 +377,836 @@ export const QP_TEMPLATES =[
     border-radius: 10px;
     padding: 1px 7px;
   }
-  .q-text {
-    font-family: 'Playfair Display', serif;
-    font-size: 8.2pt;
-    line-height: 1.55;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-  .q-text em {
-    font-style: italic;
-    color: #374151;
-  }
-
-  /* Diagram placeholder */
-  .diagram-box {
-    border: 1px dashed #94a3b8;
-    background: #f8fafc;
-    width: 70mm;
-    height: 20mm;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 3px;
-    margin: 4px 0 5px;
-  }
-  .diagram-label {
-    font-size: 6pt;
-    color: #94a3b8;
-    letter-spacing: 0.5px;
-    font-style: italic;
-  }
-
-  /* Answer lines */
-  .answer-lines {
-    margin-top: 4px;
-  }
-  .answer-line {
-    border-bottom: 0.7px solid #d1d5db;
-    height: 10px;
-    margin-bottom: 6px;
-    width: 100%;
-  }
-
-  /* MCQ options */
-  .mcq-box {
-    background: rgba(255,255,255,0.65);
-    border: 1px solid #e2e8f0;
-    border-radius: 4px;
-    padding: 5px 10px;
-    margin: 4px 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 3px 16px;
-  }
-  .mcq-option {
-    font-size: 7.8pt;
-    font-family: 'Playfair Display', serif;
-    color: var(--text);
-    display: flex;
-    gap: 5px;
-    align-items: baseline;
-    line-height: 1.4;
-  }
-  .opt-label {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 700;
-    font-size: 7pt;
-    color: var(--muted);
-    min-width: 10px;
-  }
-
-  /* Fill in the blank */
-  .blank {
-    display: inline-block;
-    border-bottom: 1.2px solid var(--text);
-    min-width: 28mm;
-    margin: 0 2px;
-    height: 10px;
-    vertical-align: bottom;
-  }
-
-  /* Section divider */
-  .section-divider {
-    height: 1px;
-    background: linear-gradient(to right, transparent, #d1d5db, transparent);
-    margin: 3px 0 6px;
-  }
-
-  /* ── FOOTER ── */
-  .footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 8px;
-    padding-top: 6px;
-    border-top: 1.5px solid var(--navy);
-    font-size: 6.5pt;
-    color: var(--muted);
-  }
-  .footer-tagline {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 600;
-    color: var(--navy);
-    letter-spacing: 0.5px;
-  }
-  .footer-page {
-    font-size: 6.5pt;
-    font-weight: 600;
-    color: var(--navy);
-  }
-
-  @media print {
-    body { background: none; }
-    .page { margin: 0; box-shadow: none; border: none; }
-    .page::before { border-color: #d1d5db; }
-  }
+  .q-text { font-family: 'Playfair Display', serif; font-size: 8.2pt; line-height: 1.55; color: var(--text); }
+  .section-divider { height: 1px; background: linear-gradient(to right, transparent, #d1d5db, transparent); margin: 6px 0; }
 </style>
 </head>
 <body>
-
 <div class="page">
-
-  <!-- ══ HEADER ══ -->
   <div class="header">
-    <div class="logo-box">
-      <img src="logo1.png" alt="AIMS PLUS Logo">
-    </div>
+    <div class="logo-box"><img src="logo1.png" alt="Logo"></div>
     <div class="header-center">
       <div class="institute-name">AIMS&nbsp;PLUS</div>
-      <div class="exam-title">Daily Examination &mdash; Physics, Chemistry &amp; Biology</div>
-      <div class="tagline-top">Powered by Harvest Group of Institutions</div>
+      <div class="exam-title">Daily Examination</div>
     </div>
-    <div class="logo-box">
-      <!-- mirrored space for balance -->
-    </div>
+    <div class="logo-box"></div>
   </div>
-
-  <!-- ══ INFO BAR ══ -->
   <div class="info-bar">
-    <div class="info-field">
-      <span class="info-label">Batch</span>
-      <span class="info-value">NEET 2025–26</span>
-    </div>
+    <div class="info-field"><span class="info-label">Batch</span><span class="info-value">{BATCH}</span></div>
     <div class="info-divider"></div>
-    <div class="info-field">
-      <span class="info-label">Set</span>
-      <span class="info-value">Set – A</span>
-    </div>
+    <div class="info-field"><span class="info-label">Set</span><span class="info-value">{SET}</span></div>
     <div class="info-divider"></div>
-    <div class="info-field">
-      <span class="info-label">Date</span>
-      <span class="info-value">____ / ____ / 2025</span>
-    </div>
+    <div class="info-field"><span class="info-label">Date</span><span class="info-value">{DATE}</span></div>
     <div class="info-divider"></div>
-    <div class="info-field">
-      <span class="info-label">Duration</span>
-      <span class="info-value">1 Hour 30 Min</span>
-    </div>
+    <div class="info-field"><span class="info-label">Duration</span><span class="info-value">{DURATION} Min</span></div>
     <div class="info-divider"></div>
-    <div class="info-field">
-      <span class="info-label">Max Marks</span>
-      <span class="info-value">90 Marks</span>
+    <div class="info-field"><span class="info-label">Max Marks</span><span class="info-value">{MAX_MARKS}</span></div>
+  </div>
+  <!-- AI will populate sections and questions -->
+</div>
+</body>
+</html>`
+  },
+  {
+    id: 'elegant',
+    name: 'Elegant Serif',
+    description: 'A sophisticated, academic look with serif typography.',
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Question Paper</title>
+<link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700;900&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  body {
+    font-family: 'Merriweather', serif;
+    color: #000;
+    margin: 0;
+    padding: 20px;
+  }
+  .page { width: 100%; }
+  .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+  .logo { height: 60px; margin-bottom: 10px; }
+  .title { font-size: 24pt; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin: 0; }
+  .subtitle { font-family: 'Open Sans', sans-serif; font-size: 10pt; color: #555; margin-top: 5px; }
+  .meta-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-family: 'Open Sans', sans-serif; font-size: 9pt; margin-bottom: 20px; font-weight: 600; }
+  .meta-item { border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
+  .instructions { font-family: 'Open Sans', sans-serif; font-size: 8pt; font-style: italic; margin-bottom: 20px; }
+  .section-title { font-size: 14pt; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid #000; margin: 20px 0 10px; padding-bottom: 4px; }
+  .question { margin-bottom: 15px; display: flex; align-items: flex-start; }
+  .q-num { font-weight: bold; width: 30px; flex-shrink: 0; }
+  .q-body { flex-grow: 1; font-size: 10pt; line-height: 1.6; }
+  .q-marks { font-weight: bold; margin-left: 10px; white-space: nowrap; }
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <img src="logo1.png" alt="Logo" class="logo">
+    <h1 class="title">AIMS PLUS</h1>
+    <div class="subtitle">EXAMINATION PAPER</div>
+  </div>
+  <div class="meta-grid">
+    <div class="meta-item">BATCH: {BATCH}</div>
+    <div class="meta-item" style="text-align: center;">SET: {SET}</div>
+    <div class="meta-item" style="text-align: right;">DATE: {DATE}</div>
+    <div class="meta-item">DURATION: {DURATION} Min</div>
+    <div class="meta-item"></div>
+    <div class="meta-item" style="text-align: right;">MAX MARKS: {MAX_MARKS}</div>
+  </div>
+  <div class="instructions">Instructions: Read all questions carefully. All questions are compulsory.</div>
+  <!-- AI will append sections and questions -->
+</div>
+</body>
+</html>`
+  },
+  {
+    id: 'boxed',
+    name: 'Boxed Structured',
+    description: 'Clean boxes for each question, very organized.',
+    html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Question Paper</title>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+  body { font-family: 'Arial', sans-serif; color: #111; margin: 0; padding: 20px; }
+  .page { width: 100%; }
+  .header { display: flex; justify-content: space-between; align-items: center; background: #f0f0f0; padding: 15px; border-radius: 8px; border: 2px solid #ccc; margin-bottom: 20px; }
+  .logo { height: 50px; }
+  .header-text { text-align: right; }
+  .header-text h1 { margin: 0; font-size: 20px; text-transform: uppercase; }
+  .meta { display: flex; flex-wrap: wrap; gap: 15px; background: #fff; border: 1px solid #ddd; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; font-weight: bold; }
+  .section-head { background: #333; color: #fff; padding: 8px 15px; font-size: 14px; font-weight: bold; text-transform: uppercase; margin: 20px 0 10px; border-radius: 4px; }
+  .question-box { border: 1px solid #ccc; border-radius: 6px; padding: 12px; margin-bottom: 12px; background: #fafafa; }
+  .q-top { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+  .q-body { font-size: 14px; line-height: 1.5; }
+  .options { margin-top: 10px; padding-left: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <img src="logo1.png" alt="Logo" class="logo">
+    <div class="header-text">
+      <h1>AIMS PLUS EVALUATION</h1>
+      <div style="font-size: 12px; color: #666; margin-top: 4px;">Standardized Test Format</div>
     </div>
   </div>
-
-  <!-- ══ INSTRUCTIONS ══ -->
-  <div class="instructions">
-    <strong>General Instructions:</strong>&nbsp;
-    Attempt all questions. Marks are indicated against each question. Write legibly. MCQ answers must be circled. Use blue/black pen only. Rough work should be done on the last page. Calculators and electronic devices are strictly prohibited.
+  <div class="meta">
+    <div>BATCH: {BATCH}</div>
+    <div>SET: {SET}</div>
+    <div>DATE: {DATE}</div>
+    <div>TIME: {DURATION} Min</div>
+    <div style="margin-left: auto;">MARKS: {MAX_MARKS}</div>
   </div>
-
-  <!-- ════════════════════════════════════
-       SECTION I – PHYSICS
-  ════════════════════════════════════ -->
-  <div class="section-panel physics">
-    <div class="section-header">
-      <div class="section-header-left">
-        <div>
-          <div class="section-roman">Section I</div>
-          <div class="section-title">Physics</div>
-          <div class="section-topic">Laws of Motion &amp; Work, Energy &amp; Power</div>
-        </div>
-      </div>
-      <div class="marks-badge">30 Marks</div>
-    </div>
-
-    <div class="question-area">
-
-      <!-- Q1 – Derivation -->
-      <div class="question-row">
-        <div class="q-meta">
-          <div class="q-number-circle">1</div>
-          <div class="diff-dots">
-            <div class="diff-dot active"></div>
-            <div class="diff-dot active"></div>
-            <div class="diff-dot active"></div>
-          </div>
-          <div class="diff-label">Hard</div>
-        </div>
-        <div class="q-content">
-          <span class="q-marks">[8 M]</span>
-          <span class="q-type-tag tag-deriv">Derivation</span>
-          <div class="q-text">
-            Derive an expression for the <em>work done by a variable force</em> acting on a particle moving along the X-axis. Hence show that the work-energy theorem holds for a variable force. Support your derivation with a neat and labelled diagram.
-          </div>
-          <div class="diagram-box">
-            <span class="diagram-label">[ Diagram / Figure Space ]</span>
-          </div>
-          <div class="answer-lines">
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- Q2 – Short Answer -->
-      <div class="question-row">
-        <div class="q-meta">
-          <div class="q-number-circle">2</div>
-          <div class="diff-dots">
-            <div class="diff-dot active"></div>
-            <div class="diff-dot active"></div>
-            <div class="diff-dot"></div>
-          </div>
-          <div class="diff-label">Med</div>
-        </div>
-        <div class="q-content">
-          <span class="q-marks">[4 M]</span>
-          <span class="q-type-tag tag-short">Short Answer</span>
-          <div class="q-text">
-            A body of mass 5 kg is moving on a rough horizontal surface with a uniform velocity of 12 m/s. If the coefficient of kinetic friction is 0.4, calculate the force applied on the body and the work done against friction in 3 seconds. (g = 10 m/s²)
-          </div>
-          <div class="answer-lines">
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- Q3 – MCQ -->
-      <div class="question-row">
-        <div class="q-meta">
-          <div class="q-number-circle">3</div>
-          <div class="diff-dots">
-            <div class="diff-dot active"></div>
-            <div class="diff-dot"></div>
-            <div class="diff-dot"></div>
-          </div>
-          <div class="diff-label">Easy</div>
-        </div>
-        <div class="q-content">
-          <span class="q-marks">[1 M]</span>
-          <span class="q-type-tag tag-mcq">MCQ</span>
-          <div class="q-text">
-            A block of mass 2 kg is placed on a frictionless inclined plane of angle 30°. The magnitude of acceleration of the block sliding down the plane is:
-          </div>
-          <div class="mcq-box">
-            <div class="mcq-option"><span class="opt-label">(a)</span> 4.9 m/s²</div>
-            <div class="mcq-option"><span class="opt-label">(b)</span> 9.8 m/s²</div>
-            <div class="mcq-option"><span class="opt-label">(c)</span> 5.0 m/s²</div>
-            <div class="mcq-option"><span class="opt-label">(d)</span> 8.5 m/s²</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- Q4 – Fill in the blank -->
-      <div class="question-row">
-        <div class="q-meta">
-          <div class="q-number-circle">4</div>
-          <div class="diff-dots">
-            <div class="diff-dot active"></div>
-            <div class="diff-dot"></div>
-            <div class="diff-dot"></div>
-          </div>
-          <div class="diff-label">Easy</div>
-        </div>
-        <div class="q-content">
-          <span class="q-marks">[2 M]</span>
-          <span class="q-type-tag tag-fill">Fill in the Blank</span>
-          <div class="q-text">
-            The rate of doing work is called <span class="blank"></span>. Its SI unit is <span class="blank"></span>, which is equivalent to one joule per second. When a force acts perpendicular to displacement, the work done is <span class="blank"></span>.
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════
-       SECTION II – CHEMISTRY
-  ════════════════════════════════════ -->
-  <div class="section-panel chemistry">
-    <div class="section-header">
-      <div class="section-header-left">
-        <div>
-          <div class="section-roman">Section II</div>
-          <div class="section-title">Chemistry</div>
-          <div class="section-topic">Chemical Bonding &amp; Molecular Structure</div>
-        </div>
-      </div>
-      <div class="marks-badge">30 Marks</div>
-    </div>
-
-    <div class="question-area">
-
-      <!-- Q5 – Derivation / Long -->
-      <div class="question-row">
-        <div class="q-meta">
-          <div class="q-number-circle">5</div>
-          <div class="diff-dots">
-            <div class="diff-dot active"></div>
-            <div class="diff-dot active"></div>
-            <div class="diff-dot active"></div>
-          </div>
-          <div class="diff-label">Hard</div>
-        </div>
-        <div class="q-content">
-          <span class="q-marks">[8 M]</span>
-          <span class="q-type-tag tag-deriv">Derivation</span>
-          <div class="q-text">
-            Explain the formation of a covalent bond using the <em>Molecular Orbital Theory (MOT)</em>. Describe how bonding and antibonding molecular orbitals arise from the linear combination of atomic orbitals (LCAO). Draw the energy-level diagram for N₂ and comment on its bond order and magnetic properties.
-          </div>
-          <div class="diagram-box">
-            <span class="diagram-label">[ Energy Level Diagram – Draw Here ]</span>
-          </div>
-          <div class="answer-lines">
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- Q6 – Short Answer -->
-      <div class="question-row">
-        <div class="q-meta">
-          <div class="q-number-circle">6</div>
-          <div class="diff-dots">
-            <div class="diff-dot active"></div>
-            <div class="diff-dot active"></div>
-            <div class="diff-dot"></div>
-          </div>
-          <div class="diff-label">Med</div>
-        </div>
-        <div class="q-content">
-          <span class="q-marks">[4 M]</span>
-          <span class="q-type-tag tag-short">Short Answer</span>
-          <div class="q-text">
-            Define electronegativity. Using Fajan's rules, explain why AlCl₃ has more covalent character than NaCl. What is the significance of electronegativity difference in determining the type of chemical bond formed between two atoms?
-          </div>
-          <div class="answer-lines">
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- Q7 – MCQ -->
-      <div class="question-row">
-        <div class="q-meta">
-          <div class="q-number-circle">7</div>
-          <div class="diff-dots">
-            <div class="diff-dot active"></div>
-            <div class="diff-dot"></div>
-            <div class="diff-dot"></div>
-          </div>
-          <div class="diff-label">Easy</div>
-        </div>
-        <div class="q-content">
-          <span class="q-marks">[1 M]</span>
-          <span class="q-type-tag tag-mcq">MCQ</span>
-          <div class="q-text">
-            Which of the following molecules has a <em>trigonal bipyramidal</em> geometry according to VSEPR theory?
-          </div>
-          <div class="mcq-box">
-            <div class="mcq-option"><span class="opt-label">(a)</span> NH₃</div>
-            <div class="mcq-option"><span class="opt-label">(b)</span> PCl₅</div>
-            <div class="mcq-option"><span class="opt-label">(c)</span> SF₆</div>
-            <div class="mcq-option"><span class="opt-label">(d)</span> H₂O</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- Q8 – Fill in the blank -->
-      <div class="question-row">
-        <div class="q-meta">
-          <div class="q-number-circle">8</div>
-          <div class="diff-dots">
-            <div class="diff-dot active"></div>
-            <div class="diff-dot"></div>
-            <div class="diff-dot"></div>
-          </div>
-          <div class="diff-label">Easy</div>
-        </div>
-        <div class="q-content">
-          <span class="q-marks">[2 M]</span>
-          <span class="q-type-tag tag-fill">Fill in the Blank</span>
-          <div class="q-text">
-            The type of hybridisation in the carbon atoms of benzene is <span class="blank"></span>. The bond angle in a water molecule is approximately <span class="blank"></span>, which is less than the ideal tetrahedral angle due to <span class="blank"></span> repulsions.
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════
-       SECTION III – BIOLOGY
-  ════════════════════════════════════ -->
-  <div class="section-panel biology">
-    <div class="section-header">
-      <div class="section-header-left">
-        <div>
-          <div class="section-roman">Section III</div>
-          <div class="section-title">Biology</div>
-          <div class="section-topic">Cell Cycle, Cell Division &amp; Biomolecules</div>
-        </div>
-      </div>
-      <div class="marks-badge">30 Marks</div>
-    </div>
-
-    <div class="question-area">
-
-      <!-- Q9 – Derivation / Long -->
-      <div class="question-row">
-        <div class="q-meta">
-          <div class="q-number-circle">9</div>
-          <div class="diff-dots">
-            <div class="diff-dot active"></div>
-            <div class="diff-dot active"></div>
-            <div class="diff-dot active"></div>
-          </div>
-          <div class="diff-label">Hard</div>
-        </div>
-        <div class="q-content">
-          <span class="q-marks">[8 M]</span>
-          <span class="q-type-tag tag-deriv">Long Answer</span>
-          <div class="q-text">
-            Describe the various stages of <em>Prophase I of Meiosis</em> in detail. Explain the significance of crossing over in the context of genetic variation. With the help of a labelled diagram, depict the arrangement of chromosomes during the zygotene and pachytene sub-stages.
-          </div>
-          <div class="diagram-box">
-            <span class="diagram-label">[ Labelled Diagram – Draw Here ]</span>
-          </div>
-          <div class="answer-lines">
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- Q10 – Short Answer -->
-      <div class="question-row">
-        <div class="q-meta">
-          <div class="q-number-circle">10</div>
-          <div class="diff-dots">
-            <div class="diff-dot active"></div>
-            <div class="diff-dot active"></div>
-            <div class="diff-dot"></div>
-          </div>
-          <div class="diff-label">Med</div>
-        </div>
-        <div class="q-content">
-          <span class="q-marks">[4 M]</span>
-          <span class="q-type-tag tag-short">Short Answer</span>
-          <div class="q-text">
-            Differentiate between <em>competitive</em> and <em>non-competitive inhibition</em> of enzyme activity. How does the concentration of substrate affect the rate of an enzyme-catalysed reaction? Mention the role of cofactors and coenzymes in enzyme function.
-          </div>
-          <div class="answer-lines">
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-            <div class="answer-line"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- Q11 – MCQ -->
-      <div class="question-row">
-        <div class="q-meta">
-          <div class="q-number-circle">11</div>
-          <div class="diff-dots">
-            <div class="diff-dot active"></div>
-            <div class="diff-dot"></div>
-            <div class="diff-dot"></div>
-          </div>
-          <div class="diff-label">Easy</div>
-        </div>
-        <div class="q-content">
-          <span class="q-marks">[1 M]</span>
-          <span class="q-type-tag tag-mcq">MCQ</span>
-          <div class="q-text">
-            During which phase of the cell cycle does <em>DNA replication</em> take place?
-          </div>
-          <div class="mcq-box">
-            <div class="mcq-option"><span class="opt-label">(a)</span> G₁ Phase</div>
-            <div class="mcq-option"><span class="opt-label">(b)</span> S Phase</div>
-            <div class="mcq-option"><span class="opt-label">(c)</span> G₂ Phase</div>
-            <div class="mcq-option"><span class="opt-label">(d)</span> M Phase</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section-divider"></div>
-
-      <!-- Q12 – Fill in the blank -->
-      <div class="question-row">
-        <div class="q-meta">
-          <div class="q-number-circle">12</div>
-          <div class="diff-dots">
-            <div class="diff-dot active"></div>
-            <div class="diff-dot"></div>
-            <div class="diff-dot"></div>
-          </div>
-          <div class="diff-label">Easy</div>
-        </div>
-        <div class="q-content">
-          <span class="q-marks">[2 M]</span>
-          <span class="q-type-tag tag-fill">Fill in the Blank</span>
-          <div class="q-text">
-            The functional unit of a kidney is the <span class="blank"></span>. The process by which plants manufacture food using sunlight is called <span class="blank"></span>. The genetic material in most living organisms is <span class="blank"></span>, which exists as a double helix.
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ══ FOOTER ══ -->
-  <div class="footer">
-    <div>
-      <span class="footer-tagline">Powered by Harvest Group of Institutions</span>
-    </div>
-    <div style="font-size:6pt; color:#9ca3af; letter-spacing:0.5px;">
-      All questions carry marks as indicated. Unauthorised reproduction prohibited.
-    </div>
-    <div class="footer-page">Page 1 of 1</div>
-  </div>
-
-</div><!-- /.page -->
-
+  <!-- AI will populate section-head and question-box elements -->
+</div>
 </body>
 </html>`
   }
 ];
 --- END OF FILE src/components/lab/qp-maker/constants.ts ---
 
+--- START OF FILE src/components/lab/qp-maker/QPMaker.tsx ---
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, FileText } from 'lucide-react';
+import QPMakerForm from './QPMakerForm';
+import QPMakerResults from './QPMakerResults';
+import QPMakerDaySelector from './QPMakerDaySelector';
+import { QPMakerDayData } from './types';
+import { format } from 'date-fns';
+import { getImage, deleteImage } from '../../../services/db';
+import { QP_TEMPLATES } from './constants';
+
+const defaultDayData: QPMakerDayData = {
+  date: format(new Date(), 'dd/MM/yyyy'),
+  duration: '30',
+  totalMarks: '15',
+  subjectDivisions: [{ id: '1', subject: 'Physics', marks: '15' }],
+  batchesAndSets: 'B1: Set A, Set B\nB2: Set A, Set B',
+  extraInstructions: 'Make sure to allocate the right questions. Change values for mathematical/physics problems to create Set B variations.',
+  templateId: 'default',
+  items: [],
+  generatedPapers: []
+};
+
+export default function QPMaker({ onBack }: { onBack: () => void }) {
+  const [days, setDays] = useState<number[]>(() => {
+    const saved = localStorage.getItem('qp_days');
+    return saved ? JSON.parse(saved) : [1];
+  });
+  const [currentDay, setCurrentDay] = useState<number>(() => {
+    const saved = localStorage.getItem('qp_currentDay');
+    return saved ? parseInt(saved, 10) : 1;
+  });
+  const [dataByDay, setDataByDay] = useState<Record<number, QPMakerDayData>>({});
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateProgress, setGenerateProgress] = useState({ current: 0, total: 0, target: '' });
+
+  useEffect(() => {
+    localStorage.setItem('qp_days', JSON.stringify(days));
+    localStorage.setItem('qp_currentDay', currentDay.toString());
+  }, [days, currentDay]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const loadedData: Record<number, QPMakerDayData> = {};
+      for (const day of days) {
+        const saved = localStorage.getItem(`qp_data_${day}`);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            const items = parsed.items || parsed.uploadedFiles || [];
+            const loadedItems = await Promise.all(items.map(async (item: any) => {
+              if (item.type === 'text') return item;
+              const fileObj = await getImage(item.id);
+              if (fileObj) {
+                return { ...item, type: 'image', file: fileObj, previewUrl: URL.createObjectURL(fileObj) };
+              }
+              return { ...item, type: 'image' };
+            }));
+            
+            loadedData[day] = {
+              ...defaultDayData,
+              ...parsed,
+              items: loadedItems
+            };
+          } catch (e) {
+            loadedData[day] = { ...defaultDayData };
+          }
+        } else {
+          loadedData[day] = { ...defaultDayData };
+        }
+      }
+      setDataByDay(loadedData);
+      setIsLoaded(true);
+    };
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    Object.entries(dataByDay).forEach(([day, data]) => {
+      const dataToSave = {
+        ...data,
+        items: data.items.map(item => ({ 
+          id: item.id, 
+          type: item.type, 
+          description: item.description,
+          textContent: item.textContent 
+        }))
+      };
+      localStorage.setItem(`qp_data_${day}`, JSON.stringify(dataToSave));
+    });
+  }, [dataByDay, isLoaded]);
+
+  const addDay = () => {
+    const newDay = Math.max(...days, 0) + 1;
+    setDays([...days, newDay]);
+    setDataByDay({ ...dataByDay, [newDay]: { ...defaultDayData } });
+    setCurrentDay(newDay);
+  };
+
+  const removeDay = async (dayToRemove: number) => {
+    if (days.length <= 1) return;
+    if (!window.confirm(`Are you sure you want to delete Day ${dayToRemove}?`)) return;
+
+    const items = dataByDay[dayToRemove]?.items || [];
+    for (const item of items) {
+      if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      if (item.type === 'image') await deleteImage(item.id);
+    }
+
+    const newDays = days.filter(d => d !== dayToRemove);
+    setDays(newDays);
+    
+    const newData = { ...dataByDay };
+    delete newData[dayToRemove];
+    setDataByDay(newData);
+    
+    localStorage.removeItem(`qp_data_${dayToRemove}`);
+    
+    if (currentDay === dayToRemove) {
+      setCurrentDay(newDays[0]);
+    }
+  };
+
+  const updateCurrentDayData = (newData: Partial<QPMakerDayData>) => {
+    setDataByDay(prev => ({
+      ...prev,
+      [currentDay]: { ...prev[currentDay], ...newData }
+    }));
+  };
+
+  const handleGenerate = async (compiledInstructions: string, targets: string[]) => {
+    const currentData = dataByDay[currentDay];
+    if (!currentData || currentData.items.length === 0) {
+      alert("Please add at least one image or text item.");
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerateProgress({ current: 0, total: targets.length, target: targets[0] || '' });
+    
+    try {
+      const apiKeysStr = localStorage.getItem('omr_apiKeysList');
+      const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) : [];
+      const model = localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview';
+      
+      const templateHtml = QP_TEMPLATES.find(t => t.id === currentData.templateId)?.html || QP_TEMPLATES[0].html;
+
+      const { generateSingleQuestionPaper } = await import('../../../services/gemini/qpMakerService');
+      
+      const results = [];
+      for (let i = 0; i < targets.length; i++) {
+        setGenerateProgress({ current: i, total: targets.length, target: targets[i] });
+        const res = await generateSingleQuestionPaper(currentData.items, compiledInstructions, targets[i], templateHtml, apiKeys, model);
+        results.push(res);
+      }
+      
+      updateCurrentDayData({ generatedPapers: results });
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  if (!isLoaded) return <div className="p-10 text-center text-gray-500">Loading...</div>;
+
+  const currentData = dataByDay[currentDay] || defaultDayData;
+
+  return (
+    <div className="space-y-6 max-w-6xl mx-auto pb-12">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors border border-gray-200 bg-white shadow-sm">
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900">AI QP Maker</h2>
+              <p className="text-xs sm:text-sm text-gray-500 font-medium">Automated HTML Question Paper Generation</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <QPMakerDaySelector 
+        days={days}
+        currentDay={currentDay}
+        onSetCurrentDay={setCurrentDay}
+        onAddDay={addDay}
+        onRemoveDay={removeDay}
+      />
+
+      {currentData.generatedPapers.length === 0 ? (
+        <QPMakerForm 
+          data={currentData}
+          onUpdate={updateCurrentDayData}
+          isGenerating={isGenerating}
+          generateProgress={generateProgress}
+          onGenerate={handleGenerate} 
+        />
+      ) : (
+        <QPMakerResults 
+          results={currentData.generatedPapers} 
+          onReset={() => {
+            if(window.confirm("Discard generated papers and edit?")) {
+              updateCurrentDayData({ generatedPapers: [] });
+            }
+          }} 
+        />
+      )}
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/qp-maker/QPMaker.tsx ---
+
+--- START OF FILE src/components/lab/qp-maker/QPMakerForm.tsx ---
+import React from 'react';
+import { QPMakerDayData } from './types';
+import { saveImage, deleteImage } from '../../../services/db';
+
+import QPMakerTemplateSelector from './QPMakerTemplateSelector';
+import QPMakerExamParams from './QPMakerExamParams';
+import QPMakerBatches from './QPMakerBatches';
+import QPMakerItems from './QPMakerItems';
+import QPMakerInstructions from './QPMakerInstructions';
+
+interface QPMakerFormProps {
+  data: QPMakerDayData;
+  onUpdate: (data: Partial<QPMakerDayData>) => void;
+  isGenerating: boolean;
+  generateProgress: { current: number, total: number, target: string };
+  onGenerate: (compiledInstructions: string, targets: string[]) => void;
+}
+
+export default function QPMakerForm({ data, onUpdate, isGenerating, generateProgress, onGenerate }: QPMakerFormProps) {
+  
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newItems = Array.from(e.target.files).map(file => ({
+        id: Math.random().toString(36).substring(7),
+        type: 'image' as const,
+        file,
+        description: '',
+        previewUrl: URL.createObjectURL(file)
+      }));
+      for(const item of newItems) {
+        await saveImage(item.id, item.file!);
+      }
+      onUpdate({ items: [...data.items, ...newItems] });
+    }
+  };
+
+  const handleAddText = () => {
+    const newItem = {
+      id: Math.random().toString(36).substring(7),
+      type: 'text' as const,
+      textContent: '',
+      description: ''
+    };
+    onUpdate({ items: [...data.items, newItem] });
+  };
+
+  const removeItem = async (id: string) => {
+    const toRemove = data.items.find(f => f.id === id);
+    if (toRemove?.type === 'image') {
+      if (toRemove.previewUrl) URL.revokeObjectURL(toRemove.previewUrl);
+      await deleteImage(id);
+    }
+    onUpdate({ items: data.items.filter(f => f.id !== id) });
+  };
+
+  const updateItemDescription = (id: string, description: string) => {
+    onUpdate({
+      items: data.items.map(f => f.id === id ? { ...f, description } : f)
+    });
+  };
+
+  const updateItemTextContent = (id: string, textContent: string) => {
+    onUpdate({
+      items: data.items.map(f => f.id === id ? { ...f, textContent } : f)
+    });
+  };
+
+  const parseTargets = (text: string) => {
+    const lines = text.split('\n');
+    const targets: string[] = [];
+    lines.forEach(line => {
+      const parts = line.split(':');
+      if (parts.length === 2) {
+        const batch = parts[0].trim();
+        const sets = parts[1].split(',').map(s => s.trim());
+        sets.forEach(s => {
+          if (s) targets.push(`${batch} - ${s}`);
+        });
+      } else {
+        if (line.trim()) targets.push(line.trim());
+      }
+    });
+    return targets;
+  };
+
+  const handleSubmit = () => {
+    if (data.items.length === 0) {
+      alert('Please add at least one image or text item containing the questions.');
+      return;
+    }
+    
+    const targets = parseTargets(data.batchesAndSets);
+    if (targets.length === 0) {
+      alert('Please define at least one batch/set target.');
+      return;
+    }
+
+    const subjectsStr = data.subjectDivisions.map(d => `${d.subject}: ${d.marks}`).join(', ');
+
+    const compiledInstructions = `
+EXAM DATE: ${data.date}
+DURATION: ${data.duration} minutes
+MAXIMUM MARKS: ${data.totalMarks}
+SUBJECTS & MARKS DIVISION: ${subjectsStr}
+
+PROVIDED SOURCE MATERIAL & INSTRUCTIONS:
+${data.items.map((item, i) => {
+  if (item.type === 'image') return `Source ${i + 1} (Image): ${item.description}`;
+  return `Source ${i + 1} (Text):\nContent: ${item.textContent}\nInstruction: ${item.description}`;
+}).join('\n\n')}
+
+ADDITIONAL INSTRUCTIONS:
+${data.extraInstructions}
+    `.trim();
+
+    onGenerate(compiledInstructions, targets);
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+      <QPMakerTemplateSelector 
+        selectedId={data.templateId || 'default'} 
+        onSelect={(id) => onUpdate({ templateId: id })} 
+      />
+      <QPMakerExamParams data={data} onUpdate={onUpdate} />
+      <QPMakerBatches data={data} onUpdate={onUpdate} />
+      <QPMakerItems 
+        data={data} 
+        onFileUpload={handleFileUpload} 
+        onAddText={handleAddText}
+        onRemoveItem={removeItem} 
+        onUpdateDescription={updateItemDescription}
+        onUpdateTextContent={updateItemTextContent}
+      />
+      <QPMakerInstructions 
+        data={data} 
+        onUpdate={onUpdate} 
+        isGenerating={isGenerating} 
+        generateProgress={generateProgress}
+        onGenerate={handleSubmit} 
+      />
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/qp-maker/QPMakerForm.tsx ---
+
+--- START OF FILE src/components/lab/qp-maker/QPMakerImageCard.tsx ---
+import React, { useState } from 'react';
+import { Trash2, Sparkles, Loader2, Image as ImageIcon } from 'lucide-react';
+import { QPItem } from './types';
+import { fileToBase64 } from '../../../utils/imageProcessing';
+import { generateImageDescription } from '../../../services/gemini/qpMakerService';
+
+interface QPMakerImageCardProps {
+  itemData: QPItem;
+  index: number;
+  onRemove: (id: string) => void;
+  onUpdateDescription: (id: string, description: string) => void;
+}
+
+export default function QPMakerImageCard({ itemData, index, onRemove, onUpdateDescription }: QPMakerImageCardProps) {
+  const [isDescribing, setIsDescribing] = useState(false);
+
+  const handleAutoDescribe = async () => {
+    if (!itemData.file) {
+      alert("Image file not available for auto-describe.");
+      return;
+    }
+    setIsDescribing(true);
+    try {
+      const apiKeysStr = localStorage.getItem('omr_apiKeysList');
+      const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) : [];
+      const liteModel = localStorage.getItem('omr_liteModel') || 'gemini-3.1-flash-lite-preview';
+
+      const base64 = await fileToBase64(itemData.file);
+      const description = await generateImageDescription(base64, itemData.file.type, apiKeys, liteModel);
+      
+      onUpdateDescription(itemData.id, description);
+    } catch (error: any) {
+      alert(`Failed to auto-describe: ${error.message}`);
+    } finally {
+      setIsDescribing(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col md:flex-row gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+      <div className="relative w-full md:w-32 h-48 md:h-32 shrink-0 bg-gray-100 rounded-lg border border-gray-200 overflow-hidden group flex items-center justify-center">
+        {itemData.previewUrl ? (
+          <img src={itemData.previewUrl} alt={`Source ${index + 1}`} className="w-full h-full object-contain bg-white" />
+        ) : (
+          <ImageIcon className="w-8 h-8 text-gray-300" />
+        )}
+        <div className="absolute top-0 left-0 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg z-10">
+          Src {index + 1}
+        </div>
+        <button 
+          onClick={() => onRemove(itemData.id)}
+          className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+          title="Remove Image"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="flex-1 flex flex-col">
+        <div className="flex items-center justify-between mb-2">
+          <label className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-wider">
+            <ImageIcon className="w-3.5 h-3.5" /> Description / Mapping
+          </label>
+          <button
+            onClick={handleAutoDescribe}
+            disabled={isDescribing}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors disabled:opacity-50 border border-indigo-100 shadow-sm"
+          >
+            {isDescribing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            Auto-Describe
+          </button>
+        </div>
+        <textarea
+          value={itemData.description}
+          onChange={(e) => onUpdateDescription(itemData.id, e.target.value)}
+          placeholder="e.g. Physics (for all class, set A, set B). Change values for Set B."
+          className="w-full flex-1 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm resize-none outline-none min-h-[100px]"
+        />
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/qp-maker/QPMakerImageCard.tsx ---
+
+--- START OF FILE src/components/lab/qp-maker/QPMakerInstructions.tsx ---
+import React from 'react';
+import { FileText, Loader2, Sparkles } from 'lucide-react';
+import { QPMakerDayData } from './types';
+import QPMakerProgress from './QPMakerProgress';
+
+interface Props {
+  data: QPMakerDayData;
+  onUpdate: (data: Partial<QPMakerDayData>) => void;
+  isGenerating: boolean;
+  generateProgress: { current: number, total: number, target: string };
+  onGenerate: () => void;
+}
+
+export default function QPMakerInstructions({ data, onUpdate, isGenerating, generateProgress, onGenerate }: Props) {
+  return (
+    <>
+      <div className="p-4 md:p-6">
+        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
+          <FileText className="w-4 h-4 text-indigo-500" /> Global / Additional Instructions
+        </label>
+        <textarea
+          value={data.extraInstructions}
+          onChange={(e) => onUpdate({ extraInstructions: e.target.value })}
+          rows={3}
+          placeholder="Any global rules for the AI..."
+          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono text-sm leading-relaxed transition-shadow shadow-sm resize-y outline-none"
+        />
+        {isGenerating && (
+          <QPMakerProgress 
+            current={generateProgress.current} 
+            total={generateProgress.total} 
+            target={generateProgress.target} 
+          />
+        )}
+      </div>
+      
+      <div className="p-4 md:p-6 bg-gray-50 border-t border-gray-200">
+        <button
+          onClick={onGenerate}
+          disabled={isGenerating || data.items.length === 0}
+          className="w-full flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+        >
+          {isGenerating ? <Loader2 className="w-6 h-6 animate-spin" /> : <Sparkles className="w-6 h-6" />}
+          {isGenerating ? 'AI is generating papers...' : 'Generate Question Papers'}
+        </button>
+      </div>
+    </>
+  );
+}
+--- END OF FILE src/components/lab/qp-maker/QPMakerInstructions.tsx ---
+
+--- START OF FILE src/components/lab/qp-maker/QPMakerItems.tsx ---
+import React, { useRef } from 'react';
+import { Upload, Type, Plus } from 'lucide-react';
+import { QPMakerDayData } from './types';
+import QPMakerImageCard from './QPMakerImageCard';
+import QPMakerTextCard from './QPMakerTextCard';
+
+interface Props {
+  data: QPMakerDayData;
+  onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onAddText: () => void;
+  onRemoveItem: (id: string) => void;
+  onUpdateDescription: (id: string, desc: string) => void;
+  onUpdateTextContent: (id: string, content: string) => void;
+}
+
+export default function QPMakerItems({ data, onFileUpload, onAddText, onRemoveItem, onUpdateDescription, onUpdateTextContent }: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFileUpload(e);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  return (
+    <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50/30">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+        <div>
+          <h3 className="font-bold text-gray-900 flex items-center gap-2">
+            <Plus className="w-5 h-5 text-indigo-600" /> Source Materials
+          </h3>
+          <p className="text-xs text-gray-500 mt-1">Add images or text blocks containing your raw questions.</p>
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button 
+            onClick={onAddText}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-bold sm:font-medium hover:bg-gray-50 transition-colors shadow-sm text-sm"
+          >
+            <Type className="w-4 h-4" /> Add Text
+          </button>
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg font-bold sm:font-medium hover:bg-indigo-100 transition-colors shadow-sm text-sm"
+          >
+            <Upload className="w-4 h-4" /> Add Images
+          </button>
+          <input 
+            type="file" 
+            multiple 
+            accept="image/*" 
+            className="hidden" 
+            ref={fileInputRef}
+            onChange={handleChange}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {data.items.length === 0 ? (
+          <div className="text-center py-10 bg-white border-2 border-dashed border-gray-200 rounded-xl">
+            <div className="flex justify-center gap-2 mb-2 text-gray-300">
+              <Upload className="w-6 h-6" />
+              <Type className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-medium text-gray-500">No source materials added yet.</p>
+          </div>
+        ) : (
+          data.items.map((item, i) => (
+            item.type === 'image' ? (
+              <QPMakerImageCard 
+                key={item.id}
+                itemData={item}
+                index={i}
+                onRemove={onRemoveItem}
+                onUpdateDescription={onUpdateDescription}
+              />
+            ) : (
+              <QPMakerTextCard 
+                key={item.id}
+                itemData={item}
+                index={i}
+                onRemove={onRemoveItem}
+                onUpdateDescription={onUpdateDescription}
+                onUpdateTextContent={onUpdateTextContent}
+              />
+            )
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/qp-maker/QPMakerItems.tsx ---
+
+--- START OF FILE src/components/lab/qp-maker/QPMakerProgress.tsx ---
+import React from 'react';
+import { Loader2 } from 'lucide-react';
+
+interface Props {
+  current: number;
+  total: number;
+  target: string;
+}
+
+export default function QPMakerProgress({ current, total, target }: Props) {
+  const percentage = total > 0 ? (current / total) * 100 : 0;
+  
+  return (
+    <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm mt-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+        <span className="text-sm font-bold text-indigo-900 flex items-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Generating {target}...
+        </span>
+        <span className="text-xs font-bold text-indigo-700 bg-white px-3 py-1 rounded-full border border-indigo-200 shadow-sm self-start sm:self-auto">
+          Paper {current + 1} of {total}
+        </span>
+      </div>
+      <div className="h-2.5 w-full bg-indigo-200/50 rounded-full overflow-hidden">
+        <div 
+          className="h-full bg-indigo-600 transition-all duration-300 rounded-full relative"
+          style={{ width: `${percentage}%` }}
+        >
+          <div className="absolute inset-0 bg-white/20 animate-pulse" />
+        </div>
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/qp-maker/QPMakerProgress.tsx ---
+
+--- START OF FILE src/components/lab/qp-maker/QPMakerTextCard.tsx ---
+import React from 'react';
+import { Trash2, Type } from 'lucide-react';
+import { QPItem } from './types';
+
+interface QPMakerTextCardProps {
+  itemData: QPItem;
+  index: number;
+  onRemove: (id: string) => void;
+  onUpdateDescription: (id: string, description: string) => void;
+  onUpdateTextContent: (id: string, textContent: string) => void;
+}
+
+export default function QPMakerTextCard({ itemData, index, onRemove, onUpdateDescription, onUpdateTextContent }: QPMakerTextCardProps) {
+  return (
+    <div className="flex flex-col md:flex-row gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm relative">
+      <div className="absolute top-0 left-0 bg-black/5 text-gray-500 text-[10px] font-bold px-2 py-1 rounded-br-lg z-10">
+        Src {index + 1}
+      </div>
+      <button 
+        onClick={() => onRemove(itemData.id)}
+        className="absolute top-2 right-2 bg-red-50 text-red-500 p-1.5 rounded-full hover:bg-red-100 transition-colors z-10"
+        title="Remove Text Block"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+
+      <div className="w-full md:w-1/2 flex flex-col mt-4 md:mt-0 pt-2">
+        <label className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 pl-1">
+          <Type className="w-3.5 h-3.5" /> Text Content
+        </label>
+        <textarea
+          value={itemData.textContent || ''}
+          onChange={(e) => onUpdateTextContent(itemData.id, e.target.value)}
+          placeholder="Paste question text here..."
+          className="w-full flex-1 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm resize-y outline-none min-h-[120px]"
+        />
+      </div>
+      <div className="w-full md:w-1/2 flex flex-col pt-2">
+        <label className="block text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 pl-1">
+          Instructions / Mapping
+        </label>
+        <textarea
+          value={itemData.description}
+          onChange={(e) => onUpdateDescription(itemData.id, e.target.value)}
+          placeholder="e.g. Physics Section A. Generate questions from this text."
+          className="w-full flex-1 px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm resize-y outline-none min-h-[120px]"
+        />
+      </div>
+    </div>
+  );
+}
+--- END OF FILE src/components/lab/qp-maker/QPMakerTextCard.tsx ---
+
 --- START OF FILE src/services/gemini/qpMakerService.ts ---
 import { GoogleGenAI, Type } from '@google/genai';
 import { fileToBase64 } from '../../utils/imageProcessing';
+import { QPItem } from '../../components/lab/qp-maker/types';
 
 export interface GeneratedQP {
   filename: string;
@@ -1382,20 +1245,24 @@ export async function generateImageDescription(
   throw lastError || new Error('Failed to generate description.');
 }
 
-export async function generateQuestionPapers(
-  files: File[],
+export async function generateSingleQuestionPaper(
+  items: QPItem[],
   instructions: string,
+  targetName: string,
   templateHtml: string,
   apiKeys: string[],
   modelName: string
-): Promise<GeneratedQP[]> {
+): Promise<GeneratedQP> {
   const keys = apiKeys.filter(k => k.trim());
   if (keys.length === 0) {
-    throw new Error('No API keys provided. Please add them in Settings.');
+    throw new Error('No API keys provided.');
   }
 
   const prompt = `You are an expert exam question paper creator.
-I am providing images of handwritten questions and specific instructions on how to parse and allocate them.
+I am providing source materials (images and text) containing raw questions and specific instructions on how to parse and allocate them.
+
+TARGET PAPER TO GENERATE: ${targetName}
+(Ensure the paper is generated specifically for this batch and set, following any variations mentioned).
 
 INSTRUCTIONS:
 ${instructions}
@@ -1406,17 +1273,22 @@ ${templateHtml}
 \`\`\`
 
 CRITICAL REQUIREMENT: Keep the logo IMG tag (\`<img src="logo1.png" ...>\`) exactly as it is in the template! Do not remove or change it. Ensure it remains in the final HTML.
+Use 100% width for the main container to allow fluid printing. Do not use fixed widths (like 850px) or box-shadows.
 
-Output a JSON array where each object contains a 'filename' (e.g., 'B1_Set_A.html') and 'htmlContent' (the fully generated HTML string for that paper, using the exact styling and structure of the template, integrating MathJax for equations). 
-Ensure the HTML is perfectly valid and properly escapes quotes if needed for JSON.`;
+Output a JSON object with 'filename' (e.g., '${targetName.replace(/[^a-zA-Z0-9]/g, '_')}.html') and 'htmlContent' (the fully generated HTML string for that paper, integrating MathJax).
+`;
 
   const contentsParts: any[] = [{ text: prompt }];
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const base64 = await fileToBase64(file);
-    contentsParts.push({ text: `Uploaded File ${i + 1}: ${file.name}` });
-    contentsParts.push({ inlineData: { data: base64, mimeType: file.type } });
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type === 'image' && item.file) {
+      const base64 = await fileToBase64(item.file);
+      contentsParts.push({ text: `Source ${i + 1} (Image): ${item.description}` });
+      contentsParts.push({ inlineData: { data: base64, mimeType: item.file.type } });
+    } else if (item.type === 'text' && item.textContent) {
+      contentsParts.push({ text: `Source ${i + 1} (Text):\nContent: ${item.textContent}\nDescription/Instructions: ${item.description}` });
+    }
   }
 
   let lastError: any;
@@ -1430,15 +1302,12 @@ Ensure the HTML is perfectly valid and properly escapes quotes if needed for JSO
         config: {
           responseMimeType: 'application/json',
           responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                filename: { type: Type.STRING, description: "e.g., B1_Set_A.html" },
-                htmlContent: { type: Type.STRING, description: "The complete HTML code based on the template" }
-              },
-              required: ["filename", "htmlContent"]
-            }
+            type: Type.OBJECT,
+            properties: {
+              filename: { type: Type.STRING },
+              htmlContent: { type: Type.STRING }
+            },
+            required: ["filename", "htmlContent"]
           }
         }
       });
@@ -1447,571 +1316,13 @@ Ensure the HTML is perfectly valid and properly escapes quotes if needed for JSO
       if (!text) throw new Error('Empty response from model');
 
       const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
-      const data = JSON.parse(cleanedText) as GeneratedQP[];
-      
-      return data;
+      return JSON.parse(cleanedText) as GeneratedQP;
     } catch (error) {
-      console.error('Error generating QPs with key:', error);
+      console.error('Error generating QP with key:', error);
       lastError = error;
     }
   }
 
-  throw lastError || new Error('Failed to generate Question Papers with the provided API keys.');
+  throw lastError || new Error(`Failed to generate Question Paper for ${targetName}`);
 }
 --- END OF FILE src/services/gemini/qpMakerService.ts ---
-
---- START OF FILE src/components/lab/qp-maker/QPMaker.tsx ---
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, FileText } from 'lucide-react';
-import QPMakerForm from './QPMakerForm';
-import QPMakerResults from './QPMakerResults';
-import QPMakerDaySelector from './QPMakerDaySelector';
-import { QPMakerDayData } from './types';
-import { format } from 'date-fns';
-import { getImage, deleteImage } from '../../../services/db';
-import { QP_TEMPLATES } from './constants';
-
-const defaultDayData: QPMakerDayData = {
-  date: format(new Date(), 'dd/MM/yyyy'),
-  duration: '30',
-  totalMarks: '15',
-  subjectDivisions:[{ id: '1', subject: 'Physics', marks: '15' }],
-  batchesAndSets: 'B1: Set A, Set B\nB2: Set A, Set B',
-  extraInstructions: 'Make sure to allocate the right questions. Change values for mathematical/physics problems to create Set B variations.',
-  templateId: 'default',
-  uploadedFiles:[],
-  generatedPapers:[]
-};
-
-export default function QPMaker({ onBack }: { onBack: () => void }) {
-  const [days, setDays] = useState<number[]>(() => {
-    const saved = localStorage.getItem('qp_days');
-    return saved ? JSON.parse(saved) : [1];
-  });
-  const [currentDay, setCurrentDay] = useState<number>(() => {
-    const saved = localStorage.getItem('qp_currentDay');
-    return saved ? parseInt(saved, 10) : 1;
-  });
-  const [dataByDay, setDataByDay] = useState<Record<number, QPMakerDayData>>({});
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  useEffect(() => {
-    localStorage.setItem('qp_days', JSON.stringify(days));
-    localStorage.setItem('qp_currentDay', currentDay.toString());
-  }, [days, currentDay]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      const loadedData: Record<number, QPMakerDayData> = {};
-      for (const day of days) {
-        const saved = localStorage.getItem(`qp_data_${day}`);
-        if (saved) {
-          try {
-            const parsed = JSON.parse(saved) as QPMakerDayData;
-            // Load images from DB
-            const filesWithPreview = await Promise.all(parsed.uploadedFiles.map(async f => {
-              const fileObj = await getImage(f.id);
-              if (fileObj) {
-                return { ...f, file: fileObj, previewUrl: URL.createObjectURL(fileObj) };
-              }
-              return f;
-            }));
-            parsed.uploadedFiles = filesWithPreview;
-            loadedData[day] = parsed;
-          } catch (e) {
-            loadedData[day] = { ...defaultDayData };
-          }
-        } else {
-          loadedData[day] = { ...defaultDayData };
-        }
-      }
-      setDataByDay(loadedData);
-      setIsLoaded(true);
-    };
-    loadData();
-  },[]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    // Save current state to local storage without file objects/previewUrls
-    Object.entries(dataByDay).forEach(([day, data]) => {
-      const dataToSave = {
-        ...data,
-        uploadedFiles: data.uploadedFiles.map(f => ({ id: f.id, description: f.description }))
-      };
-      localStorage.setItem(`qp_data_${day}`, JSON.stringify(dataToSave));
-    });
-  }, [dataByDay, isLoaded]);
-
-  const addDay = () => {
-    const newDay = Math.max(...days, 0) + 1;
-    setDays([...days, newDay]);
-    setDataByDay({ ...dataByDay, [newDay]: { ...defaultDayData } });
-    setCurrentDay(newDay);
-  };
-
-  const removeDay = async (dayToRemove: number) => {
-    if (days.length <= 1) return;
-    if (!window.confirm(`Are you sure you want to delete Day ${dayToRemove}?`)) return;
-
-    // cleanup images
-    const files = dataByDay[dayToRemove]?.uploadedFiles ||[];
-    for (const f of files) {
-      if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
-      await deleteImage(f.id);
-    }
-
-    const newDays = days.filter(d => d !== dayToRemove);
-    setDays(newDays);
-    
-    const newData = { ...dataByDay };
-    delete newData[dayToRemove];
-    setDataByDay(newData);
-    
-    localStorage.removeItem(`qp_data_${dayToRemove}`);
-    
-    if (currentDay === dayToRemove) {
-      setCurrentDay(newDays[0]);
-    }
-  };
-
-  const updateCurrentDayData = (newData: Partial<QPMakerDayData>) => {
-    setDataByDay(prev => ({
-      ...prev,
-      [currentDay]: { ...prev[currentDay], ...newData }
-    }));
-  };
-
-  const handleGenerate = async (compiledInstructions: string) => {
-    const currentData = dataByDay[currentDay];
-    if (!currentData || currentData.uploadedFiles.length === 0) {
-      alert("Please upload at least one image.");
-      return;
-    }
-    const files = currentData.uploadedFiles.map(f => f.file).filter(Boolean) as File[];
-    if (files.length === 0) return;
-
-    setIsGenerating(true);
-    try {
-      const apiKeysStr = localStorage.getItem('omr_apiKeysList');
-      const apiKeys = apiKeysStr ? JSON.parse(apiKeysStr) :[];
-      const model = localStorage.getItem('omr_proModel') || 'gemini-3.1-pro-preview';
-      
-      const templateHtml = QP_TEMPLATES.find(t => t.id === currentData.templateId)?.html || QP_TEMPLATES[0].html;
-
-      const { generateQuestionPapers } = await import('../../../services/gemini/qpMakerService');
-      const results = await generateQuestionPapers(files, compiledInstructions, templateHtml, apiKeys, model);
-      updateCurrentDayData({ generatedPapers: results });
-    } catch (error: any) {
-      alert(`Error: ${error.message}`);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  if (!isLoaded) return <div className="p-10 text-center text-gray-500">Loading...</div>;
-
-  const currentData = dataByDay[currentDay] || defaultDayData;
-
-  return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-gray-200 rounded-full transition-colors border border-gray-200 bg-white shadow-sm">
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
-          </button>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
-              <FileText className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">AI QP Maker</h2>
-              <p className="text-sm text-gray-500 font-medium">Automated HTML Question Paper Generation</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <QPMakerDaySelector 
-        days={days}
-        currentDay={currentDay}
-        onSetCurrentDay={setCurrentDay}
-        onAddDay={addDay}
-        onRemoveDay={removeDay}
-      />
-
-      {currentData.generatedPapers.length === 0 ? (
-        <QPMakerForm 
-          data={currentData}
-          onUpdate={updateCurrentDayData}
-          isGenerating={isGenerating} 
-          onGenerate={handleGenerate} 
-        />
-      ) : (
-        <QPMakerResults 
-          results={currentData.generatedPapers} 
-          onReset={() => {
-            if(window.confirm("Discard generated papers and edit?")) {
-              updateCurrentDayData({ generatedPapers:[] });
-            }
-          }} 
-        />
-      )}
-    </div>
-  );
-}
---- END OF FILE src/components/lab/qp-maker/QPMaker.tsx ---
-
---- START OF FILE src/components/lab/qp-maker/QPMakerTemplateSelector.tsx ---
-import React from 'react';
-import { LayoutTemplate, CheckCircle2 } from 'lucide-react';
-import { QP_TEMPLATES } from './constants';
-
-interface Props {
-  selectedId: string;
-  onSelect: (id: string) => void;
-}
-
-export default function QPMakerTemplateSelector({ selectedId, onSelect }: Props) {
-  return (
-    <div className="p-4 md:p-6 border-b border-gray-200">
-      <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-        <LayoutTemplate className="w-5 h-5 text-indigo-600" /> Template Design
-      </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {QP_TEMPLATES.map(template => (
-          <div 
-            key={template.id}
-            onClick={() => onSelect(template.id)}
-            className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col gap-2 ${
-              selectedId === template.id 
-                ? 'border-indigo-600 bg-indigo-50 shadow-sm' 
-                : 'border-gray-200 bg-white hover:border-indigo-300'
-            }`}
-          >
-            <div className="flex justify-between items-start">
-              <h4 className={`font-bold ${selectedId === template.id ? 'text-indigo-900' : 'text-gray-800'}`}>
-                {template.name}
-              </h4>
-              {selectedId === template.id && <CheckCircle2 className="w-5 h-5 text-indigo-600" />}
-            </div>
-            <p className="text-xs text-gray-500 leading-relaxed">{template.description}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/lab/qp-maker/QPMakerTemplateSelector.tsx ---
-
---- START OF FILE src/components/lab/qp-maker/QPMakerExamParams.tsx ---
-import React from 'react';
-import { Calendar, Clock, Target } from 'lucide-react';
-import SubjectDivisionInput from './SubjectDivisionInput';
-import { QPMakerDayData } from './types';
-
-interface Props {
-  data: QPMakerDayData;
-  onUpdate: (data: Partial<QPMakerDayData>) => void;
-}
-
-export default function QPMakerExamParams({ data, onUpdate }: Props) {
-  return (
-    <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50/50">
-      <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-        <Target className="w-5 h-5 text-indigo-600" /> Exam Parameters
-      </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <div>
-          <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-            <Calendar className="w-4 h-4 text-indigo-500" /> Date
-          </label>
-          <input
-            type="text"
-            value={data.date}
-            onChange={(e) => onUpdate({ date: e.target.value })}
-            placeholder="DD/MM/YYYY"
-            className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
-          />
-        </div>
-        <div>
-          <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-            <Clock className="w-4 h-4 text-indigo-500" /> Duration (Mins)
-          </label>
-          <input
-            type="text"
-            value={data.duration}
-            onChange={(e) => onUpdate({ duration: e.target.value })}
-            placeholder="e.g. 30"
-            className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
-          />
-        </div>
-        <div className="sm:col-span-2 md:col-span-2">
-          <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-            <Target className="w-4 h-4 text-indigo-500" /> Total Marks
-          </label>
-          <input
-            type="text"
-            value={data.totalMarks}
-            onChange={(e) => onUpdate({ totalMarks: e.target.value })}
-            placeholder="e.g. 15"
-            className="w-full px-3 py-2.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 font-medium text-sm transition-shadow shadow-sm outline-none"
-          />
-        </div>
-        <div className="sm:col-span-2 md:col-span-4">
-          <SubjectDivisionInput 
-            divisions={data.subjectDivisions} 
-            onChange={(divs) => onUpdate({ subjectDivisions: divs })} 
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/lab/qp-maker/QPMakerExamParams.tsx ---
-
---- START OF FILE src/components/lab/qp-maker/QPMakerBatches.tsx ---
-import React from 'react';
-import { Layers } from 'lucide-react';
-import { QPMakerDayData } from './types';
-
-interface Props {
-  data: QPMakerDayData;
-  onUpdate: (data: Partial<QPMakerDayData>) => void;
-}
-
-export default function QPMakerBatches({ data, onUpdate }: Props) {
-  return (
-    <div className="p-4 md:p-6 border-b border-gray-200">
-      <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-        <Layers className="w-5 h-5 text-indigo-600" /> Batches & Sets
-      </h3>
-      <p className="text-xs text-gray-500 mb-4">Define exactly which batches and sets the AI should output HTML files for.</p>
-      <textarea
-        value={data.batchesAndSets}
-        onChange={(e) => onUpdate({ batchesAndSets: e.target.value })}
-        rows={4}
-        placeholder="B1: Set A, Set B&#10;B2: Set A, Set B"
-        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono text-sm leading-relaxed transition-shadow shadow-sm resize-y outline-none"
-      />
-    </div>
-  );
-}
---- END OF FILE src/components/lab/qp-maker/QPMakerBatches.tsx ---
-
---- START OF FILE src/components/lab/qp-maker/QPMakerFiles.tsx ---
-import React, { useRef } from 'react';
-import { Upload } from 'lucide-react';
-import { QPMakerDayData } from './types';
-import QPMakerImageCard from './QPMakerImageCard';
-
-interface Props {
-  data: QPMakerDayData;
-  onFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemoveFile: (id: string) => void;
-  onUpdateDescription: (id: string, desc: string) => void;
-}
-
-export default function QPMakerFiles({ data, onFileUpload, onRemoveFile, onUpdateDescription }: Props) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFileUpload(e);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  }
-
-  return (
-    <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50/30">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
-        <div>
-          <h3 className="font-bold text-gray-900 flex items-center gap-2">
-            <Upload className="w-5 h-5 text-indigo-600" /> Uploaded Questions & Mapping
-          </h3>
-          <p className="text-xs text-gray-500 mt-1">Upload files and write specific instructions next to each.</p>
-        </div>
-        <button 
-          onClick={() => fileInputRef.current?.click()}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-bold sm:font-medium hover:bg-gray-50 transition-colors shadow-sm text-sm w-full sm:w-auto"
-        >
-          <Upload className="w-4 h-4" /> Add Files
-        </button>
-        <input 
-          type="file" 
-          multiple 
-          accept="image/*" 
-          className="hidden" 
-          ref={fileInputRef}
-          onChange={handleChange}
-        />
-      </div>
-
-      <div className="space-y-4">
-        {data.uploadedFiles.length === 0 ? (
-          <div className="text-center py-10 bg-white border-2 border-dashed border-gray-200 rounded-xl">
-            <Upload className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-            <p className="text-sm font-medium text-gray-500">No images uploaded yet.</p>
-          </div>
-        ) : (
-          data.uploadedFiles.map((f, i) => (
-            <QPMakerImageCard 
-              key={f.id}
-              fileData={f}
-              index={i}
-              onRemove={onRemoveFile}
-              onUpdateDescription={onUpdateDescription}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
---- END OF FILE src/components/lab/qp-maker/QPMakerFiles.tsx ---
-
---- START OF FILE src/components/lab/qp-maker/QPMakerInstructions.tsx ---
-import React from 'react';
-import { FileText, Loader2, Sparkles } from 'lucide-react';
-import { QPMakerDayData } from './types';
-
-interface Props {
-  data: QPMakerDayData;
-  onUpdate: (data: Partial<QPMakerDayData>) => void;
-  isGenerating: boolean;
-  onGenerate: () => void;
-}
-
-export default function QPMakerInstructions({ data, onUpdate, isGenerating, onGenerate }: Props) {
-  return (
-    <>
-      <div className="p-4 md:p-6">
-        <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-          <FileText className="w-4 h-4 text-indigo-500" /> Global / Additional Instructions
-        </label>
-        <textarea
-          value={data.extraInstructions}
-          onChange={(e) => onUpdate({ extraInstructions: e.target.value })}
-          rows={3}
-          placeholder="Any global rules for the AI..."
-          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 font-mono text-sm leading-relaxed transition-shadow shadow-sm resize-y outline-none"
-        />
-      </div>
-      
-      <div className="p-4 md:p-6 bg-gray-50 border-t border-gray-200">
-        <button
-          onClick={onGenerate}
-          disabled={isGenerating || data.uploadedFiles.length === 0}
-          className="w-full flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:active:scale-100"
-        >
-          {isGenerating ? <Loader2 className="w-6 h-6 animate-spin" /> : <Sparkles className="w-6 h-6" />}
-          {isGenerating ? 'AI is generating papers...' : 'Generate Question Papers'}
-        </button>
-      </div>
-    </>
-  );
-}
---- END OF FILE src/components/lab/qp-maker/QPMakerInstructions.tsx ---
-
---- START OF FILE src/components/lab/qp-maker/QPMakerForm.tsx ---
-import React from 'react';
-import { QPMakerDayData } from './types';
-import { saveImage, deleteImage } from '../../../services/db';
-
-import QPMakerTemplateSelector from './QPMakerTemplateSelector';
-import QPMakerExamParams from './QPMakerExamParams';
-import QPMakerBatches from './QPMakerBatches';
-import QPMakerFiles from './QPMakerFiles';
-import QPMakerInstructions from './QPMakerInstructions';
-
-interface QPMakerFormProps {
-  data: QPMakerDayData;
-  onUpdate: (data: Partial<QPMakerDayData>) => void;
-  isGenerating: boolean;
-  onGenerate: (compiledInstructions: string) => void;
-}
-
-export default function QPMakerForm({ data, onUpdate, isGenerating, onGenerate }: QPMakerFormProps) {
-  
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files).map(file => ({
-        id: Math.random().toString(36).substring(7),
-        file,
-        description: '',
-        previewUrl: URL.createObjectURL(file)
-      }));
-      // Save to IndexedDB
-      for(const f of newFiles) {
-        await saveImage(f.id, f.file);
-      }
-      onUpdate({ uploadedFiles:[...data.uploadedFiles, ...newFiles] });
-    }
-  };
-
-  const removeFile = async (id: string) => {
-    const toRemove = data.uploadedFiles.find(f => f.id === id);
-    if (toRemove && toRemove.previewUrl) {
-      URL.revokeObjectURL(toRemove.previewUrl);
-    }
-    await deleteImage(id);
-    onUpdate({ uploadedFiles: data.uploadedFiles.filter(f => f.id !== id) });
-  };
-
-  const updateFileDescription = (id: string, description: string) => {
-    onUpdate({
-      uploadedFiles: data.uploadedFiles.map(f => f.id === id ? { ...f, description } : f)
-    });
-  };
-
-  const handleSubmit = () => {
-    if (data.uploadedFiles.length === 0) {
-      alert('Please upload at least one image containing the questions.');
-      return;
-    }
-    
-    const subjectsStr = data.subjectDivisions.map(d => `${d.subject}: ${d.marks}`).join(', ');
-
-    const compiledInstructions = `
-EXAM DATE: ${data.date}
-DURATION: ${data.duration} minutes
-MAXIMUM MARKS: ${data.totalMarks}
-SUBJECTS & MARKS DIVISION: ${subjectsStr}
-
-REQUIRED OUTPUT FILES (Batches & Sets):
-${data.batchesAndSets}
-
-UPLOADED FILES & THEIR MAPPING DESCRIPTIONS:
-${data.uploadedFiles.map((f, i) => `File ${i + 1} (${f.file?.name || 'Image'}): ${f.description}`).join('\n\n')}
-
-ADDITIONAL INSTRUCTIONS:
-${data.extraInstructions}
-    `.trim();
-
-    onGenerate(compiledInstructions);
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
-      <QPMakerTemplateSelector 
-        selectedId={data.templateId || 'default'} 
-        onSelect={(id) => onUpdate({ templateId: id })} 
-      />
-      <QPMakerExamParams data={data} onUpdate={onUpdate} />
-      <QPMakerBatches data={data} onUpdate={onUpdate} />
-      <QPMakerFiles 
-        data={data} 
-        onFileUpload={handleFileUpload} 
-        onRemoveFile={removeFile} 
-        onUpdateDescription={updateFileDescription} 
-      />
-      <QPMakerInstructions 
-        data={data} 
-        onUpdate={onUpdate} 
-        isGenerating={isGenerating} 
-        onGenerate={handleSubmit} 
-      />
-    </div>
-  );
-}
---- END OF FILE src/components/lab/qp-maker/QPMakerForm.tsx ---

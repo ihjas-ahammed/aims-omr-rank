@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { fileToBase64 } from '../../utils/imageProcessing';
+import { QPItem } from '../../components/lab/qp-maker/types';
 
 export interface GeneratedQP {
   filename: string;
@@ -38,20 +39,24 @@ export async function generateImageDescription(
   throw lastError || new Error('Failed to generate description.');
 }
 
-export async function generateQuestionPapers(
-  files: File[],
+export async function generateSingleQuestionPaper(
+  items: QPItem[],
   instructions: string,
+  targetName: string,
   templateHtml: string,
   apiKeys: string[],
   modelName: string
-): Promise<GeneratedQP[]> {
+): Promise<GeneratedQP> {
   const keys = apiKeys.filter(k => k.trim());
   if (keys.length === 0) {
-    throw new Error('No API keys provided. Please add them in Settings.');
+    throw new Error('No API keys provided.');
   }
 
   const prompt = `You are an expert exam question paper creator.
-I am providing images of handwritten questions and specific instructions on how to parse and allocate them.
+I am providing source materials (images and text) containing raw questions and specific instructions on how to parse and allocate them.
+
+TARGET PAPER TO GENERATE: ${targetName}
+(Ensure the paper is generated specifically for this batch and set, following any variations mentioned).
 
 INSTRUCTIONS:
 ${instructions}
@@ -62,17 +67,22 @@ ${templateHtml}
 \`\`\`
 
 CRITICAL REQUIREMENT: Keep the logo IMG tag (\`<img src="logo1.png" ...>\`) exactly as it is in the template! Do not remove or change it. Ensure it remains in the final HTML.
+Use 100% width for the main container to allow fluid printing. Do not use fixed widths (like 850px) or box-shadows.
 
-Output a JSON array where each object contains a 'filename' (e.g., 'B1_Set_A.html') and 'htmlContent' (the fully generated HTML string for that paper, using the exact styling and structure of the template, integrating MathJax for equations). 
-Ensure the HTML is perfectly valid and properly escapes quotes if needed for JSON.`;
+Output a JSON object with 'filename' (e.g., '${targetName.replace(/[^a-zA-Z0-9]/g, '_')}.html') and 'htmlContent' (the fully generated HTML string for that paper, integrating MathJax).
+`;
 
   const contentsParts: any[] = [{ text: prompt }];
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const base64 = await fileToBase64(file);
-    contentsParts.push({ text: `Uploaded File ${i + 1}: ${file.name}` });
-    contentsParts.push({ inlineData: { data: base64, mimeType: file.type } });
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    if (item.type === 'image' && item.file) {
+      const base64 = await fileToBase64(item.file);
+      contentsParts.push({ text: `Source ${i + 1} (Image): ${item.description}` });
+      contentsParts.push({ inlineData: { data: base64, mimeType: item.file.type } });
+    } else if (item.type === 'text' && item.textContent) {
+      contentsParts.push({ text: `Source ${i + 1} (Text):\nContent: ${item.textContent}\nDescription/Instructions: ${item.description}` });
+    }
   }
 
   let lastError: any;
@@ -86,15 +96,12 @@ Ensure the HTML is perfectly valid and properly escapes quotes if needed for JSO
         config: {
           responseMimeType: 'application/json',
           responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                filename: { type: Type.STRING, description: "e.g., B1_Set_A.html" },
-                htmlContent: { type: Type.STRING, description: "The complete HTML code based on the template" }
-              },
-              required: ["filename", "htmlContent"]
-            }
+            type: Type.OBJECT,
+            properties: {
+              filename: { type: Type.STRING },
+              htmlContent: { type: Type.STRING }
+            },
+            required: ["filename", "htmlContent"]
           }
         }
       });
@@ -103,14 +110,12 @@ Ensure the HTML is perfectly valid and properly escapes quotes if needed for JSO
       if (!text) throw new Error('Empty response from model');
 
       const cleanedText = text.replace(/```json\n?|\n?```/g, '').trim();
-      const data = JSON.parse(cleanedText) as GeneratedQP[];
-      
-      return data;
+      return JSON.parse(cleanedText) as GeneratedQP;
     } catch (error) {
-      console.error('Error generating QPs with key:', error);
+      console.error('Error generating QP with key:', error);
       lastError = error;
     }
   }
 
-  throw lastError || new Error('Failed to generate Question Papers with the provided API keys.');
+  throw lastError || new Error(`Failed to generate Question Paper for ${targetName}`);
 }
