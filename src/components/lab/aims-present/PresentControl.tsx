@@ -56,7 +56,7 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
     else if (type === 'speaker') slide = { id: uuid(), type: 'speaker', segment: 'Programme', persons: [], activePersonId: null };
     else if (type === 'congrats') slide = { id: uuid(), type: 'congrats', congratsTitle: 'Congratulations', congratsSubtitle: '', congratsMessage: '' };
     else if (type === 'title') slide = { id: uuid(), type: 'title', congratsTitle: 'Title', congratsSubtitle: '', congratsMessage: '' };
-    else if (type === 'gallery') slide = { id: uuid(), type: 'gallery', galleryCategory: 'full-aplus', galleryTitle: 'Congratulations', gallerySubtitle: '', slideshowDelay: 5, galleryCurrentKey: '', footerCaption: '' };
+    else if (type === 'gallery') slide = { id: uuid(), type: 'gallery', galleryCategory: 'all', galleryTitle: 'Congratulations', gallerySubtitle: '', slideshowDelay: 5, galleryCurrentKey: '', galleryQueue: [], footerCaption: '' };
     else slide = { id: uuid(), type: 'persons', persons: [], activePersonId: null };
     const slides = [...presentation.slides, slide];
     // First slide added becomes active automatically.
@@ -506,13 +506,20 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
           </div>
           <p className="text-xs text-gray-400">Live preview — this is what viewers see right now.</p>
 
-          {activeSlide?.type === 'gallery' && (
-            <GalleryController
-              slide={activeSlide}
-              isLive={activeSlide.id === presentation.activeSlideId}
-              onShow={(key) => editSlide(activeSlide.id, { galleryCurrentKey: key })}
-            />
-          )}
+          {/* Gallery cockpit: drives the live gallery, or lets you preset the
+              up-next queue for the gallery slide while another slide is live. */}
+          {(() => {
+            const galleryNow = activeSlide?.type === 'gallery' ? activeSlide : slides.find(s => s.type === 'gallery');
+            if (!galleryNow) return null;
+            return (
+              <GalleryController
+                key={galleryNow.id}
+                slide={galleryNow}
+                isLive={galleryNow.id === presentation.activeSlideId}
+                onPatch={(patch) => editSlide(galleryNow.id, patch)}
+              />
+            );
+          })()}
         </main>
       </div>
     </div>

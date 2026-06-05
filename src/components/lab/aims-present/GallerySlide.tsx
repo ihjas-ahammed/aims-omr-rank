@@ -20,20 +20,27 @@ const textV: Variants = {
 };
 
 // Looks up the student a gallery slide should currently show: the one whose
-// photoUrl matches galleryCurrentKey, falling back to the first of the category.
+// photoUrl matches galleryCurrentKey. In Auto mode, falls back to the first of
+// the category (so the slide is never blank). In Queue-only mode there is no
+// fallback — when nothing is queued yet it shows a "ready" placeholder.
 function currentStudent(slide: Slide): Student | null {
-  const list = studentsFor(slide.galleryCategory || 'all');
   if (slide.galleryCurrentKey) {
     const match = STUDENTS.find(s => s.photoUrl === slide.galleryCurrentKey);
     if (match) return match;
   }
-  return list[0] || null;
+  if (slide.galleryQueueOnly) return null;
+  return studentsFor(slide.galleryCategory || 'all')[0] || null;
 }
 
 export default function GallerySlide({ slide, preview = false }: { slide: Slide; preview?: boolean }) {
   const student = currentStudent(slide);
+  const galleryEmpty = studentsFor(slide.galleryCategory || 'all').length === 0;
   const eyebrow = slide.galleryTitle || 'Congratulations';
-  const subtitle = slide.gallerySubtitle || (slide.galleryCategory ? CATEGORY_LABEL[slide.galleryCategory as keyof typeof CATEGORY_LABEL] : '');
+  // Subtitle follows the student's own category (so a combined "all" gallery
+  // labels each one Full A+ / 5 A+ / 90% & above), unless a fixed one is set.
+  const subtitle = (slide.gallerySubtitle && slide.gallerySubtitle.trim())
+    ? slide.gallerySubtitle
+    : (student ? CATEGORY_LABEL[student.category] : '');
 
   return (
     <div className="w-full h-full relative overflow-hidden" style={{ containerType: 'size' }}>
@@ -43,16 +50,29 @@ export default function GallerySlide({ slide, preview = false }: { slide: Slide;
       <Confetti count={10} />
       <AwardsFrame />
 
-      {!student ? (
+      {!student && galleryEmpty ? (
         <div className="absolute inset-0 flex items-center justify-center" style={{ color: AWARDS.muted, fontSize: preview ? '1.5cqmin' : '3cqmin' }}>
           No students in this gallery.
+        </div>
+      ) : !student ? (
+        // Queue-only mode, nothing queued yet — a calm "ready" stage.
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-[10cqmin]" style={{ paddingBottom: '14cqmin' }}>
+          <p className="uppercase" style={{ color: AWARDS.accent, fontSize: '3cqmin', letterSpacing: '0.46em', paddingLeft: '0.46em', fontWeight: 600, animation: 'ssaRiseUp 0.8s ease-out both' }}>
+            {eyebrow}
+          </p>
+          <span style={{ display: 'block', height: '0.5cqmin', width: '20cqmin', borderRadius: '1cqmin', background: `linear-gradient(90deg, transparent, ${AWARDS.green}, transparent)`, marginTop: '3cqmin', animation: 'ssaFadeIn 1s ease-out 0.3s both' }} />
+          {(slide.gallerySubtitle && slide.gallerySubtitle.trim()) && (
+            <p className="uppercase" style={{ color: AWARDS.muted, fontSize: '2.4cqmin', letterSpacing: '0.3em', paddingLeft: '0.3em', marginTop: '3cqmin', fontWeight: 600, animation: 'ssaFadeIn 1s ease-out 0.5s both' }}>
+              {slide.gallerySubtitle}
+            </p>
+          )}
         </div>
       ) : (
         <AnimatePresence mode="wait">
           <motion.div
             key={student.photoUrl}
             className="absolute inset-0 flex flex-col items-center justify-center text-center px-[8cqmin]"
-            style={{ paddingTop: '4cqmin', paddingBottom: '16cqmin' }}
+            style={{ paddingTop: '9cqmin', paddingBottom: '13cqmin' }}
             initial="hidden"
             animate="visible"
             exit="exit"
@@ -76,7 +96,7 @@ export default function GallerySlide({ slide, preview = false }: { slide: Slide;
             )}
 
             {/* Portrait with spotlight glow */}
-            <motion.div variants={photoV} className="relative flex items-center justify-center" style={{ marginTop: '3.5cqmin' }}>
+            <motion.div variants={photoV} className="relative flex items-center justify-center" style={{ marginTop: '3cqmin' }}>
               <div className="absolute" style={{ width: '64cqmin', height: '64cqmin', borderRadius: '50%', background: `radial-gradient(circle, ${AWARDS.green}26, transparent 66%)` }} />
               <StudentPortrait student={student} />
             </motion.div>
@@ -86,7 +106,7 @@ export default function GallerySlide({ slide, preview = false }: { slide: Slide;
               variants={textV}
               style={{
                 fontFamily: SERIF, color: AWARDS.navy, fontSize: '7.6cqmin', fontWeight: 800,
-                lineHeight: 1.04, marginTop: '3cqmin', textShadow: `0 0.2cqmin 0.5cqmin ${AWARDS.navy}1a`,
+                lineHeight: 1.04, marginTop: '2.4cqmin', textShadow: `0 0.2cqmin 0.5cqmin ${AWARDS.navy}1a`,
               }}
             >
               {student.name}
@@ -110,25 +130,28 @@ export default function GallerySlide({ slide, preview = false }: { slide: Slide;
 function StudentPortrait({ student }: { student: Student }) {
   const [err, setErr] = useState(false);
   useEffect(() => { setErr(false); }, [student.photoUrl]);
-  // Portrait frame (taller than wide) with object-cover — keeps faces filled,
-  // consistent sizing across mixed-aspect photos.
-  return (
-    <div
-      className="overflow-hidden flex items-center justify-center"
-      style={{
-        width: '44cqmin',
-        height: '52cqmin',
-        borderRadius: '3cqmin',
-        border: `0.7cqmin solid ${AWARDS.green}`,
-        background: AWARDS.panel,
-        boxShadow: `0 0.6cqmin 2.4cqmin ${AWARDS.navy}26`,
-      }}
-    >
-      {!err ? (
-        <img src={student.photoUrl} alt={student.name} className="w-full h-full object-cover" onError={() => setErr(true)} />
-      ) : (
+  // The frame hugs the photo: the border sits on the image itself and the image
+  // is bounded by max height/width, so it scales to its own aspect ratio —
+  // whole photo shown, never cropped, and no letterbox gaps.
+  const frame: React.CSSProperties = {
+    borderRadius: '3cqmin',
+    border: `0.7cqmin solid ${AWARDS.green}`,
+    background: AWARDS.panel,
+    boxShadow: `0 0.6cqmin 2.4cqmin ${AWARDS.navy}26`,
+  };
+  if (err) {
+    return (
+      <div className="flex items-center justify-center" style={{ width: '46cqmin', height: '56cqmin', ...frame }}>
         <User style={{ width: '45%', height: '45%', color: AWARDS.accent }} />
-      )}
-    </div>
+      </div>
+    );
+  }
+  return (
+    <img
+      src={student.photoUrl}
+      alt={student.name}
+      onError={() => setErr(true)}
+      style={{ maxHeight: '56cqmin', maxWidth: '66cqmin', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block', ...frame }}
+    />
   );
 }

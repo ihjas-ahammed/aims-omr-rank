@@ -164,7 +164,7 @@ export function LeafEmblem({ size = 12 }: { size?: number }) {
   );
 }
 
-export function AwardsFooter({ caption = 'SSLC Awards 2026' }: { caption?: string }) {
+export function AwardsFooter({ caption = '' }: { caption?: string }) {
   return (
     <div className="absolute left-0 right-0 flex flex-col items-center" style={{ bottom: '5cqmin', animation: 'ssaFadeIn 1s ease-out 0.6s both' }}>
       {/* logo sits directly on the white canvas — no badge needed */}

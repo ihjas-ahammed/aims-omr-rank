@@ -106,6 +106,12 @@ export interface Slide {
   // `galleryCurrentKey` is written by the controller each step; the view simply
   // displays the student whose photoUrl matches it. Reuses `slideshowDelay` for pacing.
   galleryCurrentKey?: string;        // photoUrl of the student currently on screen
+  // Priority "up next" queue (photoUrl keys). Persisted so it can be preset
+  // before the slide goes live; the driver shows these next, one per delay.
+  galleryQueue?: string[];
+  // Queue-only mode: don't auto-walk A→Z — show only queued students, and hold
+  // on the last one when the queue runs out (so the presenter can add the next).
+  galleryQueueOnly?: boolean;
 }
 
 export type AnchorV = 'top' | 'center' | 'bottom';

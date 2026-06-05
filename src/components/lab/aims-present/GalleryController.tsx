@@ -1,105 +1,140 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, Play, Pause, SkipForward, RotateCcw, Plus, X, Radio } from 'lucide-react';
+import { Search, Play, Pause, SkipForward, RotateCcw, Plus, X, Radio, Zap } from 'lucide-react';
 import { Slide } from '../../../services/firebaseService';
-import { studentsFor, Student, CATEGORY_LABEL } from './students';
+import { studentsFor, STUDENTS, Student, CATEGORY_LABEL } from './students';
 
 interface GalleryControllerProps {
   slide: Slide;
   isLive: boolean;
-  // Writes the given student's photoUrl as the gallery's current student (synced
-  // to the view via Firebase). This is the single source of "who is on screen".
-  onShow: (key: string) => void;
+  // Persists a patch onto the gallery slide (current student, queue, mode).
+  // Going through Firebase means a queue preset before the slide is live, and
+  // every step while live, are both just slide edits — one source of truth.
+  onPatch: (patch: Partial<Slide>) => void;
 }
 
-// Drives the student gallery while it is the live slide:
-//  - walks the category A–Z at the fixed delay, and
-//  - lets the presenter search and queue priority students, who are shown
-//    after the current one, one per delay tick (so a burst of additions still
-//    plays out at the normal pace).
-export default function GalleryController({ slide, isLive, onShow }: GalleryControllerProps) {
+const byKey = (key: string): Student | undefined => STUDENTS.find(s => s.photoUrl === key);
+
+// Drives the student gallery and lets the presenter manage who shows:
+//  - Auto mode: walks the set A→Z at the fixed delay; the queue jumps people forward.
+//  - Queue-only mode: shows only queued students; when the queue runs out it holds
+//    on the last one (waiting) so the presenter can add the next.
+// "Show now" on any queued student replaces who's on screen immediately.
+export default function GalleryController({ slide, isLive, onPatch }: GalleryControllerProps) {
   const category = slide.galleryCategory || 'all';
   const delay = Math.max(0.5, slide.slideshowDelay ?? 5);
+  const queueOnly = !!slide.galleryQueueOnly;
   const list = useMemo(() => studentsFor(category), [category]);
+  const queueKeys = useMemo(() => slide.galleryQueue || [], [slide.galleryQueue]);
 
-  const [queue, setQueue] = useState<Student[]>([]);
   const [search, setSearch] = useState('');
   const [paused, setPaused] = useState(false);
+  const [waiting, setWaiting] = useState(false); // queue-only ran out, holding
+  const [timerNonce, setTimerNonce] = useState(0); // bump to restart the delay
 
-  // Refs the interval reads so it always sees the latest values without resubscribing.
-  const azIndexRef = useRef(0);
-  const queueRef = useRef<Student[]>([]);
-  const onShowRef = useRef(onShow);
-  // Fast add-flow: type in the input → Tab jumps to the top result → Enter adds
-  // it and bounces focus back to the input, ready for the next name.
+  // Refs so the interval/handlers always read the latest values.
+  const azIndexRef = useRef(0);              // next A→Z index to show
+  const queueKeysRef = useRef<string[]>([]);
+  const onPatchRef = useRef(onPatch);
+  const currentKeyRef = useRef<string | undefined>(slide.galleryCurrentKey);
+  const queueOnlyRef = useRef(queueOnly);
+  const waitingRef = useRef(false);
+  queueKeysRef.current = queueKeys;
+  onPatchRef.current = onPatch;
+  currentKeyRef.current = slide.galleryCurrentKey;
+  queueOnlyRef.current = queueOnly;
+
   const searchInputRef = useRef<HTMLInputElement>(null);
   const firstResultRef = useRef<HTMLButtonElement>(null);
-  queueRef.current = queue;
-  onShowRef.current = onShow;
 
-  // Advance one step: priority queue takes precedence, else step A–Z.
+  const setWaitingBoth = (v: boolean) => { waitingRef.current = v; setWaiting(v); };
+
+  // Advance one step: priority queue first, else step A→Z (or hold in queue-only).
   const advance = () => {
-    if (list.length === 0) return;
-    if (queueRef.current.length > 0) {
-      const [next, ...rest] = queueRef.current;
-      setQueue(rest);
-      onShowRef.current(next.photoUrl);
-    } else {
-      azIndexRef.current = (azIndexRef.current + 1) % list.length;
-      onShowRef.current(list[azIndexRef.current].photoUrl);
+    const keys = queueKeysRef.current;
+    if (keys.length > 0) {
+      onPatchRef.current({ galleryCurrentKey: keys[0], galleryQueue: keys.slice(1) });
+      setWaitingBoth(false);
+    } else if (queueOnlyRef.current) {
+      setWaitingBoth(true); // hold on the current student, wait for the next add
+    } else if (list.length > 0) {
+      const idx = azIndexRef.current;
+      azIndexRef.current = (idx + 1) % list.length;
+      onPatchRef.current({ galleryCurrentKey: list[idx].photoUrl });
+      setWaitingBoth(false);
     }
   };
 
-  // When the category changes, restart the A–Z walk from the top.
+  // Show a specific student right now, pulling them out of the queue. Works
+  // whether or not the slide is live: while hidden it simply becomes the current
+  // student, so it's shown first when the slide is switched live. While live it
+  // replaces who's on screen and gets a full delay (timer restart).
+  const showNow = (s: Student) => {
+    onPatch({ galleryCurrentKey: s.photoUrl, galleryQueue: queueKeys.filter(k => k !== s.photoUrl) });
+    const i = list.findIndex(x => x.photoUrl === s.photoUrl); // resume A→Z after them
+    if (i >= 0) azIndexRef.current = (i + 1) % list.length;
+    setWaitingBoth(false);
+    setTimerNonce(n => n + 1);
+  };
+
+  // Resume A→Z just after the student currently on screen.
+  useEffect(() => {
+    const k = currentKeyRef.current;
+    const i = k ? list.findIndex(s => s.photoUrl === k) : -1;
+    if (i >= 0) azIndexRef.current = (i + 1) % list.length;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Changing the student set restarts the A→Z walk from the top.
   useEffect(() => {
     azIndexRef.current = 0;
-    setQueue([]);
-    if (isLive && list.length > 0) onShowRef.current(list[0].photoUrl);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
-  // On going live: resume from the current student if one is set, else start at A.
+  // On going live with nothing shown yet, show the first one immediately
+  // (a preset queue plays first), instead of waiting a full delay.
   useEffect(() => {
-    if (!isLive || list.length === 0) return;
-    const idx = list.findIndex(s => s.photoUrl === slide.galleryCurrentKey);
-    if (idx >= 0) {
-      azIndexRef.current = idx;
-    } else {
-      azIndexRef.current = 0;
-      onShowRef.current(list[0].photoUrl);
-    }
+    if (isLive && list.length > 0 && !currentKeyRef.current) advance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLive]);
 
-  // The auto-advance timer — only runs while live and playing.
+  // Auto-advance timer — only while live and playing. timerNonce restarts it.
   useEffect(() => {
     if (!isLive || paused || list.length === 0) return;
     const t = setInterval(advance, delay * 1000);
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLive, paused, delay, list.length]);
+  }, [isLive, paused, delay, list.length, timerNonce]);
 
   const addToQueue = (s: Student) => {
-    setQueue(prev => (prev.some(q => q.photoUrl === s.photoUrl) ? prev : [...prev, s]));
+    if (isLive && queueOnlyRef.current && waitingRef.current) {
+      // Queue had run out and we were holding — show this one straight away.
+      onPatch({ galleryCurrentKey: s.photoUrl });
+      setWaitingBoth(false);
+      setTimerNonce(n => n + 1);
+    } else if (!queueKeys.includes(s.photoUrl)) {
+      onPatch({ galleryQueue: [...queueKeys, s.photoUrl] });
+    }
     setSearch('');
-    // Bounce focus back to the search box so the next name can be typed immediately.
     searchInputRef.current?.focus();
   };
-  const removeFromQueue = (key: string) => setQueue(prev => prev.filter(q => q.photoUrl !== key));
+  const removeFromQueue = (key: string) => onPatch({ galleryQueue: queueKeys.filter(k => k !== key) });
 
   const restart = () => {
     azIndexRef.current = 0;
-    setQueue([]);
-    if (list.length > 0) onShow(list[0].photoUrl);
+    setWaitingBoth(false);
+    onPatch({ galleryCurrentKey: queueOnly ? '' : (list[0]?.photoUrl || ''), galleryQueue: [] });
+    setTimerNonce(n => n + 1);
   };
 
-  const current = list.find(s => s.photoUrl === slide.galleryCurrentKey)
-    || (slide.galleryCurrentKey ? studentsFor('all').find(s => s.photoUrl === slide.galleryCurrentKey) : undefined);
+  const current = slide.galleryCurrentKey ? byKey(slide.galleryCurrentKey) : undefined;
+  const queueStudents = queueKeys.map(byKey).filter(Boolean) as Student[];
 
   const results = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return [];
     return list.filter(s => s.name.toLowerCase().includes(q)).slice(0, 40);
   }, [search, list]);
+
+  const statusLabel = !isLive ? 'Gallery (not live)' : (waiting ? 'Waiting — add the next student' : 'Now showing');
 
   return (
     <div className="w-full max-w-3xl bg-white border border-gray-200 rounded-xl shadow-sm p-4 space-y-4">
@@ -113,9 +148,10 @@ export default function GalleryController({ slide, isLive, onShow }: GalleryCont
           )}
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-wide text-gray-400 flex items-center gap-1">
-              <Radio className={`w-3 h-3 ${isLive && !paused ? 'text-green-500' : 'text-gray-400'}`} /> Now showing
+              <Radio className={`w-3 h-3 ${isLive && !paused && !waiting ? 'text-green-500' : (waiting ? 'text-amber-500' : 'text-gray-400')}`} />
+              {statusLabel}
             </p>
-            <p className="font-semibold text-gray-900 truncate">{current?.name || '—'}</p>
+            <p className="font-semibold text-gray-900 truncate">{current?.name || (isLive ? '—' : 'Preset the queue, then set live')}</p>
             <p className="text-xs text-gray-400">{CATEGORY_LABEL[category as keyof typeof CATEGORY_LABEL] || 'All'} · {list.length} students · {delay}s each</p>
           </div>
         </div>
@@ -130,15 +166,42 @@ export default function GalleryController({ slide, isLive, onShow }: GalleryCont
           <button onClick={advance} disabled={!isLive} title="Skip to next" className="p-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-40">
             <SkipForward className="w-4 h-4" />
           </button>
-          <button onClick={restart} disabled={!isLive} title="Restart from A" className="p-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-40">
+          <button onClick={restart} disabled={!isLive} title="Restart" className="p-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 disabled:opacity-40">
             <RotateCcw className="w-4 h-4" />
           </button>
         </div>
       </div>
 
+      {/* Mode toggle */}
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">Mode</span>
+        <div className="inline-flex rounded-md border border-gray-200 overflow-hidden">
+          <button
+            onClick={() => onPatch({ galleryQueueOnly: false })}
+            className={`px-3 py-1.5 text-xs font-medium ${!queueOnly ? 'bg-violet-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+          >
+            Auto A→Z
+          </button>
+          <button
+            onClick={() => onPatch({ galleryQueueOnly: true })}
+            className={`px-3 py-1.5 text-xs font-medium ${queueOnly ? 'bg-violet-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+          >
+            Queue only
+          </button>
+        </div>
+        <span className="text-[11px] text-gray-400">
+          {queueOnly ? 'Shows only queued students; holds when empty.' : 'Plays everyone A→Z; queue jumps forward.'}
+        </span>
+      </div>
+
       {!isLive && (
         <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-          Set this slide live to start the gallery.
+          You can build the “up next” queue now. Set this slide live to start — queued students play first.
+        </p>
+      )}
+      {isLive && waiting && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+          Holding on the last student. Add a name and it shows immediately.
         </p>
       )}
 
@@ -174,7 +237,7 @@ export default function GalleryController({ slide, isLive, onShow }: GalleryCont
                 >
                   <img src={s.photoUrl} alt="" className="w-7 h-7 rounded object-cover border border-gray-200 shrink-0" />
                   <span className="flex-1 min-w-0 text-sm text-gray-800 truncate">{s.name}</span>
-                  {s.percent && <span className="text-xs text-gray-400 shrink-0">{s.percent}</span>}
+                  <span className="text-[11px] text-gray-400 shrink-0">{CATEGORY_LABEL[s.category]}</span>
                   <Plus className="w-4 h-4 text-violet-500 shrink-0" />
                 </button>
               ))}
@@ -186,16 +249,25 @@ export default function GalleryController({ slide, isLive, onShow }: GalleryCont
         </div>
 
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wide text-gray-400">Up next ({queue.length})</label>
+          <label className="text-xs font-semibold uppercase tracking-wide text-gray-400">Up next ({queueStudents.length})</label>
           <div className="mt-1 max-h-56 overflow-y-auto space-y-1.5">
-            {queue.length === 0 ? (
-              <p className="text-xs text-gray-400 py-2">Queue empty — playing A→Z. Search above to jump people forward.</p>
+            {queueStudents.length === 0 ? (
+              <p className="text-xs text-gray-400 py-2">
+                {queueOnly ? 'Queue empty — add students to show them.' : 'Queue empty — plays A→Z. Search to jump people forward.'}
+              </p>
             ) : (
-              queue.map((s, i) => (
+              queueStudents.map((s, i) => (
                 <div key={s.photoUrl} className="flex items-center gap-2 bg-violet-50 border border-violet-100 rounded-md px-2 py-1.5">
                   <span className="text-xs font-semibold text-violet-400 w-4 shrink-0">{i + 1}</span>
                   <img src={s.photoUrl} alt="" className="w-7 h-7 rounded object-cover border border-violet-200 shrink-0" />
                   <span className="flex-1 min-w-0 text-sm text-gray-800 truncate">{s.name}</span>
+                  <button
+                    onClick={() => showNow(s)}
+                    title={isLive ? 'Show now (replace current)' : 'Make current — shows first when live'}
+                    className="flex items-center gap-1 px-1.5 py-1 text-[11px] font-medium rounded bg-green-100 text-green-700 hover:bg-green-200 shrink-0"
+                  >
+                    <Zap className="w-3 h-3" /> {isLive ? 'Show now' : 'Show first'}
+                  </button>
                   <button onClick={() => removeFromQueue(s.photoUrl)} className="p-1 text-gray-400 hover:text-red-500 shrink-0">
                     <X className="w-3.5 h-3.5" />
                   </button>

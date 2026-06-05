@@ -67,7 +67,8 @@ const sslcAwards2026: PresentationTemplate = {
         congratsMessage: 'To all our brilliant achievers — your dedication and hard work have made AIMS proud. Wishing you a future as bright as this moment.',
       },
     ];
-    return { title: 'SSLC Awards 2026', slides, activeSlideId: slides[0].id };
+    const stamped = slides.map(s => ({ ...s, footerCaption: 'SSLC Awards 2026' }));
+    return { title: 'SSLC Awards 2026', slides: stamped, activeSlideId: slides[0].id };
   },
 };
 
@@ -90,34 +91,18 @@ const plusTwoAwards2026: PresentationTemplate = {
       speakerSlide('Inauguration', [person('')]),
       speakerSlide('Felicitation', [person('Ansar Sir')]),
       speakerSlide('Vote of Thanks', [person('Basim Sir')]),
-      // Student galleries — set one live, then drive it from the search & queue
-      // controller below the preview. Auto-plays A→Z; queue jumps people forward.
+      // Student gallery — all three sets in one slide. Each student shows with
+      // their own category (Full A+ / 5 A+ / 90% & above). Auto-plays A→Z; the
+      // up-next queue (presettable before going live) jumps people forward.
       {
         id: uid(),
         type: 'gallery',
-        galleryCategory: 'full-aplus',
+        galleryCategory: 'all',
         galleryTitle: 'Congratulations',
-        gallerySubtitle: 'Plus Two 2026 · Full A+',
+        gallerySubtitle: '',
         slideshowDelay: 5,
         galleryCurrentKey: '',
-      },
-      {
-        id: uid(),
-        type: 'gallery',
-        galleryCategory: '5-aplus',
-        galleryTitle: 'Congratulations',
-        gallerySubtitle: 'Plus Two 2026 · 5 A+',
-        slideshowDelay: 5,
-        galleryCurrentKey: '',
-      },
-      {
-        id: uid(),
-        type: 'gallery',
-        galleryCategory: '90-above',
-        galleryTitle: 'Congratulations',
-        gallerySubtitle: 'Plus Two 2026 · 90% & Above',
-        slideshowDelay: 5,
-        galleryCurrentKey: '',
+        galleryQueue: [],
       },
       // Celebration — keep this live during the ceremony.
       {
@@ -127,8 +112,9 @@ const plusTwoAwards2026: PresentationTemplate = {
         congratsSubtitle: 'Plus Two 2026 · Achievers',
         congratsMessage: 'To all our brilliant achievers — your dedication and hard work have made AIMS proud. Wishing you a future as bright as this moment.',
       },
-    ].map(s => ({ ...s, footerCaption: 'Plus Two Awards 2026' }));
-    return { title: 'Plus Two Awards 2026', slides, activeSlideId: slides[0].id };
+    ];
+    const stamped = slides.map(s => ({ ...s, footerCaption: 'Plus Two Awards 2026' }));
+    return { title: 'Plus Two Awards 2026', slides: stamped, activeSlideId: slides[0].id };
   },
 };
 
