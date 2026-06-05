@@ -64,7 +64,10 @@ export interface CloudSnapshot {
   data: string;
 }
 
-export type SlideType = 'text' | 'image' | 'persons' | 'speaker' | 'congrats' | 'title';
+export type SlideType = 'text' | 'image' | 'slideshow' | 'persons' | 'speaker' | 'congrats' | 'title';
+
+// Transition used between images in a slideshow slide.
+export type SlideshowAnimation = 'slide' | 'fade' | 'zoom';
 
 export interface Person {
   id: string;
@@ -78,6 +81,10 @@ export interface Slide {
   type: SlideType;
   text?: string;                  // text slides
   imageUrl?: string;              // image slides (external URL)
+  // slideshow slides: cycles through external image URLs while the slide is live.
+  images?: string[];              // ordered list of external image URLs
+  slideshowDelay?: number;        // seconds each image is shown (default 4)
+  slideshowAnimation?: SlideshowAnimation; // transition between images (default 'slide')
   persons?: Person[];             // persons / speaker slides (people)
   activePersonId?: string | null; // persons / speaker: who is currently highlighted
   // speaker slides (awards template):

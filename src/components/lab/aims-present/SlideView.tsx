@@ -4,6 +4,7 @@ import { Slide, Person, PresentationSettings, DEFAULT_PRESENTATION_SETTINGS } fr
 import SpeakerSlide from './SpeakerSlide';
 import CongratsSlide from './CongratsSlide';
 import TitleSlide from './TitleSlide';
+import SlideshowSlide from './SlideshowSlide';
 
 interface SlideViewProps {
   slide: Slide | null;
@@ -30,14 +31,18 @@ export default function SlideView({ slide, preview = false, settings }: SlideVie
     );
   }
 
+  if (slide.type === 'slideshow') return <SlideshowSlide slide={slide} preview={preview} />;
+
   if (slide.type === 'image') {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-black">
+      <div className="w-full h-full flex items-center justify-center bg-black overflow-hidden">
         {slide.imageUrl && !imgError ? (
+          // Fit by height: a portrait image on a landscape screen fills the full
+          // height and is centered, never letterboxed top/bottom.
           <img
             src={slide.imageUrl}
             alt=""
-            className="max-w-full max-h-full object-contain"
+            className="h-full w-auto max-w-none object-contain"
             onError={() => setImgError(true)}
           />
         ) : (

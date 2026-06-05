@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Users, ChevronLeft, ChevronRight, Radio, Link2, GripVertical, Mic, Award, Heading, Settings as SettingsIcon, X } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Images, Users, ChevronLeft, ChevronRight, Radio, Link2, GripVertical, Mic, Award, Heading, Settings as SettingsIcon, X } from 'lucide-react';
 import {
   getPresentation,
   updatePresentation,
@@ -50,6 +50,7 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
     let slide: Slide;
     if (type === 'text') slide = { id: uuid(), type: 'text', text: 'New slide' };
     else if (type === 'image') slide = { id: uuid(), type: 'image', imageUrl: '' };
+    else if (type === 'slideshow') slide = { id: uuid(), type: 'slideshow', images: [''], slideshowDelay: 4, slideshowAnimation: 'slide' };
     else if (type === 'speaker') slide = { id: uuid(), type: 'speaker', segment: 'Programme', persons: [], activePersonId: null };
     else if (type === 'congrats') slide = { id: uuid(), type: 'congrats', congratsTitle: 'Congratulations', congratsSubtitle: '', congratsMessage: '' };
     else if (type === 'title') slide = { id: uuid(), type: 'title', congratsTitle: 'Title', congratsSubtitle: '', congratsMessage: '' };
@@ -91,6 +92,43 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
   const setActivePerson = (slideId: string, personId: string) => {
     if (!presentation) return;
     setSlides(presentation.slides.map(s => s.id !== slideId ? s : { ...s, activePersonId: personId }));
+  };
+
+  // --- slideshow-slide helpers ---
+  const addImage = (slideId: string) => {
+    if (!presentation) return;
+    setSlides(presentation.slides.map(s =>
+      s.id !== slideId ? s : { ...s, images: [...(s.images || []), ''] }
+    ));
+  };
+
+  const editImage = (slideId: string, idx: number, value: string) => {
+    if (!presentation) return;
+    setSlides(presentation.slides.map(s => {
+      if (s.id !== slideId) return s;
+      const images = [...(s.images || [])];
+      images[idx] = value;
+      return { ...s, images };
+    }));
+  };
+
+  const deleteImage = (slideId: string, idx: number) => {
+    if (!presentation) return;
+    setSlides(presentation.slides.map(s =>
+      s.id !== slideId ? s : { ...s, images: (s.images || []).filter((_, i) => i !== idx) }
+    ));
+  };
+
+  const moveImage = (slideId: string, from: number, to: number) => {
+    if (!presentation) return;
+    setSlides(presentation.slides.map(s => {
+      if (s.id !== slideId) return s;
+      const images = [...(s.images || [])];
+      if (to < 0 || to >= images.length) return s;
+      const [item] = images.splice(from, 1);
+      images.splice(to, 0, item);
+      return { ...s, images };
+    }));
   };
 
   const settings: PresentationSettings = { ...DEFAULT_PRESENTATION_SETTINGS, ...(presentation?.settings || {}) };
@@ -185,6 +223,9 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
             <button onClick={() => addSlide('image')} className="flex items-center justify-center gap-1.5 px-2 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
               <ImageIcon className="w-4 h-4" /> Image
             </button>
+            <button onClick={() => addSlide('slideshow')} className="flex items-center justify-center gap-1.5 px-2 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
+              <Images className="w-4 h-4" /> Slideshow
+            </button>
             <button onClick={() => addSlide('persons')} className="flex items-center justify-center gap-1.5 px-2 py-2 text-sm font-medium bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200">
               <Users className="w-4 h-4" /> Persons
             </button>
@@ -248,6 +289,59 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
                       placeholder="https://image-url…"
                       className="w-full text-sm border border-gray-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-violet-400"
                     />
+                  )}
+
+                  {slide.type === 'slideshow' && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <label className="flex flex-col gap-0.5 text-xs text-gray-500">
+                          Delay (sec)
+                          <input
+                            type="number"
+                            min={0.5}
+                            step={0.5}
+                            value={slide.slideshowDelay ?? 4}
+                            onChange={(e) => editSlide(slide.id, { slideshowDelay: Math.max(0.5, parseFloat(e.target.value) || 0.5) })}
+                            className="w-full text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-violet-400"
+                          />
+                        </label>
+                        <label className="flex flex-col gap-0.5 text-xs text-gray-500">
+                          Animation
+                          <select
+                            value={slide.slideshowAnimation || 'slide'}
+                            onChange={(e) => editSlide(slide.id, { slideshowAnimation: e.target.value as any })}
+                            className="w-full text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-violet-400 bg-white"
+                          >
+                            <option value="slide">Slide</option>
+                            <option value="fade">Fade</option>
+                            <option value="zoom">Zoom</option>
+                          </select>
+                        </label>
+                      </div>
+                      {(slide.images || []).map((url, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                          <span className="text-xs font-semibold text-gray-400 w-4 shrink-0">{i + 1}</span>
+                          <input
+                            value={url}
+                            onChange={(e) => editImage(slide.id, i, e.target.value)}
+                            placeholder="https://image-url…"
+                            className="flex-1 min-w-0 text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-violet-400"
+                          />
+                          <button onClick={() => moveImage(slide.id, i, i - 1)} disabled={i === 0} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 shrink-0">
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => moveImage(slide.id, i, i + 1)} disabled={i === (slide.images || []).length - 1} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 shrink-0">
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => deleteImage(slide.id, i)} className="p-1 text-gray-400 hover:text-red-500 shrink-0">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                      <button onClick={() => addImage(slide.id)} className="w-full flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-md border border-dashed border-gray-300 text-gray-500 hover:bg-gray-50">
+                        <Plus className="w-3.5 h-3.5" /> Add image
+                      </button>
+                    </div>
                   )}
 
                   {(slide.type === 'congrats' || slide.type === 'title') && (
