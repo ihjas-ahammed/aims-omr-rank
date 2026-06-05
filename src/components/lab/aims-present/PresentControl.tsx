@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Images, Users, ChevronLeft, ChevronRight, Radio, Link2, GripVertical, Mic, Award, Heading, Settings as SettingsIcon, X } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Images, Users, ChevronLeft, ChevronRight, Radio, Link2, GripVertical, Mic, Award, Heading, Settings as SettingsIcon, X, GraduationCap } from 'lucide-react';
 import {
   getPresentation,
   updatePresentation,
@@ -13,6 +13,8 @@ import {
   isFirebaseConfigured,
 } from '../../../services/firebaseService';
 import SlideStage from './SlideStage';
+import GalleryController from './GalleryController';
+import { CATEGORY_LABEL } from './students';
 
 interface PresentControlProps {
   presentationId: string;
@@ -54,6 +56,7 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
     else if (type === 'speaker') slide = { id: uuid(), type: 'speaker', segment: 'Programme', persons: [], activePersonId: null };
     else if (type === 'congrats') slide = { id: uuid(), type: 'congrats', congratsTitle: 'Congratulations', congratsSubtitle: '', congratsMessage: '' };
     else if (type === 'title') slide = { id: uuid(), type: 'title', congratsTitle: 'Title', congratsSubtitle: '', congratsMessage: '' };
+    else if (type === 'gallery') slide = { id: uuid(), type: 'gallery', galleryCategory: 'full-aplus', galleryTitle: 'Congratulations', gallerySubtitle: '', slideshowDelay: 5, galleryCurrentKey: '', footerCaption: '' };
     else slide = { id: uuid(), type: 'persons', persons: [], activePersonId: null };
     const slides = [...presentation.slides, slide];
     // First slide added becomes active automatically.
@@ -238,6 +241,9 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
             <button onClick={() => addSlide('title')} className="flex items-center justify-center gap-1.5 px-2 py-2 text-sm font-medium bg-amber-50 text-amber-700 rounded-md hover:bg-amber-100">
               <Heading className="w-4 h-4" /> Title
             </button>
+            <button onClick={() => addSlide('gallery')} className="flex items-center justify-center gap-1.5 px-2 py-2 text-sm font-medium bg-amber-50 text-amber-700 rounded-md hover:bg-amber-100">
+              <GraduationCap className="w-4 h-4" /> Gallery
+            </button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -368,6 +374,54 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
                     </div>
                   )}
 
+                  {slide.type === 'gallery' && (
+                    <div className="space-y-1.5">
+                      <label className="flex flex-col gap-0.5 text-xs text-gray-500">
+                        Student set
+                        <select
+                          value={slide.galleryCategory || 'full-aplus'}
+                          onChange={(e) => editSlide(slide.id, { galleryCategory: e.target.value as any, galleryCurrentKey: '' })}
+                          className="w-full text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-violet-400 bg-white"
+                        >
+                          <option value="full-aplus">{CATEGORY_LABEL['full-aplus']}</option>
+                          <option value="5-aplus">{CATEGORY_LABEL['5-aplus']}</option>
+                          <option value="90-above">{CATEGORY_LABEL['90-above']}</option>
+                          <option value="all">All students</option>
+                        </select>
+                      </label>
+                      <label className="flex flex-col gap-0.5 text-xs text-gray-500">
+                        Delay per student (sec)
+                        <input
+                          type="number"
+                          min={0.5}
+                          step={0.5}
+                          value={slide.slideshowDelay ?? 5}
+                          onChange={(e) => editSlide(slide.id, { slideshowDelay: Math.max(0.5, parseFloat(e.target.value) || 0.5) })}
+                          className="w-full text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-violet-400"
+                        />
+                      </label>
+                      <input
+                        value={slide.galleryTitle || ''}
+                        onChange={(e) => editSlide(slide.id, { galleryTitle: e.target.value })}
+                        placeholder="Eyebrow (e.g. Congratulations)"
+                        className="w-full text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-violet-400"
+                      />
+                      <input
+                        value={slide.gallerySubtitle || ''}
+                        onChange={(e) => editSlide(slide.id, { gallerySubtitle: e.target.value })}
+                        placeholder="Subtitle (e.g. Plus Two 2026 · Full A+)"
+                        className="w-full text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-violet-400"
+                      />
+                      <input
+                        value={slide.footerCaption ?? ''}
+                        onChange={(e) => editSlide(slide.id, { footerCaption: e.target.value })}
+                        placeholder="Footer caption (e.g. Plus Two Awards 2026)"
+                        className="w-full text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-violet-400"
+                      />
+                      <p className="text-[11px] text-gray-400">Set live, then use the search &amp; queue below the preview to run the show.</p>
+                    </div>
+                  )}
+
                   {(slide.type === 'persons' || slide.type === 'speaker') && (
                     <div className="space-y-2">
                       {slide.type === 'speaker' && (
@@ -451,6 +505,14 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
             </button>
           </div>
           <p className="text-xs text-gray-400">Live preview — this is what viewers see right now.</p>
+
+          {activeSlide?.type === 'gallery' && (
+            <GalleryController
+              slide={activeSlide}
+              isLive={activeSlide.id === presentation.activeSlideId}
+              onShow={(key) => editSlide(activeSlide.id, { galleryCurrentKey: key })}
+            />
+          )}
         </main>
       </div>
     </div>

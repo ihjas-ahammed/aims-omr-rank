@@ -81,7 +81,7 @@ export default function SpeakerSlide({ slide }: { slide: Slide }) {
         )}
       </motion.div>
 
-      <AwardsFooter />
+      <AwardsFooter caption={slide.footerCaption} />
     </div>
   );
 }

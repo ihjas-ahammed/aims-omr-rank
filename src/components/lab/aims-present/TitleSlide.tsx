@@ -53,7 +53,7 @@ export default function TitleSlide({ slide }: { slide: Slide }) {
         )}
       </motion.div>
 
-      <AwardsFooter />
+      <AwardsFooter caption={slide.footerCaption} />
     </div>
   );
 }

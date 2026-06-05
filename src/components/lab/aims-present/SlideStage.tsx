@@ -4,7 +4,7 @@ import { Slide, PresentationSettings } from '../../../services/firebaseService';
 import SlideView from './SlideView';
 
 // Awards slides use a white canvas; the generic slides (text/image/persons) use black.
-const AWARDS_TYPES = new Set(['title', 'congrats', 'speaker']);
+const AWARDS_TYPES = new Set(['title', 'congrats', 'speaker', 'gallery']);
 
 interface SlideStageProps {
   slide: Slide | null;

@@ -71,7 +71,7 @@ export default function CongratsSlide({ slide }: { slide: Slide }) {
       </motion.div>
 
       <CelebrationConfetti />
-      <AwardsFooter />
+      <AwardsFooter caption={slide.footerCaption} />
     </div>
   );
 }

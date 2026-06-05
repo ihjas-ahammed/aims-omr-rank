@@ -164,14 +164,16 @@ export function LeafEmblem({ size = 12 }: { size?: number }) {
   );
 }
 
-export function AwardsFooter() {
+export function AwardsFooter({ caption = 'SSLC Awards 2026' }: { caption?: string }) {
   return (
     <div className="absolute left-0 right-0 flex flex-col items-center" style={{ bottom: '5cqmin', animation: 'ssaFadeIn 1s ease-out 0.6s both' }}>
       {/* logo sits directly on the white canvas — no badge needed */}
       <img src="/logo1.png" alt="AIMS" style={{ height: '5cqmin', width: 'auto', display: 'block' }} />
-      <p style={{ color: AWARDS.greenDark, fontSize: '1.6cqmin', letterSpacing: '0.32em', textTransform: 'uppercase', marginTop: '1.4cqmin', fontWeight: 600 }}>
-        SSLC Awards 2026
-      </p>
+      {caption && (
+        <p style={{ color: AWARDS.greenDark, fontSize: '1.6cqmin', letterSpacing: '0.32em', textTransform: 'uppercase', marginTop: '1.4cqmin', fontWeight: 600 }}>
+          {caption}
+        </p>
+      )}
     </div>
   );
 }

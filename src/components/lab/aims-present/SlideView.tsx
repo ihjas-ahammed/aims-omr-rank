@@ -5,6 +5,7 @@ import SpeakerSlide from './SpeakerSlide';
 import CongratsSlide from './CongratsSlide';
 import TitleSlide from './TitleSlide';
 import SlideshowSlide from './SlideshowSlide';
+import GallerySlide from './GallerySlide';
 
 interface SlideViewProps {
   slide: Slide | null;
@@ -32,6 +33,7 @@ export default function SlideView({ slide, preview = false, settings }: SlideVie
   }
 
   if (slide.type === 'slideshow') return <SlideshowSlide slide={slide} preview={preview} />;
+  if (slide.type === 'gallery') return <GallerySlide slide={slide} preview={preview} />;
 
   if (slide.type === 'image') {
     return (

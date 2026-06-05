@@ -64,7 +64,10 @@ export interface CloudSnapshot {
   data: string;
 }
 
-export type SlideType = 'text' | 'image' | 'slideshow' | 'persons' | 'speaker' | 'congrats' | 'title';
+export type SlideType = 'text' | 'image' | 'slideshow' | 'persons' | 'speaker' | 'congrats' | 'title' | 'gallery';
+
+// Which set of student photos a gallery slide draws from (see students.ts).
+export type GalleryCategory = 'full-aplus' | '5-aplus' | '90-above' | 'all';
 
 // Transition used between images in a slideshow slide.
 export type SlideshowAnimation = 'slide' | 'fade' | 'zoom';
@@ -93,6 +96,16 @@ export interface Slide {
   congratsTitle?: string;
   congratsSubtitle?: string;
   congratsMessage?: string;
+  // footer caption shown on awards slides (title/speaker/congrats/gallery).
+  // Defaults to 'SSLC Awards 2026' for backward compatibility.
+  footerCaption?: string;
+  // gallery slides (student congratulations gallery — see students.ts):
+  galleryCategory?: GalleryCategory; // which student set to cycle through
+  galleryTitle?: string;             // eyebrow shown above each student, e.g. "Plus Two 2026"
+  gallerySubtitle?: string;          // line under the eyebrow, e.g. "Full A+ Achievers"
+  // `galleryCurrentKey` is written by the controller each step; the view simply
+  // displays the student whose photoUrl matches it. Reuses `slideshowDelay` for pacing.
+  galleryCurrentKey?: string;        // photoUrl of the student currently on screen
 }
 
 export type AnchorV = 'top' | 'center' | 'bottom';
