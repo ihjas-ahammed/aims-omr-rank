@@ -29,6 +29,10 @@ export default function GalleryController({ slide, isLive, onShow }: GalleryCont
   const azIndexRef = useRef(0);
   const queueRef = useRef<Student[]>([]);
   const onShowRef = useRef(onShow);
+  // Fast add-flow: type in the input → Tab jumps to the top result → Enter adds
+  // it and bounces focus back to the input, ready for the next name.
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const firstResultRef = useRef<HTMLButtonElement>(null);
   queueRef.current = queue;
   onShowRef.current = onShow;
 
@@ -77,6 +81,8 @@ export default function GalleryController({ slide, isLive, onShow }: GalleryCont
   const addToQueue = (s: Student) => {
     setQueue(prev => (prev.some(q => q.photoUrl === s.photoUrl) ? prev : [...prev, s]));
     setSearch('');
+    // Bounce focus back to the search box so the next name can be typed immediately.
+    searchInputRef.current?.focus();
   };
   const removeFromQueue = (key: string) => setQueue(prev => prev.filter(q => q.photoUrl !== key));
 
@@ -143,19 +149,28 @@ export default function GalleryController({ slide, isLive, onShow }: GalleryCont
           <div className="relative mt-1">
             <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
+              ref={searchInputRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                // Tab → jump to the top result (so the next Enter adds it).
+                if (e.key === 'Tab' && !e.shiftKey && results.length > 0) {
+                  e.preventDefault();
+                  firstResultRef.current?.focus();
+                }
+              }}
               placeholder="Search by name…"
               className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:border-violet-400"
             />
           </div>
           {results.length > 0 && (
             <div className="mt-2 max-h-48 overflow-y-auto border border-gray-100 rounded-md divide-y divide-gray-100">
-              {results.map(s => (
+              {results.map((s, i) => (
                 <button
                   key={s.photoUrl}
+                  ref={i === 0 ? firstResultRef : undefined}
                   onClick={() => addToQueue(s)}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-violet-50"
+                  className="w-full flex items-center gap-2 px-2 py-1.5 text-left hover:bg-violet-50 focus:bg-violet-100 focus:outline-none"
                 >
                   <img src={s.photoUrl} alt="" className="w-7 h-7 rounded object-cover border border-gray-200 shrink-0" />
                   <span className="flex-1 min-w-0 text-sm text-gray-800 truncate">{s.name}</span>

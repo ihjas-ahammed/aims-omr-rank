@@ -96,17 +96,6 @@ export default function GallerySlide({ slide, preview = false }: { slide: Slide;
               variants={textV}
               style={{ display: 'block', height: '0.45cqmin', width: '16cqmin', borderRadius: '1cqmin', background: `linear-gradient(90deg, transparent, ${AWARDS.green}, transparent)`, marginTop: '1.8cqmin' }}
             />
-
-            {/* Percentage badge for the 90%-above set */}
-            {student.percent && (
-              <motion.p
-                variants={textV}
-                className="font-bold"
-                style={{ color: AWARDS.greenDark, fontSize: '4.2cqmin', marginTop: '1.8cqmin', letterSpacing: '0.04em' }}
-              >
-                {student.percent}
-              </motion.p>
-            )}
           </motion.div>
         </AnimatePresence>
       )}
