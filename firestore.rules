@@ -1,0 +1,33 @@
+rules_version = '2';
+
+// AIMS Plus Lab — open-by-ID, no-auth design.
+// Access is gated by knowledge of the document ID (exam ID, presentation ID),
+// the same model the app's UI assumes. Scoped to the collections the app uses
+// rather than a global wildcard.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Online Exams
+    match /exams/{examId} {
+      allow read, write: if true;
+      match /submissions/{submissionId} {
+        allow read, write: if true;
+      }
+    }
+
+    // Shared app data: course progress, timetables, fee logs
+    match /app_data/{docId} {
+      allow read, write: if true;
+    }
+
+    // Cloud session snapshots
+    match /cloud_sessions/{sessionId} {
+      allow read, write: if true;
+    }
+
+    // Aims Presenter
+    match /presentations/{presentationId} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -25,6 +25,7 @@ import { ScoreAnalysisDashboard } from './components/lab/score-analysis';
 import DescriptiveDashboard from './components/lab/descriptive/DescriptiveDashboard';
 
 import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
+import { PresentDashboard, PresentControl, PresentView } from './components/lab/aims-present';
 
 const DEFAULT_ATTENDANCE = `ADIL MARZOOQUE\nADISANKAR\nADITHYA RAJ\nADWAID\nAHAMED IRFAN K\nAHAMED JUNAID\nAHLAM HASAN K\nAMAL CHANDRA N\nANJANA K\nANSHIA P\nANSILA KADOORAN\nAPARNA C\nARSHA FATHIMA M\nARSHIN PC\nASWATHY E\nATHUL VB\nAVANI PS\nAYISHA DIYA\nAZAL MHD\nDIYA AK\nDIYA FATHIMA KP\nDIYA MEHRIN K\nDIYA V\nFAHMA VP\nFAIZ AHMED AN\nFARHA P\nFATHIMA DILFA P\nFATHIMA FIZA M\nFATHIMA HIBA PP\nFATHIMA HUDA N\nFATHIMA LIYA A\nFATHIMA MINHA PE\nFATHIMA MISBHA VA\nFATHIMA NASHA\nFATHIMA NASHA CP\nFATHIMA RIFNA A\nFATHIMA SHAHNA PK\nFIDA THASNIM\nGOURI NANDA C\nHAMNA FATHIMA\nHANIYA FATHIMA P\nHANIYYA V\nHASNA SHARI VP\nHIBA FATHIMA KP\nHISHAM MHD\nKRISHNA PRIYA PC\nKRISTHI MUNADHA T\nLASIN ABDULLAH\nLISNA K\nLIYA FATHIMA A\nMAJID A\nMAZIN MHD\nMHD ADNAN K\nMHD AHANN TK\nMHD ANFAS TK\nMHD ASHFAQUE\nMHD DANISH\nMHD DIYAN\nMHD FAIROOZ\nMHD FARHAN K\nMHD FATHIN ALI\nMHD LIYAN P\nMHD MAJID RAMZAN TP\nMHD MUFLIH A\nMHD NAJADH\nMHD RAZAL T\nMHD RISHAN P\nMHD SABITH P\nMHD SABITH TK\nMHD SADHIL V\nMHD SHAFEEQ KK\nMHD SHAHABAS K\nMHD SINAN A\nMILHA RAZACK A\nMINHA PK\nMISHAL AHAMED\nNAIRA ABDUL LATHEEF\nNAJIH AHAMED\nNAJIYA NASRIN C\nNAJVA\nNAJVA FATHIMA C\nNASHA FATHIMA P\nNIDHA FATHIMA K\nNIDHA SHIRIN N\nNITHIN RAJ\nRAJEEBA K\nRANA FATHIMA K\nREHAN ABDUL RAHEEM\nREVATHY K\nRIDHA K\nRIFA CP\nRIFA P\nRINSHA JALIDHA P\nRINSHA SHERIN T\nRIYA SUNEER\nSHABANA JASMIN\nSILNA FATHIMA\nSITHARA BASHEER P\nSIYA TP\nTHANHA FATHIMA`;
 
@@ -58,10 +59,25 @@ const DEFAULT_ANSWER_KEY = `{
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view';
+
+// Parse /aims-present/<mode>/<id> from a pathname. Returns null if it isn't a presenter route.
+function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dashboard'; id: string | null } | null {
+  const m = pathname.match(/^\/aims-present(?:\/(control|view)\/([^/]+))?\/?$/);
+  if (!m) return null;
+  if (!m[1]) return { mode: 'dashboard', id: null };
+  return { mode: m[1] as 'control' | 'view', id: decodeURIComponent(m[2]) };
+}
 
 export default function App() {
+  const [presentId, setPresentId] = useState<string | null>(() => parsePresentRoute(window.location.pathname)?.id ?? null);
   const [view, setView] = useState<ViewState>(() => {
+    const present = parsePresentRoute(window.location.pathname);
+    if (present) {
+      if (present.mode === 'control') return 'aims-present-control';
+      if (present.mode === 'view') return 'aims-present-view';
+      return 'lab-aims-present';
+    }
     if (window.location.pathname === '/course-progress') {
       return 'lab-course-progress';
     }
@@ -247,7 +263,14 @@ export default function App() {
 
   useEffect(() => {
     const handlePopState = () => {
-      if (window.location.pathname === '/course-progress') setView('lab-course-progress');
+      const present = parsePresentRoute(window.location.pathname);
+      if (present) {
+        setPresentId(present.id);
+        if (present.mode === 'control') setView('aims-present-control');
+        else if (present.mode === 'view') setView('aims-present-view');
+        else setView('lab-aims-present');
+      }
+      else if (window.location.pathname === '/course-progress') setView('lab-course-progress');
       else if (window.location.pathname === '/timetable') setView('lab-timetable');
       else if (window.location.pathname === '/') setView('home');
     };
@@ -814,6 +837,20 @@ export default function App() {
     }} />;
   }
 
+  if (view === 'aims-present-view') {
+    if (!presentId) return <div className="fixed inset-0 bg-black text-red-400 flex items-center justify-center">Invalid presentation ID.</div>;
+    return <PresentView presentationId={presentId} />;
+  }
+
+  if (view === 'aims-present-control') {
+    if (!presentId) return <div className="p-8 text-center text-red-500">Invalid presentation ID.</div>;
+    return <PresentControl presentationId={presentId} onBack={() => {
+      window.history.pushState({}, '', '/aims-present');
+      setPresentId(null);
+      setView('lab-aims-present');
+    }} />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans print:bg-white">
       <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
@@ -918,10 +955,24 @@ export default function App() {
             } else if (v === 'lab-timetable') {
               window.history.pushState({}, '', '/timetable');
               setView('lab-timetable');
+            } else if (v === 'lab-aims-present') {
+              window.history.pushState({}, '', '/aims-present');
+              setView('lab-aims-present');
             } else {
               setView(v);
             }
           }} />
+        )}
+
+        {view === 'lab-aims-present' && (
+          <PresentDashboard
+            onBack={() => { window.history.pushState({}, '', '/'); setView('lab'); }}
+            onOpenControl={(id) => {
+              window.history.pushState({}, '', `/aims-present/control/${id}`);
+              setPresentId(id);
+              setView('aims-present-control');
+            }}
+          />
         )}
 
         {view === 'lab-crop' && (

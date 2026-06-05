@@ -1,8 +1,8 @@
 import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature } from 'lucide-react';
+import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature, Presentation } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'home') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home') => void;
 }
 
 export default function Lab({ onNavigate }: LabProps) {
@@ -59,6 +59,22 @@ export default function Lab({ onNavigate }: LabProps) {
           <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Online Exams</h3>
           <p className="text-sm text-gray-600 flex-1">
             Setup online exams using images of a question paper. Generate a link, collect student responses with anti-cheat monitoring, and view results.
+          </p>
+        </div>
+
+        <div
+          onClick={() => onNavigate('lab-aims-present')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-violet-300 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-violet-50 text-violet-600 rounded-lg group-hover:bg-violet-100 transition-colors">
+              <Presentation className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-violet-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Aims Presenter</h3>
+          <p className="text-sm text-gray-600 flex-1">
+            Present and control slides from any device. The control screen drives live view screens in real-time across devices.
           </p>
         </div>
 

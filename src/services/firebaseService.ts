@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy, setDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -62,6 +62,56 @@ export interface CloudSnapshot {
   name: string;
   createdAt: string;
   data: string;
+}
+
+export type SlideType = 'text' | 'image' | 'persons' | 'speaker' | 'congrats' | 'title';
+
+export interface Person {
+  id: string;
+  name: string;
+  role: string;        // e.g. "Director"
+  photoUrl: string;    // external URL
+}
+
+export interface Slide {
+  id: string;
+  type: SlideType;
+  text?: string;                  // text slides
+  imageUrl?: string;              // image slides (external URL)
+  persons?: Person[];             // persons / speaker slides (people)
+  activePersonId?: string | null; // persons / speaker: who is currently highlighted
+  // speaker slides (awards template):
+  segment?: string;               // program segment, e.g. "Welcome Address"
+  // congrats slides (awards template):
+  congratsTitle?: string;
+  congratsSubtitle?: string;
+  congratsMessage?: string;
+}
+
+export type AnchorV = 'top' | 'center' | 'bottom';
+export type AnchorH = 'left' | 'center' | 'right';
+
+// Presentation-wide settings applied to all persons slides.
+export interface PresentationSettings {
+  personScale: number;     // photo/text size multiplier, e.g. 1.0 (slider 0.5–1.5)
+  personAnchorV: AnchorV;  // vertical placement of the panel
+  personAnchorH: AnchorH;  // horizontal placement of the panel
+}
+
+export const DEFAULT_PRESENTATION_SETTINGS: PresentationSettings = {
+  personScale: 1,
+  personAnchorV: 'center',
+  personAnchorH: 'center',
+};
+
+export interface Presentation {
+  id?: string;
+  title: string;
+  slides: Slide[];
+  activeSlideId: string | null;
+  settings?: PresentationSettings;
+  createdAt?: any;
+  updatedAt?: any;
 }
 
 // Service Functions
@@ -188,4 +238,87 @@ export async function getCloudSnapshots(): Promise<CloudSnapshot[]> {
 export async function deleteCloudSnapshot(id: string): Promise<void> {
   if (!db) throw new Error("Firebase is not configured.");
   await deleteDoc(doc(db, 'cloud_sessions', id));
+}
+
+// --- Aims Presenter ---
+
+export async function createPresentation(title: string): Promise<string> {
+  if (!db) throw new Error("Firebase is not configured.");
+  const docRef = await addDoc(collection(db, 'presentations'), {
+    title: title || 'Untitled Presentation',
+    slides: [],
+    activeSlideId: null,
+    settings: DEFAULT_PRESENTATION_SETTINGS,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return docRef.id;
+}
+
+// Create a presentation pre-filled with data (used by templates).
+export async function createPresentationFromData(
+  data: Pick<Presentation, 'title' | 'slides' | 'activeSlideId' | 'settings'>
+): Promise<string> {
+  if (!db) throw new Error("Firebase is not configured.");
+  const docRef = await addDoc(collection(db, 'presentations'), {
+    title: data.title || 'Untitled Presentation',
+    slides: data.slides || [],
+    activeSlideId: data.activeSlideId ?? null,
+    settings: data.settings || DEFAULT_PRESENTATION_SETTINGS,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return docRef.id;
+}
+
+export async function getPresentation(id: string): Promise<Presentation> {
+  if (!db) throw new Error("Firebase is not configured.");
+  const docRef = doc(db, 'presentations', id);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) {
+    throw new Error("Presentation not found!");
+  }
+  return { id: docSnap.id, ...docSnap.data() } as Presentation;
+}
+
+// Realtime subscription. Returns an unsubscribe function.
+export function subscribePresentation(
+  id: string,
+  cb: (p: Presentation | null) => void,
+  onError?: (e: Error) => void
+): () => void {
+  if (!db) {
+    onError?.(new Error("Firebase is not configured."));
+    return () => {};
+  }
+  const docRef = doc(db, 'presentations', id);
+  return onSnapshot(
+    docRef,
+    (snap) => {
+      if (!snap.exists()) {
+        cb(null);
+        return;
+      }
+      cb({ id: snap.id, ...snap.data() } as Presentation);
+    },
+    (err) => onError?.(err as Error)
+  );
+}
+
+export async function updatePresentation(id: string, patch: Partial<Presentation>): Promise<void> {
+  if (!db) throw new Error("Firebase is not configured.");
+  const docRef = doc(db, 'presentations', id);
+  await updateDoc(docRef, { ...patch, updatedAt: serverTimestamp() });
+}
+
+export async function listPresentations(): Promise<Presentation[]> {
+  if (!db) throw new Error("Firebase is not configured.");
+  const q = query(collection(db, 'presentations'), orderBy('createdAt', 'desc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(d => ({ id: d.id, ...d.data() })) as Presentation[];
+}
+
+export async function deletePresentation(id: string): Promise<void> {
+  if (!db) throw new Error("Firebase is not configured.");
+  await deleteDoc(doc(db, 'presentations', id));
 }
