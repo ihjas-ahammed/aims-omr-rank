@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion, Variants } from 'framer-motion';
 import { Images } from 'lucide-react';
 import { Slide } from '../../../services/firebaseService';
+import { preloadImages } from './imagePreload';
 
 interface SlideshowSlideProps {
   slide: Slide;
@@ -48,6 +49,12 @@ export default function SlideshowSlide({ slide, preview = false }: SlideshowSlid
   useEffect(() => {
     if (index >= images.length) setIndex(0);
   }, [images.length, index]);
+
+  // Warm the next image in the cycle so each auto-advance is instant.
+  useEffect(() => {
+    if (images.length <= 1) return;
+    preloadImages([images[(index + 1) % images.length]]);
+  }, [index, images]);
 
   if (images.length === 0) {
     return (

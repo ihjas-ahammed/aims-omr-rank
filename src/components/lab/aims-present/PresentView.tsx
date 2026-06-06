@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { subscribePresentation, Presentation, isFirebaseConfigured } from '../../../services/firebaseService';
 import SlideStage from './SlideStage';
+import { slideImageUrls, preloadImages } from './imagePreload';
 
 interface PresentViewProps {
   presentationId: string;
@@ -71,6 +72,21 @@ export default function PresentView({ presentationId }: PresentViewProps) {
     return unsub;
   }, [presentationId]);
 
+  const slides = presentation?.slides || [];
+  const activeIndex = slides.findIndex(s => s.id === presentation?.activeSlideId);
+  const activeSlide = activeIndex >= 0 ? slides[activeIndex] : null;
+
+  // Preload the next slide's images while the current slide is showing, so the
+  // upcoming slide appears instantly instead of loading in on screen. We warm
+  // both the immediate next slide and the one after it.
+  useEffect(() => {
+    if (activeIndex < 0) return;
+    for (let i = 1; i <= 2; i++) {
+      const upcoming = slides[activeIndex + i];
+      if (upcoming) preloadImages(slideImageUrls(upcoming));
+    }
+  }, [activeIndex, slides]);
+
   if (status === 'error') {
     return (
       <div className="fixed inset-0 bg-black text-red-400 flex items-center justify-center text-xl">
@@ -94,9 +110,6 @@ export default function PresentView({ presentationId }: PresentViewProps) {
       </div>
     );
   }
-
-  const activeSlide =
-    presentation?.slides.find(s => s.id === presentation.activeSlideId) || null;
 
   return (
     <div
