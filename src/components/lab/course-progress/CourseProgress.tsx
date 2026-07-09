@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, BookOpen, Download, Loader2, RotateCcw, AlertTriangle } from 'lucide-react';
-import * as XLSX from 'xlsx';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, BookOpen, Download, Upload, Loader2, RotateCcw, AlertTriangle } from 'lucide-react';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { SubjectProgress, TaskData, TaskStatus, BatchName, CourseProgressMap } from './types';
-import { initialData } from './initialData';
+import { initialData, initialDataB1, initialDataB2, initialDataB3 } from './initialData';
 import SubjectView from './SubjectView';
 import { getCourseProgress, saveCourseProgress, isFirebaseConfigured } from '../../../services/firebaseService';
 
@@ -12,14 +13,17 @@ const cloneProgress = (data: SubjectProgress[]) => JSON.parse(JSON.stringify(dat
 
 export default function CourseProgress({ onBack }: { onBack: () => void }) {
   const [progressMap, setProgressMap] = useState<CourseProgressMap>({
-    B1: cloneProgress(initialData),
-    B2: cloneProgress(initialData),
-    B3: cloneProgress(initialData)
+    B1: cloneProgress(initialDataB1),
+    B2: cloneProgress(initialDataB2),
+    B3: cloneProgress(initialDataB3)
   });
   const [selectedBatch, setSelectedBatch] = useState<BatchName>('B1');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [selectedSubjectIndex, setSelectedSubjectIndex] = useState<number | null>(null);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const data = progressMap[selectedBatch] || [];
 
@@ -94,16 +98,16 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
 
     if (raw && typeof raw === 'object') {
       return {
-        B1: raw.B1 && Array.isArray(raw.B1) ? raw.B1.map(migrateSubject) : cloneProgress(initialData),
-        B2: raw.B2 && Array.isArray(raw.B2) ? raw.B2.map(migrateSubject) : cloneProgress(initialData),
-        B3: raw.B3 && Array.isArray(raw.B3) ? raw.B3.map(migrateSubject) : cloneProgress(initialData)
+        B1: raw.B1 && Array.isArray(raw.B1) ? raw.B1.map(migrateSubject) : cloneProgress(initialDataB1),
+        B2: raw.B2 && Array.isArray(raw.B2) ? raw.B2.map(migrateSubject) : cloneProgress(initialDataB2),
+        B3: raw.B3 && Array.isArray(raw.B3) ? raw.B3.map(migrateSubject) : cloneProgress(initialDataB3)
       };
     }
 
     return {
-      B1: cloneProgress(initialData),
-      B2: cloneProgress(initialData),
-      B3: cloneProgress(initialData)
+      B1: cloneProgress(initialDataB1),
+      B2: cloneProgress(initialDataB2),
+      B3: cloneProgress(initialDataB3)
     };
   };
 
@@ -182,32 +186,209 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
     await saveMap(resetMap);
   };
 
-  const handleExport = () => {
-    const wsData = [['Class', 'Subject', 'Chapter', 'TCR', 'Entrance', 'Revision']];
+  const handleExport = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Sheet1');
 
-    const formatTask = (task: TaskData) => {
-      const sessionStr = task.sessions.map((s) => s.teacher || 'Unassigned').join(', ');
-      return sessionStr ? `${sessionStr} [${task.status.toUpperCase()}]` : `[${task.status.toUpperCase()}]`;
+    const greenFill: ExcelJS.Fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF00FF00' }
     };
 
-    data.forEach((sub) => {
-      sub.chapters.forEach((ch) => {
-        wsData.push([
-          selectedBatch,
-          sub.name,
+    const getTeacherStr = (task: TaskData) => {
+      return task.sessions.map((s) => s.teacher).filter(Boolean).join(', ') || '';
+    };
+
+    progressMap.B1.forEach((sub, sIdx) => {
+      if (sIdx > 0) {
+        worksheet.addRow([]); // Blank row between subjects
+      }
+
+      // Batch header row
+      const batchRow = worksheet.addRow([
+        null, 'B1', 'B1', 'B1', 'B2', 'B2', 'B2', 'B3', 'B3', 'B3'
+      ]);
+
+      // Subject header row
+      const subHeaderRow = worksheet.addRow([
+        sub.name.toUpperCase(),
+        'TCR', 'Entrance ', 'Revision ',
+        'TCR', 'Entrance ', 'Revision ',
+        'TCR', 'Entrance ', 'Revision '
+      ]);
+
+      // Make headers bold
+      batchRow.font = { bold: true };
+      subHeaderRow.font = { bold: true };
+
+      sub.chapters.forEach((ch, cIdx) => {
+        const b1Ch = progressMap.B1[sIdx].chapters[cIdx];
+        const b2Ch = progressMap.B2[sIdx].chapters[cIdx];
+        const b3Ch = progressMap.B3[sIdx].chapters[cIdx];
+
+        const rowData = [
           ch.name,
-          formatTask(ch.tcr),
-          formatTask(ch.entrance),
-          formatTask(ch.revision)
-        ]);
+          getTeacherStr(b1Ch.tcr),
+          getTeacherStr(b1Ch.entrance),
+          getTeacherStr(b1Ch.revision),
+          getTeacherStr(b2Ch.tcr),
+          getTeacherStr(b2Ch.entrance),
+          getTeacherStr(b2Ch.revision),
+          getTeacherStr(b3Ch.tcr),
+          getTeacherStr(b3Ch.entrance),
+          getTeacherStr(b3Ch.revision)
+        ];
+
+        const row = worksheet.addRow(rowData);
+
+        const tasks = [
+          { ch: b1Ch, field: 'tcr', col: 2 },
+          { ch: b1Ch, field: 'entrance', col: 3 },
+          { ch: b1Ch, field: 'revision', col: 4 },
+          { ch: b2Ch, field: 'tcr', col: 5 },
+          { ch: b2Ch, field: 'entrance', col: 6 },
+          { ch: b2Ch, field: 'revision', col: 7 },
+          { ch: b3Ch, field: 'tcr', col: 8 },
+          { ch: b3Ch, field: 'entrance', col: 9 },
+          { ch: b3Ch, field: 'revision', col: 10 }
+        ];
+
+        tasks.forEach(({ ch: batchCh, field, col }) => {
+          const task = batchCh[field as 'tcr' | 'entrance' | 'revision'];
+          if (task.status === 'finished') {
+            row.getCell(col).fill = greenFill;
+          }
+        });
       });
     });
 
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, `Course Progress ${selectedBatch}`);
-    ws['!cols'] = [{ wch: 10 }, { wch: 20 }, { wch: 40 }, { wch: 30 }, { wch: 30 }, { wch: 30 }];
-    XLSX.writeFile(wb, `Course_Progress_${selectedBatch}.xlsx`);
+    // Auto-fit column widths
+    worksheet.columns.forEach((col, idx) => {
+      if (idx === 0) {
+        col.width = 40;
+      } else {
+        col.width = 15;
+      }
+    });
+
+    try {
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      saveAs(blob, 'Course_Progress_All_Batches.xlsx');
+    } catch (err) {
+      console.error('Failed to export Excel file:', err);
+      alert('Failed to export Excel file.');
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const buffer = evt.target?.result as ArrayBuffer;
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
+        const sheet = workbook.worksheets[0];
+
+        // Start with a clean copy of the initial empty baseline structure for B1, B2, B3
+        const parsedMap: CourseProgressMap = {
+          B1: cloneProgress(initialData),
+          B2: cloneProgress(initialData),
+          B3: cloneProgress(initialData)
+        };
+
+        let currentSubject: string | null = null;
+
+        const mapCellToTask = (cell: ExcelJS.Cell): TaskData => {
+          const val = cell.value;
+          const teacher = val ? String(val).trim() : '';
+
+          if (!teacher) {
+            return { status: 'pending', sessions: [] };
+          }
+
+          let isGreen = false;
+          if (cell.fill && cell.fill.type === 'pattern' && cell.fill.fgColor) {
+            const argb = cell.fill.fgColor.argb;
+            if (argb === 'FF00FF00' || argb === '00FF00') {
+              isGreen = true;
+            }
+          }
+
+          return {
+            status: isGreen ? 'finished' : 'ongoing',
+            sessions: [{
+              id: Math.random().toString(36).substring(7),
+              teacher
+            }]
+          };
+        };
+
+        for (let i = 1; i <= sheet.rowCount; i++) {
+          const row = sheet.getRow(i);
+          const col1 = row.getCell(1).value;
+          const col2 = row.getCell(2).value;
+
+          const col1Str = col1 ? String(col1).trim() : '';
+          const col2Str = col2 ? String(col2).trim() : '';
+
+          if (!col1Str) continue;
+
+          if (col2Str === 'TCR') {
+            currentSubject = col1Str;
+          } else if (currentSubject) {
+            const sIdxB1 = parsedMap.B1.findIndex(s => s.name.toUpperCase() === currentSubject!.toUpperCase());
+            const sIdxB2 = parsedMap.B2.findIndex(s => s.name.toUpperCase() === currentSubject!.toUpperCase());
+            const sIdxB3 = parsedMap.B3.findIndex(s => s.name.toUpperCase() === currentSubject!.toUpperCase());
+
+            if (sIdxB1 !== -1) {
+              const chB1 = parsedMap.B1[sIdxB1].chapters.find(c => c.name.trim().toUpperCase() === col1Str.toUpperCase());
+              if (chB1) {
+                chB1.tcr = mapCellToTask(row.getCell(2));
+                chB1.entrance = mapCellToTask(row.getCell(3));
+                chB1.revision = mapCellToTask(row.getCell(4));
+              }
+            }
+
+            if (sIdxB2 !== -1) {
+              const chB2 = parsedMap.B2[sIdxB2].chapters.find(c => c.name.trim().toUpperCase() === col1Str.toUpperCase());
+              if (chB2) {
+                chB2.tcr = mapCellToTask(row.getCell(5));
+                chB2.entrance = mapCellToTask(row.getCell(6));
+                chB2.revision = mapCellToTask(row.getCell(7));
+              }
+            }
+
+            if (sIdxB3 !== -1) {
+              const chB3 = parsedMap.B3[sIdxB3].chapters.find(c => c.name.trim().toUpperCase() === col1Str.toUpperCase());
+              if (chB3) {
+                chB3.tcr = mapCellToTask(row.getCell(8));
+                chB3.entrance = mapCellToTask(row.getCell(9));
+                chB3.revision = mapCellToTask(row.getCell(10));
+              }
+            }
+          }
+        }
+
+        setProgressMap(parsedMap);
+        await saveMap(parsedMap);
+        alert('Successfully imported course progress from XLSX!');
+      } catch (err) {
+        console.error(err);
+        alert('Failed to parse the imported XLSX file. Please ensure it matches the correct template format.');
+      } finally {
+        setImporting(false);
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
   };
 
   if (loading) {
@@ -261,11 +442,30 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
         </div>
         
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImport}
+            accept=".xlsx"
+            className="hidden"
+          />
           <button
             onClick={handleReset}
             className="flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-md font-medium hover:bg-red-100 transition-colors shadow-sm border border-red-200 flex-1 md:flex-none"
           >
             <RotateCcw className="w-4 h-4" /> Reset Class
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-200 rounded-md font-medium hover:bg-gray-50 transition-colors shadow-sm flex-1 md:flex-none disabled:opacity-50"
+          >
+            {importing ? (
+              <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
+            ) : (
+              <Upload className="w-4 h-4" />
+            )}
+            Import XLS
           </button>
           <button
             onClick={handleExport}
@@ -293,6 +493,10 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
           }, 0);
           const percent = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
 
+          const totalChapters = subject.chapters.length;
+          const completedTCRChapters = subject.chapters.filter(ch => ch.tcr.status === 'finished').length;
+          const chapterPercent = totalChapters === 0 ? 0 : Math.round((completedTCRChapters / totalChapters) * 100);
+
           return (
             <div 
               key={subject.name}
@@ -300,18 +504,41 @@ export default function CourseProgress({ onBack }: { onBack: () => void }) {
               className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md hover:border-green-300 transition-all"
             >
               <h3 className="text-xl font-bold text-gray-900 mb-4 uppercase">{subject.name}</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm font-medium text-gray-600">
+              <div className="space-y-4">
+                {/* Progress Percentages Header */}
+                <div className="flex justify-between items-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   <span>Progress</span>
-                  <span>{percent}%</span>
+                  <div className="flex gap-3">
+                    <span className="text-blue-600 font-bold">TCR: {chapterPercent}%</span>
+                    <span className="text-green-600 font-bold">Tasks: {percent}%</span>
+                  </div>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-2">
+
+                {/* Layered Progress Bar Container */}
+                <div className="relative w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                  {/* Chapter Progress (TCR) - Transparent Blue */}
                   <div 
-                    className="bg-green-500 h-2 rounded-full transition-all"
+                    className="absolute top-0 left-0 bg-blue-500/30 h-full rounded-full transition-all"
+                    style={{ width: `${chapterPercent}%` }}
+                  />
+                  {/* Task Progress - Solid Green */}
+                  <div 
+                    className="absolute top-0 left-0 bg-green-500 h-full rounded-full transition-all"
                     style={{ width: `${percent}%` }}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">{completedTasks} of {totalTasks} tasks fully completed</p>
+
+                {/* Detailed progress description */}
+                <div className="flex flex-col gap-1 text-xs text-gray-500">
+                  <div className="flex justify-between">
+                    <span>Chapters Taught (TCR):</span>
+                    <span className="font-semibold text-blue-600">{completedTCRChapters} of {totalChapters}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Overall Tasks Completed:</span>
+                    <span className="font-semibold text-green-600">{completedTasks} of {totalTasks}</span>
+                  </div>
+                </div>
               </div>
             </div>
           );
