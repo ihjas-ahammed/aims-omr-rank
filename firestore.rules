@@ -29,5 +29,10 @@ service cloud.firestore {
     match /presentations/{presentationId} {
       allow read, write: if true;
     }
+
+    // Student Improvement Responses
+    match /improvement_responses/{responseId} {
+      allow read, write: if true;
+    }
   }
 }

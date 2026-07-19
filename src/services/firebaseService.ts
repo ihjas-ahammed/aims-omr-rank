@@ -348,3 +348,78 @@ export async function deletePresentation(id: string): Promise<void> {
   if (!db) throw new Error("Firebase is not configured.");
   await deleteDoc(doc(db, 'presentations', id));
 }
+
+// Student Improvement Responses
+export interface ImprovementResponse {
+  id?: string;
+  name: string;
+  batch: 'B1' | 'B2' | 'B3';
+  scores: {
+    english: number;
+    language: number;
+    physics: number;
+    chemistry: number;
+    mathematics: number;
+    sixthSubjectType: 'Biology' | 'Computer Science';
+    sixthSubjectScore: number;
+  };
+  totalScore: number;
+  improvementSubjects: string[];
+  wantsEntranceExams: boolean;
+  preferredEntranceExams?: string[];
+  submittedAt?: any;
+}
+
+export async function submitImprovementResponse(response: Omit<ImprovementResponse, 'id' | 'submittedAt'>): Promise<void> {
+  if (!db) {
+    const localData = localStorage.getItem('local_improvement_responses') || '[]';
+    const parsed = JSON.parse(localData);
+    parsed.push({
+      ...response,
+      id: 'local_' + Math.random().toString(36).substring(2, 9),
+      submittedAt: new Date().toISOString()
+    });
+    localStorage.setItem('local_improvement_responses', JSON.stringify(parsed));
+    return;
+  }
+  await addDoc(collection(db, 'improvement_responses'), {
+    ...response,
+    submittedAt: serverTimestamp()
+  });
+}
+
+export async function getImprovementResponses(): Promise<ImprovementResponse[]> {
+  if (!db) {
+    const localData = localStorage.getItem('local_improvement_responses') || '[]';
+    return JSON.parse(localData);
+  }
+  const q = query(collection(db, 'improvement_responses'), orderBy('submittedAt', 'desc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    let submittedAtStr = new Date().toISOString();
+    if (data.submittedAt) {
+      try {
+        submittedAtStr = data.submittedAt.toDate().toISOString();
+      } catch (e) {
+        submittedAtStr = String(data.submittedAt);
+      }
+    }
+    return {
+      id: doc.id,
+      ...data,
+      submittedAt: submittedAtStr
+    } as ImprovementResponse;
+  });
+}
+
+export async function deleteImprovementResponse(id: string): Promise<void> {
+  if (!db) {
+    const localData = localStorage.getItem('local_improvement_responses') || '[]';
+    const parsed = JSON.parse(localData) as ImprovementResponse[];
+    const filtered = parsed.filter(item => item.id !== id);
+    localStorage.setItem('local_improvement_responses', JSON.stringify(filtered));
+    return;
+  }
+  await deleteDoc(doc(db, 'improvement_responses', id));
+}

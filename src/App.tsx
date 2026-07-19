@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Camera, Settings, Plus, X, Beaker } from 'lucide-react';
+import { Upload, Camera, Settings, Plus, X, Beaker, LogOut } from 'lucide-react';
 import { correctNamesBatch, OMRResult } from './services/geminiService';
 import { saveImage, getImage, deleteImage } from './services/db';
 import { rotateImageFile } from './utils/imageProcessing';
@@ -23,6 +23,9 @@ import FeeLogger from './components/lab/fee-logger/FeeLogger';
 import CloudSessions from './components/lab/cloud-sessions/CloudSessions';
 import { ScoreAnalysisDashboard } from './components/lab/score-analysis';
 import DescriptiveDashboard from './components/lab/descriptive/DescriptiveDashboard';
+import Login from './components/common/Login';
+import ImprovementForm from './components/lab/improvement/ImprovementForm';
+import ImprovementAdmin from './components/lab/improvement/ImprovementAdmin';
 
 import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
 import { PresentDashboard, PresentControl, PresentView } from './components/lab/aims-present';
@@ -59,7 +62,7 @@ const DEFAULT_ANSWER_KEY = `{
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public';
 
 // Parse /aims-present/<mode>/<id> from a pathname. Returns null if it isn't a presenter route.
 function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dashboard'; id: string | null } | null {
@@ -71,7 +74,16 @@ function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dash
 
 export default function App() {
   const [presentId, setPresentId] = useState<string | null>(() => parsePresentRoute(window.location.pathname)?.id ?? null);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
+    return localStorage.getItem('aims_admin_logged_in') === 'true';
+  });
   const [view, setView] = useState<ViewState>(() => {
+    if (window.location.pathname === '/form/improvement') {
+      return 'improvement-form';
+    }
+    if (window.location.pathname === '/admin/responses/3f9a7c') {
+      return 'lab-improvement-responses-public';
+    }
     const present = parsePresentRoute(window.location.pathname);
     if (present) {
       if (present.mode === 'control') return 'aims-present-control';
@@ -263,16 +275,22 @@ export default function App() {
 
   useEffect(() => {
     const handlePopState = () => {
-      const present = parsePresentRoute(window.location.pathname);
-      if (present) {
-        setPresentId(present.id);
-        if (present.mode === 'control') setView('aims-present-control');
-        else if (present.mode === 'view') setView('aims-present-view');
-        else setView('lab-aims-present');
+      if (window.location.pathname === '/form/improvement') {
+        setView('improvement-form');
+      } else if (window.location.pathname === '/admin/responses/3f9a7c') {
+        setView('lab-improvement-responses-public');
+      } else {
+        const present = parsePresentRoute(window.location.pathname);
+        if (present) {
+          setPresentId(present.id);
+          if (present.mode === 'control') setView('aims-present-control');
+          else if (present.mode === 'view') setView('aims-present-view');
+          else setView('lab-aims-present');
+        }
+        else if (window.location.pathname === '/course-progress') setView('lab-course-progress');
+        else if (window.location.pathname === '/timetable') setView('lab-timetable');
+        else if (window.location.pathname === '/') setView('lab');
       }
-      else if (window.location.pathname === '/course-progress') setView('lab-course-progress');
-      else if (window.location.pathname === '/timetable') setView('lab-timetable');
-      else if (window.location.pathname === '/') setView('home');
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -826,6 +844,16 @@ export default function App() {
     if (hasPrevDetail) setSelectedStudent(sortedResults[currentDetailIndex - 1]);
   };
 
+  const isPublicView = view === 'improvement-form' || view === 'exam-take' || view === 'aims-present-view' || view === 'lab-improvement-responses-public';
+
+  if (view === 'improvement-form') {
+    return <ImprovementForm />;
+  }
+
+  if (!isPublicView && !isAdminLoggedIn) {
+    return <Login onLoginSuccess={() => setIsAdminLoggedIn(true)} />;
+  }
+
   if (view === 'exam-take') {
     const activeExamId = selectedExamId || new URLSearchParams(window.location.search).get('examId');
     if (!activeExamId) {
@@ -870,9 +898,26 @@ export default function App() {
             <button
               onClick={() => setShowSettings(!showSettings)}
               className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+              title="Settings"
             >
               <Settings className="w-5 h-5" />
             </button>
+            {isAdminLoggedIn && (
+              <button
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to sign out?')) {
+                    localStorage.removeItem('aims_admin_logged_in');
+                    setIsAdminLoggedIn(false);
+                    window.history.pushState({}, '', '/');
+                    setView('lab');
+                  }
+                }}
+                className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                title="Sign Out"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -1039,6 +1084,16 @@ export default function App() {
 
         {view === 'lab-descriptive' && (
           <DescriptiveDashboard onBack={() => setView('lab')} />
+        )}
+
+        {(view === 'lab-improvement-responses' || view === 'lab-improvement-responses-public') && (
+          <ImprovementAdmin 
+            onBack={() => {
+              window.history.pushState({}, '', '/');
+              setView('lab');
+            }} 
+            hideBack={view === 'lab-improvement-responses-public'}
+          />
         )}
 
         {view === 'ranklist' && (
