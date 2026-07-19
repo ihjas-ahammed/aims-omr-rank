@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { submitImprovementResponse } from '../../../services/firebaseService';
-import { ClipboardList, CheckCircle2, ChevronRight, User, GraduationCap, Award, HelpCircle, ArrowRight } from 'lucide-react';
+import { ClipboardList, CheckCircle2, User, Award, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function ImprovementForm() {
@@ -18,10 +18,6 @@ export default function ImprovementForm() {
 
   // Improvement selection
   const [improvementSubjects, setImprovementSubjects] = useState<string[]>([]);
-  
-  // Entrance exams
-  const [wantsEntranceExams, setWantsEntranceExams] = useState<boolean>(false);
-  const [preferredEntranceExams, setPreferredEntranceExams] = useState<string[]>([]);
 
   // Form states
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -94,11 +90,7 @@ export default function ImprovementForm() {
     });
   };
 
-  const togglePreferredEntrance = (exam: string) => {
-    setPreferredEntranceExams(prev => 
-      prev.includes(exam) ? prev.filter(e => e !== exam) : [...prev, exam]
-    );
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,8 +145,8 @@ export default function ImprovementForm() {
         },
         totalScore,
         improvementSubjects,
-        wantsEntranceExams,
-        preferredEntranceExams,
+        wantsEntranceExams: false,
+        preferredEntranceExams: [],
       });
 
       // Show Confetti
@@ -183,8 +175,6 @@ export default function ImprovementForm() {
     setMathematics('');
     setSixthSubjectScore('');
     setImprovementSubjects([]);
-    setWantsEntranceExams(false);
-    setPreferredEntranceExams([]);
     setErrors({});
     setSubmitted(false);
   };
@@ -215,18 +205,7 @@ export default function ImprovementForm() {
                 {improvementSubjects.length > 0 ? improvementSubjects.join(', ') : 'None'}
               </span>
             </div>
-            <div className="flex justify-between text-sm text-gray-600">
-              <span>Entrance Exams:</span>
-              <span className="font-semibold text-gray-900">{wantsEntranceExams ? 'Yes' : 'No'}</span>
-            </div>
-            {preferredEntranceExams.length > 0 && (
-              <div className="flex justify-between text-sm text-gray-600">
-                <span>Preferred Entrance:</span>
-                <span className="font-semibold text-gray-900 max-w-[200px] text-right truncate">
-                  {preferredEntranceExams.join(', ')}
-                </span>
-              </div>
-            )}
+
           </div>
           <button
             onClick={handleReset}
@@ -495,57 +474,7 @@ export default function ImprovementForm() {
             </div>
           </div>
 
-          {/* Section 4: Night Entrance Class Option */}
-          <div className="space-y-4">
-            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 pb-2 border-b border-gray-100">
-              <HelpCircle className="w-5 h-5 text-purple-500" />
-              <span>Night Entrance Class Option</span>
-            </h3>
-            
-            <div className="bg-gray-50 border border-gray-200/60 rounded-2xl p-5 flex items-start gap-4">
-              <div className="pt-0.5">
-                <input
-                  id="entrance"
-                  type="checkbox"
-                  checked={wantsEntranceExams}
-                  onChange={(e) => setWantsEntranceExams(e.target.checked)}
-                  className="w-5 h-5 accent-purple-600 rounded text-purple-600 focus:ring-purple-500 border-gray-300"
-                />
-              </div>
-              <label htmlFor="entrance" className="cursor-pointer space-y-1">
-                <span className="text-sm font-bold text-gray-800 block">Whether want to join night entrance class</span>
-                <span className="text-xs text-gray-500 block">
-                  Check this box if you wish to enroll in the night entrance classes.
-                </span>
-              </label>
-            </div>
 
-            {/* Preferred Entrance Exams grid */}
-            <div className="space-y-3 mt-4">
-              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider block">Preferred Entrance Exams</span>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {['JEE', 'NEET', 'KEAM', 'IISER', 'CUSAT', 'IMUCET'].map(exam => {
-                  const isChecked = preferredEntranceExams.includes(exam);
-                  return (
-                    <div
-                      key={exam}
-                      onClick={() => togglePreferredEntrance(exam)}
-                      className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer select-none transition-colors ${isChecked ? 'bg-purple-50/50 border-purple-300 text-purple-700 font-semibold' : 'bg-gray-50/30 border-gray-200 hover:bg-gray-50 text-gray-600'}`}
-                    >
-                      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${isChecked ? 'bg-purple-600 border-purple-600 text-white' : 'border-gray-300 bg-white'}`}>
-                        {isChecked && (
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                      <span className="text-sm">{exam}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
 
           {/* Submit Button */}
           <button
