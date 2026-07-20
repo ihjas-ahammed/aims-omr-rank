@@ -1,0 +1,31 @@
+{
+  "short_name": "Study Progress",
+  "name": "Study Progress - Student Portal",
+  "description": "Track chapter-wise study progress and checkpoints",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/app_icon.png",
+      "type": "image/png",
+      "sizes": "1254x1254",
+      "purpose": "any"
+    }
+  ],
+  "start_url": "/form/studyprogress",
+  "background_color": "#090d16",
+  "theme_color": "#0f172a",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/"
+}

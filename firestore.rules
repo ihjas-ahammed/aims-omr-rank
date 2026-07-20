@@ -34,5 +34,13 @@ service cloud.firestore {
     match /improvement_responses/{responseId} {
       allow read, write: if true;
     }
+
+    // Study Progress
+    match /study_progress/{docId} {
+      allow read, write: if true;
+    }
+    match /deleted_study_progress/{docId} {
+      allow read, write: if true;
+    }
   }
 }

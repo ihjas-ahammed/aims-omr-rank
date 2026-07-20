@@ -74,7 +74,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
                   id="email"
                   type="email"
                   required
-                  placeholder="admin@aims.in"
+                  placeholder="name@domain.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/80 transition-all"

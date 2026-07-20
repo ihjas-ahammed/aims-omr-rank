@@ -26,6 +26,8 @@ import DescriptiveDashboard from './components/lab/descriptive/DescriptiveDashbo
 import Login from './components/common/Login';
 import ImprovementForm from './components/lab/improvement/ImprovementForm';
 import ImprovementAdmin from './components/lab/improvement/ImprovementAdmin';
+import StudyProgressForm from './components/lab/study-progress/StudyProgressForm';
+import StudyProgressAdmin from './components/lab/study-progress/StudyProgressAdmin';
 
 import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
 import { PresentDashboard, PresentControl, PresentView } from './components/lab/aims-present';
@@ -62,7 +64,7 @@ const DEFAULT_ANSWER_KEY = `{
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin';
 
 // Parse /aims-present/<mode>/<id> from a pathname. Returns null if it isn't a presenter route.
 function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dashboard'; id: string | null } | null {
@@ -78,10 +80,21 @@ export default function App() {
     return localStorage.getItem('aims_admin_logged_in') === 'true';
   });
   const [view, setView] = useState<ViewState>(() => {
-    if (window.location.pathname === '/form/improvement') {
+    const path = window.location.pathname;
+    const hash = window.location.hash;
+    if (path === '/form/studyprogress' || path === '/studyprogress') {
+      if (hash.includes('admin')) {
+        return 'study-progress-admin';
+      }
+      return 'study-progress-form';
+    }
+    if (path === '/admin/studyprogress' || hash.includes('studyprogress-admin')) {
+      return 'study-progress-admin';
+    }
+    if (path === '/form/improvement') {
       return 'improvement-form';
     }
-    if (window.location.pathname === '/admin/responses/3f9a7c') {
+    if (path === '/admin/responses/3f9a7c') {
       return 'lab-improvement-responses-public';
     }
     const present = parsePresentRoute(window.location.pathname);
@@ -191,6 +204,28 @@ export default function App() {
   const [selectedStudent, setSelectedStudent] = useState<OMRResult | null>(null);
   
   const [selectedExamId, setSelectedExamId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleHashAndPathChange = () => {
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      if (path === '/form/studyprogress' || path === '/studyprogress') {
+        if (hash.includes('admin')) {
+          setView('study-progress-admin');
+        } else {
+          setView('study-progress-form');
+        }
+      } else if (path === '/admin/studyprogress' || hash.includes('studyprogress-admin')) {
+        setView('study-progress-admin');
+      }
+    };
+    window.addEventListener('hashchange', handleHashAndPathChange);
+    window.addEventListener('popstate', handleHashAndPathChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashAndPathChange);
+      window.removeEventListener('popstate', handleHashAndPathChange);
+    };
+  }, []);
 
   const [days, setDays] = useState<number[]>(() => {
     const saved = localStorage.getItem('omr_days');
@@ -844,39 +879,43 @@ export default function App() {
     if (hasPrevDetail) setSelectedStudent(sortedResults[currentDetailIndex - 1]);
   };
 
-  const isPublicView = view === 'improvement-form' || view === 'exam-take' || view === 'aims-present-view' || view === 'lab-improvement-responses-public';
+  const isPublicView = 
+    view === 'improvement-form' || 
+    (view as string) === 'study-progress-form' || 
+    (view as string) === 'study-progress-admin' || 
+    view === 'exam-take' || 
+    view === 'aims-present-view' || 
+    (view as string) === 'lab-improvement-responses-public';
 
   if (view === 'improvement-form') {
     return <ImprovementForm />;
   }
 
+  if ((view as string) === 'study-progress-form') {
+    return (
+      <StudyProgressForm 
+        onNavigateAdmin={() => {
+          window.location.hash = 'admin?key=aims2019';
+          setView('study-progress-admin');
+        }} 
+      />
+    );
+  }
+
+  if ((view as string) === 'study-progress-admin') {
+    return (
+      <StudyProgressAdmin 
+        onBack={() => {
+          window.history.pushState({}, '', '/form/studyprogress');
+          window.location.hash = '';
+          setView('study-progress-form');
+        }} 
+      />
+    );
+  }
+
   if (!isPublicView && !isAdminLoggedIn) {
     return <Login onLoginSuccess={() => setIsAdminLoggedIn(true)} />;
-  }
-
-  if (view === 'exam-take') {
-    const activeExamId = selectedExamId || new URLSearchParams(window.location.search).get('examId');
-    if (!activeExamId) {
-      return <div className="p-8 text-center text-red-500">Invalid Exam ID provided.</div>;
-    }
-    return <ExamTake examId={activeExamId} onFinish={() => {
-      window.history.pushState({}, '', '/');
-      setView('home');
-    }} />;
-  }
-
-  if (view === 'aims-present-view') {
-    if (!presentId) return <div className="fixed inset-0 bg-black text-red-400 flex items-center justify-center">Invalid presentation ID.</div>;
-    return <PresentView presentationId={presentId} />;
-  }
-
-  if (view === 'aims-present-control') {
-    if (!presentId) return <div className="p-8 text-center text-red-500">Invalid presentation ID.</div>;
-    return <PresentControl presentationId={presentId} onBack={() => {
-      window.history.pushState({}, '', '/aims-present');
-      setPresentId(null);
-      setView('lab-aims-present');
-    }} />;
   }
 
   return (
@@ -1086,13 +1125,36 @@ export default function App() {
           <DescriptiveDashboard onBack={() => setView('lab')} />
         )}
 
-        {(view === 'lab-improvement-responses' || view === 'lab-improvement-responses-public') && (
+        {((view as string) === 'lab-improvement-responses' || (view as string) === 'lab-improvement-responses-public') && (
           <ImprovementAdmin 
             onBack={() => {
               window.history.pushState({}, '', '/');
               setView('lab');
             }} 
-            hideBack={view === 'lab-improvement-responses-public'}
+            hideBack={(view as string) === 'lab-improvement-responses-public'}
+          />
+        )}
+
+        {(view as string) === 'improvement-form' && (
+          <ImprovementForm />
+        )}
+
+        {(view as string) === 'study-progress-form' && (
+          <StudyProgressForm 
+            onNavigateAdmin={() => {
+              window.location.hash = 'admin';
+              setView('study-progress-admin');
+            }}
+          />
+        )}
+
+        {(view as string) === 'study-progress-admin' && (
+          <StudyProgressAdmin 
+            onBack={() => {
+              window.history.pushState({}, '', '/form/studyprogress');
+              window.location.hash = '';
+              setView('study-progress-form');
+            }}
           />
         )}
 

@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, doc, getDoc, getDocs, updateDoc, serverTimestamp, query, orderBy, setDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { getDatabase } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -8,7 +9,8 @@ const firebaseConfig = {
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || ''
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
+  databaseURL: 'https://aims-plus-evaluation-default-rtdb.asia-southeast1.firebasedatabase.app'
 };
 
 export const isFirebaseConfigured = !!firebaseConfig.apiKey;
@@ -16,6 +18,7 @@ export const isFirebaseConfigured = !!firebaseConfig.apiKey;
 // Initialize Firebase only if config exists and hasn't been initialized
 export const app = isFirebaseConfigured ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp()) : null;
 export const db = isFirebaseConfigured ? getFirestore(app!) : null;
+export const rtdb = isFirebaseConfigured ? getDatabase(app!) : null;
 export const auth = isFirebaseConfigured ? getAuth(app!) : null;
 
 export interface ExamIncident {
