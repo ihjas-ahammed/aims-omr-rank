@@ -603,21 +603,21 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
                                 <span className="font-bold text-slate-200">Ch {ch.chapterNumber}: {chTitle}</span>
                               </div>
                               <div className="flex items-center gap-1.5 shrink-0">
-                                {[0, 1, 2].map((idx) => (
+                                {Array.from({ length: ch.totalBoxes || 3 }).map((_, idx) => (
                                   <span
                                     key={idx}
                                     className={`w-6 h-6 rounded-lg font-bold text-[10px] flex items-center justify-center ${
                                       boxes[idx] ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-600'
                                     }`}
                                   >
-                                    {boxes[idx] ? '✓' : idx + 1}
+                                    {boxes[idx] ? '✓' : (ch.totalBoxes || 3) === 1 ? '✓' : idx + 1}
                                   </span>
                                 ))}
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 pt-1.5 border-t border-slate-800/80 text-[10px] text-slate-400">
-                              {[0, 1, 2].map((idx) => {
+                            <div className={`grid gap-1.5 pt-1.5 border-t border-slate-800/80 text-[10px] text-slate-400 ${(ch.totalBoxes || 3) === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-3'}`}>
+                              {Array.from({ length: ch.totalBoxes || 3 }).map((_, idx) => {
                                 const isChecked = boxes[idx];
                                 const ts = timestamps[idx];
 
@@ -625,7 +625,7 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
                                   <div key={idx} className="flex items-center gap-1">
                                     <Clock className="w-3 h-3 text-slate-500 shrink-0" />
                                     <span>
-                                      Box {idx + 1}: {isChecked ? (ts ? new Date(ts).toLocaleString() : 'Ticked') : 'Pending'}
+                                      {(ch.totalBoxes || 3) === 1 ? 'Checkpoint' : `Box ${idx + 1}`}: {isChecked ? (ts ? new Date(ts).toLocaleString() : 'Ticked') : 'Pending'}
                                     </span>
                                   </div>
                                 );

@@ -54,6 +54,7 @@ function getSubjectIcon(subjectId: string) {
     case 'maths': return <Calculator className="w-5 h-5 text-cyan-100 drop-shadow" />;
     case 'english': return <BookOpen className="w-5 h-5 text-amber-100 drop-shadow" />;
     case 'hindi': return <Languages className="w-5 h-5 text-orange-100 drop-shadow" />;
+    case 'malayalam2': return <BookOpen className="w-5 h-5 text-pink-100 drop-shadow" />;
     case 'history': return <Landmark className="w-5 h-5 text-violet-100 drop-shadow" />;
     case 'geography': return <Globe className="w-5 h-5 text-sky-100 drop-shadow" />;
     default: return <BookOpen className="w-5 h-5 text-slate-100 drop-shadow" />;
@@ -469,9 +470,12 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
             let completedChaptersCount = 0;
             subject.chapters.forEach(ch => {
               const entry = boxes[ch.id] || { boxes: [false, false, false], timestamps: [null, null, null] };
-              if (entry.boxes[0] && entry.boxes[1] && entry.boxes[2]) {
-                completedChaptersCount++;
+              const maxB = ch.totalBoxes || 3;
+              let allDone = true;
+              for (let i = 0; i < maxB; i++) {
+                if (!entry.boxes[i]) allDone = false;
               }
+              if (allDone) completedChaptersCount++;
             });
 
             return (
@@ -523,8 +527,12 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
                       const entry = boxes[chapter.id] || { boxes: [false, false, false], timestamps: [null, null, null] };
                       const chBoxes = entry.boxes;
                       const chTimestamps = entry.timestamps;
-                      const checkedCount = (chBoxes[0] ? 1 : 0) + (chBoxes[1] ? 1 : 0) + (chBoxes[2] ? 1 : 0);
-                      const isFullyCompleted = checkedCount === 3;
+                      const maxB = chapter.totalBoxes || 3;
+                      let checkedCount = 0;
+                      for (let i = 0; i < maxB; i++) {
+                        if (chBoxes[i]) checkedCount++;
+                      }
+                      const isFullyCompleted = checkedCount === maxB;
 
                       const chTitle = isMalayalam ? chapter.titleMl : chapter.titleEn;
                       const chSubtitle = isMalayalam ? (chapter.subtitleMl || chapter.subtitleEn) : chapter.subtitleEn;
@@ -533,7 +541,7 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
                       return (
                         <div 
                           key={chapter.id}
-                          className={`pt-3 first:pt-0 p-3.5 rounded-2xl border transition-all ${
+                          className={`p-3.5 md:p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
                             isFullyCompleted 
                               ? 'bg-emerald-950/20 border-emerald-500/30' 
                               : checkedCount > 0 
@@ -541,66 +549,61 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
                                 : 'bg-slate-900/40 border-slate-800/60'
                           }`}
                         >
-                          {chUnit && (
-                            <div className="text-[10px] font-bold tracking-widest text-indigo-400 uppercase mb-1.5">
-                              {chUnit}
+                          {/* Left Column: Number badge + Unit / Title / Subtitle */}
+                          <div className="flex items-start gap-3 min-w-0 flex-1">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 mt-0.5 ${
+                              isFullyCompleted ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'
+                            }`}>
+                              {chapter.chapterNumber}
                             </div>
-                          )}
-
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                            <div className="flex items-start gap-3">
-                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
-                                isFullyCompleted ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'
-                              }`}>
-                                {chapter.chapterNumber}
-                              </div>
-                              <div>
-                                <h4 className="font-bold text-white text-xs md:text-sm leading-snug">
-                                  {chTitle}
-                                </h4>
-                                {chSubtitle && (
-                                  <p className="text-[11px] text-slate-400 mt-0.5">
-                                    {chSubtitle}
-                                  </p>
-                                )}
-                              </div>
+                            <div className="min-w-0 flex-1 space-y-0.5">
+                              {chUnit && (
+                                <div className="text-[10px] font-extrabold tracking-widest text-indigo-400 uppercase">
+                                  {chUnit}
+                                </div>
+                              )}
+                              <h4 className="font-bold text-white text-xs md:text-sm leading-snug">
+                                {chTitle}
+                              </h4>
+                              {chSubtitle && (
+                                <p className="text-[11px] text-slate-400">
+                                  {chSubtitle}
+                                </p>
+                              )}
                             </div>
+                          </div>
 
-                            {/* 3 Checkpoints - Only tick when saved to DB */}
-                            <div className="flex flex-col items-end gap-1.5 shrink-0 self-end sm:self-center">
-                              <div className="flex items-center gap-2">
-                                {[0, 1, 2].map((idx) => {
-                                  const isChecked = chBoxes[idx as 0 | 1 | 2];
-                                  const ts = chTimestamps[idx as 0 | 1 | 2];
-                                  const isSavingThisBox = savingBoxKey === `${chapter.id}_${idx}`;
+                          {/* Right Side: Checkpoint Button */}
+                          <div className="shrink-0 flex items-center pl-1">
+                            {Array.from({ length: maxB }).map((_, idx) => {
+                              const isChecked = chBoxes[idx as 0 | 1 | 2];
+                              const ts = chTimestamps[idx as 0 | 1 | 2];
+                              const isSavingThisBox = savingBoxKey === `${chapter.id}_${idx}`;
 
-                                  return (
-                                    <div key={idx} className="flex flex-col items-center">
-                                      <button
-                                        disabled={!!savingBoxKey}
-                                        onClick={() => toggleBox(chapter.id, idx as 0 | 1 | 2)}
-                                        className={`w-11 h-11 rounded-xl border-2 font-bold text-xs flex items-center justify-center transition-all cursor-pointer active:scale-90 ${
-                                          isSavingThisBox
-                                            ? 'bg-slate-800 border-indigo-500 text-indigo-400 animate-pulse'
-                                            : isChecked
-                                              ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/40'
-                                              : 'bg-slate-800 border-slate-700 hover:border-slate-600 text-slate-500'
-                                        }`}
-                                        title={ts ? `Ticked: ${new Date(ts).toLocaleString()}` : `Toggle Checkpoint ${idx + 1}`}
-                                      >
-                                        {isSavingThisBox ? (
-                                          <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
-                                        ) : isChecked ? (
-                                          <Check className="w-5 h-5 stroke-[3]" />
-                                        ) : (
-                                          <span>{idx + 1}</span>
-                                        )}
-                                      </button>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
+                              return (
+                                <button
+                                  key={idx}
+                                  disabled={!!savingBoxKey}
+                                  onClick={() => toggleBox(chapter.id, idx as 0 | 1 | 2)}
+                                  className={`w-11 h-11 md:w-12 md:h-12 rounded-2xl border-2 font-bold text-xs flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-md ${
+                                    isSavingThisBox
+                                      ? 'bg-slate-800 border-indigo-500 text-indigo-400 animate-pulse'
+                                      : isChecked
+                                        ? 'bg-gradient-to-br from-emerald-500 to-teal-600 border-emerald-400 text-white shadow-emerald-500/30'
+                                        : 'bg-slate-800/80 border-slate-700 hover:border-slate-500 text-slate-400'
+                                  }`}
+                                  title={ts ? `Ticked: ${new Date(ts).toLocaleString()}` : `Toggle Checkpoint`}
+                                >
+                                  {isSavingThisBox ? (
+                                    <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
+                                  ) : isChecked ? (
+                                    <Check className="w-6 h-6 stroke-[3]" />
+                                  ) : (
+                                    <span className="text-base font-black">✓</span>
+                                  )}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       );

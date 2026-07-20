@@ -7,7 +7,7 @@ export interface ChapterDef {
   subtitleMl?: string;
   unitEn?: string;
   unitMl?: string;
-  totalBoxes: 3;
+  totalBoxes?: number;
 }
 
 export interface SubjectDef {
@@ -38,7 +38,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'ശബ്ദ തരംഗങ്ങൾ',
         subtitleEn: 'Properties and propagation of sound',
         subtitleMl: 'ശബ്ദ തരംഗങ്ങളുടെ സവിശേഷതകൾ',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'phy-2',
@@ -47,7 +47,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'ലെൻസുകൾ',
         subtitleEn: 'Refraction and optical lenses',
         subtitleMl: 'പ്രകാശ അപവർത്തനവും ലെൻസുകളും',
-        totalBoxes: 3
+        totalBoxes: 1
       }
     ]
   },
@@ -67,7 +67,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'ഓർഗാനിക് സംയുക്തങ്ങളുടെ നാമകരണവും ഐസോമെറിസവും',
         subtitleEn: 'IUPAC naming rules and structure',
         subtitleMl: 'ഐ.യു.പി.എ.സി നാമകരണ തത്വങ്ങൾ',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'chem-2',
@@ -76,7 +76,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'ഓർഗാനിക് സംയുക്തങ്ങളുടെ നാമകരണം',
         subtitleEn: 'Functional group reactions',
         subtitleMl: 'പ്രവർത്തന ഗ്രൂപ്പുകളുടെ രാസപ്രവർത്തനങ്ങൾ',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'chem-3',
@@ -85,7 +85,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'പിരിയോഡിക് ടേബിളും ഇലക്ട്രോൺ വിന്യാസവും',
         subtitleEn: 'Elements and shell configurations',
         subtitleMl: 'മൂലകങ്ങളുടെ ഇലക്ട്രോൺ വിന്യാസം',
-        totalBoxes: 3
+        totalBoxes: 1
       }
     ]
   },
@@ -105,7 +105,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'ജീവന്റെ ജനിതകം',
         subtitleEn: 'DNA, RNA and genetic inheritance',
         subtitleMl: 'ഡി.എൻ.എ ഉം ജനിതക ഘടനയും',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'bio-2',
@@ -114,7 +114,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'പരിണാമത്തിന്റെ വഴികൾ',
         subtitleEn: 'Evolutionary theory and origin of species',
         subtitleMl: 'പരിണാമ സിദ്ധാന്തങ്ങളും തെളിവുകളും',
-        totalBoxes: 3
+        totalBoxes: 1
       }
     ]
   },
@@ -134,7 +134,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'സമാന്തര ശ്രേണികൾ',
         subtitleEn: 'Number patterns and common difference',
         subtitleMl: 'സമാന്തര ശ്രേണികളുടെ പൊതുവ്യത്യാസം',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'math-2',
@@ -143,7 +143,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'വൃത്തങ്ങളും കോണുകളും',
         subtitleEn: 'Central angles and cyclic quadrilaterals',
         subtitleMl: 'വൃത്തത്തിലെ കോണുകളുടെ സവിശേഷതകൾ',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'math-3',
@@ -152,7 +152,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'സമാന്തര ശ്രേണിയും ബീജ ഗണിതവും',
         subtitleEn: 'Algebraic expression of nth terms',
         subtitleMl: 'ശ്രേണികളുടെ ബീജഗണിത രൂപം',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'math-4',
@@ -161,7 +161,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'സാധ്യതകളുടെ ഗണിതം',
         subtitleEn: 'Probability calculations',
         subtitleMl: 'സാധ്യതയും സംഭവങ്ങളും',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'math-5',
@@ -170,7 +170,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'രണ്ടാംകൃതി സമവാക്യങ്ങൾ',
         subtitleEn: 'Quadratic equations and roots',
         subtitleMl: 'രണ്ടാംകൃതി സമവാക്യങ്ങളുടെ നിർദ്ധാരണം',
-        totalBoxes: 3
+        totalBoxes: 1
       }
     ]
   },
@@ -192,7 +192,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'A VERY OLD MAN WITH ENORMOUS WINGS',
         subtitleEn: 'Magical Realism',
         subtitleMl: 'Magical Realism',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'eng-2',
@@ -203,7 +203,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'IN THE ATTIC',
         subtitleEn: 'Prose Study',
         subtitleMl: 'Prose Study',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'eng-3',
@@ -214,7 +214,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'FRIENDS ROMANS AND COUNTRYMAN',
         subtitleEn: 'Classic Oratory',
         subtitleMl: 'Classic Oratory',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'eng-4',
@@ -225,7 +225,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'BREAKING BARRIERS I WILL FLY',
         subtitleEn: 'Inspirational Essay',
         subtitleMl: 'Inspirational Essay',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'eng-5',
@@ -236,7 +236,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'A PHOENIX RISES',
         subtitleEn: 'Modern Poetry',
         subtitleMl: 'Modern Poetry',
-        totalBoxes: 3
+        totalBoxes: 1
       }
     ]
   },
@@ -254,55 +254,102 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         chapterNumber: 1,
         unitEn: 'UNIT 1',
         unitMl: 'UNIT 1',
-        titleEn: 'खिड़की (KHIDKI)',
+        titleEn: 'KHIDKI',
         titleMl: 'खिड़की (लघुकथा)',
         subtitleEn: 'Short Story',
         subtitleMl: 'लघुकथा',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'hin-2',
         chapterNumber: 2,
         unitEn: 'UNIT 1',
         unitMl: 'UNIT 1',
-        titleEn: 'जिंदगी का सफर (ZINDAGI KA SAFAR)',
+        titleEn: 'ZINDAGI KA SAFAR',
         titleMl: 'जिंदगी का सफर (हाइकु)',
         subtitleEn: 'Haiku Poetry',
         subtitleMl: 'हाइकु',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'hin-3',
         chapterNumber: 3,
         unitEn: 'UNIT 1',
         unitMl: 'UNIT 1',
-        titleEn: 'रैन बसेरे में... (RAIN BASERE MEIN)',
+        titleEn: 'RAIN BASERE MEIN...',
         titleMl: 'रैन बसेरे में... (यात्रावृत्त)',
         subtitleEn: 'Travelogue',
         subtitleMl: 'यात्रावृत्त',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'hin-4',
         chapterNumber: 1,
         unitEn: 'UNIT 2',
         unitMl: 'UNIT 2',
-        titleEn: 'मेरी दुनिया के तमाम बच्चे',
+        titleEn: 'MERI DUNIYA KE TAMAM BACCHE',
         titleMl: 'मेरी दुनिया के तमाम बच्चे (कविता)',
         subtitleEn: 'Poem Study',
         subtitleMl: 'कविता',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'hin-5',
         chapterNumber: 2,
         unitEn: 'UNIT 2',
         unitMl: 'UNIT 2',
-        titleEn: 'व्हाइट कैप (WHITE CAP)',
+        titleEn: 'WHITE CAP',
         titleMl: 'व्हाइट कैप (कहानी)',
         subtitleEn: 'Story Analysis',
         subtitleMl: 'कहानी',
-        totalBoxes: 3
+        totalBoxes: 1
+      }
+    ]
+  },
+  {
+    id: 'malayalam2',
+    nameEn: 'Malayalam II',
+    nameMl: 'മലയാളം II',
+    code: 'MAL-2',
+    color: 'from-pink-600 to-rose-600',
+    bgGradient: 'bg-gradient-to-r from-pink-600 to-rose-600',
+    borderColor: 'border-pink-200',
+    chapters: [
+      {
+        id: 'mal2-1',
+        chapterNumber: 1,
+        unitEn: 'UNIT 1: ARANGUM PORULUM',
+        unitMl: 'UNIT : 1  അരങ്ങും പൊരുളും',
+        titleEn: 'CHITHRAKARI',
+        titleMl: 'ചിത്രകാരി',
+        totalBoxes: 1
+      },
+      {
+        id: 'mal2-2',
+        chapterNumber: 2,
+        unitEn: 'UNIT 1: ARANGUM PORULUM',
+        unitMl: 'UNIT : 1  അരങ്ങും പൊരുളും',
+        titleEn: 'KHALBILE NILAAVU',
+        titleMl: 'ഖൽബിലെ നിലാവ്',
+        totalBoxes: 1
+      },
+      {
+        id: 'mal2-3',
+        chapterNumber: 3,
+        unitEn: 'UNIT 1: ARANGUM PORULUM',
+        unitMl: 'UNIT : 1  അരങ്ങും പൊരുളും',
+        titleEn: 'ORU PAKSHIKKUNJINTE MARANAM',
+        titleMl: 'ഒരു പക്ഷിക്കുഞ്ഞിന്റെ മരണം',
+        totalBoxes: 1
+      },
+      {
+        id: 'mal2-4',
+        chapterNumber: 1,
+        unitEn: 'UNIT 2: EKODARA SODARAR NAAM',
+        unitMl: 'UNIT : 2  ഏകോദര സോദരർ നാം',
+        titleEn: 'VISHUKKANI',
+        titleMl: 'വിഷുക്കണി',
+        totalBoxes: 1
       }
     ]
   },
@@ -322,7 +369,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'മാനവികത',
         subtitleEn: 'Renaissance and culture',
         subtitleMl: 'നവോത്ഥാനവും മാനവിക ചിന്തകളും',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'hist-2',
@@ -331,7 +378,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'സ്വാതന്ത്ര്യം, സമത്വം, സാഹോദര്യം',
         subtitleEn: 'French revolution ideals',
         subtitleMl: 'ഫ്രഞ്ച് വിപ്ലവവും ആശയങ്ങളും',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'hist-3',
@@ -340,7 +387,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'സാമൂഹിക വിശകലനം: സമൂഹ ശാസ്ത്ര സങ്കല്പത്തിലൂടെ',
         subtitleEn: 'Sociology perspectives',
         subtitleMl: 'സമൂഹശാസ്ത്ര സങ്കല്പങ്ങൾ',
-        totalBoxes: 3
+        totalBoxes: 1
       }
     ]
   },
@@ -360,7 +407,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'ദിനാന്തരീക്ഷ സ്ഥിതിയും കാലാവസ്ഥയും',
         subtitleEn: 'Weather elements and dynamics',
         subtitleMl: 'ദിനാന്തരീക്ഷ ഘടകങ്ങൾ',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'geo-2',
@@ -369,7 +416,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'കാലാവസ്ഥ മേഖലകളും കാലാവസ്ഥ മാറ്റവും',
         subtitleEn: 'Global climate patterns',
         subtitleMl: 'ആഗോള കാലാവസ്ഥ വ്യതിയാനം',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'geo-3',
@@ -378,7 +425,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'മഴക്കാടുകളിൽ നിന്ന് മഞ്ഞിന്റെ നാട്ടിലേക്ക്',
         subtitleEn: 'Global biomes',
         subtitleMl: 'ലോകത്തിലെ വിവിധ ജീവമണ്ഡലങ്ങൾ',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'geo-4',
@@ -387,7 +434,7 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'ഉപഭോക്താവ് : അവകാശങ്ങളും സംരക്ഷണവും',
         subtitleEn: 'Consumer awareness and laws',
         subtitleMl: 'ഉപഭോക്തൃ അവകാശ സംരക്ഷണം',
-        totalBoxes: 3
+        totalBoxes: 1
       },
       {
         id: 'geo-5',
@@ -396,11 +443,11 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'പണവും സാമ്പത്തിക വ്യവസ്ഥയും',
         subtitleEn: 'Financial systems',
         subtitleMl: 'സാമ്പത്തിക ക്രമങ്ങളും പണവും',
-        totalBoxes: 3
+        totalBoxes: 1
       }
     ]
   }
 ];
 
 export const TOTAL_CHAPTERS = STUDY_SUBJECTS.reduce((acc, sub) => acc + sub.chapters.length, 0);
-export const TOTAL_CHECKPOINTS = TOTAL_CHAPTERS * 3;
+export const TOTAL_CHECKPOINTS = TOTAL_CHAPTERS;

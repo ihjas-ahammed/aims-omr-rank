@@ -24,12 +24,13 @@ npm run lint       # TypeScript type checking
 App.tsx is the central state hub. All application state lives here and is passed down to child components. Settings are persisted to localStorage.
 
 ### View Routing
-The app uses a `ViewState` type to manage navigation between different views (home, lab, ranklist, detail, lab-course-progress, lab-timetable, lab-atr-list, lab-qp-maker, exam-*, etc.). URL paths are synced via `window.history.pushState`.
+The app uses a `ViewState` type to manage navigation between different views (home, lab, ranklist, detail, lab-course-progress, lab-timetable, lab-atr-list, lab-qp-maker, exam-*, study-progress-*, improvement-*, aims-present-*, etc.). URL paths are synced via `window.history.pushState`.
 
 ### Services Layer
 - `src/services/geminiService.ts` - All Gemini API interactions: OMR evaluation (`evaluateOMR`/`evaluateOMRBatch`), name correction (`correctNamesBatch`), text extraction, auto-crop
 - `src/services/db.ts` - IndexedDB wrapper for image persistence across two stores: `images` (OMR sheets) and `student-images`
-- `src/services/firebaseService.ts` - Firebase integration for exams
+- `src/services/firebaseService.ts` - Firebase integration for exams, study progress, and cloud sessions
+- `src/services/studyProgressService.ts` - Service managing study progress tracking, box checkpoints, and statistics calculation
 
 ### Utils
 - `src/utils/topicParser.ts` - Parses markdown-formatted topic mapping into `Chapter[]`/`Topic[]` structures
@@ -38,7 +39,7 @@ The app uses a `ViewState` type to manage navigation between different views (ho
 - `src/utils/cropUtils.ts` - Crop coordinate utilities
 
 ### Components
-Key components include `Lab`, `RankList`, `StudentDetail`, `ReviewModal`, and feature-specific components under `src/components/lab/` (course-progress, timetable, atr-list, qp-maker, online-exams).
+Key components include `Lab`, `RankList`, `StudentDetail`, `ReviewModal`, and feature-specific components under `src/components/lab/` (course-progress, timetable, atr-list, qp-maker, online-exams, study-progress, fee-logger, cloud-sessions, descriptive, aims-present, score-analysis, improvement).
 
 ### OMR Processing Flow
 1. Images uploaded and stored in IndexedDB

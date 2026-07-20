@@ -71,13 +71,16 @@ export function calculateProgressStats(progress: ChapterBoxesMap) {
 
   STUDY_SUBJECTS.forEach(subject => {
     let subChecked = 0;
-    let subPossible = subject.chapters.length * 3;
+    let subPossible = 0;
 
     subject.chapters.forEach(ch => {
+      const maxB = ch.totalBoxes || 1;
+      subPossible += maxB;
       const entry = progress[ch.id] || { boxes: [false, false, false], timestamps: [null, null, null] };
       const boxes = entry.boxes;
-      const count = (boxes[0] ? 1 : 0) + (boxes[1] ? 1 : 0) + (boxes[2] ? 1 : 0);
-      subChecked += count;
+      for (let i = 0; i < maxB; i++) {
+        if (boxes[i]) subChecked++;
+      }
     });
 
     subjectPercentages[subject.id] = subPossible > 0 ? Math.round((subChecked / subPossible) * 100) : 0;
