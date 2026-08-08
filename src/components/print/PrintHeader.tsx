@@ -13,7 +13,7 @@ export default function PrintHeader({ subjectName, dayNumber, chapterTopicString
         <img src="/logo1.png" alt="Logo" className="h-12 md:h-16 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
         <div className="text-center flex-1">
           <h1 className="text-sm md:text-xl font-bold tracking-[0.4em] uppercase ml-[0.4em] text-slate-800">
-            AIMS PLUS TEST SERIES · CRASH 2026
+            AIMS TEST SERIES · CRASH 2026
           </h1>
           <h2 className="text-xl md:text-2xl font-black mt-1 text-slate-900">DAY {dayNumber} — RANK LIST</h2>
         </div>

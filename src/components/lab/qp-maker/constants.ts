@@ -344,7 +344,7 @@ export const QP_TEMPLATES = [
   <div class="header">
     <div class="logo-box"><img src="logo1.png" alt="Logo"></div>
     <div class="header-center">
-      <div class="institute-name">AIMS&nbsp;PLUS</div>
+      <div class="institute-name">AIMS</div>
       <div class="exam-title">Daily Examination</div>
     </div>
     <div class="logo-box"></div>
@@ -405,7 +405,7 @@ export const QP_TEMPLATES = [
 <div class="page">
   <div class="header">
     <img src="logo1.png" alt="Logo" class="logo">
-    <h1 class="title">AIMS PLUS</h1>
+    <h1 class="title">AIMS</h1>
     <div class="subtitle">EXAMINATION PAPER</div>
   </div>
   <div class="meta-grid">
@@ -454,7 +454,7 @@ export const QP_TEMPLATES = [
   <div class="header">
     <img src="logo1.png" alt="Logo" class="logo">
     <div class="header-text">
-      <h1>AIMS PLUS EVALUATION</h1>
+      <h1>AIMS EVALUATION</h1>
       <div style="font-size: 12px; color: #666; margin-top: 4px;">Standardized Test Format</div>
     </div>
   </div>

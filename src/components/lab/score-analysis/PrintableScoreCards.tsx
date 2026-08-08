@@ -10,7 +10,7 @@ interface PrintableScoreCardsProps {
 
 export default function PrintableScoreCards({ students, scoreHeaders, onBack }: PrintableScoreCardsProps) {
   const [title, setTitle] = useState('WEEKLY SCORE REPORT');
-  const [subtitle, setSubtitle] = useState('AIMS PLUS TRACK RECORD');
+  const [subtitle, setSubtitle] = useState('AIMS TRACK RECORD');
   
   // By default, select the last 7 columns to fit perfectly on standard printed cards
   const [selectedHeaders, setSelectedHeaders] = useState<string[]>(

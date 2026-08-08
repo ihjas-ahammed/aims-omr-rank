@@ -11,7 +11,7 @@ interface ResultsProps {
 
 export function Results({ results }: ResultsProps) {
   const [activeTab, setActiveTab] = useState(0);
-  const [headerTitle, setHeaderTitle] = useState('AIMS PLUS Track Record');
+  const [headerTitle, setHeaderTitle] = useState('AIMS Track Record');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState('');
 

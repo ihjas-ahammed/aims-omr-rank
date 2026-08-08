@@ -924,7 +924,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => { window.history.pushState({}, '', '/'); setView('lab'); }}>
             <Beaker className="w-6 h-6 text-purple-600" />
-            <h1 className="text-xl font-semibold tracking-tight">AIMS Plus Lab</h1>
+            <h1 className="text-xl font-semibold tracking-tight">AIMS Lab</h1>
           </div>
           <div className="flex items-center gap-2">
             <button

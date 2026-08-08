@@ -586,7 +586,7 @@ export default function ImprovementAdmin({ onBack, hideBack = false }: Improveme
             {/* Footer page descriptor */}
             <div className="bg-gray-50 px-5 py-3.5 border-t border-gray-100 text-xs text-gray-500 font-medium flex justify-between items-center">
               <span>Showing {processedResponses.length} of {responses.length} total entries</span>
-              <span>AIMS Plus Lab Evaluation</span>
+              <span>AIMS Lab Evaluation</span>
             </div>
           </div>
         </div>

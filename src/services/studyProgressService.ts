@@ -1,17 +1,20 @@
 import { db, rtdb } from './firebaseService';
 import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { ref, set, get, child, remove } from 'firebase/database';
-import { STUDY_SUBJECTS } from '../data/studyProgressData';
+import { STUDY_SUBJECTS, FirstLanguageSubject, getSubjectListForStudent } from '../data/studyProgressData';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
 export type StudentMedium = 'English' | 'Malayalam';
+export type { FirstLanguageSubject };
 
 export interface StudentProfile {
   name: string;
   studentClass: string;
   admissionNo: string;
   medium: StudentMedium;
+  firstLanguage?: FirstLanguageSubject;
+  phoneNumber?: string;
 }
 
 export interface ChapterProgressEntry {
@@ -27,6 +30,8 @@ export interface StudentProgressRecord {
   studentName: string;
   studentClass: string;
   medium: StudentMedium;
+  firstLanguage?: FirstLanguageSubject;
+  phoneNumber?: string;
   progress: ChapterBoxesMap;
   overallPercentage: number;
   subjectPercentages: Record<string, number>;
@@ -64,12 +69,14 @@ export function normalizeChapterBoxesMap(raw: any): ChapterBoxesMap {
 }
 
 // Calculate percentages helper
-export function calculateProgressStats(progress: ChapterBoxesMap) {
+export function calculateProgressStats(progress: ChapterBoxesMap, firstLang?: FirstLanguageSubject) {
   const subjectPercentages: Record<string, number> = {};
   let totalCheckedBoxes = 0;
   let totalPossibleBoxes = 0;
 
-  STUDY_SUBJECTS.forEach(subject => {
+  const subjects = getSubjectListForStudent(firstLang);
+
+  subjects.forEach(subject => {
     let subChecked = 0;
     let subPossible = 0;
 
@@ -101,8 +108,89 @@ export function calculateProgressStats(progress: ChapterBoxesMap) {
 const LOCAL_STORAGE_KEY_PROFILE = 'study_progress_student_profile';
 const LOCAL_STORAGE_KEY_PROGRESS = 'study_progress_chapter_boxes';
 const LOCAL_STORAGE_KEY_ALL_RECORDS = 'study_progress_all_records_cache';
+const LOCAL_STORAGE_KEY_PROFILES_LIST = 'study_progress_saved_profiles';
+const LOCAL_STORAGE_KEY_ACTIVE_ADMISSION_NO = 'study_progress_active_admission_no';
+
+export function getAllLocalProfiles(): StudentProfile[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY_PROFILES_LIST);
+    let profiles: StudentProfile[] = raw ? JSON.parse(raw) : [];
+
+    // Fallback: If empty, seed from legacy profile or all_records_cache
+    if (profiles.length === 0) {
+      const current = getLegacyLocalStudentProfile();
+      if (current && current.admissionNo) {
+        profiles.push(current);
+      } else {
+        const recordsRaw = localStorage.getItem(LOCAL_STORAGE_KEY_ALL_RECORDS);
+        if (recordsRaw) {
+          const recs: StudentProgressRecord[] = JSON.parse(recordsRaw);
+          recs.forEach(r => {
+            if (r.admissionNo && r.studentName) {
+              profiles.push({
+                name: r.studentName,
+                studentClass: r.studentClass,
+                admissionNo: r.admissionNo,
+                medium: r.medium,
+                firstLanguage: r.firstLanguage
+              });
+            }
+          });
+        }
+      }
+      if (profiles.length > 0) {
+        localStorage.setItem(LOCAL_STORAGE_KEY_PROFILES_LIST, JSON.stringify(profiles));
+      }
+    }
+    return profiles.map(p => ({
+      ...p,
+      medium: p.medium === 'Malayalam' ? 'Malayalam' : 'English'
+    }));
+  } catch (e) {
+    return [];
+  }
+}
+
+export function saveLocalStudentProfile(profile: StudentProfile): void {
+  const sanitized: StudentProfile = {
+    ...profile,
+    name: profile.name.trim(),
+    admissionNo: profile.admissionNo.trim(),
+    studentClass: profile.studentClass.trim(),
+    medium: profile.medium === 'Malayalam' ? 'Malayalam' : 'English',
+    phoneNumber: profile.phoneNumber?.trim() || ''
+  };
+
+  localStorage.setItem(LOCAL_STORAGE_KEY_PROFILE, JSON.stringify(sanitized));
+  localStorage.setItem(LOCAL_STORAGE_KEY_ACTIVE_ADMISSION_NO, sanitized.admissionNo);
+
+  try {
+    const profiles = getAllLocalProfiles();
+    const existingIdx = profiles.findIndex(p => p.admissionNo === sanitized.admissionNo);
+    if (existingIdx >= 0) {
+      profiles[existingIdx] = sanitized;
+    } else {
+      profiles.push(sanitized);
+    }
+    localStorage.setItem(LOCAL_STORAGE_KEY_PROFILES_LIST, JSON.stringify(profiles));
+  } catch (e) {}
+}
 
 export function getLocalStudentProfile(): StudentProfile | null {
+  try {
+    const activeAdmNo = localStorage.getItem(LOCAL_STORAGE_KEY_ACTIVE_ADMISSION_NO);
+    const profiles = getAllLocalProfiles();
+    if (activeAdmNo && profiles.length > 0) {
+      const match = profiles.find(p => p.admissionNo === activeAdmNo);
+      if (match) return match;
+    }
+    return getLegacyLocalStudentProfile();
+  } catch (e) {
+    return null;
+  }
+}
+
+function getLegacyLocalStudentProfile(): StudentProfile | null {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY_PROFILE);
     if (!raw) return null;
@@ -116,12 +204,25 @@ export function getLocalStudentProfile(): StudentProfile | null {
   }
 }
 
-export function saveLocalStudentProfile(profile: StudentProfile): void {
-  localStorage.setItem(LOCAL_STORAGE_KEY_PROFILE, JSON.stringify(profile));
-}
-
-export function getLocalChapterProgress(): ChapterBoxesMap {
+export function getLocalChapterProgress(admissionNo?: string): ChapterBoxesMap {
   try {
+    const admNo = admissionNo || localStorage.getItem(LOCAL_STORAGE_KEY_ACTIVE_ADMISSION_NO);
+    if (admNo) {
+      const specificRaw = localStorage.getItem(`study_progress_chapter_boxes_${admNo}`);
+      if (specificRaw) {
+        return normalizeChapterBoxesMap(JSON.parse(specificRaw));
+      }
+
+      const recordsRaw = localStorage.getItem(LOCAL_STORAGE_KEY_ALL_RECORDS);
+      if (recordsRaw) {
+        const recs: StudentProgressRecord[] = JSON.parse(recordsRaw);
+        const match = recs.find(r => r.admissionNo === admNo || r.id === admNo);
+        if (match && match.progress) {
+          return normalizeChapterBoxesMap(match.progress);
+        }
+      }
+    }
+
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY_PROGRESS);
     if (!raw) return {};
     return normalizeChapterBoxesMap(JSON.parse(raw));
@@ -130,8 +231,70 @@ export function getLocalChapterProgress(): ChapterBoxesMap {
   }
 }
 
-export function saveLocalChapterProgress(progress: ChapterBoxesMap): void {
+export function saveLocalChapterProgress(progress: ChapterBoxesMap, admissionNo?: string): void {
+  const admNo = admissionNo || localStorage.getItem(LOCAL_STORAGE_KEY_ACTIVE_ADMISSION_NO);
   localStorage.setItem(LOCAL_STORAGE_KEY_PROGRESS, JSON.stringify(progress));
+  if (admNo) {
+    localStorage.setItem(`study_progress_chapter_boxes_${admNo}`, JSON.stringify(progress));
+  }
+}
+
+export function switchActiveProfile(admissionNo: string): { profile: StudentProfile | null; progress: ChapterBoxesMap } {
+  const profiles = getAllLocalProfiles();
+  const match = profiles.find(p => p.admissionNo === admissionNo);
+
+  if (match) {
+    localStorage.setItem(LOCAL_STORAGE_KEY_ACTIVE_ADMISSION_NO, match.admissionNo);
+    localStorage.setItem(LOCAL_STORAGE_KEY_PROFILE, JSON.stringify(match));
+    const progress = getLocalChapterProgress(match.admissionNo);
+    localStorage.setItem(LOCAL_STORAGE_KEY_PROGRESS, JSON.stringify(progress));
+    return { profile: match, progress };
+  }
+
+  try {
+    const recordsRaw = localStorage.getItem(LOCAL_STORAGE_KEY_ALL_RECORDS);
+    if (recordsRaw) {
+      const recs: StudentProgressRecord[] = JSON.parse(recordsRaw);
+      const recMatch = recs.find(r => r.admissionNo === admissionNo || r.id === admissionNo);
+      if (recMatch) {
+        const foundProfile: StudentProfile = {
+          name: recMatch.studentName,
+          studentClass: recMatch.studentClass,
+          admissionNo: recMatch.admissionNo,
+          medium: recMatch.medium,
+          firstLanguage: recMatch.firstLanguage
+        };
+        saveLocalStudentProfile(foundProfile);
+        const progress = normalizeChapterBoxesMap(recMatch.progress);
+        saveLocalChapterProgress(progress, foundProfile.admissionNo);
+        return { profile: foundProfile, progress };
+      }
+    }
+  } catch (e) {}
+
+  return { profile: null, progress: {} };
+}
+
+export function removeLocalProfile(admissionNo: string): StudentProfile[] {
+  try {
+    const profiles = getAllLocalProfiles().filter(p => p.admissionNo !== admissionNo);
+    localStorage.setItem(LOCAL_STORAGE_KEY_PROFILES_LIST, JSON.stringify(profiles));
+    localStorage.removeItem(`study_progress_chapter_boxes_${admissionNo}`);
+
+    const activeAdmNo = localStorage.getItem(LOCAL_STORAGE_KEY_ACTIVE_ADMISSION_NO);
+    if (activeAdmNo === admissionNo) {
+      if (profiles.length > 0) {
+        switchActiveProfile(profiles[0].admissionNo);
+      } else {
+        localStorage.removeItem(LOCAL_STORAGE_KEY_ACTIVE_ADMISSION_NO);
+        localStorage.removeItem(LOCAL_STORAGE_KEY_PROFILE);
+        localStorage.removeItem(LOCAL_STORAGE_KEY_PROGRESS);
+      }
+    }
+    return profiles;
+  } catch (e) {
+    return [];
+  }
 }
 
 export async function saveStudentProgress(
@@ -139,7 +302,7 @@ export async function saveStudentProgress(
   progress: ChapterBoxesMap
 ): Promise<void> {
   saveLocalStudentProfile(profile);
-  saveLocalChapterProgress(progress);
+  saveLocalChapterProgress(progress, profile.admissionNo.trim());
 
   const stats = calculateProgressStats(progress);
   const docId = profile.admissionNo.trim().replace(/[\/\\#\?\.\$\[\]]/g, '_') || `student_${Date.now()}`;
@@ -151,6 +314,8 @@ export async function saveStudentProgress(
     studentName: profile.name.trim(),
     studentClass: profile.studentClass.trim(),
     medium: profile.medium,
+    firstLanguage: profile.firstLanguage,
+    phoneNumber: profile.phoneNumber?.trim() || '',
     progress,
     overallPercentage: stats.overallPercentage,
     subjectPercentages: stats.subjectPercentages,
@@ -212,6 +377,8 @@ export async function fetchAllStudentProgress(): Promise<StudentProgressRecord[]
           studentName: data.studentName || 'Unknown',
           studentClass: data.studentClass || 'N/A',
           medium: data.medium === 'Malayalam' ? 'Malayalam' : 'English',
+          firstLanguage: data.firstLanguage || 'Malayalam',
+          phoneNumber: data.phoneNumber || '',
           progress: normalizeChapterBoxesMap(data.progress),
           overallPercentage: data.overallPercentage ?? 0,
           subjectPercentages: data.subjectPercentages || {},
@@ -247,6 +414,8 @@ export async function fetchAllStudentProgress(): Promise<StudentProgressRecord[]
           studentName: data.studentName || 'Unknown',
           studentClass: data.studentClass || 'N/A',
           medium: data.medium === 'Malayalam' ? 'Malayalam' : 'English',
+          firstLanguage: data.firstLanguage || 'Malayalam',
+          phoneNumber: data.phoneNumber || '',
           progress: normalizeChapterBoxesMap(data.progress),
           overallPercentage: data.overallPercentage ?? 0,
           subjectPercentages: data.subjectPercentages || {},
@@ -476,6 +645,7 @@ export async function exportStudyProgressToExcel(records: StudentProgressRecord[
   const chapterLogHeaders = [
     'Admission No',
     'Student Name',
+    'Phone Number',
     'Class',
     'Medium',
     'Subject',
@@ -522,6 +692,7 @@ export async function exportStudyProgressToExcel(records: StudentProgressRecord[
         const row = chapterLogSheet.addRow([
           rec.admissionNo,
           rec.studentName,
+          rec.phoneNumber || 'N/A',
           rec.studentClass,
           rec.medium || 'English',
           subName,
@@ -607,6 +778,7 @@ export async function exportStudyProgressToExcel(records: StudentProgressRecord[
   const studentSummaryHeaders = [
     'Admission No',
     'Student Name',
+    'Phone Number',
     'Class',
     'Medium',
     'Completed Checkpoints',
@@ -646,14 +818,15 @@ export async function exportStudyProgressToExcel(records: StudentProgressRecord[
     const latestTick = allTimestamps.length > 0 ? formatDateForExcel(new Date(allTimestamps[allTimestamps.length - 1]).toISOString()) : 'No Ticks Yet';
     const lastUpdate = formatDateForExcel(rec.updatedAt);
 
-    const overallStatus = tickedCount === 72 ? 'Fully Completed' : tickedCount > 0 ? 'In Progress' : 'Not Started';
+    const totalPossible = calculateProgressStats(rec.progress || {}, rec.firstLanguage).totalPossibleBoxes || 36;
+    const overallStatus = tickedCount >= totalPossible ? 'Fully Completed' : tickedCount > 0 ? 'In Progress' : 'Not Started';
 
     const row = studentSummarySheet.addRow([
       rec.admissionNo,
       rec.studentName,
       rec.studentClass,
       rec.medium || 'English',
-      `${tickedCount} / 72 Checkpoints (${rec.overallPercentage}%)`,
+      `${tickedCount} / ${totalPossible} Checkpoints (${rec.overallPercentage}%)`,
       overallStatus,
       firstTick,
       latestTick,

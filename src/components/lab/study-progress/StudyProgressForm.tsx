@@ -4,7 +4,9 @@ import {
   TOTAL_CHAPTERS, 
   TOTAL_CHECKPOINTS, 
   SubjectDef, 
-  ChapterDef 
+  ChapterDef,
+  FirstLanguageSubject,
+  getSubjectListForStudent
 } from '../../../data/studyProgressData';
 import { 
   StudentProfile, 
@@ -13,7 +15,10 @@ import {
   getLocalStudentProfile, 
   getLocalChapterProgress, 
   saveStudentProgress, 
-  calculateProgressStats 
+  calculateProgressStats,
+  getAllLocalProfiles,
+  switchActiveProfile,
+  removeLocalProfile
 } from '../../../services/studyProgressService';
 import { 
   CheckCircle2, 
@@ -36,7 +41,13 @@ import {
   Languages,
   Landmark,
   Loader2,
-  Download
+  Download,
+  Users,
+  UserPlus,
+  Trash2,
+  X,
+  Phone,
+  PhoneCall
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -54,7 +65,10 @@ function getSubjectIcon(subjectId: string) {
     case 'maths': return <Calculator className="w-5 h-5 text-cyan-100 drop-shadow" />;
     case 'english': return <BookOpen className="w-5 h-5 text-amber-100 drop-shadow" />;
     case 'hindi': return <Languages className="w-5 h-5 text-orange-100 drop-shadow" />;
+    case 'malayalam1': return <BookOpen className="w-5 h-5 text-pink-100 drop-shadow" />;
     case 'malayalam2': return <BookOpen className="w-5 h-5 text-pink-100 drop-shadow" />;
+    case 'arabic': return <BookOpen className="w-5 h-5 text-emerald-100 drop-shadow" />;
+    case 'urdu': return <BookOpen className="w-5 h-5 text-amber-100 drop-shadow" />;
     case 'history': return <Landmark className="w-5 h-5 text-violet-100 drop-shadow" />;
     case 'geography': return <Globe className="w-5 h-5 text-sky-100 drop-shadow" />;
     default: return <BookOpen className="w-5 h-5 text-slate-100 drop-shadow" />;
@@ -64,10 +78,13 @@ function getSubjectIcon(subjectId: string) {
 export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressFormProps) {
   const [profile, setProfile] = useState<StudentProfile | null>(() => getLocalStudentProfile());
   const [boxes, setBoxes] = useState<ChapterBoxesMap>(() => getLocalChapterProgress());
+  const [savedProfiles, setSavedProfiles] = useState<StudentProfile[]>(() => getAllLocalProfiles());
+  const [isAccountSwitcherOpen, setIsAccountSwitcherOpen] = useState(false);
+  const [isAddingAccount, setIsAddingAccount] = useState(false);
   
   // Set page title
   useEffect(() => {
-    document.title = 'Study Progress';
+    document.title = 'AIMS';
   }, []);
 
   // Onboarding input states
@@ -75,8 +92,98 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
   const [inputClass, setInputClass] = useState(profile?.studentClass || 'E1');
   const [inputAdmNo, setInputAdmNo] = useState(profile?.admissionNo || '');
   const [inputMedium, setInputMedium] = useState<StudentMedium>(profile?.medium || 'English');
+  const [inputFirstLang, setInputFirstLang] = useState<FirstLanguageSubject>(profile?.firstLanguage || 'Malayalam');
+  const [inputPhone, setInputPhone] = useState(profile?.phoneNumber || '');
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [formError, setFormError] = useState('');
+
+  // Custom Alert Modal state for existing users without phone number
+  const [showPhoneModal, setShowPhoneModal] = useState<boolean>(() => {
+    return !!(profile && (!profile.phoneNumber || !profile.phoneNumber.trim()));
+  });
+  const [modalPhone, setModalPhone] = useState('');
+  const [modalPhoneError, setModalPhoneError] = useState('');
+  const [isSavingModalPhone, setIsSavingModalPhone] = useState(false);
+
+  const handleSwitchAccount = (admNo: string) => {
+    const { profile: nextProfile, progress: nextBoxes } = switchActiveProfile(admNo);
+    if (nextProfile) {
+      setProfile(nextProfile);
+      setBoxes(nextBoxes);
+      setInputName(nextProfile.name);
+      setInputClass(nextProfile.studentClass);
+      setInputAdmNo(nextProfile.admissionNo);
+      setInputMedium(nextProfile.medium);
+      setInputFirstLang(nextProfile.firstLanguage || 'Malayalam');
+      setInputPhone(nextProfile.phoneNumber || '');
+      setIsEditingProfile(false);
+      setIsAddingAccount(false);
+      setIsAccountSwitcherOpen(false);
+      setShowPhoneModal(!!(!nextProfile.phoneNumber || !nextProfile.phoneNumber.trim()));
+      triggerSaveToast();
+    }
+  };
+
+  const handleAddAccount = () => {
+    setInputName('');
+    setInputClass('E1');
+    setInputAdmNo('');
+    setInputMedium('English');
+    setInputFirstLang('Malayalam');
+    setInputPhone('');
+    setIsAddingAccount(true);
+    setIsEditingProfile(false);
+    setIsAccountSwitcherOpen(false);
+  };
+
+  const handleRemoveAccount = (admNo: string) => {
+    const updated = removeLocalProfile(admNo);
+    setSavedProfiles(updated);
+    const active = getLocalStudentProfile();
+    setProfile(active);
+    if (active) {
+      setBoxes(getLocalChapterProgress(active.admissionNo));
+    } else {
+      setBoxes({});
+      setIsAddingAccount(true);
+    }
+  };
+
+  // Auto-prompt old users who haven't selected a first language subject yet
+  useEffect(() => {
+    if (profile && !profile.firstLanguage) {
+      setIsEditingProfile(true);
+      setFormError('Please select your First Language Subject (Malayalam I, Arabic, or Urdu) to update your profile.');
+    }
+  }, [profile]);
+
+  const handleSaveOldUserPhone = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = modalPhone.trim();
+    if (!trimmed || trimmed.length < 8) {
+      setModalPhoneError('Please enter a valid Phone / WhatsApp number (at least 8-10 digits)');
+      return;
+    }
+    setIsSavingModalPhone(true);
+    setModalPhoneError('');
+
+    try {
+      const updatedProfile: StudentProfile = {
+        ...profile!,
+        phoneNumber: trimmed
+      };
+      await saveStudentProgress(updatedProfile, boxes);
+      setProfile(updatedProfile);
+      setInputPhone(trimmed);
+      setSavedProfiles(getAllLocalProfiles());
+      setShowPhoneModal(false);
+      triggerSaveToast();
+    } catch (err) {
+      setModalPhoneError('Failed to save phone number to database. Please check your internet connection.');
+    } finally {
+      setIsSavingModalPhone(false);
+    }
+  };
 
   // Saving state tracker for specific checkbox
   const [savingBoxKey, setSavingBoxKey] = useState<string | null>(null);
@@ -84,10 +191,12 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
   // Real-time auto-save indicator toast
   const [saveToast, setSaveToast] = useState(false);
 
+  const studentSubjects = useMemo(() => getSubjectListForStudent(profile?.firstLanguage), [profile?.firstLanguage]);
+
   // Accordion open/close state map for each subject (id -> boolean)
   const [openSubjects, setOpenSubjects] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    STUDY_SUBJECTS.forEach((s, idx) => {
+    studentSubjects.forEach((s, idx) => {
       initial[s.id] = idx === 0;
     });
     return initial;
@@ -111,7 +220,7 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
     };
   }, []);
 
-  const stats = useMemo(() => calculateProgressStats(boxes), [boxes]);
+  const stats = useMemo(() => calculateProgressStats(boxes, profile?.firstLanguage), [boxes, profile?.firstLanguage]);
 
   const isMalayalam = profile?.medium === 'Malayalam';
 
@@ -145,19 +254,31 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
       setFormError('Please enter your admission number');
       return;
     }
+    if (!inputPhone.trim() || inputPhone.trim().length < 8) {
+      setFormError('Please enter a valid Phone / WhatsApp number (at least 8-10 digits)');
+      return;
+    }
 
     setFormError('');
     const newProfile: StudentProfile = {
       name: inputName.trim(),
       studentClass: inputClass.trim(),
       admissionNo: inputAdmNo.trim(),
-      medium: inputMedium
+      medium: inputMedium,
+      firstLanguage: inputFirstLang,
+      phoneNumber: inputPhone.trim()
     };
 
     try {
-      await saveStudentProgress(newProfile, boxes);
+      const existingBoxes = getLocalChapterProgress(newProfile.admissionNo);
+      const targetBoxes = (Object.keys(existingBoxes).length > 0 && !isEditingProfile) ? existingBoxes : boxes;
+
+      await saveStudentProgress(newProfile, targetBoxes);
       setProfile(newProfile);
+      setBoxes(targetBoxes);
+      setSavedProfiles(getAllLocalProfiles());
       setIsEditingProfile(false);
+      setIsAddingAccount(false);
       triggerSaveToast();
 
       // Prompt PWA installation dialog on registration submit if prompt is ready and not installed
@@ -200,7 +321,7 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
       setBoxes(updatedMap);
       triggerSaveToast();
 
-      const newStats = calculateProgressStats(updatedMap);
+      const newStats = calculateProgressStats(updatedMap, profile.firstLanguage);
       if (newStats.overallPercentage === 100 && stats.overallPercentage !== 100) {
         confetti({
           particleCount: 150,
@@ -225,29 +346,42 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
 
   const setAllAccordionState = (isOpen: boolean) => {
     const next: Record<string, boolean> = {};
-    STUDY_SUBJECTS.forEach(s => { next[s.id] = isOpen; });
+    studentSubjects.forEach(s => { next[s.id] = isOpen; });
     setOpenSubjects(next);
   };
 
   // --- SIGN UP / PROFILE ENTRY SCREEN ---
-  if (!profile || isEditingProfile) {
+  if (!profile || isEditingProfile || isAddingAccount) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between p-4 md:p-8 font-sans">
         <header className="w-full max-w-lg mx-auto flex items-center justify-between py-4">
           <div className="flex items-center gap-3">
-            <img src="/app_icon.png" alt="Study Progress Logo" className="w-10 h-10 rounded-xl object-contain bg-slate-900 border border-slate-800 p-1 shadow-lg" />
+            <img src="/app_icon.png?v=2" alt="AIMS Logo" className="w-10 h-10 rounded-xl object-contain bg-slate-900 border border-slate-800 p-1 shadow-lg" />
             <div>
               <h1 className="text-base font-extrabold tracking-tight text-white">Study Progress</h1>
               <p className="text-[11px] text-slate-400">Student Portal</p>
             </div>
           </div>
+
+          {savedProfiles.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setIsAccountSwitcherOpen(true)}
+              className="flex items-center gap-2 py-1.5 px-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-full transition-all cursor-pointer shadow-lg text-xs font-bold text-slate-300"
+            >
+              <Users className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Accounts ({savedProfiles.length})</span>
+            </button>
+          )}
         </header>
 
         <div className="w-full max-w-lg mx-auto bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6 my-auto">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-black text-white tracking-tight">Student Registration</h2>
+            <h2 className="text-2xl font-black text-white tracking-tight">
+              {isEditingProfile ? 'Edit Student Profile' : isAddingAccount ? 'Add Student Account' : 'Student Registration'}
+            </h2>
             <p className="text-slate-400 text-xs md:text-sm">
-              Enter your details, select your batch and preferred medium of instruction.
+              {isAddingAccount ? 'Add another student account to track progress on this device.' : 'Enter your details, select your batch, first language, and preferred medium.'}
             </p>
           </div>
 
@@ -264,7 +398,7 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
               </label>
               <input
                 type="text"
-                placeholder="Enter your full name"
+                placeholder="Enter full name"
                 value={inputName}
                 onChange={(e) => setInputName(e.target.value)}
                 className="w-full h-12 px-4 bg-slate-800/90 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium transition-all"
@@ -305,6 +439,44 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
               </div>
             </div>
 
+            {/* Phone Number Field */}
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Phone className="w-4 h-4 text-indigo-400" /> Phone / WhatsApp Number
+              </label>
+              <input
+                type="tel"
+                placeholder="e.g. 9876543210"
+                value={inputPhone}
+                onChange={(e) => setInputPhone(e.target.value)}
+                className="w-full h-12 px-4 bg-slate-800/90 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 text-sm font-medium transition-all"
+                required
+              />
+            </div>
+
+            {/* First Language Selection */}
+            <div>
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4 text-indigo-400" /> First Language Subject
+              </label>
+              <div className="grid grid-cols-3 gap-2 p-1 bg-slate-800/60 border border-slate-700 rounded-2xl">
+                {(['Malayalam', 'Arabic', 'Urdu'] as FirstLanguageSubject[]).map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setInputFirstLang(lang)}
+                    className={`py-3 px-2 rounded-xl font-bold text-xs transition-all cursor-pointer flex items-center justify-center ${
+                      inputFirstLang === lang
+                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <span>{lang === 'Malayalam' ? 'Malayalam I' : lang}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Medium Selection */}
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
@@ -341,16 +513,27 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
               type="submit"
               className="w-full h-13 mt-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-bold rounded-2xl shadow-xl shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 text-sm"
             >
-              {isEditingProfile ? 'Save & Return' : 'Start Progress Tracking'} <ArrowRight className="w-4 h-4" />
+              {isEditingProfile ? 'Save & Return' : isAddingAccount ? 'Add Account' : 'Start Progress Tracking'} <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          {isEditingProfile && (
+          {(isEditingProfile || (isAddingAccount && profile)) && (
             <button
-              onClick={() => setIsEditingProfile(false)}
+              type="button"
+              onClick={() => {
+                setIsEditingProfile(false);
+                setIsAddingAccount(false);
+                if (profile) {
+                  setInputName(profile.name);
+                  setInputClass(profile.studentClass);
+                  setInputAdmNo(profile.admissionNo);
+                  setInputMedium(profile.medium);
+                  setInputFirstLang(profile.firstLanguage || 'Malayalam');
+                }
+              }}
               className="w-full h-11 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-2xl text-xs transition-all cursor-pointer"
             >
-              Cancel
+              Cancel & Return
             </button>
           )}
         </div>
@@ -358,6 +541,108 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
         <footer className="w-full max-w-lg mx-auto py-4 text-center text-xs text-slate-500">
           Study Progress • Student Module
         </footer>
+
+        {/* Account Switcher Modal */}
+        {isAccountSwitcherOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 relative">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white leading-tight">Switch Account</h3>
+                    <p className="text-xs text-slate-400">Select an account to view or track progress</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAccountSwitcherOpen(false)}
+                  className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+                {savedProfiles.map((p) => {
+                  const isActive = profile?.admissionNo === p.admissionNo;
+                  const pProgress = getLocalChapterProgress(p.admissionNo);
+                  const pStats = calculateProgressStats(pProgress, p.firstLanguage);
+
+                  return (
+                    <div
+                      key={p.admissionNo}
+                      onClick={() => handleSwitchAccount(p.admissionNo)}
+                      className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer ${
+                        isActive
+                          ? 'bg-indigo-600/10 border-indigo-500/50 shadow-md shadow-indigo-500/5'
+                          : 'bg-slate-800/50 hover:bg-slate-800 border-slate-800 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm text-white shadow-inner flex-shrink-0 ${
+                          isActive
+                            ? 'bg-gradient-to-tr from-indigo-500 to-purple-600 shadow-indigo-500/30'
+                            : 'bg-gradient-to-tr from-slate-700 to-slate-800'
+                        }`}>
+                          {p.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-bold text-white truncate">{p.name}</h4>
+                            {isActive && (
+                              <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold rounded-md flex-shrink-0">
+                                Active
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-400 truncate">
+                            Adm #{p.admissionNo} • Batch {p.studentClass} • {p.medium}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-xs font-extrabold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-1 rounded-lg">
+                          {pStats.overallPercentage}%
+                        </span>
+
+                        {savedProfiles.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm(`Remove ${p.name} (Adm #${p.admissionNo}) from this device?`)) {
+                                handleRemoveAccount(p.admissionNo);
+                              }
+                            }}
+                            className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                            title="Remove Account"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="border-t border-slate-800 pt-3">
+                <button
+                  type="button"
+                  onClick={handleAddAccount}
+                  className="w-full py-3 px-4 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:text-indigo-200 font-bold rounded-2xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>Add Account</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -369,41 +654,65 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
       <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-3">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/app_icon.png" alt="Study Progress Logo" className="w-9 h-9 rounded-xl object-contain bg-slate-950 border border-slate-800 p-0.5" />
+            <img src="/app_icon.png?v=2" alt="AIMS Logo" className="w-9 h-9 rounded-xl object-contain bg-slate-950 border border-slate-800 p-0.5" />
             <div>
               <div className="flex items-center gap-1.5">
                 <h1 className="text-sm font-extrabold text-white leading-tight">Study Progress</h1>
                 <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 text-[10px] font-extrabold rounded-md">
                   {profile.medium}
                 </span>
-                <button
-                  onClick={() => {
-                    setInputName(profile.name);
-                    setInputClass(profile.studentClass);
-                    setInputAdmNo(profile.admissionNo);
-                    setInputMedium(profile.medium);
-                    setIsEditingProfile(true);
-                  }}
-                  className="p-1 text-slate-400 hover:text-indigo-400 cursor-pointer ml-1"
-                  title="Edit Profile"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                </button>
+                <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 text-[10px] font-extrabold rounded-md">
+                  {profile.firstLanguage || 'Malayalam'}
+                </span>
               </div>
               <p className="text-[11px] text-slate-400">{profile.name} • Batch {profile.studentClass} • Adm: {profile.admissionNo}</p>
             </div>
           </div>
 
-          {/* Remove Install App button once clicked */}
-          {deferredPrompt && !hasClickedInstall && (
+          <div className="flex items-center gap-2">
+            {/* Account Switcher Button */}
             <button
-              onClick={handleInstallClick}
-              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
-              title="Install App to Homescreen"
+              onClick={() => setIsAccountSwitcherOpen(true)}
+              className="flex items-center gap-2 py-1.5 px-3 bg-slate-800/90 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-full transition-all cursor-pointer shadow-sm active:scale-95 group"
+              title="Switch Account"
             >
-              <Download className="w-3.5 h-3.5" /> Install App
+              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 text-white font-black text-[10px] flex items-center justify-center shadow">
+                {profile.name.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-xs font-bold text-slate-200 group-hover:text-white max-w-[90px] sm:max-w-[130px] truncate">
+                {profile.name}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-200 transition-transform" />
             </button>
-          )}
+
+            {/* Edit Profile */}
+            <button
+              onClick={() => {
+                setInputName(profile.name);
+                setInputClass(profile.studentClass);
+                setInputAdmNo(profile.admissionNo);
+                setInputMedium(profile.medium);
+                setInputFirstLang(profile.firstLanguage || 'Malayalam');
+                setInputPhone(profile.phoneNumber || '');
+                setIsEditingProfile(true);
+              }}
+              className="p-2 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-full transition-colors cursor-pointer"
+              title="Edit Profile Details"
+            >
+              <Edit3 className="w-4 h-4" />
+            </button>
+
+            {/* Remove Install App button once clicked */}
+            {deferredPrompt && !hasClickedInstall && (
+              <button
+                onClick={handleInstallClick}
+                className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow flex items-center gap-1.5 cursor-pointer active:scale-95 shrink-0"
+                title="Install App to Homescreen"
+              >
+                <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Install</span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -434,14 +743,14 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
 
           <div className="flex justify-between text-[11px] text-slate-400">
             <span>{stats.totalCheckedBoxes} of {stats.totalPossibleBoxes} Checkpoints Completed</span>
-            <span>{TOTAL_CHAPTERS} Chapters Total</span>
+            <span>{studentSubjects.reduce((acc, s) => acc + s.chapters.length, 0)} Chapters Total</span>
           </div>
         </div>
 
         {/* Accordion Controls Bar */}
         <div className="flex items-center justify-between px-1">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <Layers className="w-4 h-4 text-indigo-400" /> Subjects ({STUDY_SUBJECTS.length})
+            <Layers className="w-4 h-4 text-indigo-400" /> Subjects ({studentSubjects.length})
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -462,7 +771,7 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
 
         {/* SUBJECT ACCORDION DROPDOWNS WITH MATERIAL/LUCIDE ICONS */}
         <div className="space-y-4">
-          {STUDY_SUBJECTS.map((subject) => {
+          {studentSubjects.map((subject) => {
             const isOpen = !!openSubjects[subject.id];
             const subPerc = stats.subjectPercentages[subject.id] || 0;
             const subName = isMalayalam ? subject.nameMl : subject.nameEn;
@@ -470,7 +779,7 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
             let completedChaptersCount = 0;
             subject.chapters.forEach(ch => {
               const entry = boxes[ch.id] || { boxes: [false, false, false], timestamps: [null, null, null] };
-              const maxB = ch.totalBoxes || 3;
+              const maxB = ch.totalBoxes || 1;
               let allDone = true;
               for (let i = 0; i < maxB; i++) {
                 if (!entry.boxes[i]) allDone = false;
@@ -527,7 +836,7 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
                       const entry = boxes[chapter.id] || { boxes: [false, false, false], timestamps: [null, null, null] };
                       const chBoxes = entry.boxes;
                       const chTimestamps = entry.timestamps;
-                      const maxB = chapter.totalBoxes || 3;
+                      const maxB = chapter.totalBoxes || 1;
                       let checkedCount = 0;
                       for (let i = 0; i < maxB; i++) {
                         if (chBoxes[i]) checkedCount++;
@@ -615,6 +924,167 @@ export default function StudyProgressForm({ onNavigateAdmin }: StudyProgressForm
           })}
         </div>
       </main>
+
+      {/* Account Switcher Modal */}
+      {isAccountSwitcherOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 relative">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white leading-tight">Switch Account</h3>
+                  <p className="text-xs text-slate-400">Select an account to view or track progress</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAccountSwitcherOpen(false)}
+                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-1">
+              {savedProfiles.map((p) => {
+                const isActive = profile?.admissionNo === p.admissionNo;
+                const pProgress = getLocalChapterProgress(p.admissionNo);
+                const pStats = calculateProgressStats(pProgress, p.firstLanguage);
+
+                return (
+                  <div
+                    key={p.admissionNo}
+                    onClick={() => handleSwitchAccount(p.admissionNo)}
+                    className={`p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer ${
+                      isActive
+                        ? 'bg-indigo-600/10 border-indigo-500/50 shadow-md shadow-indigo-500/5'
+                        : 'bg-slate-800/50 hover:bg-slate-800 border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm text-white shadow-inner flex-shrink-0 ${
+                        isActive
+                          ? 'bg-gradient-to-tr from-indigo-500 to-purple-600 shadow-indigo-500/30'
+                          : 'bg-gradient-to-tr from-slate-700 to-slate-800'
+                      }`}>
+                        {p.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-white truncate">{p.name}</h4>
+                          {isActive && (
+                            <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold rounded-md flex-shrink-0">
+                              Active
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-400 truncate">
+                          Adm #{p.admissionNo} • Batch {p.studentClass} • {p.medium}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-xs font-extrabold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-1 rounded-lg">
+                        {pStats.overallPercentage}%
+                      </span>
+
+                      {savedProfiles.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Remove ${p.name} (Adm #${p.admissionNo}) from this device?`)) {
+                              handleRemoveAccount(p.admissionNo);
+                            }
+                          }}
+                          className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                          title="Remove Account"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="border-t border-slate-800 pt-3">
+              <button
+                type="button"
+                onClick={handleAddAccount}
+                className="w-full py-3 px-4 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:text-indigo-200 font-bold rounded-2xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Add Account</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOM OLD USER PHONE ALERT MODAL */}
+      {showPhoneModal && profile && (!profile.phoneNumber || !profile.phoneNumber.trim()) && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 md:p-8 shadow-2xl space-y-5 text-white relative">
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 p-3 mx-auto flex items-center justify-center text-indigo-400 shadow-lg mb-2">
+                <PhoneCall className="w-7 h-7 text-indigo-400 animate-pulse" />
+              </div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-extrabold rounded-full mb-1">
+                <span>Action Required for Existing Students</span>
+              </div>
+              <h3 className="text-xl font-black text-white">Update Phone Number</h3>
+              <p className="text-slate-400 text-xs leading-relaxed">
+                Dear <strong className="text-indigo-300">{profile.name}</strong>, please enter your mobile / WhatsApp number to complete your profile update and sync with database.
+              </p>
+            </div>
+
+            {modalPhoneError && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-300 text-xs font-semibold text-center">
+                {modalPhoneError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveOldUserPhone} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <Phone className="w-4 h-4 text-indigo-400" /> Phone / WhatsApp Number
+                </label>
+                <input
+                  type="tel"
+                  placeholder="e.g. 9876543210"
+                  value={modalPhone}
+                  onChange={(e) => setModalPhone(e.target.value)}
+                  className="w-full h-12 px-4 bg-slate-800 border border-slate-700 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 text-sm font-medium transition-all"
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSavingModalPhone}
+                className="w-full h-12 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 text-white font-bold rounded-2xl text-xs shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
+              >
+                {isSavingModalPhone ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Saving to Database...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" /> Save & Update Profile
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

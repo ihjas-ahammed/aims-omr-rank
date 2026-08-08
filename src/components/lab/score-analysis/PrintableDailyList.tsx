@@ -12,7 +12,7 @@ export default function PrintableDailyList({ students, scoreColumn, onBack }: Pr
   const formattedDate = scoreColumn.replace(/Score\s*\(?/i, '').replace(/\)/g, '').trim();
   
   const [title, setTitle] = useState('DAILY SCORE REPORT');
-  const [subtitle, setSubtitle] = useState('AIMS PLUS');
+  const [subtitle, setSubtitle] = useState('AIMS');
   const [examDate, setExamDate] = useState(formattedDate);
 
   // Process data: Filter out absentees/invalid scores, convert to number, sort descending

@@ -21,6 +21,50 @@ export interface SubjectDef {
   chapters: ChapterDef[];
 }
 
+export type FirstLanguageSubject = 'Malayalam' | 'Arabic' | 'Urdu';
+
+export const FIRST_LANGUAGE_SUBJECTS: Record<FirstLanguageSubject, SubjectDef> = {
+  Malayalam: {
+    id: 'malayalam1',
+    nameEn: 'Malayalam I',
+    nameMl: 'മലയാളം I',
+    code: 'MAL-1',
+    color: 'from-pink-600 to-rose-600',
+    bgGradient: 'bg-gradient-to-r from-pink-600 to-rose-600',
+    borderColor: 'border-pink-200',
+    chapters: [
+      { id: 'mal1-1', chapterNumber: 1, titleEn: 'UNIT 1', titleMl: 'UNIT 1', totalBoxes: 1 },
+      { id: 'mal1-2', chapterNumber: 2, titleEn: 'UNIT 2', titleMl: 'UNIT 2', totalBoxes: 1 }
+    ]
+  },
+  Arabic: {
+    id: 'arabic',
+    nameEn: 'Arabic',
+    nameMl: 'അറബിക്',
+    code: 'ARB',
+    color: 'from-emerald-600 to-teal-600',
+    bgGradient: 'bg-gradient-to-r from-emerald-600 to-teal-600',
+    borderColor: 'border-emerald-200',
+    chapters: [
+      { id: 'arb-1', chapterNumber: 1, titleEn: 'UNIT 1', titleMl: 'UNIT 1', totalBoxes: 1 },
+      { id: 'arb-2', chapterNumber: 2, titleEn: 'UNIT 2', titleMl: 'UNIT 2', totalBoxes: 1 }
+    ]
+  },
+  Urdu: {
+    id: 'urdu',
+    nameEn: 'Urdu',
+    nameMl: 'ഉറുദു',
+    code: 'URD',
+    color: 'from-amber-600 to-orange-600',
+    bgGradient: 'bg-gradient-to-r from-amber-600 to-orange-600',
+    borderColor: 'border-amber-200',
+    chapters: [
+      { id: 'urd-1', chapterNumber: 1, titleEn: 'UNIT 1', titleMl: 'UNIT 1', totalBoxes: 1 },
+      { id: 'urd-2', chapterNumber: 2, titleEn: 'UNIT 2', titleMl: 'UNIT 2', totalBoxes: 1 }
+    ]
+  }
+};
+
 export const STUDY_SUBJECTS: SubjectDef[] = [
   {
     id: 'physics',
@@ -83,8 +127,8 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         chapterNumber: 3,
         titleEn: 'PERIODIC TABLE AND ELECTRON CONFIGURATION',
         titleMl: 'പിരിയോഡിക് ടേബിളും ഇലക്ട്രോൺ വിന്യാസവും',
-        subtitleEn: 'Elements and shell configurations',
-        subtitleMl: 'മൂലകങ്ങളുടെ ഇലക്ട്രോൺ വിന്യാസം',
+        subtitleEn: 'Upto quantum numbers',
+        subtitleMl: 'Upto quantum numbers',
         totalBoxes: 1
       }
     ]
@@ -419,15 +463,6 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         totalBoxes: 1
       },
       {
-        id: 'geo-3',
-        chapterNumber: 3,
-        titleEn: 'FROM THE RAINY FORESTS TO THE LAND OF PERMAFROST',
-        titleMl: 'മഴക്കാടുകളിൽ നിന്ന് മഞ്ഞിന്റെ നാട്ടിലേക്ക്',
-        subtitleEn: 'Global biomes',
-        subtitleMl: 'ലോകത്തിലെ വിവിധ ജീവമണ്ഡലങ്ങൾ',
-        totalBoxes: 1
-      },
-      {
         id: 'geo-4',
         chapterNumber: 4,
         titleEn: 'CONSUMERS RIGHT & PROTECTION',
@@ -435,19 +470,15 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         subtitleEn: 'Consumer awareness and laws',
         subtitleMl: 'ഉപഭോക്തൃ അവകാശ സംരക്ഷണം',
         totalBoxes: 1
-      },
-      {
-        id: 'geo-5',
-        chapterNumber: 5,
-        titleEn: 'MONEY AND ECONOMY',
-        titleMl: 'പണവും സാമ്പത്തിക വ്യവസ്ഥയും',
-        subtitleEn: 'Financial systems',
-        subtitleMl: 'സാമ്പത്തിക ക്രമങ്ങളും പണവും',
-        totalBoxes: 1
       }
     ]
   }
 ];
 
-export const TOTAL_CHAPTERS = STUDY_SUBJECTS.reduce((acc, sub) => acc + sub.chapters.length, 0);
+export function getSubjectListForStudent(firstLang?: FirstLanguageSubject): SubjectDef[] {
+  const langSub = FIRST_LANGUAGE_SUBJECTS[firstLang || 'Malayalam'];
+  return [langSub, ...STUDY_SUBJECTS];
+}
+
+export const TOTAL_CHAPTERS = STUDY_SUBJECTS.reduce((acc, sub) => acc + sub.chapters.length, 0) + 4;
 export const TOTAL_CHECKPOINTS = TOTAL_CHAPTERS;

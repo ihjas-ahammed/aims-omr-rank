@@ -17,7 +17,7 @@ export default function ScoreAnalysisDashboard({ onBack }: ScoreAnalysisDashboar
   const [searchQuery, setSearchQuery] = useState('');
   
   // Report Title for Printing the Big List
-  const [reportTitle, setReportTitle] = useState('AIMS PLUS - Score Analysis Report');
+  const [reportTitle, setReportTitle] = useState('AIMS - Score Analysis Report');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);

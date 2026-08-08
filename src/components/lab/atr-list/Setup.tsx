@@ -86,7 +86,7 @@ export function Setup({ onProcess }: SetupProps) {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">AIMS PLUS ATR Setup</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">AIMS ATR Setup</h1>
         <p className="text-gray-500">Upload your rank lists to generate the Track Record.</p>
       </div>
 

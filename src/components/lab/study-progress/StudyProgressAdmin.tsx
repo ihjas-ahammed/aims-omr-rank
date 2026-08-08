@@ -7,7 +7,7 @@ import {
   restoreStudentProgressRecord,
   exportStudyProgressToExcel 
 } from '../../../services/studyProgressService';
-import { STUDY_SUBJECTS } from '../../../data/studyProgressData';
+import { STUDY_SUBJECTS, getSubjectListForStudent } from '../../../data/studyProgressData';
 import { 
   ArrowLeft, 
   Search, 
@@ -21,8 +21,11 @@ import {
   Key, 
   Clock,
   RotateCcw,
-  Archive
+  Archive,
+  FileCheck
 } from 'lucide-react';
+import StudentReportModal from './StudentReportModal';
+
 
 interface StudyProgressAdminProps {
   onBack?: () => void;
@@ -57,6 +60,8 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
 
   // Modal inspection state
   const [inspectRecord, setInspectRecord] = useState<StudentProgressRecord | null>(null);
+  const [reportRecord, setReportRecord] = useState<StudentProgressRecord | null>(null);
+
 
   useEffect(() => {
     if (isAuthorized) {
@@ -205,7 +210,7 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 font-sans">
         <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-2xl space-y-6">
           <div className="text-center space-y-2">
-            <img src="/app_icon.png" alt="Study Progress Logo" className="w-12 h-12 rounded-2xl object-contain bg-slate-950 border border-slate-800 p-1 mx-auto mb-3 shadow-lg" />
+            <img src="/app_icon.png?v=2" alt="AIMS Logo" className="w-12 h-12 rounded-2xl object-contain bg-slate-950 border border-slate-800 p-1 mx-auto mb-3 shadow-lg" />
             <h2 className="text-xl font-extrabold text-white">Study Progress Admin</h2>
             <p className="text-slate-400 text-xs">
               Enter the required admin secret key to view student study progress records.
@@ -261,7 +266,7 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
       <div className="bg-slate-900 rounded-2xl p-4 md:p-6 border border-slate-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <img src="/app_icon.png" alt="Study Progress Logo" className="w-10 h-10 rounded-xl object-contain bg-slate-950 border border-slate-800 p-0.5" />
+            <img src="/app_icon.png?v=2" alt="AIMS Logo" className="w-10 h-10 rounded-xl object-contain bg-slate-950 border border-slate-800 p-0.5" />
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl md:text-2xl font-bold text-white">Study Progress Admin</h1>
@@ -407,6 +412,7 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
                   <tr className="bg-slate-800/60 border-b border-slate-800 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
                     <th className="py-3 px-4">Adm No</th>
                     <th className="py-3 px-4">Student Name</th>
+                    <th className="py-3 px-4">Phone No</th>
                     <th className="py-3 px-4">Class</th>
                     <th className="py-3 px-4">Medium</th>
                     <th className="py-3 px-4">Overall Completion</th>
@@ -420,6 +426,7 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
                     <tr key={record.id} className="hover:bg-slate-800/40 transition-colors">
                       <td className="py-3.5 px-4 font-bold text-white">{record.admissionNo}</td>
                       <td className="py-3.5 px-4 font-bold text-indigo-200">{record.studentName}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-300 text-xs">{record.phoneNumber || 'N/A'}</td>
                       <td className="py-3.5 px-4">
                         <span className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded-md font-semibold text-[11px]">
                           {record.studentClass}
@@ -465,6 +472,12 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <button
+                          onClick={() => setReportRecord(record)}
+                          className="px-2.5 py-1 bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-semibold mr-2 hover:bg-emerald-600/30 transition-all cursor-pointer inline-flex items-center gap-1"
+                        >
+                          <FileCheck className="w-3.5 h-3.5" /> Study Report (PNG)
+                        </button>
+                        <button
                           onClick={() => setInspectRecord(record)}
                           className="px-2.5 py-1 bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-semibold mr-2 hover:bg-indigo-600/30 transition-all cursor-pointer"
                         >
@@ -496,7 +509,9 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
                           {record.medium || 'English'}
                         </span>
                       </h4>
-                      <p className="text-xs text-slate-400 mt-0.5">Adm: {record.admissionNo} • Class: {record.studentClass}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Adm: {record.admissionNo} • Class: {record.studentClass} {record.phoneNumber ? `• Ph: ${record.phoneNumber}` : ''}
+                      </p>
                     </div>
                     <span className="text-base font-black text-indigo-400">{record.overallPercentage || 0}%</span>
                   </div>
@@ -509,7 +524,7 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
                   </div>
 
                   <div className="flex flex-wrap gap-1">
-                    {STUDY_SUBJECTS.map(s => {
+                    {getSubjectListForStudent(record.firstLanguage).map(s => {
                       const p = record.subjectPercentages?.[s.id] || 0;
                       return (
                         <span 
@@ -528,16 +543,23 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
                     <span className="text-[10px] text-slate-500">
                       {record.updatedAt ? new Date(record.updatedAt).toLocaleDateString() : 'N/A'}
                     </span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5 justify-end">
+                      <button
+                        onClick={() => setReportRecord(record)}
+                        className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center gap-1 active:scale-95 transition-all"
+                      >
+                        <FileCheck className="w-3.5 h-3.5" /> Report PNG
+                      </button>
                       <button
                         onClick={() => setInspectRecord(record)}
-                        className="px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
+                        className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 rounded-xl text-xs font-bold cursor-pointer active:scale-95 transition-all"
                       >
-                        Inspect Timestamps
+                        Inspect
                       </button>
                       <button
                         onClick={() => handleDelete(record.id, record.studentName)}
-                        className="p-1.5 text-slate-400 hover:text-rose-400 cursor-pointer"
+                        className="p-1.5 text-slate-400 hover:text-rose-400 cursor-pointer rounded-lg hover:bg-slate-800"
+                        title="Archive / Delete Record"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -561,9 +583,12 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
                   <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 text-xs rounded-md">
                     {inspectRecord.medium || 'English'} Medium
                   </span>
+                  <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 text-xs rounded-md">
+                    {inspectRecord.firstLanguage || 'Malayalam'}
+                  </span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Class: {inspectRecord.studentClass} • Adm No: {inspectRecord.admissionNo} • Overall: {inspectRecord.overallPercentage}%
+                  Class: {inspectRecord.studentClass} • Adm No: {inspectRecord.admissionNo} {inspectRecord.phoneNumber ? `• Phone: ${inspectRecord.phoneNumber}` : ''} • Overall: {inspectRecord.overallPercentage}%
                 </p>
               </div>
               <button
@@ -575,7 +600,7 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
             </div>
 
             <div className="space-y-4">
-              {STUDY_SUBJECTS.map((subject) => {
+              {getSubjectListForStudent(inspectRecord.firstLanguage).map((subject) => {
                 const isMl = inspectRecord.medium === 'Malayalam';
                 const subName = isMl ? subject.nameMl : subject.nameEn;
                 const subPerc = inspectRecord.subjectPercentages?.[subject.id] || 0;
@@ -640,10 +665,20 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
               })}
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex justify-end">
+            <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+              <button
+                onClick={() => {
+                  const rec = inspectRecord;
+                  setInspectRecord(null);
+                  setReportRecord(rec);
+                }}
+                className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <FileCheck className="w-4 h-4" /> Download Study Report PNG
+              </button>
               <button
                 onClick={() => setInspectRecord(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold cursor-pointer"
               >
                 Close Inspection
               </button>
@@ -705,6 +740,16 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
             </div>
           </div>
         </div>
+      )}
+
+      {/* Student Study Progress Report PNG Modal */}
+      {reportRecord && (
+        <StudentReportModal
+          record={reportRecord}
+          allRecords={records}
+          onClose={() => setReportRecord(null)}
+          onSelectStudent={(rec) => setReportRecord(rec)}
+        />
       )}
     </div>
   );

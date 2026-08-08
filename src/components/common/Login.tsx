@@ -43,7 +43,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           <div className="p-4 bg-purple-600/10 border border-purple-500/20 rounded-2xl mb-3 shadow-lg backdrop-blur-md">
             <Beaker className="w-10 h-10 text-purple-400" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-white">AIMS Plus Lab</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">AIMS Lab</h1>
           <p className="text-sm text-slate-400 mt-1">Authorized Administrator Access Only</p>
         </div>
 

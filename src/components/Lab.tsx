@@ -10,7 +10,7 @@ export default function Lab({ onNavigate }: LabProps) {
     <div className="space-y-6 max-w-5xl mx-auto">
 
       <p className="text-gray-600">
-        Welcome to AIMS Plus Lab! Explore our suite of educational tools and experimental features.
+        Welcome to AIMS Lab! Explore our suite of educational tools and experimental features.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

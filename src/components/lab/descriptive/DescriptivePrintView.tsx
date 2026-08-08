@@ -10,7 +10,7 @@ interface Props {
 
 export default function DescriptivePrintView({ students, onBack }: Props) {
   const [title, setTitle] = useState('DESCRIPTIVE EVALUATION');
-  const [subtitle, setSubtitle] = useState('AIMS PLUS TRACK RECORD');
+  const [subtitle, setSubtitle] = useState('AIMS TRACK RECORD');
   const [cardsPerRow, setCardsPerRow] = useState<number>(3);
   const [scheme, setScheme] = useState<DescQuestionScheme[]>([]);
 
