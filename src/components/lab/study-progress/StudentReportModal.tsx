@@ -11,8 +11,12 @@ import {
   FileCheck,
   CheckCircle,
   BookOpen,
-  Award
+  Award,
+  MessageSquare,
+  Loader2
 } from 'lucide-react';
+import { sendReportViaWhatsAppCloudAPI, generateWhatsAppWebShareUrl, getExamDaysLeft } from '../../../utils/whatsappService';
+import { updateStudentWhatsAppSent } from '../../../services/studyProgressService';
 
 interface StudentReportModalProps {
   record: StudentProgressRecord;
@@ -31,6 +35,8 @@ export default function StudentReportModal({
   // Default to subject-wise progress report (compact view requested by user)
   const [showFullChapters, setShowFullChapters] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const [isSendingWA, setIsSendingWA] = useState<boolean>(false);
+  const [waStatus, setWaStatus] = useState<{ success: boolean; message: string } | null>(null);
   const [previewDataUrl, setPreviewDataUrl] = useState<string>('');
   
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -484,6 +490,28 @@ export default function StudentReportModal({
     setIsGenerating(false);
   };
 
+  // Handle WhatsApp API Send
+  const handleSendWhatsApp = async () => {
+    let canvas = canvasRef.current;
+    if (!canvas) {
+      canvas = await renderCanvas();
+    }
+    if (!canvas) return;
+
+    setIsSendingWA(true);
+    setWaStatus(null);
+
+    const res = await sendReportViaWhatsAppCloudAPI(record, canvas);
+    setIsSendingWA(false);
+
+    if (res.success) {
+      setWaStatus({ success: true, message: res.message });
+      await updateStudentWhatsAppSent(record.id || record.admissionNo);
+    } else {
+      setWaStatus({ success: false, message: res.message });
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl sm:rounded-3xl max-w-4xl w-full p-3 sm:p-5 md:p-6 shadow-2xl text-white space-y-3.5 my-auto max-h-[95vh] flex flex-col">
@@ -529,6 +557,17 @@ export default function StudentReportModal({
             >
               {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-indigo-400" />}
               <span className="hidden xs:inline">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+            </button>
+
+            {/* WhatsApp Direct Send Button */}
+            <button
+              onClick={handleSendWhatsApp}
+              disabled={isSendingWA}
+              className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
+              title="Send Scorecard directly to Student's WhatsApp"
+            >
+              {isSendingWA ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MessageSquare className="w-3.5 h-3.5 fill-current" />}
+              <span>{isSendingWA ? 'Sending...' : 'Send WhatsApp'}</span>
             </button>
 
             {/* Compact vs Detailed Toggle */}
@@ -611,4 +650,255 @@ export default function StudentReportModal({
       </div>
     </div>
   );
+}
+
+export async function generateOffscreenReportCanvas(
+  record: StudentProgressRecord,
+  theme: 'dark' | 'light' = 'dark'
+): Promise<HTMLCanvasElement> {
+  const width = 1000;
+  const height = 1350;
+  const daysLeft = getExamDaysLeft();
+  const subjects = getSubjectListForStudent(record.firstLanguage);
+
+  let totalPossibleCheckpoints = 0;
+  let totalCheckedCheckpoints = 0;
+  let subjectsCompletedCount = 0;
+
+  subjects.forEach(sub => {
+    let subChecked = 0;
+    let subTotal = 0;
+    sub.chapters.forEach(ch => {
+      const maxB = ch.totalBoxes || 1;
+      subTotal += maxB;
+      const b = record.progress?.[ch.id]?.boxes || [false, false, false];
+      for (let i = 0; i < maxB; i++) {
+        if (b[i]) subChecked++;
+      }
+    });
+    totalPossibleCheckpoints += subTotal;
+    totalCheckedCheckpoints += subChecked;
+    if (subTotal > 0 && subChecked === subTotal) {
+      subjectsCompletedCount++;
+    }
+  });
+
+  const overallPct = record.overallPercentage || 0;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+
+  const loadImage = (src: string): Promise<HTMLImageElement | null> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  };
+
+  const logo1 = await loadImage('/logo1.png');
+  const appIcon = await loadImage('/app_icon.png?v=2');
+
+  const bgCard = '#1e293b';
+  const borderCard = '#334155';
+  const accentBlue = '#0284c7';
+  const accentEmerald = '#10b981';
+  const accentAmber = '#f59e0b';
+  const accentIndigo = '#6366f1';
+  const textWhite = '#ffffff';
+  const textMuted = '#94a3b8';
+
+  const drawRoundedRect = (
+    x: number, y: number, w: number, h: number, r: number, fill?: string, stroke?: string, strokeWidth: number = 1
+  ) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    if (fill) {
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = strokeWidth;
+      ctx.stroke();
+    }
+  };
+
+  // 1. Canvas Background (#0f172a)
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(0, 0, width, height);
+
+  let curY = 30;
+
+  // 2. WHITE HEADER CARD (Matching send_real_scorecard.py)
+  drawRoundedRect(35, curY, width - 70, 130, 20, '#ffffff', '#e2e8f0', 2);
+
+  let logoOffset = 65;
+  if (logo1) {
+    ctx.drawImage(logo1, 55, curY + 12, 150, 105);
+    logoOffset = 225;
+  } else if (appIcon) {
+    ctx.drawImage(appIcon, 55, curY + 25, 80, 80);
+    logoOffset = 155;
+  }
+
+  ctx.fillStyle = accentBlue;
+  ctx.font = 'bold 14px Inter, sans-serif';
+  ctx.fillText('AIMS ACADEMIC EVALUATION SYSTEMS', logoOffset, curY + 38);
+
+  ctx.fillStyle = '#0f172a';
+  ctx.font = '900 26px Inter, sans-serif';
+  ctx.fillText('STUDENT STUDY PROGRESS REPORT', logoOffset, curY + 72);
+
+  ctx.fillStyle = '#475569';
+  ctx.font = '600 14px Inter, sans-serif';
+  ctx.fillText(`MISSION SUCCESS MATRIX • EXAM IN ${daysLeft} DAYS`, logoOffset, curY + 102);
+
+  curY += 150;
+
+  // 3. Student Info Card
+  drawRoundedRect(35, curY, width - 70, 130, 20, bgCard, borderCard, 2);
+
+  // Column 1: Student Name
+  ctx.fillStyle = textMuted;
+  ctx.font = 'bold 14px Inter, sans-serif';
+  ctx.fillText('STUDENT NAME', 65, curY + 35);
+  ctx.fillStyle = textWhite;
+  ctx.font = 'bold 24px Inter, sans-serif';
+  ctx.fillText((record.studentName || 'N/A').toUpperCase(), 65, curY + 68);
+  ctx.fillStyle = '#a5b4fc';
+  ctx.font = '500 16px Inter, sans-serif';
+  ctx.fillText(`Medium: ${record.medium || 'English'} Medium`, 65, curY + 100);
+
+  // Column 2: Admission No
+  ctx.fillStyle = textMuted;
+  ctx.font = 'bold 14px Inter, sans-serif';
+  ctx.fillText('ADMISSION NO', 420, curY + 35);
+  ctx.fillStyle = textWhite;
+  ctx.font = 'bold 24px Inter, sans-serif';
+  ctx.fillText(record.admissionNo || 'N/A', 420, curY + 68);
+  ctx.fillStyle = textWhite;
+  ctx.font = '500 16px Inter, sans-serif';
+  ctx.fillText(`Class: Batch ${record.studentClass || 'N/A'}`, 420, curY + 100);
+
+  // Column 3: First Language
+  ctx.fillStyle = textMuted;
+  ctx.font = 'bold 14px Inter, sans-serif';
+  ctx.fillText('FIRST LANGUAGE', 720, curY + 35);
+  ctx.fillStyle = textWhite;
+  ctx.font = 'bold 24px Inter, sans-serif';
+  ctx.fillText(record.firstLanguage || 'Malayalam', 720, curY + 68);
+  ctx.fillStyle = accentAmber;
+  ctx.font = 'bold 16px Inter, sans-serif';
+  ctx.fillText(`Exam Target: ${daysLeft} Days Left`, 720, curY + 100);
+
+  curY += 155;
+
+  // 4. Overall Completion KPI Card
+  drawRoundedRect(35, curY, width - 70, 135, 20, '#312e81', '#6366f1', 2);
+
+  ctx.fillStyle = '#c7d2fe';
+  ctx.font = 'bold 14px Inter, sans-serif';
+  ctx.fillText('MISSION SUCCESS - OVERALL PROGRESS COMPLETION', 65, curY + 35);
+
+  ctx.fillStyle = textWhite;
+  ctx.font = '900 48px Inter, sans-serif';
+  ctx.fillText(`${overallPct}%`, 65, curY + 88);
+
+  ctx.fillStyle = '#e0e7ff';
+  ctx.font = '600 16px Inter, sans-serif';
+  ctx.fillText(`${totalCheckedCheckpoints} of ${totalPossibleCheckpoints} Checkpoints Ticked • Only ${daysLeft} Days Left For Exam!`, 220, curY + 75);
+
+  // KPI Progress Bar
+  const kpiBarW = width - 130;
+  drawRoundedRect(65, curY + 105, kpiBarW, 14, 7, '#1e1b4b');
+  if (overallPct > 0) {
+    const fillW = Math.max(14, Math.round(kpiBarW * (overallPct / 100)));
+    drawRoundedRect(65, curY + 105, fillW, 14, 7, accentEmerald);
+  }
+
+  curY += 165;
+
+  // 5. Subject Breakdown Section Title
+  ctx.fillStyle = textWhite;
+  ctx.font = 'bold 22px Inter, sans-serif';
+  ctx.fillText('SUBJECT-WISE PROGRESS BREAKDOWN', 35, curY);
+
+  curY += 25;
+
+  // Render Subjects List
+  subjects.forEach(sub => {
+    let subChecked = 0;
+    let subTotal = 0;
+    sub.chapters.forEach(ch => {
+      const maxB = ch.totalBoxes || 1;
+      subTotal += maxB;
+      const b = record.progress?.[ch.id]?.boxes || [false, false, false];
+      for (let i = 0; i < maxB; i++) {
+        if (b[i]) subChecked++;
+      }
+    });
+
+    const pct = subTotal > 0 ? Math.round((subChecked / subTotal) * 100) : 0;
+    const isMalayalam = record.medium === 'Malayalam';
+    const subTitle = isMalayalam ? sub.nameMl : sub.nameEn;
+    const statusText = pct === 100 ? `Fully Ticked (${subChecked}/${subTotal})` : `In Progress (${subChecked}/${subTotal})`;
+    const subColor = pct === 100 ? accentEmerald : pct >= 50 ? accentIndigo : accentAmber;
+
+    drawRoundedRect(35, curY, width - 70, 80, 16, bgCard, borderCard, 1);
+
+    ctx.fillStyle = textWhite;
+    ctx.font = 'bold 18px Inter, sans-serif';
+    ctx.fillText(`${subTitle} (${sub.code})`, 65, curY + 32);
+
+    ctx.fillStyle = textMuted;
+    ctx.font = '500 14px Inter, sans-serif';
+    ctx.fillText(statusText, 660, curY + 32);
+
+    ctx.fillStyle = subColor;
+    ctx.font = 'bold 20px Inter, sans-serif';
+    ctx.fillText(`${pct}%`, width - 120, curY + 32);
+
+    // Subject Progress bar
+    const barW = width - 130;
+    drawRoundedRect(65, curY + 50, barW, 12, 6, '#0f172a');
+    if (pct > 0) {
+      const fillW = Math.max(12, Math.round(barW * (pct / 100)));
+      drawRoundedRect(65, curY + 50, fillW, 12, 6, subColor);
+    }
+
+    curY += 92;
+  });
+
+  // Footer
+  ctx.strokeStyle = borderCard;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(35, height - 55);
+  ctx.lineTo(width - 35, height - 55);
+  ctx.stroke();
+
+  ctx.fillStyle = textMuted;
+  ctx.font = '500 13px Inter, sans-serif';
+  ctx.fillText('Generated by AIMS Group of Institutions • Verification: aims-kondotty1.web.app', 35, height - 30);
+
+  ctx.fillStyle = accentBlue;
+  ctx.font = 'bold 13px Inter, sans-serif';
+  ctx.fillText('Official Verified Report', width - 200, height - 30);
+
+  return canvas;
 }

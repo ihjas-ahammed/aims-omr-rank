@@ -1,6 +1,6 @@
 import { db, rtdb } from './firebaseService';
-import { collection, doc, setDoc, getDoc, getDocs, deleteDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { ref, set, get, child, remove } from 'firebase/database';
+import { collection, doc, setDoc, updateDoc, getDoc, getDocs, deleteDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { ref, set, update, get, child, remove } from 'firebase/database';
 import { STUDY_SUBJECTS, FirstLanguageSubject, getSubjectListForStudent } from '../data/studyProgressData';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
@@ -32,6 +32,10 @@ export interface StudentProgressRecord {
   medium: StudentMedium;
   firstLanguage?: FirstLanguageSubject;
   phoneNumber?: string;
+  whatsappSentAt?: string;
+  whatsappFailedAt?: string;
+  whatsappError?: string;
+  whatsappSentHistory?: string[];
   progress: ChapterBoxesMap;
   overallPercentage: number;
   subjectPercentages: Record<string, number>;
@@ -308,6 +312,17 @@ export async function saveStudentProgress(
   const docId = profile.admissionNo.trim().replace(/[\/\\#\?\.\$\[\]]/g, '_') || `student_${Date.now()}`;
   const nowIso = new Date().toISOString();
 
+  // Preserve existing whatsappSentAt if present in local storage cache
+  let existingSentAt: string | undefined = undefined;
+  try {
+    const cachedRaw = localStorage.getItem(LOCAL_STORAGE_KEY_ALL_RECORDS);
+    if (cachedRaw) {
+      const records: StudentProgressRecord[] = JSON.parse(cachedRaw);
+      const existing = records.find(r => r.admissionNo === profile.admissionNo.trim() || r.id === docId);
+      if (existing) existingSentAt = existing.whatsappSentAt;
+    }
+  } catch (e) {}
+
   const recordData: StudentProgressRecord = {
     id: docId,
     admissionNo: profile.admissionNo.trim(),
@@ -316,6 +331,7 @@ export async function saveStudentProgress(
     medium: profile.medium,
     firstLanguage: profile.firstLanguage,
     phoneNumber: profile.phoneNumber?.trim() || '',
+    whatsappSentAt: existingSentAt,
     progress,
     overallPercentage: stats.overallPercentage,
     subjectPercentages: stats.subjectPercentages,
@@ -379,6 +395,9 @@ export async function fetchAllStudentProgress(): Promise<StudentProgressRecord[]
           medium: data.medium === 'Malayalam' ? 'Malayalam' : 'English',
           firstLanguage: data.firstLanguage || 'Malayalam',
           phoneNumber: data.phoneNumber || '',
+          whatsappSentAt: data.whatsappSentAt || undefined,
+          whatsappFailedAt: data.whatsappFailedAt || undefined,
+          whatsappError: data.whatsappError || undefined,
           progress: normalizeChapterBoxesMap(data.progress),
           overallPercentage: data.overallPercentage ?? 0,
           subjectPercentages: data.subjectPercentages || {},
@@ -974,4 +993,95 @@ export async function exportStudyProgressToExcel(records: StudentProgressRecord[
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   saveAs(blob, `Student_Study_Progress_Timestamps_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+export async function updateStudentWhatsAppSent(docId: string, timestamp: string): Promise<void> {
+  let updatedHistory: string[] = [timestamp];
+
+  // 1. Update local cache
+  try {
+    const cachedRaw = localStorage.getItem(LOCAL_STORAGE_KEY_ALL_RECORDS);
+    if (cachedRaw) {
+      const records: StudentProgressRecord[] = JSON.parse(cachedRaw);
+      const idx = records.findIndex(r => r.id === docId || r.admissionNo === docId);
+      if (idx !== -1) {
+        records[idx].whatsappSentAt = timestamp;
+        const currentHist = records[idx].whatsappSentHistory || [];
+        if (!currentHist.includes(timestamp)) {
+          currentHist.push(timestamp);
+        }
+        records[idx].whatsappSentHistory = currentHist;
+        records[idx].whatsappFailedAt = undefined;
+        records[idx].whatsappError = undefined;
+        updatedHistory = currentHist;
+        localStorage.setItem(LOCAL_STORAGE_KEY_ALL_RECORDS, JSON.stringify(records));
+      }
+    }
+  } catch (e) {}
+
+  // 2. Update Firebase Realtime Database
+  try {
+    const recordRef = ref(rtdb, `study_progress/${docId}`);
+    await update(recordRef, {
+      whatsappSentAt: timestamp,
+      whatsappSentHistory: updatedHistory,
+      whatsappFailedAt: null,
+      whatsappError: null
+    });
+  } catch (err) {
+    console.warn('Failed to update whatsappSentAt in RTDB:', err);
+  }
+
+  // 3. Update Firestore
+  try {
+    const docRef = doc(db, 'study_progress', docId);
+    await updateDoc(docRef, {
+      whatsappSentAt: timestamp,
+      whatsappSentHistory: updatedHistory,
+      whatsappFailedAt: null,
+      whatsappError: null
+    });
+  } catch (err) {
+    console.warn('Failed to update whatsappSentAt in Firestore:', err);
+  }
+}
+
+export async function updateStudentWhatsAppFailed(docId: string, errorMsg: string): Promise<void> {
+  const timestamp = new Date().toISOString();
+
+  // 1. Update local cache
+  try {
+    const cachedRaw = localStorage.getItem(LOCAL_STORAGE_KEY_ALL_RECORDS);
+    if (cachedRaw) {
+      const records: StudentProgressRecord[] = JSON.parse(cachedRaw);
+      const idx = records.findIndex(r => r.id === docId || r.admissionNo === docId);
+      if (idx !== -1) {
+        records[idx].whatsappFailedAt = timestamp;
+        records[idx].whatsappError = errorMsg;
+        localStorage.setItem(LOCAL_STORAGE_KEY_ALL_RECORDS, JSON.stringify(records));
+      }
+    }
+  } catch (e) {}
+
+  // 2. Update Firebase Realtime Database
+  try {
+    const recordRef = ref(rtdb, `study_progress/${docId}`);
+    await update(recordRef, {
+      whatsappFailedAt: timestamp,
+      whatsappError: errorMsg
+    });
+  } catch (err) {
+    console.warn('Failed to update whatsappFailedAt in RTDB:', err);
+  }
+
+  // 3. Update Firestore
+  try {
+    const docRef = doc(db, 'study_progress', docId);
+    await updateDoc(docRef, {
+      whatsappFailedAt: timestamp,
+      whatsappError: errorMsg
+    });
+  } catch (err) {
+    console.warn('Failed to update whatsappFailedAt in Firestore:', err);
+  }
 }

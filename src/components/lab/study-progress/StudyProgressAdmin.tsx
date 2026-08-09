@@ -17,14 +17,39 @@ import {
   RefreshCw, 
   FileSpreadsheet, 
   BarChart, 
-  Lock, 
-  Key, 
   Clock,
   RotateCcw,
   Archive,
-  FileCheck
+  FileCheck,
+  MessageSquare,
+  Send,
+  Play,
+  Pause,
+  Settings,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Lock,
+  Key,
+  Printer,
+  PhoneOff,
+  Download
 } from 'lucide-react';
-import StudentReportModal from './StudentReportModal';
+import StudentReportModal, { generateOffscreenReportCanvas } from './StudentReportModal';
+import WhatsAppSettingsModal from './WhatsAppSettingsModal';
+import { 
+  sendReportViaWhatsAppCloudAPI, 
+  getBatchWhatsAppProgress, 
+  saveBatchWhatsAppProgress, 
+  clearBatchWhatsAppProgress, 
+  BatchWhatsAppProgressState,
+  formatWhatsAppPhoneNumber,
+  isEligibleForBatchWhatsApp,
+  isSentToday,
+  getWeeklySendCount
+} from '../../../utils/whatsappService';
+import { updateStudentWhatsAppSent, updateStudentWhatsAppFailed } from '../../../services/studyProgressService';
+import { downloadRosterPDF, downloadMissingNumbersPDF } from '../../../utils/pdfExportService';
 
 
 interface StudyProgressAdminProps {
@@ -58,9 +83,24 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'percentage'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  // Modal inspection state
+  // Modal inspection & WhatsApp state
   const [inspectRecord, setInspectRecord] = useState<StudentProgressRecord | null>(null);
   const [reportRecord, setReportRecord] = useState<StudentProgressRecord | null>(null);
+  const [showWASettings, setShowWASettings] = useState(false);
+  const [showBatchWAModal, setShowBatchWAModal] = useState(false);
+  const [showMissingNumbersModal, setShowMissingNumbersModal] = useState(false);
+  const [showPrintRosterModal, setShowPrintRosterModal] = useState(false);
+  const [sendingSingleWAId, setSendingSingleWAId] = useState<string | null>(null);
+
+  // Phone filter state
+  const [selectedPhoneFilter, setSelectedPhoneFilter] = useState<'ALL' | 'WITH_PHONE' | 'MISSING_PHONE'>('ALL');
+
+  // Batch WhatsApp state
+  const [batchClassFilter, setBatchClassFilter] = useState<string>('ALL');
+  const [batchState, setBatchState] = useState<BatchWhatsAppProgressState | null>(() => getBatchWhatsAppProgress());
+  const [isBatchRunning, setIsBatchRunning] = useState(false);
+  const [isBatchPaused, setIsBatchPaused] = useState(false);
+  const [batchLogs, setBatchLogs] = useState<string[]>([]);
 
 
   useEffect(() => {
@@ -118,6 +158,136 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
     }
   };
 
+  // Single WhatsApp Dispatch Handler (with single-send guard & override)
+  const handleSendSingleWhatsApp = async (record: StudentProgressRecord, forceOverride: boolean = false) => {
+    const formattedPhone = formatWhatsAppPhoneNumber(record.phoneNumber);
+    if (!formattedPhone) {
+      alert(`Student "${record.studentName}" does not have a valid phone number registered.`);
+      return;
+    }
+
+    if (record.whatsappSentAt && !forceOverride) {
+      const sentDate = new Date(record.whatsappSentAt).toLocaleString();
+      if (!window.confirm(`Scorecard was already sent to ${record.studentName} (${record.phoneNumber}) on ${sentDate}.\n\nDo you want to resend now?`)) {
+        return;
+      }
+    }
+
+    setSendingSingleWAId(record.id);
+
+    try {
+      const canvas = await generateOffscreenReportCanvas(record);
+      const res = await sendReportViaWhatsAppCloudAPI(record, canvas);
+      if (res.success) {
+        const timestamp = new Date().toISOString();
+        await updateStudentWhatsAppSent(record.id || record.admissionNo, timestamp);
+        setRecords(prev => prev.map(r => (r.id === record.id || r.admissionNo === record.admissionNo) ? { ...r, whatsappSentAt: timestamp, whatsappFailedAt: undefined, whatsappError: undefined } : r));
+        alert(`✓ Scorecard report sent successfully to ${record.studentName} (${formattedPhone})!`);
+      } else {
+        const timestamp = new Date().toISOString();
+        await updateStudentWhatsAppFailed(record.id || record.admissionNo, res.message);
+        setRecords(prev => prev.map(r => (r.id === record.id || r.admissionNo === record.admissionNo) ? { ...r, whatsappFailedAt: timestamp, whatsappError: res.message } : r));
+        alert(`❌ WhatsApp API Error: ${res.message}`);
+      }
+    } catch (err: any) {
+      alert(`Error sending WhatsApp message: ${err.message || err}`);
+    } finally {
+      setSendingSingleWAId(null);
+    }
+  };
+
+  // Batch WhatsApp Dispatch Processor
+  const handleStartBatchDispatch = async (resume: boolean = false) => {
+    const targetStudents = records.filter(r => {
+      if (batchClassFilter !== 'ALL' && r.studentClass !== batchClassFilter) return false;
+      return true;
+    });
+
+    let sentNos: string[] = resume && batchState ? [...batchState.sentAdmissionNos] : [];
+    let failedNos: string[] = resume && batchState ? [...batchState.failedAdmissionNos] : [];
+
+    const eligibleStudents = targetStudents.filter(r => {
+      if (sentNos.includes(r.admissionNo)) return false;
+      const { eligible, reason } = isEligibleForBatchWhatsApp(r);
+      if (!eligible && !resume) {
+        return false;
+      }
+      return true;
+    });
+
+    if (eligibleStudents.length === 0) {
+      alert(`No eligible students found in Class ${batchClassFilter}.\n\nPolicy rules:\n1. Must have valid phone number\n2. Cannot be sent twice on the same day\n3. Max 2 successful sends allowed per week.`);
+      return;
+    }
+
+    setIsBatchRunning(true);
+    setIsBatchPaused(false);
+
+    const initialState: BatchWhatsAppProgressState = {
+      targetClass: batchClassFilter,
+      totalCount: eligibleStudents.length,
+      completedCount: sentNos.length + failedNos.length,
+      sentAdmissionNos: sentNos,
+      failedAdmissionNos: failedNos,
+      lastUpdated: new Date().toISOString(),
+      isPaused: false
+    };
+
+    setBatchState(initialState);
+    saveBatchWhatsAppProgress(initialState);
+
+    for (let i = 0; i < eligibleStudents.length; i++) {
+      const student = eligibleStudents[i];
+      setBatchLogs(prev => [`[${new Date().toLocaleTimeString()}] Processing (${i + 1}/${eligibleStudents.length}): ${student.studentName} (Adm #${student.admissionNo})...`, ...prev]);
+
+      try {
+        const canvas = await generateOffscreenReportCanvas(student);
+        const res = await sendReportViaWhatsAppCloudAPI(student, canvas);
+
+        if (res.success) {
+          const timestamp = new Date().toISOString();
+          await updateStudentWhatsAppSent(student.id || student.admissionNo, timestamp);
+          sentNos.push(student.admissionNo);
+
+          setRecords(prev => prev.map(r => (r.id === student.id || r.admissionNo === student.admissionNo) ? { ...r, whatsappSentAt: timestamp, whatsappFailedAt: undefined, whatsappError: undefined } : r));
+          setBatchLogs(prev => [`✓ Sent: ${student.studentName} (${student.phoneNumber})`, ...prev]);
+        } else {
+          const timestamp = new Date().toISOString();
+          await updateStudentWhatsAppFailed(student.id || student.admissionNo, res.message);
+          failedNos.push(student.admissionNo);
+          setRecords(prev => prev.map(r => (r.id === student.id || r.admissionNo === student.admissionNo) ? { ...r, whatsappFailedAt: timestamp, whatsappError: res.message } : r));
+          setBatchLogs(prev => [`❌ Failed: ${student.studentName} - ${res.message}`, ...prev]);
+        }
+      } catch (err: any) {
+        const timestamp = new Date().toISOString();
+        const errMsg = err.message || String(err);
+        await updateStudentWhatsAppFailed(student.id || student.admissionNo, errMsg);
+        failedNos.push(student.admissionNo);
+        setRecords(prev => prev.map(r => (r.id === student.id || r.admissionNo === student.admissionNo) ? { ...r, whatsappFailedAt: timestamp, whatsappError: errMsg } : r));
+        setBatchLogs(prev => [`❌ Error: ${student.studentName} - ${errMsg}`, ...prev]);
+      }
+
+      const updatedState: BatchWhatsAppProgressState = {
+        targetClass: batchClassFilter,
+        totalCount: targetStudents.length,
+        completedCount: sentNos.length + failedNos.length,
+        sentAdmissionNos: sentNos,
+        failedAdmissionNos: failedNos,
+        lastUpdated: new Date().toISOString(),
+        isPaused: false
+      };
+
+      setBatchState(updatedState);
+      saveBatchWhatsAppProgress(updatedState);
+
+      // Delay 1.5s between sends to avoid API rate limits
+      await new Promise(res => setTimeout(res, 1500));
+    }
+
+    setIsBatchRunning(false);
+    setBatchLogs(prev => [`🎉 Batch Dispatch Completed! Sent: ${sentNos.length}, Failed: ${failedNos.length}`, ...prev]);
+  };
+
   const classList = useMemo(() => {
     const set = new Set<string>();
     records.forEach(r => {
@@ -137,7 +307,14 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
 
       const matchClass = selectedClass === 'ALL' || r.studentClass === selectedClass;
       const matchMedium = selectedMediumFilter === 'ALL' || r.medium === selectedMediumFilter;
-      return matchSearch && matchClass && matchMedium;
+      
+      const hasPhone = !!(r.phoneNumber && formatWhatsAppPhoneNumber(r.phoneNumber));
+      const matchPhone = 
+        selectedPhoneFilter === 'ALL' || 
+        (selectedPhoneFilter === 'WITH_PHONE' && hasPhone) || 
+        (selectedPhoneFilter === 'MISSING_PHONE' && !hasPhone);
+
+      return matchSearch && matchClass && matchMedium && matchPhone;
     });
 
     result.sort((a, b) => {
@@ -155,7 +332,15 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
     });
 
     return result;
-  }, [records, searchQuery, selectedClass, selectedMediumFilter, sortBy, sortOrder]);
+  }, [records, searchQuery, selectedClass, selectedMediumFilter, selectedPhoneFilter, sortBy, sortOrder]);
+
+  const missingPhoneRecords = useMemo(() => {
+    return records.filter(r => {
+      const matchClass = selectedClass === 'ALL' || r.studentClass === selectedClass;
+      const hasPhone = !!(r.phoneNumber && formatWhatsAppPhoneNumber(r.phoneNumber));
+      return matchClass && !hasPhone;
+    }).sort((a, b) => a.studentClass.localeCompare(b.studentClass) || a.studentName.localeCompare(b.studentName));
+  }, [records, selectedClass]);
 
   // Summary statistics
   const stats = useMemo(() => {
@@ -297,10 +482,48 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
           </button>
           
           <button
-            onClick={handleExportExcel}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            onClick={() => exportStudyProgressToExcel(filteredRecords)}
+            className="px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
           >
             <FileSpreadsheet className="w-4 h-4" /> Export Excel (.xlsx)
+          </button>
+
+          {/* Download Filtered Roster PDF Button */}
+          <button
+            onClick={() => downloadRosterPDF(filteredRecords, 'STUDENT STUDY PROGRESS ROSTER REPORT', { classFilter: selectedClass, mediumFilter: selectedMediumFilter, phoneFilter: selectedPhoneFilter, searchQuery })}
+            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-lg active:scale-95"
+            title="Download active filtered student list as clean vector PDF document"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download PDF Roster ({filteredRecords.length})</span>
+          </button>
+
+          {/* Missing Phone Numbers List & Print Button */}
+          <button
+            onClick={() => setShowMissingNumbersModal(true)}
+            className="px-3.5 py-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+            title="Get and print list of students without registered phone numbers"
+          >
+            <PhoneOff className="w-4 h-4 text-rose-400" />
+            <span>Missing Numbers ({missingPhoneRecords.length})</span>
+          </button>
+
+          {/* Batch WhatsApp Dispatch Button */}
+          <button
+            onClick={() => setShowBatchWAModal(true)}
+            className="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-xs shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+          >
+            <MessageSquare className="w-4 h-4 fill-current text-white" />
+            <span>Batch WhatsApp</span>
+          </button>
+
+          {/* WhatsApp Settings Button */}
+          <button
+            onClick={() => setShowWASettings(true)}
+            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition-all cursor-pointer"
+            title="Configure WhatsApp API Credentials & Caption"
+          >
+            <Settings className="w-4 h-4 text-emerald-400" />
           </button>
         </div>
       </div>
@@ -371,6 +594,20 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
             <option value="ALL">All Mediums</option>
             <option value="English">English Medium</option>
             <option value="Malayalam">Malayalam Medium</option>
+          </select>
+
+          <select
+            value={selectedPhoneFilter}
+            onChange={(e) => setSelectedPhoneFilter(e.target.value as 'ALL' | 'WITH_PHONE' | 'MISSING_PHONE')}
+            className={`px-3 py-2 border rounded-xl text-xs font-semibold focus:outline-none cursor-pointer ${
+              selectedPhoneFilter === 'MISSING_PHONE' 
+                ? 'bg-rose-900/50 text-rose-200 border-rose-500 font-bold' 
+                : 'bg-slate-800 border-slate-700 text-slate-300'
+            }`}
+          >
+            <option value="ALL">All Phone Status</option>
+            <option value="WITH_PHONE">✓ Has Phone Number</option>
+            <option value="MISSING_PHONE">⚠️ Missing Phone Number ({records.filter(r => !(r.phoneNumber && formatWhatsAppPhoneNumber(r.phoneNumber))).length})</option>
           </select>
 
           <select
@@ -471,9 +708,38 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
                         {record.updatedAt ? new Date(record.updatedAt).toLocaleDateString() : 'N/A'}
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        {/* WhatsApp Single Send Button */}
+                        <button
+                          onClick={() => handleSendSingleWhatsApp(record)}
+                          disabled={sendingSingleWAId === record.id}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-semibold mr-2 transition-all cursor-pointer inline-flex items-center gap-1.5 active:scale-95 ${
+                            record.whatsappSentAt
+                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20'
+                              : record.whatsappFailedAt
+                              ? 'bg-rose-600/20 text-rose-300 border border-rose-500/40 hover:bg-rose-600/30 font-bold animate-pulse'
+                              : 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm'
+                          }`}
+                          title={
+                            record.whatsappSentAt
+                              ? `Sent on ${new Date(record.whatsappSentAt).toLocaleString()}. Click to resend.`
+                              : record.whatsappFailedAt
+                              ? `Failed: ${record.whatsappError || 'Unknown Error'}. Click to retry.`
+                              : 'Send Scorecard via WhatsApp'
+                          }
+                        >
+                          {sendingSingleWAId === record.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                          )}
+                          <span>
+                            {record.whatsappSentAt ? 'Sent ✓' : record.whatsappFailedAt ? 'Failed ❌ (Retry)' : 'WhatsApp'}
+                          </span>
+                        </button>
+
                         <button
                           onClick={() => setReportRecord(record)}
-                          className="px-2.5 py-1 bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-semibold mr-2 hover:bg-emerald-600/30 transition-all cursor-pointer inline-flex items-center gap-1"
+                          className="px-2.5 py-1 bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-semibold mr-2 hover:bg-indigo-600/30 transition-all cursor-pointer inline-flex items-center gap-1"
                         >
                           <FileCheck className="w-3.5 h-3.5" /> Study Report (PNG)
                         </button>
@@ -545,8 +811,36 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
                     </span>
                     <div className="flex flex-wrap items-center gap-1.5 justify-end">
                       <button
+                        onClick={() => handleSendSingleWhatsApp(record)}
+                        disabled={sendingSingleWAId === record.id}
+                        className={`px-2.5 py-1.5 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1 active:scale-95 transition-all ${
+                          record.whatsappSentAt
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                            : record.whatsappFailedAt
+                            ? 'bg-rose-600/20 text-rose-300 border border-rose-500/40 animate-pulse'
+                            : 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-md'
+                        }`}
+                        title={
+                          record.whatsappSentAt
+                            ? `Sent on ${new Date(record.whatsappSentAt).toLocaleString()}. Click to resend.`
+                            : record.whatsappFailedAt
+                            ? `Failed: ${record.whatsappError || 'Unknown Error'}. Click to retry.`
+                            : 'Send Scorecard via WhatsApp'
+                        }
+                      >
+                        {sendingSingleWAId === record.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <MessageSquare className="w-3.5 h-3.5 fill-current" />
+                        )}
+                        <span>
+                          {record.whatsappSentAt ? 'Sent ✓' : record.whatsappFailedAt ? 'Failed ❌ (Retry)' : 'WhatsApp'}
+                        </span>
+                      </button>
+
+                      <button
                         onClick={() => setReportRecord(record)}
-                        className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer flex items-center gap-1 active:scale-95 transition-all"
+                        className="px-2.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 rounded-xl text-xs font-bold cursor-pointer flex items-center gap-1 active:scale-95 transition-all"
                       >
                         <FileCheck className="w-3.5 h-3.5" /> Report PNG
                       </button>
@@ -738,6 +1032,290 @@ export default function StudyProgressAdmin({ onBack, hideBack = false }: StudyPr
                 Close Archive
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp Settings Modal */}
+      {showWASettings && (
+        <WhatsAppSettingsModal
+          onClose={() => setShowWASettings(false)}
+        />
+      )}
+
+      {/* Batch WhatsApp Dispatch Modal */}
+      {showBatchWAModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-5 sm:p-7 shadow-2xl text-white space-y-4 my-auto max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/30">
+                  <MessageSquare className="w-6 h-6 fill-current" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Batch WhatsApp Scorecard Dispatch</h3>
+                  <p className="text-xs text-slate-400">Send personalized scorecards to class rosters via Meta WhatsApp API</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowBatchWAModal(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-xl cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Class Filter Selection */}
+            <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+              <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                Select Target Class / Batch
+              </label>
+              <select
+                value={batchClassFilter}
+                disabled={isBatchRunning}
+                onChange={(e) => setBatchClassFilter(e.target.value)}
+                className="w-full h-11 px-3.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs font-bold focus:outline-none focus:border-indigo-500 cursor-pointer disabled:opacity-50"
+              >
+                <option value="ALL">All Classes / Batches ({records.filter(r => r.phoneNumber).length} Eligible Phone Numbers)</option>
+                {classList.map(cls => {
+                  const cnt = records.filter(r => r.studentClass === cls && r.phoneNumber).length;
+                  const unsentCnt = records.filter(r => r.studentClass === cls && r.phoneNumber && !r.whatsappSentAt).length;
+                  return (
+                    <option key={cls} value={cls}>
+                      Class {cls} ({cnt} students with phone • {unsentCnt} unsent)
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            {/* Resume Saved Unfinished Batch Alert */}
+            {batchState && !isBatchRunning && batchState.completedCount < batchState.totalCount && (
+              <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-300 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-xs">
+                  <AlertCircle className="w-4 h-4 text-amber-400" />
+                  Unfinished Batch Progress Detected ({batchState.completedCount} / {batchState.totalCount} completed for Class {batchState.targetClass})
+                </div>
+                <p className="text-[11px] text-amber-200/80">
+                  Last active: {new Date(batchState.lastUpdated).toLocaleString()}. You can resume sending to remaining unsent students without duplicate messages!
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    onClick={() => handleStartBatchDispatch(true)}
+                    className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" /> Resume Unfinished Batch
+                  </button>
+                  <button
+                    onClick={() => {
+                      clearBatchWhatsAppProgress();
+                      setBatchState(null);
+                    }}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-xl text-xs font-semibold cursor-pointer"
+                  >
+                    Clear Stored Progress
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Live Progress Bar & Stats */}
+            {batchState && (
+              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-white">Batch Sending Progress</span>
+                  <span className="font-mono font-bold text-emerald-400">
+                    {batchState.completedCount} / {batchState.totalCount} ({Math.round((batchState.completedCount / (batchState.totalCount || 1)) * 100)}%)
+                  </span>
+                </div>
+
+                <div className="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-800">
+                  <div
+                    className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${(batchState.completedCount / (batchState.totalCount || 1)) * 100}%` }}
+                  ></div>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
+                  <span className="text-emerald-400 font-semibold">✓ Sent: {batchState.sentAdmissionNos.length}</span>
+                  <span className="text-rose-400 font-semibold">❌ Failed: {batchState.failedAdmissionNos.length}</span>
+                  <span className="text-slate-400 font-semibold">Remaining: {batchState.totalCount - batchState.completedCount}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between pt-2">
+              <button
+                onClick={() => setShowBatchWAModal(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Close
+              </button>
+
+              {!isBatchRunning ? (
+                <button
+                  onClick={() => handleStartBatchDispatch(false)}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/30 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <Play className="w-4 h-4 fill-current" /> Start New Batch Dispatch
+                </button>
+              ) : (
+                <button
+                  onClick={() => setIsBatchRunning(false)}
+                  className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold shadow-lg transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <Pause className="w-4 h-4 fill-current" /> Stop Batch
+                </button>
+              )}
+            </div>
+
+            {/* Real-time Dispatch Logs */}
+            {batchLogs.length > 0 && (
+              <div className="border-t border-slate-800 pt-3 space-y-1.5">
+                <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Live Dispatch Console Log</h4>
+                <div className="p-3 bg-slate-950 rounded-xl border border-slate-800/80 max-h-36 overflow-y-auto font-mono text-[11px] space-y-1">
+                  {batchLogs.map((log, idx) => (
+                    <div
+                      key={idx}
+                      className={log.startsWith('✓') ? 'text-emerald-400' : log.startsWith('❌') ? 'text-rose-400' : 'text-slate-300'}
+                    >
+                      {log}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Print Filtered Roster Modal (Simple Compact PDF Layout) */}
+      {showPrintRosterModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-5 md:p-6 shadow-2xl text-white space-y-4 my-8 max-h-[92vh] overflow-y-auto print:max-h-none print:p-0 print:border-none print:shadow-none print:bg-white print:text-black">
+            
+            {/* Modal Control Bar (Hidden on Print) */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 print:hidden">
+              <div>
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Printer className="w-5 h-5 text-indigo-400" />
+                  Print Filtered Roster (PDF)
+                  <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 text-xs rounded-md font-bold">
+                    {filteredRecords.length} Students
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Class: <span className="font-bold text-white">{selectedClass}</span> • Medium: <span className="font-bold text-white">{selectedMediumFilter}</span> • Phone Status: <span className="font-bold text-white">{selectedPhoneFilter}</span> {searchQuery ? `• Search: "${searchQuery}"` : ''}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => downloadMissingNumbersPDF(missingPhoneRecords, selectedClass)}
+                  className="px-3.5 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-md active:scale-95"
+                >
+                  <Download className="w-4 h-4" /> Download PDF Report
+                </button>
+                <button
+                  onClick={() => downloadRosterPDF(filteredRecords, 'STUDENT STUDY PROGRESS ROSTER REPORT', { classFilter: selectedClass, mediumFilter: selectedMediumFilter, phoneFilter: selectedPhoneFilter, searchQuery })}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-lg active:scale-95"
+                >
+                  <Download className="w-4 h-4" /> Download Vector PDF File
+                </button>
+                <button
+                  onClick={() => setShowPrintRosterModal(false)}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-xl text-lg cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            {/* Printable Document Container */}
+            <div className="space-y-3 print:space-y-2">
+              
+              {/* Document Header */}
+              <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between print:bg-white print:border-b-2 print:border-black print:rounded-none print:p-0 print:pb-2">
+                <div className="flex items-center gap-3">
+                  <img src="/logo1.png" alt="AIMS Logo" className="w-10 h-10 object-contain" />
+                  <div>
+                    <h2 className="text-sm font-black text-white print:text-black">AIMS ACADEMIC EVALUATION SYSTEMS</h2>
+                    <p className="text-[11px] font-bold text-indigo-400 print:text-gray-800 uppercase tracking-wider">
+                      STUDENT STUDY PROGRESS ROSTER REPORT
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right text-[11px] text-slate-400 print:text-black leading-tight">
+                  <p className="font-bold">Class: {selectedClass === 'ALL' ? 'All Classes' : `Class ${selectedClass}`} | Medium: {selectedMediumFilter}</p>
+                  <p>Total Filtered Roster: {filteredRecords.length} Students</p>
+                  <p className="text-[10px] text-slate-500 print:text-gray-600">Generated: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+              </div>
+
+              {filteredRecords.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 space-y-1">
+                  <p className="text-sm font-bold text-white">No students match current filter criteria.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto border border-slate-800 rounded-2xl print:border-black print:rounded-none">
+                  <table className="w-full text-left text-[11px] print:text-[10px]">
+                    <thead className="bg-slate-950 text-slate-300 font-bold border-b border-slate-800 print:bg-gray-100 print:text-black print:border-black">
+                      <tr>
+                        <th className="py-2 px-2.5 w-8">#</th>
+                        <th className="py-2 px-2.5">Adm No</th>
+                        <th className="py-2 px-2.5">Student Name</th>
+                        <th className="py-2 px-2.5">Class</th>
+                        <th className="py-2 px-2.5">Medium</th>
+                        <th className="py-2 px-2.5">First Lang</th>
+                        <th className="py-2 px-2.5">Overall %</th>
+                        <th className="py-2 px-2.5">Phone Number</th>
+                        <th className="py-2 px-2.5">WhatsApp Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/80 text-slate-200 print:divide-gray-300 print:text-black">
+                      {filteredRecords.map((rec, idx) => {
+                        const formattedPhone = formatWhatsAppPhoneNumber(rec.phoneNumber);
+                        return (
+                          <tr key={rec.id} className="hover:bg-slate-800/40 print:hover:bg-transparent">
+                            <td className="py-1.5 px-2.5 font-semibold text-slate-400 print:text-black">{idx + 1}</td>
+                            <td className="py-1.5 px-2.5 font-mono font-bold text-indigo-300 print:text-black">{rec.admissionNo}</td>
+                            <td className="py-1.5 px-2.5 font-bold text-white print:text-black">{rec.studentName}</td>
+                            <td className="py-1.5 px-2.5 font-semibold">{rec.studentClass}</td>
+                            <td className="py-1.5 px-2.5">{rec.medium}</td>
+                            <td className="py-1.5 px-2.5">{rec.firstLanguage || 'Malayalam'}</td>
+                            <td className="py-1.5 px-2.5 font-bold text-emerald-400 print:text-black">{rec.overallPercentage}%</td>
+                            <td className="py-1.5 px-2.5 font-mono">
+                              {formattedPhone ? (
+                                <span className="text-slate-200 print:text-black">{formattedPhone}</span>
+                              ) : (
+                                <span className="text-rose-400 print:text-gray-500 italic">Not Registered</span>
+                              )}
+                            </td>
+                            <td className="py-1.5 px-2.5 font-semibold">
+                              {rec.whatsappSentAt ? (
+                                <span className="text-emerald-400 print:text-black font-bold">✓ Sent</span>
+                              ) : rec.whatsappFailedAt ? (
+                                <span className="text-rose-400 print:text-black">❌ Failed</span>
+                              ) : (
+                                <span className="text-slate-500 print:text-gray-500">Unsent</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Ultra Compact Print Footer */}
+              <div className="p-2 bg-slate-950/60 border border-slate-800 rounded-xl text-[10px] text-slate-400 flex items-center justify-between print:bg-white print:border-none print:p-0 print:text-black">
+                <p>Generated by AIMS Group of Institutions • Verification: aims-kondotty1.web.app</p>
+                <p className="font-bold shrink-0 ml-4">Official Verified Student Roster</p>
+              </div>
+
+            </div>
+
           </div>
         </div>
       )}
