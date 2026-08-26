@@ -93,10 +93,10 @@ export default function App() {
     if (path === '/admin/studyprogress' || hash.includes('studyprogress-admin')) {
       return 'study-progress-admin';
     }
-    if (path === '/form/improvement') {
+    if (path === '/form/improvement' || path === '/improvement') {
       return 'improvement-form';
     }
-    if (path === '/admin/responses/3f9a7c') {
+    if (path === '/admin/responses/3f9a7c' || path === '/admin/improvement' || path === '/admin/improvement/3f9a7c') {
       return 'lab-improvement-responses-public';
     }
     if (path === '/form/compensation' || path === '/compensation') {
@@ -903,6 +903,14 @@ export default function App() {
 
   if (view === 'improvement-form') {
     return <ImprovementForm />;
+  }
+
+  if ((view as string) === 'lab-improvement-responses-public') {
+    return (
+      <div className="min-h-screen bg-slate-50 p-2 sm:p-4">
+        <ImprovementAdmin hideBack={true} />
+      </div>
+    );
   }
 
   if (view === 'compensation-form') {

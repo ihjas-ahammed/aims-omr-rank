@@ -352,23 +352,26 @@ export async function deletePresentation(id: string): Promise<void> {
   await deleteDoc(doc(db, 'presentations', id));
 }
 
-// Student Improvement Responses
+// Student Improvement Responses (Night Class)
 export interface ImprovementResponse {
   id?: string;
   name: string;
-  batch: 'B1' | 'B2' | 'B3';
-  scores: {
-    english: number;
-    language: number;
-    physics: number;
-    chemistry: number;
-    mathematics: number;
-    sixthSubjectType: 'Biology' | 'Computer Science';
-    sixthSubjectScore: number;
-  };
-  totalScore: number;
+  batch: 'B1' | 'B2' | 'B3' | string;
+  phone?: string;
   improvementSubjects: string[];
-  wantsEntranceExams: boolean;
+  notes?: string;
+  // Legacy / optional fields for backward compatibility
+  scores?: {
+    english?: number;
+    language?: number;
+    physics?: number;
+    chemistry?: number;
+    mathematics?: number;
+    sixthSubjectType?: string;
+    sixthSubjectScore?: number;
+  };
+  totalScore?: number;
+  wantsEntranceExams?: boolean;
   preferredEntranceExams?: string[];
   submittedAt?: any;
 }
@@ -396,24 +399,52 @@ export async function getImprovementResponses(): Promise<ImprovementResponse[]> 
     const localData = localStorage.getItem('local_improvement_responses') || '[]';
     return JSON.parse(localData);
   }
-  const q = query(collection(db, 'improvement_responses'), orderBy('submittedAt', 'desc'));
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => {
-    const data = doc.data();
-    let submittedAtStr = new Date().toISOString();
-    if (data.submittedAt) {
-      try {
-        submittedAtStr = data.submittedAt.toDate().toISOString();
-      } catch (e) {
-        submittedAtStr = String(data.submittedAt);
+  try {
+    const q = query(collection(db, 'improvement_responses'), orderBy('submittedAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      let submittedAtStr = new Date().toISOString();
+      if (data.submittedAt) {
+        try {
+          submittedAtStr = data.submittedAt.toDate().toISOString();
+        } catch (e) {
+          submittedAtStr = String(data.submittedAt);
+        }
       }
+      return {
+        id: doc.id,
+        ...data,
+        submittedAt: submittedAtStr
+      } as ImprovementResponse;
+    });
+  } catch (err) {
+    console.error("Error fetching improvement_responses:", err);
+    try {
+      const querySnapshot = await getDocs(collection(db, 'improvement_responses'));
+      const list = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        let submittedAtStr = new Date().toISOString();
+        if (data.submittedAt) {
+          try {
+            submittedAtStr = data.submittedAt.toDate().toISOString();
+          } catch (e) {
+            submittedAtStr = String(data.submittedAt);
+          }
+        }
+        return {
+          id: doc.id,
+          ...data,
+          submittedAt: submittedAtStr
+        } as ImprovementResponse;
+      });
+      return list.sort((a, b) => (b.submittedAt > a.submittedAt ? 1 : -1));
+    } catch (fallbackErr) {
+      console.warn("Falling back to local improvement responses:", fallbackErr);
+      const localData = localStorage.getItem('local_improvement_responses') || '[]';
+      return JSON.parse(localData);
     }
-    return {
-      id: doc.id,
-      ...data,
-      submittedAt: submittedAtStr
-    } as ImprovementResponse;
-  });
+  }
 }
 
 export async function deleteImprovementResponse(id: string): Promise<void> {
@@ -425,6 +456,17 @@ export async function deleteImprovementResponse(id: string): Promise<void> {
     return;
   }
   await deleteDoc(doc(db, 'improvement_responses', id));
+}
+
+export async function clearAllImprovementResponses(): Promise<void> {
+  if (!db) {
+    localStorage.removeItem('local_improvement_responses');
+    return;
+  }
+  const snapshot = await getDocs(collection(db, 'improvement_responses'));
+  const deletePromises = snapshot.docs.map(d => deleteDoc(doc(db, 'improvement_responses', d.id)));
+  await Promise.all(deletePromises);
+  localStorage.removeItem('local_improvement_responses');
 }
 
 // Student Compensation Class Requests (Batch A2)

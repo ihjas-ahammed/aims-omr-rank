@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature, Presentation, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature, Presentation, ClipboardList, Moon } from 'lucide-react';
 
 interface LabProps {
   onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses') => void;
@@ -217,17 +217,17 @@ export default function Lab({ onNavigate }: LabProps) {
 
         <div
           onClick={() => onNavigate('lab-improvement-responses')}
-          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-purple-300 transition-all cursor-pointer group flex flex-col"
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group flex flex-col"
         >
           <div className="flex items-start justify-between">
-            <div className="p-3 bg-purple-50 text-purple-600 rounded-lg group-hover:bg-purple-100 transition-colors">
-              <ClipboardList className="w-6 h-6" />
+            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-100 transition-colors">
+              <Moon className="w-6 h-6" />
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Improvement Responses</h3>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Improvement Night Class</h3>
           <p className="text-sm text-gray-600 flex-1">
-            View and manage student academic profiles, exam marks, improvement selections, and export to Excel.
+            Manage student registrations for improvement night classes, filter by subject & batch, copy name lists, and export data.
           </p>
         </div>
 
