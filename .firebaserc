@@ -1,5 +1,17 @@
 {
   "projects": {
     "default": "aims-kondotty1"
+  },
+  "targets": {
+    "aims-kondotty1": {
+      "hosting": {
+        "default": [
+          "aims-kondotty1"
+        ],
+        "aims-plus-evalution": [
+          "aims-plus-evalution"
+        ]
+      }
+    }
   }
 }

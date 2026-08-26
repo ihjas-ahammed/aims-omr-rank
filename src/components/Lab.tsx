@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature, Presentation, ClipboardList } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses') => void;
 }
 
 export default function Lab({ onNavigate }: LabProps) {

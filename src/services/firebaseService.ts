@@ -4,12 +4,12 @@ import { getDatabase } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || '',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyA88qBFpFuxgZTOmE5qRCzaAYqcQlPRRoA',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'aims-kondotty1.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'aims-kondotty1',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'aims-kondotty1.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '613707197972',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:613707197972:web:98ee168875b8d76d78c101',
   databaseURL: 'https://aims-plus-evaluation-default-rtdb.asia-southeast1.firebasedatabase.app'
 };
 
@@ -425,4 +425,104 @@ export async function deleteImprovementResponse(id: string): Promise<void> {
     return;
   }
   await deleteDoc(doc(db, 'improvement_responses', id));
+}
+
+// Student Compensation Class Requests (Batch A2)
+export interface CompensationSelectedChapter {
+  subject: string;
+  chapter: string;
+  teacher?: string;
+}
+
+export interface CompensationResponse {
+  id?: string;
+  name: string;
+  studentClass: string; // 'A2'
+  phone?: string;
+  selectedChapters: CompensationSelectedChapter[];
+  reason?: string;
+  submittedAt?: any;
+}
+
+export async function submitCompensationResponse(response: Omit<CompensationResponse, 'id' | 'submittedAt'>): Promise<void> {
+  if (!db) {
+    const localData = localStorage.getItem('local_compensation_responses') || '[]';
+    const parsed = JSON.parse(localData);
+    parsed.push({
+      ...response,
+      id: 'local_' + Math.random().toString(36).substring(2, 9),
+      submittedAt: new Date().toISOString()
+    });
+    localStorage.setItem('local_compensation_responses', JSON.stringify(parsed));
+    return;
+  }
+  await addDoc(collection(db, 'compensation_responses'), {
+    ...response,
+    submittedAt: serverTimestamp()
+  });
+}
+
+export async function getCompensationResponses(): Promise<CompensationResponse[]> {
+  if (!db) {
+    const localData = localStorage.getItem('local_compensation_responses') || '[]';
+    return JSON.parse(localData);
+  }
+  try {
+    const q = query(collection(db, 'compensation_responses'), orderBy('submittedAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      let submittedAtStr = new Date().toISOString();
+      if (data.submittedAt) {
+        try {
+          submittedAtStr = data.submittedAt.toDate().toISOString();
+        } catch (e) {
+          submittedAtStr = String(data.submittedAt);
+        }
+      }
+      return {
+        id: doc.id,
+        ...data,
+        submittedAt: submittedAtStr
+      } as CompensationResponse;
+    });
+  } catch (err) {
+    console.error("Error fetching compensation_responses:", err);
+    try {
+      // Fallback if index missing or query error
+      const querySnapshot = await getDocs(collection(db, 'compensation_responses'));
+      const list = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        let submittedAtStr = new Date().toISOString();
+        if (data.submittedAt) {
+          try {
+            submittedAtStr = data.submittedAt.toDate().toISOString();
+          } catch (e) {
+            submittedAtStr = String(data.submittedAt);
+          }
+        }
+        return {
+          id: doc.id,
+          ...data,
+          submittedAt: submittedAtStr
+        } as CompensationResponse;
+      });
+      return list.sort((a, b) => (b.submittedAt > a.submittedAt ? 1 : -1));
+    } catch (fallbackErr) {
+      console.warn("Falling back to local compensation responses:", fallbackErr);
+      const localData = localStorage.getItem('local_compensation_responses') || '[]';
+      return JSON.parse(localData);
+    }
+  }
+}
+
+export async function deleteCompensationResponse(id: string): Promise<void> {
+  if (!db) {
+    const localData = localStorage.getItem('local_compensation_responses') || '[]';
+    const parsed = JSON.parse(localData) as CompensationResponse[];
+    const filtered = parsed.filter(item => item.id !== id);
+    localStorage.setItem('local_compensation_responses', JSON.stringify(filtered));
+    return;
+  }
+  await deleteDoc(doc(db, 'compensation_responses', id));
 }

@@ -28,6 +28,8 @@ import ImprovementForm from './components/lab/improvement/ImprovementForm';
 import ImprovementAdmin from './components/lab/improvement/ImprovementAdmin';
 import StudyProgressForm from './components/lab/study-progress/StudyProgressForm';
 import StudyProgressAdmin from './components/lab/study-progress/StudyProgressAdmin';
+import CompensationForm from './components/lab/compensation/CompensationForm';
+import CompensationAdmin from './components/lab/compensation/CompensationAdmin';
 
 import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
 import { PresentDashboard, PresentControl, PresentView } from './components/lab/aims-present';
@@ -64,7 +66,7 @@ const DEFAULT_ANSWER_KEY = `{
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public';
 
 // Parse /aims-present/<mode>/<id> from a pathname. Returns null if it isn't a presenter route.
 function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dashboard'; id: string | null } | null {
@@ -96,6 +98,12 @@ export default function App() {
     }
     if (path === '/admin/responses/3f9a7c') {
       return 'lab-improvement-responses-public';
+    }
+    if (path === '/form/compensation' || path === '/compensation') {
+      return 'compensation-form';
+    }
+    if (path === '/admin/compensation' || path === '/admin/compensation/3f9a7c') {
+      return 'lab-compensation-responses-public';
     }
     const present = parsePresentRoute(window.location.pathname);
     if (present) {
@@ -314,6 +322,10 @@ export default function App() {
         setView('improvement-form');
       } else if (window.location.pathname === '/admin/responses/3f9a7c') {
         setView('lab-improvement-responses-public');
+      } else if (window.location.pathname === '/form/compensation' || window.location.pathname === '/compensation') {
+        setView('compensation-form');
+      } else if (window.location.pathname === '/admin/compensation' || window.location.pathname === '/admin/compensation/3f9a7c') {
+        setView('lab-compensation-responses-public');
       } else {
         const present = parsePresentRoute(window.location.pathname);
         if (present) {
@@ -881,6 +893,8 @@ export default function App() {
 
   const isPublicView = 
     view === 'improvement-form' || 
+    view === 'compensation-form' ||
+    (view as string) === 'lab-compensation-responses-public' ||
     (view as string) === 'study-progress-form' || 
     (view as string) === 'study-progress-admin' || 
     view === 'exam-take' || 
@@ -889,6 +903,18 @@ export default function App() {
 
   if (view === 'improvement-form') {
     return <ImprovementForm />;
+  }
+
+  if (view === 'compensation-form') {
+    return <CompensationForm />;
+  }
+
+  if ((view as string) === 'lab-compensation-responses-public') {
+    return (
+      <div className="min-h-screen bg-slate-50 p-2 sm:p-4">
+        <CompensationAdmin hideBack={true} />
+      </div>
+    );
   }
 
   if ((view as string) === 'study-progress-form') {
@@ -1133,6 +1159,20 @@ export default function App() {
             }} 
             hideBack={(view as string) === 'lab-improvement-responses-public'}
           />
+        )}
+
+        {((view as string) === 'lab-compensation-responses' || (view as string) === 'lab-compensation-responses-public') && (
+          <CompensationAdmin 
+            onBack={() => {
+              window.history.pushState({}, '', '/');
+              setView('lab');
+            }} 
+            hideBack={(view as string) === 'lab-compensation-responses-public'}
+          />
+        )}
+
+        {(view as string) === 'compensation-form' && (
+          <CompensationForm />
         )}
 
         {(view as string) === 'improvement-form' && (

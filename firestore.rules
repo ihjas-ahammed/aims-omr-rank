@@ -35,6 +35,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Student Compensation Class Responses (Batch A2)
+    match /compensation_responses/{responseId} {
+      allow read, write: if true;
+    }
+
     // Study Progress
     match /study_progress/{docId} {
       allow read, write: if true;
@@ -44,3 +49,4 @@ service cloud.firestore {
     }
   }
 }
+
