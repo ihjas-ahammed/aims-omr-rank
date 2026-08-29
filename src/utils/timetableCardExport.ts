@@ -1,4 +1,6 @@
 import { toPng, toBlob } from 'html-to-image';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 /**
  * High resolution timetable card export engine using html-to-image.
@@ -26,7 +28,6 @@ export async function captureTimetableCardBlob(elementId: string = 'timetable-po
       cacheBust: true,
       skipAutoScale: true,
       filter: (node) => {
-        // Exclude any interactive controls or modals if accidentally nested
         if (node instanceof HTMLElement && node.classList.contains('no-export')) {
           return false;
         }
@@ -77,30 +78,21 @@ export async function downloadTimetableCardImage(
   const fileName = `TIMETABLE_${cleanBatch}_${cleanDate}.png`;
 
   try {
-    // Generate high-res dataUrl directly for fastest, safest download
+    // Generate high-res dataUrl directly for fastest download
     const dataUrl = await toPng(cardElement, {
       pixelRatio: 2.5,
       backgroundColor: '#ffffff',
       cacheBust: true
     });
 
-    const link = document.createElement('a');
-    link.download = fileName;
-    link.href = dataUrl;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Use FileSaver saveAs or direct anchor click
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    saveAs(blob, fileName);
   } catch (err) {
     console.warn('Direct dataUrl download failed, trying blob fallback:', err);
     const blob = await captureTimetableCardBlob(elementId);
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.download = fileName;
-    link.href = url;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    saveAs(blob, fileName);
   }
 }
 
@@ -115,4 +107,22 @@ export async function copyTimetableCardToClipboard(
     return true;
   }
   throw new Error('Clipboard write API is not supported on this device/browser.');
+}
+
+/**
+ * Package multiple class cards into a single ZIP archive to bypass browser multi-download limits.
+ */
+export async function createTimetableZipArchive(
+  date: string,
+  files: Array<{ name: string; blob: Blob }>
+): Promise<Blob> {
+  const zip = new JSZip();
+  const folderName = `TIMETABLES_${date.replace(/[\/\.\-]/g, '_')}`;
+  const folder = zip.folder(folderName) || zip;
+
+  files.forEach(f => {
+    folder.file(f.name, f.blob);
+  });
+
+  return await zip.generateAsync({ type: 'blob' });
 }

@@ -1,12 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { 
   CalendarDays, Plus, Search, Sliders, ScanLine, Download, Trash2, 
-  Copy, Edit2, Calendar, Clock, BookOpen, AlertTriangle, ArrowRight, X, Check
+  Copy, Edit2, Calendar, Clock, BookOpen, AlertTriangle, ArrowRight, X, Check,
+  Archive, Loader2, FileDown
 } from 'lucide-react';
 import { TeacherMappingsModal } from './TeacherMappingsModal';
 import { ScanTimetableModal } from './ScanTimetableModal';
 import { PosterCardPreview } from './PosterCardPreview';
-import { downloadTimetableCardImage } from '../../../utils/timetableCardExport';
+import { downloadTimetableCardImage, captureTimetableCardBlob, createTimetableZipArchive } from '../../../utils/timetableCardExport';
+import { saveAs } from 'file-saver';
 
 interface DaySchedule {
   date: string;
@@ -123,6 +125,10 @@ export const TimetableManager: React.FC<Props> = ({
     setNewClassName('');
   };
 
+  // Zipping / Batch Export State
+  const [zippingDayDate, setZippingDayDate] = useState<string | null>(null);
+  const [zipProgressText, setZipProgressText] = useState<string>('');
+
   // Quick download helper
   const handleQuickDownload = async (dayDate: string, c: any) => {
     const key = `${dayDate}_${c.class_name}`;
@@ -139,6 +145,48 @@ export const TimetableManager: React.FC<Props> = ({
         setQuickExportTarget(null);
       }
     }, 120);
+  };
+
+  // Robust Sequential ZIP Exporter for all cards in a day (bypasses browser multi-download limits)
+  const handleDownloadDayAsZip = async (day: DaySchedule) => {
+    if (!day.classes || day.classes.length === 0) return;
+    setZippingDayDate(day.date);
+    setZipProgressText(`Preparing 0/${day.classes.length}...`);
+
+    const files: Array<{ name: string; blob: Blob }> = [];
+    const cleanDate = day.date.replace(/[\/\.\-]/g, '_');
+
+    try {
+      for (let i = 0; i < day.classes.length; i++) {
+        const cls = day.classes[i];
+        setZipProgressText(`Rendering ${i + 1}/${day.classes.length}: ${cls.class_name}...`);
+        
+        // 1. Mount offscreen
+        setQuickExportTarget({ dayDate: day.date, classData: cls });
+        
+        // 2. Allow DOM and fonts to settle
+        await new Promise(resolve => setTimeout(resolve, 140));
+        
+        // 3. Capture blob
+        const blob = await captureTimetableCardBlob('quick-export-poster-card');
+        const cleanBatch = (cls.class_name || 'CLASS').replace(/\s+/g, '_');
+        files.push({
+          name: `TIMETABLE_${cleanBatch}_${cleanDate}.png`,
+          blob
+        });
+      }
+
+      setZipProgressText('Packaging ZIP archive...');
+      const zipBlob = await createTimetableZipArchive(day.date, files);
+      saveAs(zipBlob, `TIMETABLES_${cleanDate}.zip`);
+    } catch (err) {
+      console.error('Batch ZIP export failed:', err);
+      alert('Failed to package timetable images into ZIP. Please try downloading individually.');
+    } finally {
+      setZippingDayDate(null);
+      setZipProgressText('');
+      setQuickExportTarget(null);
+    }
   };
 
   return (
@@ -282,7 +330,27 @@ export const TimetableManager: React.FC<Props> = ({
                   </div>
 
                   {/* Day Action Buttons */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center flex-wrap gap-2">
+                    {/* Download All as ZIP Button */}
+                    <button
+                      onClick={() => handleDownloadDayAsZip(day)}
+                      disabled={zippingDayDate === day.date || !day.classes || day.classes.length === 0}
+                      className="px-2.5 py-1 text-xs font-bold border border-amber-400 text-amber-900 bg-amber-50 hover:bg-amber-100 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                      title="Download all class timetable cards for this day as a single ZIP file"
+                    >
+                      {zippingDayDate === day.date ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-600" />
+                          <span>{zipProgressText || 'Packaging...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Archive className="w-3.5 h-3.5 text-amber-700" />
+                          <span>Download All ({classCount})</span>
+                        </>
+                      )}
+                    </button>
+
                     <button
                       onClick={() => {
                         setTargetDayForClass(day.date);
