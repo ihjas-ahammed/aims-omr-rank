@@ -6,8 +6,10 @@ import {
 } from 'lucide-react';
 import { TeacherMappingsModal } from './TeacherMappingsModal';
 import { ScanTimetableModal } from './ScanTimetableModal';
+import { TimetableAiSettingsModal } from './TimetableAiSettingsModal';
 import { PosterCardPreview } from './PosterCardPreview';
 import { downloadTimetableCardImage, captureTimetableCardBlob, createTimetableZipArchive } from '../../../utils/timetableCardExport';
+import { getTimetableAiConfig, TimetableAiConfig } from '../../../services/timetableAiService';
 import { saveAs } from 'file-saver';
 
 interface DaySchedule {
@@ -47,6 +49,9 @@ export const TimetableManager: React.FC<Props> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [showMappingsModal, setShowMappingsModal] = useState(false);
   const [showScanModal, setShowScanModal] = useState(false);
+  const [showAiSettingsModal, setShowAiSettingsModal] = useState(false);
+  const [aiConfig, setAiConfig] = useState<TimetableAiConfig>(() => getTimetableAiConfig());
+
 
   // Add Day Modal State
   const [showAddDayModal, setShowAddDayModal] = useState(false);
@@ -226,12 +231,25 @@ export const TimetableManager: React.FC<Props> = ({
           </button>
 
           <button
+            onClick={() => setShowAiSettingsModal(true)}
+            className="px-3 py-1.5 text-xs font-bold border border-slate-300 hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 transition-colors relative"
+            title="Configure Timetable AI API Key, Gemini Model & Primary Priority"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            AI Settings
+            {aiConfig.customApiKey && (
+              <span className="w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-white" title="Custom AI Key Active" />
+            )}
+          </button>
+
+          <button
             onClick={() => setShowScanModal(true)}
             className="px-3 py-1.5 text-xs font-bold border border-[#78b82a] text-[#5c921c] hover:bg-[#78b82a]/10 flex items-center gap-1.5 transition-colors"
           >
             <ScanLine className="w-3.5 h-3.5" />
             Scan Image
           </button>
+
 
           <button
             onClick={() => setShowAddDayModal(true)}
@@ -500,6 +518,16 @@ export const TimetableManager: React.FC<Props> = ({
           });
         }}
       />
+
+      {/* AI Settings Modal */}
+      <TimetableAiSettingsModal
+        isOpen={showAiSettingsModal}
+        onClose={() => setShowAiSettingsModal(false)}
+        onSaved={(newCfg) => {
+          setAiConfig(newCfg);
+        }}
+      />
+
 
       {/* Add Day Modal */}
       {showAddDayModal && (

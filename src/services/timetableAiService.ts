@@ -37,6 +37,132 @@ export interface ScanTimetableResult {
   classes: ScannedClass[];
   unmapped_teachers: string[];
   error?: string;
+  usedModel?: string;
+  usedKeyType?: 'custom' | 'global';
+}
+
+export interface TimetableAiConfig {
+  customApiKey: string;
+  customModel: string;
+  useCustomAsPrimary: boolean;
+}
+
+export interface ScanTimetableOptions {
+  customApiKey?: string;
+  customModel?: string;
+  useCustomAsPrimary?: boolean;
+}
+
+export const TIMETABLE_CUSTOM_API_KEY_STORAGE = 'aims_timetable_custom_api_key';
+export const TIMETABLE_CUSTOM_MODEL_STORAGE = 'aims_timetable_custom_model';
+export const TIMETABLE_USE_CUSTOM_PRIMARY_STORAGE = 'aims_timetable_use_custom_as_primary';
+
+export const DEFAULT_TIMETABLE_PRIMARY_MODEL = 'gemini-2.5-flash';
+
+export const PRESET_TIMETABLE_MODELS = [
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', desc: 'Fast & highly accurate table extraction (Recommended)' },
+  { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite', desc: 'Ultra-fast, lowest latency' },
+  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', desc: 'Standard production vision model' },
+  { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite', desc: 'Lightweight multimodal OCR' },
+  { id: 'gemini-flash-lite-latest', name: 'Gemini Flash Lite Latest', desc: 'Latest Flash Lite alias' },
+  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', desc: 'Deep reasoning capability' },
+  { id: 'gemini-3.1-flash-preview', name: 'Gemini 3.1 Flash Preview', desc: 'Preview high-performance model' }
+];
+
+export const FALLBACK_TIMETABLE_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite',
+  'gemini-flash-lite-latest',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-2.5-pro'
+];
+
+/**
+ * Get current Timetable AI configuration from local storage
+ */
+export function getTimetableAiConfig(): TimetableAiConfig {
+  const customApiKey = (localStorage.getItem(TIMETABLE_CUSTOM_API_KEY_STORAGE) || '').trim();
+  const customModel = (localStorage.getItem(TIMETABLE_CUSTOM_MODEL_STORAGE) || DEFAULT_TIMETABLE_PRIMARY_MODEL).trim();
+  const storedPrimary = localStorage.getItem(TIMETABLE_USE_CUSTOM_PRIMARY_STORAGE);
+
+  // Default to true if not explicitly set
+  const useCustomAsPrimary = storedPrimary === null ? true : storedPrimary === 'true';
+
+  return {
+    customApiKey,
+    customModel: customModel || DEFAULT_TIMETABLE_PRIMARY_MODEL,
+    useCustomAsPrimary
+  };
+}
+
+/**
+ * Save Timetable AI configuration to local storage
+ */
+export function saveTimetableAiConfig(config: Partial<TimetableAiConfig>): void {
+  if (config.customApiKey !== undefined) {
+    localStorage.setItem(TIMETABLE_CUSTOM_API_KEY_STORAGE, config.customApiKey.trim());
+  }
+  if (config.customModel !== undefined) {
+    localStorage.setItem(TIMETABLE_CUSTOM_MODEL_STORAGE, config.customModel.trim());
+  }
+  if (config.useCustomAsPrimary !== undefined) {
+    localStorage.setItem(TIMETABLE_USE_CUSTOM_PRIMARY_STORAGE, String(config.useCustomAsPrimary));
+  }
+}
+
+/**
+ * Fetch available Gemini models from Google API using the given key
+ */
+export async function fetchTimetableGeminiModels(apiKey: string): Promise<string[]> {
+  const cleanKey = apiKey.trim();
+  if (!cleanKey) {
+    throw new Error('Please provide an API key to fetch models.');
+  }
+
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${cleanKey}`);
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || 'Failed to fetch models from Gemini API.');
+  }
+
+  if (data.models && Array.isArray(data.models)) {
+    const names = data.models
+      .map((m: any) => (m.name || '').replace('models/', ''))
+      .filter((name: string) => name.toLowerCase().includes('gemini'));
+    return Array.from(new Set(names)).sort();
+  }
+
+  throw new Error('No Gemini models returned for this API key.');
+}
+
+/**
+ * Test connectivity for an API key and model
+ */
+export async function testGeminiApiKeyAndModel(
+  apiKey: string,
+  modelName: string = DEFAULT_TIMETABLE_PRIMARY_MODEL
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const cleanKey = apiKey.trim();
+    if (!cleanKey) {
+      return { success: false, message: 'API key cannot be empty.' };
+    }
+    const cleanModel = modelName.trim() || DEFAULT_TIMETABLE_PRIMARY_MODEL;
+    const ai = new GoogleGenAI({ apiKey: cleanKey });
+    const response = await ai.models.generateContent({
+      model: cleanModel,
+      contents: 'Ping test. Reply with word OK.'
+    });
+
+    if (response && response.text) {
+      return { success: true, message: `Connected successfully using ${cleanModel}!` };
+    }
+    return { success: false, message: 'No response received from Gemini API.' };
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Connection test failed.' };
+  }
 }
 
 export function getAutoIconForSubject(subjectName: string): { icon_type: string; icon: string } {
@@ -53,15 +179,70 @@ export function getAutoIconForSubject(subjectName: string): { icon_type: string;
 
 export async function scanTimetableImageFromClient(
   fileOrBase64: File | string,
-  customApiKey?: string
+  optionsOrKey?: string | ScanTimetableOptions
 ): Promise<ScanTimetableResult> {
-  // 1. Resolve API Key (Priority: customApiKey -> stored global key in Firebase -> default global key)
-  let apiKey = (customApiKey && customApiKey.trim()) ? customApiKey.trim() : await getGlobalAiApiKey();
-  if (!apiKey || LEAKED_BLOCKED_KEYS.includes(apiKey.trim())) {
-    apiKey = DEFAULT_GLOBAL_GEMINI_API_KEY;
+  // 1. Resolve Config Options
+  const storedConfig = getTimetableAiConfig();
+  let customApiKey = '';
+  let customModel = '';
+  let useCustomAsPrimary = true;
+
+  if (typeof optionsOrKey === 'string') {
+    customApiKey = optionsOrKey;
+    customModel = storedConfig.customModel;
+    useCustomAsPrimary = storedConfig.useCustomAsPrimary;
+  } else if (optionsOrKey && typeof optionsOrKey === 'object') {
+    customApiKey = optionsOrKey.customApiKey !== undefined ? optionsOrKey.customApiKey : storedConfig.customApiKey;
+    customModel = optionsOrKey.customModel !== undefined ? optionsOrKey.customModel : storedConfig.customModel;
+    useCustomAsPrimary = optionsOrKey.useCustomAsPrimary !== undefined ? optionsOrKey.useCustomAsPrimary : storedConfig.useCustomAsPrimary;
+  } else {
+    customApiKey = storedConfig.customApiKey;
+    customModel = storedConfig.customModel;
+    useCustomAsPrimary = storedConfig.useCustomAsPrimary;
   }
 
-  // 2. Prepare Base64 Image
+  // 2. Resolve Global Backup Key
+  const globalKey = await getGlobalAiApiKey();
+
+  // 3. Build Key Resolution Queue
+  // If useCustomAsPrimary is true and customApiKey is non-empty, custom key is primary!
+  interface KeyCandidate {
+    key: string;
+    type: 'custom' | 'global';
+  }
+
+  const keyCandidates: KeyCandidate[] = [];
+  const cleanCustomKey = (customApiKey || '').trim();
+  const cleanGlobalKey = (globalKey || '').trim() || DEFAULT_GLOBAL_GEMINI_API_KEY;
+
+  if (useCustomAsPrimary && cleanCustomKey && !LEAKED_BLOCKED_KEYS.includes(cleanCustomKey)) {
+    keyCandidates.push({ key: cleanCustomKey, type: 'custom' });
+    if (cleanGlobalKey && cleanGlobalKey !== cleanCustomKey && !LEAKED_BLOCKED_KEYS.includes(cleanGlobalKey)) {
+      keyCandidates.push({ key: cleanGlobalKey, type: 'global' });
+    }
+  } else {
+    if (cleanGlobalKey && !LEAKED_BLOCKED_KEYS.includes(cleanGlobalKey)) {
+      keyCandidates.push({ key: cleanGlobalKey, type: 'global' });
+    }
+    if (cleanCustomKey && cleanCustomKey !== cleanGlobalKey && !LEAKED_BLOCKED_KEYS.includes(cleanCustomKey)) {
+      keyCandidates.push({ key: cleanCustomKey, type: 'custom' });
+    }
+  }
+
+  // Fallback default if candidates empty
+  if (keyCandidates.length === 0) {
+    keyCandidates.push({ key: DEFAULT_GLOBAL_GEMINI_API_KEY, type: 'global' });
+  }
+
+  // 4. Build Model Priority Sequence
+  // The primary model (chosen custom model) is placed first!
+  const targetPrimaryModel = (customModel || DEFAULT_TIMETABLE_PRIMARY_MODEL).trim();
+  const modelsToTry: string[] = [
+    targetPrimaryModel,
+    ...FALLBACK_TIMETABLE_MODELS.filter(m => m !== targetPrimaryModel)
+  ];
+
+  // 5. Prepare Base64 Image
   let base64Data = '';
   let mimeType = 'image/jpeg';
 
@@ -110,32 +291,40 @@ Return ONLY a valid JSON object matching this schema without markdown code block
   ]
 }`;
 
-  const modelsToTry = ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-2.0-flash-lite', 'gemini-2.5-flash'];
   let rawJsonText = '';
   let lastError: any = null;
+  let usedModelName = '';
+  let usedKeyType: 'custom' | 'global' = 'global';
 
-  for (const model of modelsToTry) {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model,
-        contents: [
-          { text: prompt },
-          { inlineData: { data: base64Data, mimeType } }
-        ]
-      });
+  // 6. Execute AI Generation with Priority Queue
+  keyLoop: for (const keyCandidate of keyCandidates) {
+    for (const model of modelsToTry) {
+      try {
+        const ai = new GoogleGenAI({ apiKey: keyCandidate.key });
+        const response = await ai.models.generateContent({
+          model,
+          contents: [
+            { text: prompt },
+            { inlineData: { data: base64Data, mimeType } }
+          ]
+        });
 
-      if (response && response.text) {
-        rawJsonText = response.text.trim();
-        if (rawJsonText) break;
+        if (response && response.text) {
+          rawJsonText = response.text.trim();
+          if (rawJsonText) {
+            usedModelName = model;
+            usedKeyType = keyCandidate.type;
+            break keyLoop;
+          }
+        }
+      } catch (err: any) {
+        lastError = err;
       }
-    } catch (err: any) {
-      lastError = err;
     }
   }
 
   if (!rawJsonText) {
-    throw new Error(`Failed to scan timetable image with Gemini: ${lastError?.message || 'Empty response'}`);
+    throw new Error(`Failed to scan timetable image with Gemini (${usedModelName || targetPrimaryModel}): ${lastError?.message || 'Empty response'}`);
   }
 
   // Clean JSON markup
@@ -145,7 +334,7 @@ Return ONLY a valid JSON object matching this schema without markdown code block
 
   const parsed = JSON.parse(rawJsonText.trim());
 
-  // 3. Format Date
+  // 7. Format Date
   const rawDate = parsed.date || "";
   let dateStr = "";
   let isoDate = "";
@@ -177,7 +366,7 @@ Return ONLY a valid JSON object matching this schema without markdown code block
     dayName = today.toLocaleDateString('en-US', { weekday: 'long' });
   }
 
-  // 4. Format Timing
+  // 8. Format Timing
   const timeSlots: string[] = parsed.time_slots || [];
   let overallTime = "8.30.00 am – 5.00 pm";
   if (timeSlots && timeSlots.length >= 1) {
@@ -195,7 +384,7 @@ Return ONLY a valid JSON object matching this schema without markdown code block
     }
   }
 
-  // 5. Teacher Mappings Resolution
+  // 9. Teacher Mappings Resolution
   const mappings = await getTeacherMappingsData();
   const knownUpper = ['PHYSICS', 'CHEMISTRY', 'MATHS', 'MATHEMATICS', 'BOTANY', 'ZOOLOGY', 'BIOLOGY', 'COMPUTER SCIENCE', 'ENGLISH'];
   const unmappedTeachers = new Set<string>();
@@ -267,6 +456,9 @@ Return ONLY a valid JSON object matching this schema without markdown code block
     time: overallTime,
     time_slots: timeSlots,
     classes: processedClasses,
-    unmapped_teachers: Array.from(unmappedTeachers).sort()
+    unmapped_teachers: Array.from(unmappedTeachers).sort(),
+    usedModel: usedModelName,
+    usedKeyType
   };
 }
+
