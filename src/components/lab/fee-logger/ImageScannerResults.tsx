@@ -142,7 +142,7 @@ export default function ImageScannerResults({
               <div className="flex justify-between items-center mb-3 border-b border-gray-100 pb-2">
                  <span className="font-bold text-gray-700 text-sm">Record #{idx+1}</span>
                  <div className="flex items-center gap-2">
-                   {duplicateReason && <AlertTriangle className="w-4 h-4 text-yellow-600" title={duplicateReason} />}
+                   {duplicateReason && <span title={duplicateReason}><AlertTriangle className="w-4 h-4 text-yellow-600" /></span>}
                    <button onClick={() => removeRecord(idx)} className="text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-colors"><Trash2 className="w-4 h-4"/></button>
                  </div>
               </div>

@@ -252,11 +252,15 @@ export interface StudentImageEntry {
   studentName: string;
   studentClass: string;
   phoneOrAdmission?: string;
+  phoneNumber?: string;
   questionNumber: number;
   imageIndex: number;
-  b2Key: string;
+  b2Key?: string;
   url?: string;
+  imageUrl?: string;
 }
+
+
 
 /**
  * Packages all descriptive answer images into a clean ZIP folder

@@ -1,10 +1,10 @@
 import React from 'react';
-import { Batch, BATCHES, TimeSlot, TIME_SLOTS, TimetableDay } from './types';
+import { Batch, BATCHES, TimetableDay, TimetableSession } from './types';
 import { UserPlus } from 'lucide-react';
 
 interface Props {
   data: TimetableDay;
-  onEditSlot: (batch: Batch, slot: TimeSlot, currentTeacher: string) => void;
+  onEditSlot: (batch: Batch, sessionIndex: number, session: TimetableSession) => void;
 }
 
 export default function TimetableGrid({ data, onEditSlot }: Props) {
@@ -15,10 +15,8 @@ export default function TimetableGrid({ data, onEditSlot }: Props) {
         <table className="w-full text-left border-collapse min-w-[800px]">
           <thead>
             <tr className="bg-gray-50 text-gray-700 text-sm border-b border-gray-200">
-              <th className="p-4 font-bold border-r border-gray-200 bg-gray-100 w-24 text-center">Batch / Time</th>
-              {TIME_SLOTS.map(slot => (
-                <th key={slot} className="p-4 font-bold text-center w-40">{slot}</th>
-              ))}
+              <th className="p-4 font-bold border-r border-gray-200 bg-gray-100 w-24 text-center">Batch</th>
+              <th className="p-4 font-bold text-center">Sessions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -27,27 +25,30 @@ export default function TimetableGrid({ data, onEditSlot }: Props) {
                 <td className="p-4 text-lg font-black text-gray-800 text-center border-r border-gray-200 bg-gray-50">
                   {batch}
                 </td>
-                {TIME_SLOTS.map(slot => {
-                  const teacher = data[batch]?.[slot] || '';
-                  return (
-                    <td key={slot} className="p-3 text-center align-middle">
-                      <div 
-                        onClick={() => onEditSlot(batch, slot, teacher)}
-                        className={`min-h-[3rem] flex items-center justify-center rounded-lg border-2 cursor-pointer transition-all p-2 mx-auto max-w-[120px] ${
-                          teacher 
-                            ? 'bg-orange-50 border-orange-200 text-orange-800 hover:bg-orange-100 hover:border-orange-300 shadow-sm'
-                            : 'bg-white border-dashed border-gray-200 text-gray-400 hover:border-orange-400 hover:bg-orange-50'
-                        }`}
-                      >
-                        {teacher ? (
-                          <span className="font-bold text-sm tracking-wide break-words">{teacher}</span>
-                        ) : (
-                          <UserPlus className="w-4 h-4 opacity-50" />
-                        )}
-                      </div>
-                    </td>
-                  );
-                })}
+                <td className="p-3">
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {(data[batch] || []).map((session, sIdx) => {
+                      return (
+                        <div
+                          key={session.id || sIdx}
+                          onClick={() => onEditSlot(batch, sIdx, session)}
+                          className={`min-h-[3rem] min-w-[120px] flex flex-col items-center justify-center rounded-lg border-2 cursor-pointer transition-all p-2 ${
+                            session.teacher
+                              ? 'bg-orange-50 border-orange-200 text-orange-800 hover:bg-orange-100 hover:border-orange-300 shadow-sm'
+                              : 'bg-white border-dashed border-gray-200 text-gray-400 hover:border-orange-400 hover:bg-orange-50'
+                          }`}
+                        >
+                          <span className="text-[10px] text-gray-500 font-semibold">{session.time}</span>
+                          {session.teacher ? (
+                            <span className="font-bold text-sm tracking-wide break-words">{session.teacher}</span>
+                          ) : (
+                            <UserPlus className="w-4 h-4 opacity-50 mt-1" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -62,21 +63,20 @@ export default function TimetableGrid({ data, onEditSlot }: Props) {
               <h3 className="font-black text-lg text-gray-800">Batch {batch}</h3>
             </div>
             <div className="p-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {TIME_SLOTS.map(slot => {
-                const teacher = data[batch]?.[slot] || '';
+              {(data[batch] || []).map((session, sIdx) => {
                 return (
-                  <div key={slot} className="flex flex-col gap-1">
-                    <span className="text-[10px] uppercase font-bold text-gray-500 text-center tracking-wider">{slot}</span>
+                  <div key={session.id || sIdx} className="flex flex-col gap-1">
+                    <span className="text-[10px] uppercase font-bold text-gray-500 text-center tracking-wider">{session.time}</span>
                     <div 
-                      onClick={() => onEditSlot(batch, slot, teacher)}
+                      onClick={() => onEditSlot(batch, sIdx, session)}
                       className={`h-12 flex items-center justify-center rounded-lg border-2 cursor-pointer transition-all p-2 ${
-                        teacher 
+                        session.teacher 
                           ? 'bg-orange-50 border-orange-200 text-orange-800 shadow-sm'
                           : 'bg-white border-dashed border-gray-200 text-gray-400 active:bg-gray-50'
                       }`}
                     >
-                      {teacher ? (
-                        <span className="font-bold text-sm text-center line-clamp-2">{teacher}</span>
+                      {session.teacher ? (
+                        <span className="font-bold text-sm text-center line-clamp-2">{session.teacher}</span>
                       ) : (
                         <span className="text-xs font-medium opacity-60">Assign</span>
                       )}

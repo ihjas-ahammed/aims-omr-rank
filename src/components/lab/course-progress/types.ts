@@ -3,12 +3,14 @@ export type TaskType = 'tcr' | 'entrance' | 'revision';
 export type TaskStatus = 'pending' | 'ongoing' | 'finished';
 
 export interface SessionData {
-  id: string;
+  id?: string;
   teacher: string | null;
+  status?: TaskStatus;
   date?: string;
   startTime?: string;
   endTime?: string;
 }
+
 
 export interface TaskData {
   status: TaskStatus;

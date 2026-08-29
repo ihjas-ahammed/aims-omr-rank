@@ -2,8 +2,9 @@ import React, { useState, useMemo, useRef } from 'react';
 import { 
   CalendarDays, Plus, Search, Sliders, ScanLine, Download, Trash2, 
   Copy, Edit2, Calendar, Clock, BookOpen, AlertTriangle, ArrowRight, X, Check,
-  Archive, Loader2, FileDown
+  Archive, Loader2, FileDown, Sparkles
 } from 'lucide-react';
+
 import { TeacherMappingsModal } from './TeacherMappingsModal';
 import { ScanTimetableModal } from './ScanTimetableModal';
 import { TimetableAiSettingsModal } from './TimetableAiSettingsModal';

@@ -710,7 +710,7 @@ export default function OnlineExamStudentPortal({ examId }: OnlineExamStudentPor
             {descQuestions.length > 0 && (
               <button
                 type="button"
-                onClick={() => setActiveFilter('desc')}
+                onClick={() => setActiveFilter('descriptive')}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-colors whitespace-nowrap ${
                   activeFilter === 'descriptive' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'
                 }`}
@@ -718,6 +718,7 @@ export default function OnlineExamStudentPortal({ examId }: OnlineExamStudentPor
                 Descriptive ({descQuestions.length})
               </button>
             )}
+
             <button
               type="button"
               onClick={() => setActiveFilter('unanswered')}

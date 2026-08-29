@@ -130,9 +130,10 @@ export async function fetchTimetableGeminiModels(apiKey: string): Promise<string
   if (data.models && Array.isArray(data.models)) {
     const names = data.models
       .map((m: any) => (m.name || '').replace('models/', ''))
-      .filter((name: string) => name.toLowerCase().includes('gemini'));
-    return Array.from(new Set(names)).sort();
+      .filter((name: string) => typeof name === 'string' && name.toLowerCase().includes('gemini'));
+    return (Array.from(new Set(names)) as string[]).sort();
   }
+
 
   throw new Error('No Gemini models returned for this API key.');
 }

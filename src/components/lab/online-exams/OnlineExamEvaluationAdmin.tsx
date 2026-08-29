@@ -101,7 +101,7 @@ export default function OnlineExamEvaluationAdmin({ examId, onBack }: OnlineExam
         };
       });
       setCurrentGradeMap(map);
-      setOverallFeedback(selectedStudent.teacherOverallFeedback || '');
+      setOverallFeedback((selectedStudent as any).teacherOverallFeedback || selectedStudent.gradedBy || '');
     }
   }, [selectedStudentId, selectedStudent, exam]);
 
@@ -116,7 +116,7 @@ export default function OnlineExamEvaluationAdmin({ examId, onBack }: OnlineExam
     if (!exam || !selectedStudentId) return;
     setIsSavingGrade(true);
     try {
-      await gradeStudentDescriptive(exam.id, selectedStudentId, currentGradeMap, overallFeedback);
+      await gradeStudentDescriptive(exam, selectedStudentId, currentGradeMap, overallFeedback);
       alert('Evaluation saved successfully!');
       setSelectedStudentId(null);
     } catch (e: any) {
@@ -125,6 +125,7 @@ export default function OnlineExamEvaluationAdmin({ examId, onBack }: OnlineExam
       setIsSavingGrade(false);
     }
   };
+
 
   // -------------------------------------------------------------
   // AI Evaluation Handlers
@@ -209,8 +210,11 @@ export default function OnlineExamEvaluationAdmin({ examId, onBack }: OnlineExam
               phoneNumber: sub.phoneNumber,
               questionNumber: parseInt(qNum, 10),
               imageIndex: idx + 1,
+              b2Key: img.b2Key || '',
+              url: img.url,
               imageUrl: img.url
             });
+
           });
         });
       });

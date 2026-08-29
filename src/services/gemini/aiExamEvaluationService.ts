@@ -214,7 +214,8 @@ STUDENT ATTACHED HANDWRITTEN PAGES (${images.length} page(s)):`
       const overall = parsed.overallFeedback?.trim() || "Evaluation completed by AI examiner.";
 
       // Automatically persist to Firestore
-      await gradeStudentDescriptive(exam.id, submission.id, gradeMap, overall);
+      await gradeStudentDescriptive(exam, submission.id, gradeMap, overall);
+
 
       return {
         grades: gradeMap,

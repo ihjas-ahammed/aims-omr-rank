@@ -1299,14 +1299,8 @@ export default function App() {
           }} />
         )}
 
-        {view === 'lab-timetable' && (
-          <AdminTimetable onBack={() => {
-            window.history.pushState({}, '', '/');
-            setView('lab');
-          }} />
-        )}
-
         {view === 'lab-atr-list' && (
+
           <ATRList onBack={() => setView('lab')} />
         )}
 
