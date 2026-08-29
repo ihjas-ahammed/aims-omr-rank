@@ -7,7 +7,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Online Exams
+    // Online Exams (Modern and Legacy collections)
+    match /online_exams/{examId} {
+      allow read, write: if true;
+      match /submissions/{submissionId} {
+        allow read, write: if true;
+      }
+    }
     match /exams/{examId} {
       allow read, write: if true;
       match /submissions/{submissionId} {

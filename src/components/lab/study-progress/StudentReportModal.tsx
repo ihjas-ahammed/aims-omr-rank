@@ -506,7 +506,7 @@ export default function StudentReportModal({
 
     if (res.success) {
       setWaStatus({ success: true, message: res.message });
-      await updateStudentWhatsAppSent(record.id || record.admissionNo);
+      await updateStudentWhatsAppSent(record.id || record.admissionNo, new Date().toISOString());
     } else {
       setWaStatus({ success: false, message: res.message });
     }

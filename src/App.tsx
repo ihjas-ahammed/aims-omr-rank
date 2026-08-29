@@ -31,7 +31,15 @@ import StudyProgressAdmin from './components/lab/study-progress/StudyProgressAdm
 import CompensationForm from './components/lab/compensation/CompensationForm';
 import CompensationAdmin from './components/lab/compensation/CompensationAdmin';
 
-import { ExamDashboard, ExamSetup, ExamTake, ExamResults } from './components/lab/online-exams';
+import { 
+  ExamDashboard, 
+  ExamSetup, 
+  ExamTake, 
+  ExamResults, 
+  OnlineExamsAdmin, 
+  OnlineExamEvaluationAdmin, 
+  OnlineExamStudentPortal 
+} from './components/lab/online-exams';
 import { PresentDashboard, PresentControl, PresentView } from './components/lab/aims-present';
 
 const DEFAULT_ATTENDANCE = `ADIL MARZOOQUE\nADISANKAR\nADITHYA RAJ\nADWAID\nAHAMED IRFAN K\nAHAMED JUNAID\nAHLAM HASAN K\nAMAL CHANDRA N\nANJANA K\nANSHIA P\nANSILA KADOORAN\nAPARNA C\nARSHA FATHIMA M\nARSHIN PC\nASWATHY E\nATHUL VB\nAVANI PS\nAYISHA DIYA\nAZAL MHD\nDIYA AK\nDIYA FATHIMA KP\nDIYA MEHRIN K\nDIYA V\nFAHMA VP\nFAIZ AHMED AN\nFARHA P\nFATHIMA DILFA P\nFATHIMA FIZA M\nFATHIMA HIBA PP\nFATHIMA HUDA N\nFATHIMA LIYA A\nFATHIMA MINHA PE\nFATHIMA MISBHA VA\nFATHIMA NASHA\nFATHIMA NASHA CP\nFATHIMA RIFNA A\nFATHIMA SHAHNA PK\nFIDA THASNIM\nGOURI NANDA C\nHAMNA FATHIMA\nHANIYA FATHIMA P\nHANIYYA V\nHASNA SHARI VP\nHIBA FATHIMA KP\nHISHAM MHD\nKRISHNA PRIYA PC\nKRISTHI MUNADHA T\nLASIN ABDULLAH\nLISNA K\nLIYA FATHIMA A\nMAJID A\nMAZIN MHD\nMHD ADNAN K\nMHD AHANN TK\nMHD ANFAS TK\nMHD ASHFAQUE\nMHD DANISH\nMHD DIYAN\nMHD FAIROOZ\nMHD FARHAN K\nMHD FATHIN ALI\nMHD LIYAN P\nMHD MAJID RAMZAN TP\nMHD MUFLIH A\nMHD NAJADH\nMHD RAZAL T\nMHD RISHAN P\nMHD SABITH P\nMHD SABITH TK\nMHD SADHIL V\nMHD SHAFEEQ KK\nMHD SHAHABAS K\nMHD SINAN A\nMILHA RAZACK A\nMINHA PK\nMISHAL AHAMED\nNAIRA ABDUL LATHEEF\nNAJIH AHAMED\nNAJIYA NASRIN C\nNAJVA\nNAJVA FATHIMA C\nNASHA FATHIMA P\nNIDHA FATHIMA K\nNIDHA SHIRIN N\nNITHIN RAJ\nRAJEEBA K\nRANA FATHIMA K\nREHAN ABDUL RAHEEM\nREVATHY K\nRIDHA K\nRIFA CP\nRIFA P\nRINSHA JALIDHA P\nRINSHA SHERIN T\nRIYA SUNEER\nSHABANA JASMIN\nSILNA FATHIMA\nSITHARA BASHEER P\nSIYA TP\nTHANHA FATHIMA`;
@@ -66,7 +74,7 @@ const DEFAULT_ANSWER_KEY = `{
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public';
 
 // Parse /aims-present/<mode>/<id> from a pathname. Returns null if it isn't a presenter route.
 function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dashboard'; id: string | null } | null {
@@ -76,52 +84,160 @@ function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dash
   return { mode: m[1] as 'control' | 'view', id: decodeURIComponent(m[2]) };
 }
 
+// Parse /admin/exams, /admin/exam/#<id>, /form/exam/#<id>, /exam/<id>, ?examId=<id>
+function parseOnlineExamRoute(pathname: string, hash: string, search: string): { mode: 'admin-list' | 'admin-detail' | 'student-form'; examId: string | null } | null {
+  // 1. Admin Exams List: /admin/exams or /admin/online-exams
+  if (pathname === '/admin/exams' || pathname === '/admin/online-exams') {
+    return { mode: 'admin-list', examId: null };
+  }
+
+  // 2. Admin Exam Detail: /admin/exam, /admin/exam/#<id>, /admin/exam/<id>
+  if (pathname === '/admin/exam' || pathname.startsWith('/admin/exam/')) {
+    const segments = pathname.split('/').filter(Boolean);
+    const pathId = segments[2] || null;
+    const hashId = hash ? hash.replace(/^#/, '').trim() : null;
+    const queryId = new URLSearchParams(search).get('id') || new URLSearchParams(search).get('examId');
+    const examId = pathId || hashId || queryId;
+    if (examId) {
+      return { mode: 'admin-detail', examId: decodeURIComponent(examId) };
+    }
+    return { mode: 'admin-list', examId: null };
+  }
+
+  // 3. Student Exam Portal: /form/exam, /form/exam/#<id>, /form/exam/<id>, /exam/<id>, ?examId=<id>
+  if (
+    pathname === '/form/exam' || 
+    pathname.startsWith('/form/exam/') || 
+    pathname.startsWith('/exam/') ||
+    pathname === '/exam'
+  ) {
+    const segments = pathname.split('/').filter(Boolean);
+    const pathId = (pathname.startsWith('/form/exam/') ? segments[2] : segments[1]) || null;
+    const hashId = hash ? hash.replace(/^#/, '').trim() : null;
+    const queryId = new URLSearchParams(search).get('id') || new URLSearchParams(search).get('examId');
+    const examId = pathId || hashId || queryId;
+    return { mode: 'student-form', examId: examId ? decodeURIComponent(examId) : null };
+  }
+
+  const queryExamId = new URLSearchParams(search).get('examId');
+  if (queryExamId) {
+    return { mode: 'student-form', examId: decodeURIComponent(queryExamId) };
+  }
+
+  return null;
+}
+
+function resolveInitialView(): ViewState {
+  const path = window.location.pathname;
+  const hash = window.location.hash;
+  const search = window.location.search;
+
+  // Check Online Exam Routes
+  const onlineExam = parseOnlineExamRoute(path, hash, search);
+  if (onlineExam) {
+    if (onlineExam.mode === 'admin-list') return 'admin-online-exams';
+    if (onlineExam.mode === 'admin-detail') return 'admin-online-exam-detail';
+    if (onlineExam.mode === 'student-form') return 'online-exam-portal';
+  }
+
+  if (path === '/form/studyprogress' || path === '/studyprogress') {
+    if (hash.includes('admin')) {
+      return 'study-progress-admin';
+    }
+    return 'study-progress-form';
+  }
+  if (path === '/admin/studyprogress' || hash.includes('studyprogress-admin')) {
+    return 'study-progress-admin';
+  }
+  if (path === '/form/improvement' || path === '/improvement' || path === '/improvement-study-progress' || path === '/improvement-progress' || path === '/form/improvement-progress') {
+    return 'improvement-form';
+  }
+  if (path === '/admin/responses/3f9a7c' || path === '/admin/improvement' || path === '/admin/improvement/3f9a7c' || path === '/admin/improvement-progress') {
+    return 'lab-improvement-responses-public';
+  }
+  if (path === '/form/compensation' || path === '/compensation') {
+    return 'compensation-form';
+  }
+  if (path === '/admin/compensation' || path === '/admin/compensation/3f9a7c') {
+    return 'lab-compensation-responses-public';
+  }
+  const present = parsePresentRoute(path);
+  if (present) {
+    if (present.mode === 'control') return 'aims-present-control';
+    if (present.mode === 'view') return 'aims-present-view';
+    return 'lab-aims-present';
+  }
+  if (path === '/course-progress') {
+    return 'lab-course-progress';
+  }
+  if (path === '/timetable') {
+    return 'lab-timetable';
+  }
+
+  // -------------------------------------------------------------
+  // SMART PWA & ROOT REDIRECTOR:
+  // When launching from installed PWA or visiting root '/',
+  // restore the latest opened portal so current users won't lose it!
+  // -------------------------------------------------------------
+  try {
+    const lastActivePortal = localStorage.getItem('aims_last_active_portal');
+    const hasImprovementProfile = !!localStorage.getItem('improvement_study_progress_active_profile');
+    const hasStudyProgressProfile = !!localStorage.getItem('study_progress_student_profile');
+
+    // Priority 1: User's explicit last visited portal
+    if (lastActivePortal === 'improvement-form') {
+      window.history.replaceState(null, '', '/form/improvement');
+      return 'improvement-form';
+    }
+    if (lastActivePortal === 'study-progress-form') {
+      window.history.replaceState(null, '', '/form/studyprogress');
+      return 'study-progress-form';
+    }
+    if (lastActivePortal === 'compensation-form') {
+      window.history.replaceState(null, '', '/form/compensation');
+      return 'compensation-form';
+    }
+    if (lastActivePortal === 'study-progress-admin') {
+      window.history.replaceState(null, '', '/admin/studyprogress');
+      return 'study-progress-admin';
+    }
+    if (lastActivePortal === 'lab-improvement-responses-public') {
+      window.history.replaceState(null, '', '/admin/improvement');
+      return 'lab-improvement-responses-public';
+    }
+    if (lastActivePortal === 'admin-online-exams') {
+      window.history.replaceState(null, '', '/admin/exams');
+      return 'admin-online-exams';
+    }
+    if (lastActivePortal && [
+      'lab-course-progress', 'lab-timetable', 'lab-atr-list', 'lab-qp-maker', 
+      'lab-fee-logger', 'lab-cloud-sessions', 'lab-score-analysis', 'lab-descriptive'
+    ].includes(lastActivePortal)) {
+      return lastActivePortal as ViewState;
+    }
+
+    // Priority 2: Fallback to existing student profile on device
+    if (hasImprovementProfile) {
+      window.history.replaceState(null, '', '/form/improvement');
+      return 'improvement-form';
+    }
+    if (hasStudyProgressProfile) {
+      window.history.replaceState(null, '', '/form/studyprogress');
+      return 'study-progress-form';
+    }
+  } catch (e) {
+    console.warn('Failed to parse last active portal preference:', e);
+  }
+
+  return 'lab';
+}
+
 export default function App() {
   const [presentId, setPresentId] = useState<string | null>(() => parsePresentRoute(window.location.pathname)?.id ?? null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
     return localStorage.getItem('aims_admin_logged_in') === 'true';
   });
-  const [view, setView] = useState<ViewState>(() => {
-    const path = window.location.pathname;
-    const hash = window.location.hash;
-    if (path === '/form/studyprogress' || path === '/studyprogress') {
-      if (hash.includes('admin')) {
-        return 'study-progress-admin';
-      }
-      return 'study-progress-form';
-    }
-    if (path === '/admin/studyprogress' || hash.includes('studyprogress-admin')) {
-      return 'study-progress-admin';
-    }
-    if (path === '/form/improvement' || path === '/improvement') {
-      return 'improvement-form';
-    }
-    if (path === '/admin/responses/3f9a7c' || path === '/admin/improvement' || path === '/admin/improvement/3f9a7c') {
-      return 'lab-improvement-responses-public';
-    }
-    if (path === '/form/compensation' || path === '/compensation') {
-      return 'compensation-form';
-    }
-    if (path === '/admin/compensation' || path === '/admin/compensation/3f9a7c') {
-      return 'lab-compensation-responses-public';
-    }
-    const present = parsePresentRoute(window.location.pathname);
-    if (present) {
-      if (present.mode === 'control') return 'aims-present-control';
-      if (present.mode === 'view') return 'aims-present-view';
-      return 'lab-aims-present';
-    }
-    if (window.location.pathname === '/course-progress') {
-      return 'lab-course-progress';
-    }
-    if (window.location.pathname === '/timetable') {
-      return 'lab-timetable';
-    }
-    if (new URLSearchParams(window.location.search).get('examId')) {
-      return 'exam-take';
-    }
-    return 'lab';
-  });
+  const [view, setView] = useState<ViewState>(() => resolveInitialView());
 
   const [apiKeys, setApiKeys] = useState<string[]>(() => {
     const saved = localStorage.getItem('omr_apiKeysList');
@@ -301,6 +417,10 @@ export default function App() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [onlineExamId, setOnlineExamId] = useState<string | null>(() => {
+    return parseOnlineExamRoute(window.location.pathname, window.location.hash, window.location.search)?.examId ?? null;
+  });
+
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set());
   const [reviewFileId, setReviewFileId] = useState<string | null>(null);
   
@@ -318,30 +438,33 @@ export default function App() {
 
   useEffect(() => {
     const handlePopState = () => {
-      if (window.location.pathname === '/form/improvement') {
-        setView('improvement-form');
-      } else if (window.location.pathname === '/admin/responses/3f9a7c') {
-        setView('lab-improvement-responses-public');
-      } else if (window.location.pathname === '/form/compensation' || window.location.pathname === '/compensation') {
-        setView('compensation-form');
-      } else if (window.location.pathname === '/admin/compensation' || window.location.pathname === '/admin/compensation/3f9a7c') {
-        setView('lab-compensation-responses-public');
-      } else {
-        const present = parsePresentRoute(window.location.pathname);
-        if (present) {
-          setPresentId(present.id);
-          if (present.mode === 'control') setView('aims-present-control');
-          else if (present.mode === 'view') setView('aims-present-view');
-          else setView('lab-aims-present');
-        }
-        else if (window.location.pathname === '/course-progress') setView('lab-course-progress');
-        else if (window.location.pathname === '/timetable') setView('lab-timetable');
-        else if (window.location.pathname === '/') setView('lab');
+      const nextView = resolveInitialView();
+      setView(nextView);
+      const present = parsePresentRoute(window.location.pathname);
+      if (present) {
+        setPresentId(present.id);
+      }
+      const onlineExam = parseOnlineExamRoute(window.location.pathname, window.location.hash, window.location.search);
+      if (onlineExam) {
+        setOnlineExamId(onlineExam.examId);
       }
     };
     window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
   }, []);
+
+  // Synchronize latest active portal in local storage
+  useEffect(() => {
+    if (view) {
+      try {
+        localStorage.setItem('aims_last_active_portal', view);
+      } catch (e) {}
+    }
+  }, [view]);
 
   useEffect(() => { localStorage.setItem('omr_apiKeysList', JSON.stringify(apiKeys)); }, [apiKeys]);
   useEffect(() => { localStorage.setItem('omr_liteModel', liteModel); }, [liteModel]);
@@ -897,9 +1020,48 @@ export default function App() {
     (view as string) === 'lab-compensation-responses-public' ||
     (view as string) === 'study-progress-form' || 
     (view as string) === 'study-progress-admin' || 
-    view === 'exam-take' || 
+    view === 'online-exam-portal' ||
+    view === 'exam-take' ||
+    view === 'admin-online-exams' ||
+    view === 'admin-online-exam-detail' ||
     view === 'aims-present-view' || 
     (view as string) === 'lab-improvement-responses-public';
+
+  if (view === 'online-exam-portal' || view === 'exam-take') {
+    const finalExamId = onlineExamId || new URLSearchParams(window.location.search).get('examId') || new URLSearchParams(window.location.search).get('id') || '';
+    return <OnlineExamStudentPortal examId={finalExamId} />;
+  }
+
+  if (view === 'admin-online-exam-detail') {
+    const finalExamId = onlineExamId || new URLSearchParams(window.location.search).get('examId') || new URLSearchParams(window.location.search).get('id') || '';
+    return (
+      <OnlineExamEvaluationAdmin 
+        examId={finalExamId} 
+        onBack={() => {
+          window.history.pushState({}, '', '/admin/exams');
+          window.location.hash = '';
+          setOnlineExamId(null);
+          setView('admin-online-exams');
+        }} 
+      />
+    );
+  }
+
+  if (view === 'admin-online-exams') {
+    return (
+      <OnlineExamsAdmin 
+        onBack={() => {
+          window.history.pushState({}, '', '/');
+          setView('lab');
+        }}
+        onNavigateToEvaluation={(examId) => {
+          window.history.pushState({}, '', `/admin/exam/#${examId}`);
+          setOnlineExamId(examId);
+          setView('admin-online-exam-detail');
+        }}
+      />
+    );
+  }
 
   if (view === 'improvement-form') {
     return <ImprovementForm />;
@@ -1067,6 +1229,9 @@ export default function App() {
             if (v === 'home') {
               window.history.pushState({}, '', '/');
               setView('home');
+            } else if (v === 'admin-online-exams') {
+              window.history.pushState({}, '', '/admin/exams');
+              setView('admin-online-exams');
             } else if (v === 'lab-course-progress') {
               window.history.pushState({}, '', '/course-progress');
               setView('lab-course-progress');

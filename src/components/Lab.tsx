@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature, Presentation, ClipboardList, Moon } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'admin-online-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses') => void;
 }
 
 export default function Lab({ onNavigate }: LabProps) {
@@ -47,18 +47,20 @@ export default function Lab({ onNavigate }: LabProps) {
         </div>
 
         <div 
-          onClick={() => onNavigate('lab-exams')}
-          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group flex flex-col"
+          onClick={() => onNavigate('admin-online-exams')}
+          className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-400 transition-all cursor-pointer group flex flex-col"
         >
           <div className="flex items-start justify-between">
-            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-100 transition-colors">
+            <div className="p-3 bg-indigo-100 text-indigo-600 rounded-lg group-hover:bg-indigo-200 transition-colors">
               <MonitorPlay className="w-6 h-6" />
             </div>
-            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
+            <span className="px-2 py-0.5 bg-indigo-600 text-white text-[10px] font-black rounded-md uppercase tracking-wider">
+              NEW
+            </span>
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Online Exams</h3>
-          <p className="text-sm text-gray-600 flex-1">
-            Setup online exams using images of a question paper. Generate a link, collect student responses with anti-cheat monitoring, and view results.
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Online Exams (/admin/exams)</h3>
+          <p className="text-sm text-gray-700 flex-1">
+            Conduct MCQ & Descriptive exams with direct camera photo uploads to Backblaze B2, inline image grading, and Excel/ZIP exports.
           </p>
         </div>
 
@@ -225,9 +227,9 @@ export default function Lab({ onNavigate }: LabProps) {
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 transition-colors" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Improvement Night Class</h3>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Improvement Study Progress</h3>
           <p className="text-sm text-gray-600 flex-1">
-            Manage student registrations for improvement night classes, filter by subject & batch, copy name lists, and export data.
+            Manage Plus One SCERT student registrations, subject choices, study progress checkpoints, copy name lists, and export data.
           </p>
         </div>
 

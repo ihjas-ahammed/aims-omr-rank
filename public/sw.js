@@ -1,6 +1,7 @@
-const CACHE_NAME = 'study-progress-pwa-v3';
+const CACHE_NAME = 'aims-plus-pwa-v4';
 const ASSETS_TO_CACHE = [
   '/',
+  '/form/improvement',
   '/form/studyprogress',
   '/manifest.json',
   '/app_icon.png',
