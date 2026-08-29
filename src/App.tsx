@@ -16,7 +16,7 @@ import AutoCropTool from './components/lab/AutoCropTool';
 import QueueItem, { ProcessedFile } from './components/QueueItem';
 import QueueToolbar from './components/QueueToolbar';
 import CourseProgress from './components/lab/course-progress/CourseProgress';
-import TimetableDashboard from './components/lab/timetable/TimetableDashboard';
+import AdminTimetable from './components/lab/timetable/AdminTimetable';
 import ATRList from './components/lab/atr-list/ATRList';
 import QPMaker from './components/lab/qp-maker/QPMaker';
 import FeeLogger from './components/lab/fee-logger/FeeLogger';
@@ -170,7 +170,7 @@ function resolveInitialView(): ViewState {
   if (path === '/course-progress') {
     return 'lab-course-progress';
   }
-  if (path === '/timetable') {
+  if (path === '/admin/timetable' || path === '/admin/timetable/' || path === '/timetable' || path === '/timetable/') {
     return 'lab-timetable';
   }
 
@@ -1024,8 +1024,20 @@ export default function App() {
     view === 'exam-take' ||
     view === 'admin-online-exams' ||
     view === 'admin-online-exam-detail' ||
+    view === 'lab-timetable' ||
     view === 'aims-present-view' || 
     (view as string) === 'lab-improvement-responses-public';
+
+  if (view === 'lab-timetable') {
+    return (
+      <AdminTimetable 
+        onBack={() => {
+          window.history.pushState({}, '', '/');
+          setView('lab');
+        }} 
+      />
+    );
+  }
 
   if (view === 'online-exam-portal' || view === 'exam-take') {
     const finalExamId = onlineExamId || new URLSearchParams(window.location.search).get('examId') || new URLSearchParams(window.location.search).get('id') || '';
@@ -1288,7 +1300,7 @@ export default function App() {
         )}
 
         {view === 'lab-timetable' && (
-          <TimetableDashboard onBack={() => {
+          <AdminTimetable onBack={() => {
             window.history.pushState({}, '', '/');
             setView('lab');
           }} />

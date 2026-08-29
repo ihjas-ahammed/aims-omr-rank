@@ -568,3 +568,152 @@ export async function deleteCompensationResponse(id: string): Promise<void> {
   }
   await deleteDoc(doc(db, 'compensation_responses', id));
 }
+
+// ---------------- Timetable Manager & Global AI Key ----------------
+export const DEFAULT_GLOBAL_GEMINI_API_KEY = "AIzaSyBaXtDi_OglFxqKWNDDNqXXYHSjeO8n-rQ";
+
+export const LEAKED_BLOCKED_KEYS = [
+  "AIzaSyAT2oFfKW8mfPT8iP-SetxXfeFdwfFi0ro",
+  "AIzaSyA88qBFpFuxgZTOmE5qRCzaAYqcQlPRRoA",
+  "AIzaSyC6BuQvYUAb5kFd5W2tazuD0kAtTSuYMfs"
+];
+
+export const DEFAULT_TEACHER_MAPPINGS: Record<string, string> = {
+  "ABR": "PHYSICS",
+  "ARJ": "PHYSICS",
+  "JN": "PHYSICS",
+  "CY": "CHEMISTRY",
+  "AMR": "CHEMISTRY",
+  "CSD": "CHEMISTRY",
+  "MF": "MATHS",
+  "ADL": "MATHS",
+  "SRJ": "MATHS",
+  "MRS": "MATHS",
+  "AZ": "ZOOLOGY",
+  "SDR": "ZOOLOGY",
+  "HB": "ZOOLOGY",
+  "TK": "ZOOLOGY",
+  "JS": "BOTANY",
+  "SHM": "BOTANY",
+  "HR": "BOTANY",
+  "SB": "BOTANY",
+  "ENG": "ENGLISH",
+  "CS": "COMPUTER SCIENCE"
+};
+
+export async function getGlobalAiApiKey(): Promise<string> {
+  let localKey = localStorage.getItem('aims_global_ai_api_key');
+  if (localKey && LEAKED_BLOCKED_KEYS.includes(localKey.trim())) {
+    localStorage.removeItem('aims_global_ai_api_key');
+    localKey = null;
+  }
+  if (localKey && localKey.trim()) return localKey.trim();
+
+  if (!db) {
+    localStorage.setItem('aims_global_ai_api_key', DEFAULT_GLOBAL_GEMINI_API_KEY);
+    return DEFAULT_GLOBAL_GEMINI_API_KEY;
+  }
+
+  try {
+    const docRef = doc(db, 'app_data', 'global_ai_settings');
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      const k = (data?.gemini_api_key || data?.apiKey || '').trim();
+      if (k && !LEAKED_BLOCKED_KEYS.includes(k)) {
+        localStorage.setItem('aims_global_ai_api_key', k);
+        return k;
+      }
+    }
+  } catch (err) {
+    console.warn("Failed to fetch global AI key from Firestore, using verified default:", err);
+  }
+
+  localStorage.setItem('aims_global_ai_api_key', DEFAULT_GLOBAL_GEMINI_API_KEY);
+  return DEFAULT_GLOBAL_GEMINI_API_KEY;
+}
+
+export async function saveGlobalAiApiKey(apiKey: string): Promise<void> {
+  const cleanKey = apiKey.trim();
+  localStorage.setItem('aims_global_ai_api_key', cleanKey);
+  if (!db) return;
+  try {
+    const docRef = doc(db, 'app_data', 'global_ai_settings');
+    await setDoc(docRef, { apiKey: cleanKey, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (err) {
+    console.error("Failed to save global AI key to Firestore:", err);
+  }
+}
+
+export async function getTimetablesDataset(): Promise<{ days: any[] }> {
+  const localStr = localStorage.getItem('aims_timetables_dataset');
+  let fallbackData: { days: any[] } = { days: [] };
+  if (localStr) {
+    try { fallbackData = JSON.parse(localStr); } catch (e) {}
+  }
+
+  if (!db) return fallbackData;
+  try {
+    const docRef = doc(db, 'app_data', 'timetables_dataset');
+    const snap = await getDoc(docRef);
+    if (snap.exists() && snap.data()?.days) {
+      const remoteData = { days: snap.data().days };
+      localStorage.setItem('aims_timetables_dataset', JSON.stringify(remoteData));
+      return remoteData;
+    }
+    return fallbackData;
+  } catch (err) {
+    console.warn("Error fetching timetables dataset from Firestore:", err);
+    return fallbackData;
+  }
+}
+
+export async function saveTimetablesDataset(data: { days: any[] }): Promise<void> {
+  localStorage.setItem('aims_timetables_dataset', JSON.stringify(data));
+  if (!db) return;
+  try {
+    const docRef = doc(db, 'app_data', 'timetables_dataset');
+    await setDoc(docRef, { days: data.days, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (err) {
+    console.error("Error saving timetables dataset to Firestore:", err);
+  }
+}
+
+export async function getTeacherMappingsData(): Promise<Record<string, string>> {
+  const localStr = localStorage.getItem('aims_teacher_mappings');
+  let fallback: Record<string, string> = { ...DEFAULT_TEACHER_MAPPINGS };
+  if (localStr) {
+    try {
+      const parsed = JSON.parse(localStr);
+      if (parsed && typeof parsed === 'object') fallback = { ...DEFAULT_TEACHER_MAPPINGS, ...parsed };
+    } catch (e) {}
+  }
+
+  if (!db) return fallback;
+  try {
+    const docRef = doc(db, 'app_data', 'teacher_mappings');
+    const snap = await getDoc(docRef);
+    if (snap.exists() && snap.data()?.mappings) {
+      const remote = { ...DEFAULT_TEACHER_MAPPINGS, ...snap.data().mappings };
+      localStorage.setItem('aims_teacher_mappings', JSON.stringify(remote));
+      return remote;
+    }
+    // Seed defaults in Firestore if empty
+    await setDoc(docRef, { mappings: DEFAULT_TEACHER_MAPPINGS, updatedAt: serverTimestamp() }, { merge: true });
+    return fallback;
+  } catch (err) {
+    console.warn("Error fetching teacher mappings from Firestore:", err);
+    return fallback;
+  }
+}
+
+export async function saveTeacherMappingsData(mappings: Record<string, string>): Promise<void> {
+  localStorage.setItem('aims_teacher_mappings', JSON.stringify(mappings));
+  if (!db) return;
+  try {
+    const docRef = doc(db, 'app_data', 'teacher_mappings');
+    await setDoc(docRef, { mappings, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (err) {
+    console.error("Error saving teacher mappings to Firestore:", err);
+  }
+}
