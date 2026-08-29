@@ -4,12 +4,12 @@ import { getDatabase } from 'firebase/database';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyA88qBFpFuxgZTOmE5qRCzaAYqcQlPRRoA',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'aims-kondotty1.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'aims-kondotty1',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'aims-kondotty1.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '613707197972',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:613707197972:web:98ee168875b8d76d78c101',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyAx4OAmZuDXmjSoeL8LFdqYboGvg_RMdx0',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'aims-plus-evaluation.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'aims-plus-evaluation',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'aims-plus-evaluation.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '958947699164',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:958947699164:web:e0b21e0ef02e557ce7c719',
   databaseURL: 'https://aims-plus-evaluation-default-rtdb.asia-southeast1.firebasedatabase.app'
 };
 
@@ -570,9 +570,10 @@ export async function deleteCompensationResponse(id: string): Promise<void> {
 }
 
 // ---------------- Timetable Manager & Global AI Key ----------------
-export const DEFAULT_GLOBAL_GEMINI_API_KEY = "AIzaSyBaXtDi_OglFxqKWNDDNqXXYHSjeO8n-rQ";
+export const DEFAULT_GLOBAL_GEMINI_API_KEY = "AIzaSyAe1bCB1GHTJhD0rJbG3D9TLDE3KsILMAo";
 
 export const LEAKED_BLOCKED_KEYS = [
+  "AIzaSyBaXtDi_OglFxqKWNDDNqXXYHSjeO8n-rQ",
   "AIzaSyAT2oFfKW8mfPT8iP-SetxXfeFdwfFi0ro",
   "AIzaSyA88qBFpFuxgZTOmE5qRCzaAYqcQlPRRoA",
   "AIzaSyC6BuQvYUAb5kFd5W2tazuD0kAtTSuYMfs"
@@ -614,6 +615,21 @@ export async function getGlobalAiApiKey(): Promise<string> {
     return DEFAULT_GLOBAL_GEMINI_API_KEY;
   }
 
+  // 1. Fetch from Firestore secrets collection
+  try {
+    const secretsRef = doc(db, 'secrets', 'apikeys');
+    const secretSnap = await getDoc(secretsRef);
+    if (secretSnap.exists()) {
+      const data = secretSnap.data();
+      const k = (data?.global_gemini_api_key || data?.gemini_api_key || data?.apiKey || '').trim();
+      if (k && !LEAKED_BLOCKED_KEYS.includes(k)) {
+        localStorage.setItem('aims_global_ai_api_key', k);
+        return k;
+      }
+    }
+  } catch (e) {}
+
+  // 2. Fallback to app_data
   try {
     const docRef = doc(db, 'app_data', 'global_ai_settings');
     const snap = await getDoc(docRef);

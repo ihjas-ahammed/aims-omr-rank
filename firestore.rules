@@ -26,6 +26,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Secrets & Global AI configuration
+    match /secrets/{secretId} {
+      allow read, write: if true;
+    }
+
     // Cloud session snapshots
     match /cloud_sessions/{sessionId} {
       allow read, write: if true;

@@ -110,7 +110,7 @@ Return ONLY a valid JSON object matching this schema without markdown code block
   ]
 }`;
 
-  const modelsToTry = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash', 'gemini-flash-latest'];
+  const modelsToTry = ['gemini-flash-lite-latest', 'gemini-2.5-flash-lite', 'gemini-2.0-flash-lite', 'gemini-2.5-flash'];
   let rawJsonText = '';
   let lastError: any = null;
 
