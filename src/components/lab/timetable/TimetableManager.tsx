@@ -406,10 +406,10 @@ export const TimetableManager: React.FC<Props> = ({
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 mt-3.5">
-                    {day.classes.map(c => {
+                    {day.classes.map((c, cIdx) => {
                       return (
                         <div
-                          key={c.class_name}
+                          key={`${day.date}_${c.class_name}_${cIdx}`}
                           className="p-3.5 bg-slate-50 border border-slate-200 flex flex-col justify-between hover:border-[#062e5b] transition-colors shadow-xs"
                         >
                           <div>

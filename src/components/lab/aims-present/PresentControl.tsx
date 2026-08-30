@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Images, Users, ChevronLeft, ChevronRight, Radio, Link2, GripVertical, Mic, Award, Heading, Settings as SettingsIcon, X, GraduationCap } from 'lucide-react';
+import { 
+  ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Images, 
+  Users, ChevronLeft, ChevronRight, Radio, Link2, GripVertical, Mic, Award, Heading, 
+  Settings as SettingsIcon, X, GraduationCap, Upload, Loader2, User 
+} from 'lucide-react';
 import {
   getPresentation,
   updatePresentation,
@@ -12,6 +16,13 @@ import {
   AnchorH,
   isFirebaseConfigured,
 } from '../../../services/firebaseService';
+import {
+  uploadPresenterImageToB2,
+  useB2ImageUrl
+} from '../../../services/b2StorageService';
+import {
+  compressImageToBlob
+} from '../../../utils/imageProcessing';
 import SlideStage from './SlideStage';
 import GalleryController from './GalleryController';
 import { CATEGORY_LABEL } from './students';
@@ -24,11 +35,17 @@ interface PresentControlProps {
 const uuid = () =>
   (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
+function B2Thumbnail({ src, alt = '', className = '' }: { src: string; alt?: string; className?: string }) {
+  const resolved = useB2ImageUrl(src);
+  return <img src={resolved || src} alt={alt} className={className} />;
+}
+
 export default function PresentControl({ presentationId, onBack }: PresentControlProps) {
   const [presentation, setPresentation] = useState<Presentation | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error' | 'notfound'>('loading');
   const [copied, setCopied] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [uploadingState, setUploadingState] = useState<Record<string, { progress: number; label?: string }>>({});
   const dragIndex = useRef<number | null>(null);
 
   useEffect(() => {
@@ -42,6 +59,143 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
   const persist = (patch: Partial<Presentation>) => {
     setPresentation(prev => (prev ? { ...prev, ...patch } : prev));
     updatePresentation(presentationId, patch).catch(err => console.error('Save failed', err));
+  };
+
+  const setProgress = (key: string, progress: number, label?: string) => {
+    setUploadingState(prev => ({
+      ...prev,
+      [key]: { progress, label }
+    }));
+  };
+
+  const clearProgress = (key: string) => {
+    setUploadingState(prev => {
+      const copy = { ...prev };
+      delete copy[key];
+      return copy;
+    });
+  };
+
+  // Upload a single image for image slide
+  const uploadSingleImage = async (slideId: string, file: File) => {
+    const key = `slide_${slideId}`;
+    try {
+      setProgress(key, 15, 'Optimizing image...');
+      let blobToUpload: Blob = file;
+      try {
+        blobToUpload = await compressImageToBlob(file, 1920, 0.85);
+      } catch (e) {
+        console.warn('Image compression fallback to raw file:', e);
+      }
+      setProgress(key, 40, 'Uploading to B2 Storage...');
+      const res = await uploadPresenterImageToB2({
+        file: blobToUpload,
+        presentationId,
+        folder: 'aims-present',
+        onProgress: (pct) => setProgress(key, 40 + Math.round(pct * 0.55), `Uploading to B2: ${pct}%`)
+      });
+      editSlide(slideId, { imageUrl: res.url });
+    } catch (err: any) {
+      console.error('Image upload failed', err);
+      alert('Failed to upload image to B2 storage: ' + (err.message || 'Network error'));
+    } finally {
+      clearProgress(key);
+    }
+  };
+
+  // Upload multiple images for slideshow slide
+  const uploadSlideshowImages = async (slideId: string, files: FileList | File[]) => {
+    const fileArray = Array.from(files);
+    if (fileArray.length === 0) return;
+    const key = `slideshow_${slideId}`;
+    try {
+      const newUrls: string[] = [];
+      for (let i = 0; i < fileArray.length; i++) {
+        const file = fileArray[i];
+        setProgress(key, Math.round(((i) / fileArray.length) * 100), `Uploading ${i + 1}/${fileArray.length} to B2...`);
+        let blobToUpload: Blob = file;
+        try {
+          blobToUpload = await compressImageToBlob(file, 1920, 0.85);
+        } catch (e) {
+          console.warn('Image compression fallback:', e);
+        }
+        const res = await uploadPresenterImageToB2({
+          file: blobToUpload,
+          presentationId,
+          folder: 'aims-present'
+        });
+        newUrls.push(res.url);
+      }
+      setPresentation(prev => {
+        if (!prev) return prev;
+        const updatedSlides = prev.slides.map(s => {
+          if (s.id !== slideId) return s;
+          const existing = (s.images || []).filter(Boolean);
+          return { ...s, images: [...existing, ...newUrls] };
+        });
+        updatePresentation(presentationId, { slides: updatedSlides }).catch(err => console.error(err));
+        return { ...prev, slides: updatedSlides };
+      });
+    } catch (err: any) {
+      console.error('Slideshow upload failed', err);
+      alert('Failed to upload images to B2 storage: ' + (err.message || 'Error'));
+    } finally {
+      clearProgress(key);
+    }
+  };
+
+  // Replace a specific image in slideshow
+  const replaceSlideshowImage = async (slideId: string, index: number, file: File) => {
+    const key = `slideshow_${slideId}_${index}`;
+    try {
+      setProgress(key, 25, 'Optimizing...');
+      let blobToUpload: Blob = file;
+      try {
+        blobToUpload = await compressImageToBlob(file, 1920, 0.85);
+      } catch (e) {
+        console.warn('Image compression fallback:', e);
+      }
+      setProgress(key, 50, 'Uploading...');
+      const res = await uploadPresenterImageToB2({
+        file: blobToUpload,
+        presentationId,
+        folder: 'aims-present',
+        onProgress: (pct) => setProgress(key, 50 + Math.round(pct * 0.45))
+      });
+      editImage(slideId, index, res.url);
+    } catch (err: any) {
+      console.error('Failed to replace image', err);
+      alert('Failed to upload image to B2 storage: ' + (err.message || 'Error'));
+    } finally {
+      clearProgress(key);
+    }
+  };
+
+  // Upload photo for a person
+  const uploadPersonPhoto = async (slideId: string, personId: string, file: File) => {
+    const key = `person_${slideId}_${personId}`;
+    try {
+      setProgress(key, 25, 'Optimizing photo...');
+      let blobToUpload: Blob = file;
+      try {
+        blobToUpload = await compressImageToBlob(file, 1000, 0.85);
+      } catch (e) {
+        console.warn('Photo compression fallback:', e);
+      }
+      setProgress(key, 50, 'Uploading to B2...');
+      const res = await uploadPresenterImageToB2({
+        file: blobToUpload,
+        presentationId,
+        folder: 'aims-present/persons',
+        onProgress: (pct) => setProgress(key, 50 + Math.round(pct * 0.45))
+      });
+      editPerson(slideId, personId, { photoUrl: res.url });
+    } catch (err: any) {
+      console.error('Person photo upload failed', err);
+      alert('Failed to upload person photo to B2 storage: ' + (err.message || 'Error'));
+    } finally {
+      clearProgress(key);
+    }
   };
 
   const setSlides = (slides: Slide[], extra: Partial<Presentation> = {}) =>
@@ -289,16 +443,92 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
                   )}
 
                   {slide.type === 'image' && (
-                    <input
-                      value={slide.imageUrl || ''}
-                      onChange={(e) => editSlide(slide.id, { imageUrl: e.target.value })}
-                      placeholder="https://image-url…"
-                      className="w-full text-sm border border-gray-200 rounded-md px-2 py-1.5 focus:outline-none focus:border-violet-400"
-                    />
+                    <div className="space-y-2">
+                      {uploadingState[`slide_${slide.id}`] ? (
+                        <div className="p-3 bg-violet-50 border border-violet-200 rounded-lg flex flex-col items-center justify-center gap-1.5 text-center">
+                          <Loader2 className="w-5 h-5 text-violet-600 animate-spin" />
+                          <span className="text-xs font-medium text-violet-800">
+                            {uploadingState[`slide_${slide.id}`].label || 'Uploading to B2 Storage...'}
+                          </span>
+                          <div className="w-full bg-violet-200 h-1.5 rounded-full overflow-hidden mt-1 max-w-[200px]">
+                            <div
+                              className="bg-violet-600 h-full transition-all duration-200"
+                              style={{ width: `${uploadingState[`slide_${slide.id}`].progress}%` }}
+                            />
+                          </div>
+                        </div>
+                      ) : slide.imageUrl ? (
+                        <div className="space-y-1.5">
+                          <div className="relative group rounded-lg overflow-hidden border border-gray-200 bg-gray-900 aspect-video flex items-center justify-center max-h-36">
+                            <B2Thumbnail src={slide.imageUrl} alt="" className="w-full h-full object-contain" />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <label className="cursor-pointer px-2.5 py-1.5 bg-white text-gray-800 text-xs font-medium rounded shadow hover:bg-gray-100 flex items-center gap-1">
+                                <Upload className="w-3.5 h-3.5 text-violet-600" />
+                                Replace
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    if (e.target.files?.[0]) {
+                                      uploadSingleImage(slide.id, e.target.files[0]);
+                                    }
+                                  }}
+                                />
+                              </label>
+                              <button
+                                onClick={() => editSlide(slide.id, { imageUrl: '' })}
+                                className="px-2.5 py-1.5 bg-red-600 text-white text-xs font-medium rounded shadow hover:bg-red-700 flex items-center gap-1"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between gap-1 text-[11px] text-gray-400">
+                            <input
+                              value={slide.imageUrl}
+                              onChange={(e) => editSlide(slide.id, { imageUrl: e.target.value })}
+                              placeholder="Image URL"
+                              className="flex-1 text-xs border border-gray-200 rounded px-1.5 py-0.5 text-gray-600 truncate focus:outline-none focus:border-violet-400"
+                            />
+                            <label className="text-violet-600 hover:text-violet-700 cursor-pointer font-medium shrink-0 text-xs flex items-center gap-0.5">
+                              <Upload className="w-3 h-3" /> Upload
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  if (e.target.files?.[0]) {
+                                    uploadSingleImage(slide.id, e.target.files[0]);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      ) : (
+                        <label className="cursor-pointer border-2 border-dashed border-violet-200 hover:border-violet-400 hover:bg-violet-50/50 rounded-lg p-4 flex flex-col items-center justify-center text-center transition-colors">
+                          <Upload className="w-6 h-6 text-violet-500 mb-1.5" />
+                          <span className="text-xs font-semibold text-gray-800">Upload Image to B2 Storage</span>
+                          <span className="text-[10px] text-gray-400 mt-0.5">Click or drag &amp; drop (PNG, JPG, WebP)</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files?.[0]) {
+                                uploadSingleImage(slide.id, e.target.files[0]);
+                              }
+                            }}
+                          />
+                        </label>
+                      )}
+                    </div>
                   )}
 
                   {slide.type === 'slideshow' && (
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       <div className="grid grid-cols-2 gap-2">
                         <label className="flex flex-col gap-0.5 text-xs text-gray-500">
                           Delay (sec)
@@ -324,29 +554,94 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
                           </select>
                         </label>
                       </div>
-                      {(slide.images || []).map((url, i) => (
-                        <div key={i} className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold text-gray-400 w-4 shrink-0">{i + 1}</span>
-                          <input
-                            value={url}
-                            onChange={(e) => editImage(slide.id, i, e.target.value)}
-                            placeholder="https://image-url…"
-                            className="flex-1 min-w-0 text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-violet-400"
-                          />
-                          <button onClick={() => moveImage(slide.id, i, i - 1)} disabled={i === 0} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 shrink-0">
-                            <ChevronUp className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => moveImage(slide.id, i, i + 1)} disabled={i === (slide.images || []).length - 1} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 shrink-0">
-                            <ChevronDown className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => deleteImage(slide.id, i)} className="p-1 text-gray-400 hover:text-red-500 shrink-0">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+
+                      {uploadingState[`slideshow_${slide.id}`] && (
+                        <div className="p-2.5 bg-violet-50 border border-violet-200 rounded-md flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 text-violet-600 animate-spin shrink-0" />
+                          <p className="text-xs font-medium text-violet-900 truncate">
+                            {uploadingState[`slideshow_${slide.id}`].label || 'Uploading images to B2 Storage...'}
+                          </p>
                         </div>
-                      ))}
-                      <button onClick={() => addImage(slide.id)} className="w-full flex items-center justify-center gap-1.5 text-xs font-medium py-1.5 rounded-md border border-dashed border-gray-300 text-gray-500 hover:bg-gray-50">
-                        <Plus className="w-3.5 h-3.5" /> Add image
-                      </button>
+                      )}
+
+                      <div className="space-y-1.5 max-h-60 overflow-y-auto">
+                        {(slide.images || []).map((url, i) => {
+                          const replaceUploading = uploadingState[`slideshow_${slide.id}_${i}`];
+                          return (
+                            <div key={i} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-md p-1.5">
+                              <span className="text-xs font-semibold text-gray-400 w-4 text-center shrink-0">{i + 1}</span>
+                              {url ? (
+                                <B2Thumbnail src={url} alt="" className="w-8 h-8 rounded object-cover border border-gray-200 shrink-0 bg-black" />
+                              ) : (
+                                <div className="w-8 h-8 rounded bg-gray-200 shrink-0 flex items-center justify-center text-gray-400">
+                                  <ImageIcon className="w-4 h-4" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <input
+                                  value={url}
+                                  onChange={(e) => editImage(slide.id, i, e.target.value)}
+                                  placeholder="Image URL or upload..."
+                                  className="w-full text-xs border border-transparent hover:border-gray-300 focus:border-violet-400 bg-transparent rounded px-1 py-0.5"
+                                />
+                              </div>
+                              <label className="p-1 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded cursor-pointer shrink-0" title="Replace image">
+                                {replaceUploading ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin text-violet-600" />
+                                ) : (
+                                  <Upload className="w-3.5 h-3.5" />
+                                )}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  disabled={!!replaceUploading}
+                                  onChange={(e) => {
+                                    if (e.target.files?.[0]) {
+                                      replaceSlideshowImage(slide.id, i, e.target.files[0]);
+                                    }
+                                  }}
+                                />
+                              </label>
+                              <button onClick={() => moveImage(slide.id, i, i - 1)} disabled={i === 0} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 shrink-0">
+                                <ChevronUp className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => moveImage(slide.id, i, i + 1)} disabled={i === (slide.images || []).length - 1} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 shrink-0">
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => deleteImage(slide.id, i)} className="p-1 text-gray-400 hover:text-red-500 shrink-0">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <label className="flex-1 cursor-pointer flex items-center justify-center gap-1.5 py-2 px-3 text-xs font-semibold rounded-md bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-colors">
+                          <Upload className="w-3.5 h-3.5 text-violet-600" />
+                          Upload Photos to B2
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              if (e.target.files && e.target.files.length > 0) {
+                                uploadSlideshowImages(slide.id, e.target.files);
+                                e.target.value = '';
+                              }
+                            }}
+                          />
+                        </label>
+                        <button
+                          onClick={() => addImage(slide.id)}
+                          className="px-3 py-2 text-xs font-medium rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50 shrink-0"
+                          title="Add empty URL entry"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -434,31 +729,88 @@ export default function PresentControl({ presentationId, onBack }: PresentContro
                       )}
                       {(slide.persons || []).map(person => {
                         const talking = person.id === slide.activePersonId;
+                        const isPersonUploading = uploadingState[`person_${slide.id}_${person.id}`];
                         return (
-                          <div key={person.id} className={`rounded-md border p-2 space-y-1.5 ${talking ? 'border-violet-400 bg-violet-50/60' : 'border-gray-200'}`}>
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                value={person.name}
-                                onChange={(e) => editPerson(slide.id, person.id, { name: e.target.value })}
-                                placeholder="Name"
-                                className="flex-1 min-w-0 text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-violet-400"
-                              />
-                              <button onClick={() => deletePerson(slide.id, person.id)} className="p-1 text-gray-400 hover:text-red-500 shrink-0">
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                          <div key={person.id} className={`rounded-md border p-2 space-y-2 ${talking ? 'border-violet-400 bg-violet-50/60' : 'border-gray-200 bg-white'}`}>
+                            <div className="flex items-center gap-2.5">
+                              {/* Avatar with B2 upload */}
+                              <div className="relative group shrink-0">
+                                <div className="w-12 h-12 rounded-full overflow-hidden border border-gray-300 bg-gray-100 flex items-center justify-center">
+                                  {isPersonUploading ? (
+                                    <Loader2 className="w-5 h-5 text-violet-600 animate-spin" />
+                                  ) : person.photoUrl ? (
+                                    <B2Thumbnail src={person.photoUrl} alt="" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <User className="w-5 h-5 text-gray-400" />
+                                  )}
+                                </div>
+                                <label
+                                  className="absolute inset-0 rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                                  title="Upload photo to B2"
+                                >
+                                  <Upload className="w-4 h-4" />
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    disabled={!!isPersonUploading}
+                                    onChange={(e) => {
+                                      if (e.target.files?.[0]) {
+                                        uploadPersonPhoto(slide.id, person.id, e.target.files[0]);
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </div>
+
+                              <div className="flex-1 min-w-0 space-y-1">
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    value={person.name}
+                                    onChange={(e) => editPerson(slide.id, person.id, { name: e.target.value })}
+                                    placeholder="Name"
+                                    className="flex-1 min-w-0 text-sm font-medium border border-gray-200 rounded px-2 py-0.5 focus:outline-none focus:border-violet-400"
+                                  />
+                                  <button onClick={() => deletePerson(slide.id, person.id)} className="p-1 text-gray-400 hover:text-red-500 shrink-0">
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <input
+                                  value={person.role}
+                                  onChange={(e) => editPerson(slide.id, person.id, { role: e.target.value })}
+                                  placeholder="Role (e.g. Director)"
+                                  className="w-full text-xs text-gray-600 border border-gray-200 rounded px-2 py-0.5 focus:outline-none focus:border-violet-400"
+                                />
+                              </div>
                             </div>
-                            <input
-                              value={person.role}
-                              onChange={(e) => editPerson(slide.id, person.id, { role: e.target.value })}
-                              placeholder="Role (e.g. Director)"
-                              className="w-full text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-violet-400"
-                            />
-                            <input
-                              value={person.photoUrl}
-                              onChange={(e) => editPerson(slide.id, person.id, { photoUrl: e.target.value })}
-                              placeholder="https://photo-url…"
-                              className="w-full text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-violet-400"
-                            />
+
+                            {/* Photo actions row */}
+                            <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100 text-xs">
+                              <label className="cursor-pointer text-violet-600 hover:text-violet-800 font-medium flex items-center gap-1 text-[11px]">
+                                <Upload className="w-3 h-3" />
+                                {person.photoUrl ? 'Change Photo (B2)' : 'Upload Photo (B2)'}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  disabled={!!isPersonUploading}
+                                  onChange={(e) => {
+                                    if (e.target.files?.[0]) {
+                                      uploadPersonPhoto(slide.id, person.id, e.target.files[0]);
+                                    }
+                                  }}
+                                />
+                              </label>
+                              {person.photoUrl && (
+                                <button
+                                  onClick={() => editPerson(slide.id, person.id, { photoUrl: '' })}
+                                  className="text-gray-400 hover:text-red-500 text-[11px]"
+                                >
+                                  Clear photo
+                                </button>
+                              )}
+                            </div>
+
                             <button
                               onClick={() => setActivePerson(slide.id, person.id)}
                               disabled={talking}

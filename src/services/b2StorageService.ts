@@ -2,6 +2,7 @@
  * Backblaze B2 S3-Compatible Storage Service for Online Exams
  * Uses browser-native Web Crypto API (crypto.subtle) for AWS Signature Version 4.
  */
+import { useState, useEffect } from 'react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -230,6 +231,186 @@ export async function uploadAnswerPhotoToB2({
 
     xhr.send(file);
   });
+}
+
+export interface UploadPresenterImageOptions {
+  file: File | Blob;
+  presentationId?: string;
+  folder?: string;
+  fileName?: string;
+  onProgress?: (progressPercent: number) => void;
+}
+
+/**
+ * Uploads an image (photo, poster, presenter slide asset) directly to Backblaze B2 storage
+ * using standard AWS v4 presigned PUT.
+ */
+export async function uploadPresenterImageToB2({
+  file,
+  presentationId = 'general',
+  folder = 'aims-present',
+  fileName: customFileName,
+  onProgress
+}: UploadPresenterImageOptions): Promise<B2UploadedImage> {
+  const sanitizedFolder = `${folder}/${presentationId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+  const timestamp = Date.now();
+  const rawName = (file as File).name || 'image.jpg';
+  const extMatch = rawName.match(/\.([a-zA-Z0-9]+)$/);
+  const ext = extMatch ? extMatch[1].toLowerCase() : (file.type.split('/')[1] || 'jpg');
+  const baseName = rawName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 32);
+  const fileName = customFileName || `${baseName}_${timestamp}.${ext}`;
+  const b2Key = `${sanitizedFolder}/${fileName}`;
+
+  const presignedPutUrl = await getB2PresignedPutUrl(b2Key, 3600);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', presignedPutUrl, true);
+    xhr.setRequestHeader('Content-Type', file.type || 'image/jpeg');
+
+    if (xhr.upload && onProgress) {
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress(percent);
+        }
+      };
+    }
+
+    xhr.onload = async () => {
+      if (xhr.status === 200 || xhr.status === 201 || xhr.status === 204) {
+        try {
+          const presignedGetUrl = await getB2PresignedUrl(b2Key, 604800); // 7 days validity
+          resolve({
+            b2Key,
+            url: presignedGetUrl,
+            fileName,
+            fileSize: file.size,
+            uploadedAt: new Date().toISOString()
+          });
+        } catch (e) {
+          resolve({
+            b2Key,
+            url: presignedPutUrl.split('?')[0],
+            fileName,
+            fileSize: file.size,
+            uploadedAt: new Date().toISOString()
+          });
+        }
+      } else {
+        reject(new Error(`B2 Upload failed with HTTP status ${xhr.status}: ${xhr.responseText || xhr.statusText}`));
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('Network error occurred during B2 image upload.'));
+    };
+
+    xhr.send(file);
+  });
+}
+
+// -------------------------------------------------------------
+// B2 URL Resolvers & Hook (Auto-signs private B2 URLs)
+// -------------------------------------------------------------
+
+const presignedCache = new Map<string, { url: string; expiresAt: number }>();
+
+/**
+ * Extracts B2 object key from a full Backblaze B2 S3 / web URL or relative key path.
+ */
+export function extractB2Key(urlOrKey: string | undefined | null): string | null {
+  if (!urlOrKey) return null;
+  if (!urlOrKey.startsWith('http://') && !urlOrKey.startsWith('https://')) {
+    if (urlOrKey.startsWith('exams/') || urlOrKey.startsWith('aims-present/') || urlOrKey.startsWith('presentations/')) {
+      return urlOrKey.replace(/^\//, '');
+    }
+    return null;
+  }
+  try {
+    const parsed = new URL(urlOrKey);
+    if (parsed.hostname.includes('backblazeb2.com')) {
+      let pathname = decodeURIComponent(parsed.pathname).replace(/^\//, '');
+      if (pathname.startsWith(`file/${B2_CONFIG.bucketName}/`)) {
+        pathname = pathname.replace(`file/${B2_CONFIG.bucketName}/`, '');
+      }
+      return pathname;
+    }
+  } catch (e) {}
+  return null;
+}
+
+/**
+ * Asynchronously resolves any B2 URL or key to an authorized, presigned GET URL.
+ * If the URL is already signed or not a B2 asset, it returns the input unchanged.
+ */
+export async function resolveB2Url(urlOrKey: string | undefined | null): Promise<string> {
+  if (!urlOrKey) return '';
+  const key = extractB2Key(urlOrKey);
+  if (!key) return urlOrKey;
+
+  // If already signed with active signature
+  if (urlOrKey.includes('X-Amz-Signature=')) {
+    return urlOrKey;
+  }
+
+  // Check in-memory cache
+  const cached = presignedCache.get(key);
+  const now = Date.now();
+  if (cached && cached.expiresAt > now + 3600 * 1000) {
+    return cached.url;
+  }
+
+  try {
+    const signed = await getB2PresignedUrl(key, 604800); // 7 days validity
+    presignedCache.set(key, { url: signed, expiresAt: now + 604800 * 1000 });
+    return signed;
+  } catch (e) {
+    console.error('Failed to presign B2 URL:', e);
+    return urlOrKey;
+  }
+}
+
+/**
+ * React hook to automatically resolve and sign any B2 storage image URL.
+ */
+export function useB2ImageUrl(urlOrKey: string | undefined | null): string {
+  const [resolvedUrl, setResolvedUrl] = useState<string>(() => {
+    if (!urlOrKey) return '';
+    const key = extractB2Key(urlOrKey);
+    if (!key) return urlOrKey;
+    if (urlOrKey.includes('X-Amz-Signature=')) return urlOrKey;
+    const cached = presignedCache.get(key);
+    if (cached && cached.expiresAt > Date.now() + 3600 * 1000) {
+      return cached.url;
+    }
+    return '';
+  });
+
+  useEffect(() => {
+    if (!urlOrKey) {
+      setResolvedUrl('');
+      return;
+    }
+    const key = extractB2Key(urlOrKey);
+    if (!key) {
+      setResolvedUrl(urlOrKey);
+      return;
+    }
+    if (urlOrKey.includes('X-Amz-Signature=')) {
+      setResolvedUrl(urlOrKey);
+      return;
+    }
+    let isCurrent = true;
+    resolveB2Url(urlOrKey).then((signed) => {
+      if (isCurrent) setResolvedUrl(signed);
+    });
+    return () => {
+      isCurrent = false;
+    };
+  }, [urlOrKey]);
+
+  return resolvedUrl || urlOrKey || '';
 }
 
 // -------------------------------------------------------------

@@ -1,4 +1,5 @@
 import { Slide } from '../../../services/firebaseService';
+import { resolveB2Url } from '../../../services/b2StorageService';
 
 // Collects every external image URL a slide may render, so they can be warmed
 // in the browser cache before the slide goes live.
@@ -22,11 +23,14 @@ const warmed = new Set<string>();
 // objects. The browser caches the bytes, so when the slide later mounts its
 // <img> the pixels are already decoded and there is no load-in lag.
 export function preloadImages(urls: Iterable<string>): void {
-  for (const url of urls) {
-    if (!url || warmed.has(url)) continue;
-    warmed.add(url);
-    const img = new Image();
-    img.decoding = 'async';
-    img.src = url;
+  for (const rawUrl of urls) {
+    if (!rawUrl) continue;
+    resolveB2Url(rawUrl).then(url => {
+      if (!url || warmed.has(url)) return;
+      warmed.add(url);
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = url;
+    }).catch(() => {});
   }
 }

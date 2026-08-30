@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion, Variants } from 'framer-motion';
 import { Images } from 'lucide-react';
 import { Slide } from '../../../services/firebaseService';
+import { useB2ImageUrl } from '../../../services/b2StorageService';
 import { preloadImages } from './imagePreload';
 
 interface SlideshowSlideProps {
@@ -56,6 +57,10 @@ export default function SlideshowSlide({ slide, preview = false }: SlideshowSlid
     preloadImages([images[(index + 1) % images.length]]);
   }, [index, images]);
 
+  const safeIndex = Math.min(index, Math.max(0, images.length - 1));
+  const currentRawSrc = images[safeIndex] || '';
+  const resolvedSrc = useB2ImageUrl(currentRawSrc);
+
   if (images.length === 0) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-black text-gray-500 gap-2">
@@ -66,8 +71,6 @@ export default function SlideshowSlide({ slide, preview = false }: SlideshowSlid
   }
 
   const variant = VARIANTS[animation] || VARIANTS.slide;
-  const safeIndex = Math.min(index, images.length - 1);
-  const src = images[safeIndex];
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-black">
@@ -83,7 +86,7 @@ export default function SlideshowSlide({ slide, preview = false }: SlideshowSlid
           className="absolute inset-0 flex items-center justify-center"
         >
           {/* Fit by height: height fills the stage, width follows aspect ratio. */}
-          <img src={src} alt="" className="h-full w-auto max-w-none object-contain" />
+          <img src={resolvedSrc || currentRawSrc} alt="" className="h-full w-auto max-w-none object-contain" />
         </motion.div>
       </AnimatePresence>
     </div>

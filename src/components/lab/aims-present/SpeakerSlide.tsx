@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, Variants } from 'framer-motion';
 import { User } from 'lucide-react';
 import { Slide, Person } from '../../../services/firebaseService';
+import { useB2ImageUrl } from '../../../services/b2StorageService';
 import { AWARDS } from './templates';
 import { Confetti, Sparkles, AwardsBackground, AwardsFrame, AwardsFooter, awardsKeyframes, awardsContainer as container, awardsItem as item } from './awardsShared';
 
@@ -88,7 +89,8 @@ export default function SpeakerSlide({ slide }: { slide: Slide }) {
 
 function PersonPhoto({ person, size }: { person: Person | null; size: number }) {
   const [err, setErr] = useState(false);
-  useEffect(() => { setErr(false); }, [person?.photoUrl]);
+  const resolvedPhotoUrl = useB2ImageUrl(person?.photoUrl);
+  useEffect(() => { setErr(false); }, [person?.photoUrl, resolvedPhotoUrl]);
   return (
     <div
       className="rounded-full overflow-hidden flex items-center justify-center mx-auto"
@@ -100,8 +102,8 @@ function PersonPhoto({ person, size }: { person: Person | null; size: number }) 
         boxShadow: `0 0.4cqmin 2cqmin ${AWARDS.navy}1f`,
       }}
     >
-      {person?.photoUrl && !err ? (
-        <img src={person.photoUrl} alt="" className="w-full h-full object-cover" onError={() => setErr(true)} />
+      {resolvedPhotoUrl && !err ? (
+        <img src={resolvedPhotoUrl} alt="" className="w-full h-full object-cover" onError={() => setErr(true)} />
       ) : (
         <User style={{ width: '45%', height: '45%', color: AWARDS.accent }} />
       )}

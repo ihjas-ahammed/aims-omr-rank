@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ImageOff, User } from 'lucide-react';
 import { Slide, Person, PresentationSettings, DEFAULT_PRESENTATION_SETTINGS } from '../../../services/firebaseService';
+import { useB2ImageUrl } from '../../../services/b2StorageService';
 import SpeakerSlide from './SpeakerSlide';
 import CongratsSlide from './CongratsSlide';
 import TitleSlide from './TitleSlide';
@@ -20,9 +21,10 @@ const ANCHOR_H: Record<string, string> = { left: 'flex-start', center: 'center',
 
 export default function SlideView({ slide, preview = false, settings }: SlideViewProps) {
   const [imgError, setImgError] = useState(false);
+  const resolvedImageUrl = useB2ImageUrl(slide?.imageUrl);
 
   // Reset the error state whenever the image source changes.
-  useEffect(() => { setImgError(false); }, [slide?.imageUrl]);
+  useEffect(() => { setImgError(false); }, [slide?.imageUrl, resolvedImageUrl]);
 
   if (!slide) {
     return (
@@ -38,11 +40,11 @@ export default function SlideView({ slide, preview = false, settings }: SlideVie
   if (slide.type === 'image') {
     return (
       <div className="w-full h-full flex items-center justify-center bg-black overflow-hidden">
-        {slide.imageUrl && !imgError ? (
+        {resolvedImageUrl && !imgError ? (
           // Fit by height: a portrait image on a landscape screen fills the full
           // height and is centered, never letterboxed top/bottom.
           <img
-            src={slide.imageUrl}
+            src={resolvedImageUrl}
             alt=""
             className="h-full w-auto max-w-none object-contain"
             onError={() => setImgError(true)}
@@ -110,7 +112,8 @@ export default function SlideView({ slide, preview = false, settings }: SlideVie
 
 function PersonCard({ person, active, scale }: { person: Person; active: boolean; scale: number }) {
   const [imgError, setImgError] = useState(false);
-  useEffect(() => { setImgError(false); }, [person.photoUrl]);
+  const resolvedPhotoUrl = useB2ImageUrl(person.photoUrl);
+  useEffect(() => { setImgError(false); }, [person.photoUrl, resolvedPhotoUrl]);
 
   // Sizes in cqmin (1% of the smaller container dimension) × the global scale.
   // Active speaker is bigger + bright; others shrink, dim, and desaturate.
@@ -128,8 +131,8 @@ function PersonCard({ person, active, scale }: { person: Person; active: boolean
           border: active ? '0.7cqmin solid #8b5cf6' : '0.3cqmin solid #374151',
         }}
       >
-        {person.photoUrl && !imgError ? (
-          <img src={person.photoUrl} alt="" className="w-full h-full object-cover" onError={() => setImgError(true)} />
+        {resolvedPhotoUrl && !imgError ? (
+          <img src={resolvedPhotoUrl} alt="" className="w-full h-full object-cover" onError={() => setImgError(true)} />
         ) : (
           <User className="text-gray-600" style={{ width: '50%', height: '50%' }} />
         )}

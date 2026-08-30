@@ -331,17 +331,16 @@ export default function App() {
 
   useEffect(() => {
     const handleHashAndPathChange = () => {
-      const path = window.location.pathname;
-      const hash = window.location.hash;
-      if (path === '/form/studyprogress' || path === '/studyprogress') {
-        if (hash.includes('admin')) {
-          setView('study-progress-admin');
-        } else {
-          setView('study-progress-form');
-        }
-      } else if (path === '/admin/studyprogress' || hash.includes('studyprogress-admin')) {
-        setView('study-progress-admin');
+      const nextView = resolveInitialView();
+      const present = parsePresentRoute(window.location.pathname);
+      if (present?.id) {
+        setPresentId(present.id);
       }
+      const examRoute = parseOnlineExamRoute(window.location.pathname, window.location.hash, window.location.search);
+      if (examRoute?.examId) {
+        setOnlineExamId(examRoute.examId);
+      }
+      setView(nextView);
     };
     window.addEventListener('hashchange', handleHashAndPathChange);
     window.addEventListener('popstate', handleHashAndPathChange);
@@ -1026,7 +1025,26 @@ export default function App() {
     view === 'admin-online-exam-detail' ||
     view === 'lab-timetable' ||
     view === 'aims-present-view' || 
+    view === 'aims-present-control' ||
     (view as string) === 'lab-improvement-responses-public';
+
+  if (view === 'aims-present-view') {
+    const finalPresentId = presentId || parsePresentRoute(window.location.pathname)?.id || '';
+    return <PresentView presentationId={finalPresentId} />;
+  }
+
+  if (view === 'aims-present-control') {
+    const finalPresentId = presentId || parsePresentRoute(window.location.pathname)?.id || '';
+    return (
+      <PresentControl
+        presentationId={finalPresentId}
+        onBack={() => {
+          window.history.pushState({}, '', '/aims-present');
+          setView('lab-aims-present');
+        }}
+      />
+    );
+  }
 
   if (view === 'lab-timetable') {
     return (
