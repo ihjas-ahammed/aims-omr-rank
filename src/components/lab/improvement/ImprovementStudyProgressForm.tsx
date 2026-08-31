@@ -1217,7 +1217,7 @@ export default function ImprovementStudyProgressForm({ onNavigateAdmin }: Improv
                 )}
               </div>
               <h3 className="text-sm sm:text-base font-bold text-white mt-1">
-                Did you study today's Plus One topics?
+                Did you study today's Plus Two topics?
               </h3>
             </div>
 
