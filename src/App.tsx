@@ -30,6 +30,8 @@ import StudyProgressForm from './components/lab/study-progress/StudyProgressForm
 import StudyProgressAdmin from './components/lab/study-progress/StudyProgressAdmin';
 import CompensationForm from './components/lab/compensation/CompensationForm';
 import CompensationAdmin from './components/lab/compensation/CompensationAdmin';
+import TeacherLogForm from './components/lab/teacher-log/TeacherLogForm';
+import TeacherLogAdmin from './components/lab/teacher-log/TeacherLogAdmin';
 
 import { 
   ExamDashboard, 
@@ -74,7 +76,7 @@ const DEFAULT_ANSWER_KEY = `{
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public' | 'teacher-log-form' | 'teacher-log-admin';
 
 // Parse /aims-present/<mode>/<id> from a pathname. Returns null if it isn't a presenter route.
 function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dashboard'; id: string | null } | null {
@@ -140,6 +142,16 @@ function resolveInitialView(): ViewState {
     if (onlineExam.mode === 'student-form') return 'online-exam-portal';
   }
 
+  if (path === '/form/teacher' || path === '/teacher' || path === '/form/teacherlog' || path === '/form/teacherslog' || path === '/teacherlog') {
+    if (hash.includes('admin')) {
+      return 'teacher-log-admin';
+    }
+    return 'teacher-log-form';
+  }
+  if (path === '/admin/teacher' || path === '/admin/teacherslog' || path === '/admin/teacherlog' || path === '/admin/teacher-log' || hash.includes('teacher-admin')) {
+    return 'teacher-log-admin';
+  }
+
   if (path === '/form/studyprogress' || path === '/studyprogress') {
     if (hash.includes('admin')) {
       return 'study-progress-admin';
@@ -183,8 +195,17 @@ function resolveInitialView(): ViewState {
     const lastActivePortal = localStorage.getItem('aims_last_active_portal');
     const hasImprovementProfile = !!localStorage.getItem('improvement_study_progress_active_profile');
     const hasStudyProgressProfile = !!localStorage.getItem('study_progress_student_profile');
+    const hasTeacherProfile = !!localStorage.getItem('aims_teacher_profile');
 
     // Priority 1: User's explicit last visited portal
+    if (lastActivePortal === 'teacher-log-form') {
+      window.history.replaceState(null, '', '/form/teacher');
+      return 'teacher-log-form';
+    }
+    if (lastActivePortal === 'teacher-log-admin') {
+      window.history.replaceState(null, '', '/admin/teacher');
+      return 'teacher-log-admin';
+    }
     if (lastActivePortal === 'improvement-form') {
       window.history.replaceState(null, '', '/form/improvement');
       return 'improvement-form';
@@ -216,7 +237,7 @@ function resolveInitialView(): ViewState {
       return lastActivePortal as ViewState;
     }
 
-    // Priority 2: Fallback to existing student profile on device
+    // Priority 2: Fallback to existing profile on device
     if (hasImprovementProfile) {
       window.history.replaceState(null, '', '/form/improvement');
       return 'improvement-form';
@@ -1014,6 +1035,8 @@ export default function App() {
   };
 
   const isPublicView = 
+    view === 'teacher-log-form' || 
+    view === 'teacher-log-admin' || 
     view === 'improvement-form' || 
     view === 'compensation-form' ||
     (view as string) === 'lab-compensation-responses-public' ||
@@ -1136,6 +1159,28 @@ export default function App() {
           window.location.hash = '';
           setView('study-progress-form');
         }} 
+      />
+    );
+  }
+
+  if ((view as string) === 'teacher-log-form') {
+    return (
+      <TeacherLogForm 
+        onNavigateAdmin={() => {
+          window.history.pushState({}, '', '/admin/teacher');
+          setView('teacher-log-admin');
+        }}
+      />
+    );
+  }
+
+  if ((view as string) === 'teacher-log-admin') {
+    return (
+      <TeacherLogAdmin 
+        onBack={() => {
+          window.history.pushState({}, '', '/form/teacher');
+          setView('teacher-log-form');
+        }}
       />
     );
   }

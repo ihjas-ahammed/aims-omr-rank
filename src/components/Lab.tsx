@@ -82,6 +82,27 @@ export default function Lab({ onNavigate }: LabProps) {
 
         <div 
           onClick={() => {
+            window.history.pushState({}, '', '/form/teacher');
+            window.location.reload();
+          }}
+          className="bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-blue-400 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-blue-100 text-blue-700 rounded-lg group-hover:bg-blue-200 transition-colors">
+              <ClipboardList className="w-6 h-6" />
+            </div>
+            <span className="px-2 py-0.5 bg-blue-600 text-white text-[10px] font-black rounded-md uppercase tracking-wider">
+              NEW
+            </span>
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Teacher's Log (/form/teacher)</h3>
+          <p className="text-sm text-gray-700 flex-1">
+            Official NCERT chapter & subsection checklist for teachers across batches (B1, B2, B3 for Plus Two, A1, A2 for Plus One), real-time cloud sync, and admin progress matrix (/admin/teacher).
+          </p>
+        </div>
+
+        <div 
+          onClick={() => {
             window.history.pushState({}, '', '/form/studyprogress');
             window.location.reload();
           }}
