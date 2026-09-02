@@ -32,6 +32,7 @@ import CompensationForm from './components/lab/compensation/CompensationForm';
 import CompensationAdmin from './components/lab/compensation/CompensationAdmin';
 import TeacherLogForm from './components/lab/teacher-log/TeacherLogForm';
 import TeacherLogAdmin from './components/lab/teacher-log/TeacherLogAdmin';
+import { Sem5StudyProgressForm } from './components/lab/sem5-progress';
 
 import { 
   ExamDashboard, 
@@ -76,7 +77,7 @@ const DEFAULT_ANSWER_KEY = `{
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public' | 'teacher-log-form' | 'teacher-log-admin';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public' | 'teacher-log-form' | 'teacher-log-admin' | 'sem5-progress-mathematics' | 'sem5-progress-physics';
 
 // Parse /aims-present/<mode>/<id> from a pathname. Returns null if it isn't a presenter route.
 function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dashboard'; id: string | null } | null {
@@ -133,6 +134,32 @@ function resolveInitialView(): ViewState {
   const path = window.location.pathname;
   const hash = window.location.hash;
   const search = window.location.search;
+
+  // Check Semester 5 Study Progress Routes
+  if (
+    path === '/form/progress/mathematics/5' || 
+    path === '/form/progress/mathematics/sem5' || 
+    path === '/form/progress/math/5' || 
+    path === '/form/progress/maths/5' || 
+    path === '/progress/mathematics/5' || 
+    path === '/progress/math/5' ||
+    path === '/form/progress/mathematics' ||
+    path === '/form/progress/math'
+  ) {
+    return 'sem5-progress-mathematics';
+  }
+
+  if (
+    path === '/form/progress/physics/5' || 
+    path === '/form/progress/physics/sem5' || 
+    path === '/form/progress/phy/5' || 
+    path === '/progress/physics/5' || 
+    path === '/progress/phy/5' ||
+    path === '/form/progress/physics' ||
+    path === '/form/progress/phy'
+  ) {
+    return 'sem5-progress-physics';
+  }
 
   // Check Online Exam Routes
   const onlineExam = parseOnlineExamRoute(path, hash, search);
@@ -1035,6 +1062,8 @@ export default function App() {
   };
 
   const isPublicView = 
+    view === 'sem5-progress-mathematics' ||
+    view === 'sem5-progress-physics' ||
     view === 'teacher-log-form' || 
     view === 'teacher-log-admin' || 
     view === 'improvement-form' || 
@@ -1050,6 +1079,14 @@ export default function App() {
     view === 'aims-present-view' || 
     view === 'aims-present-control' ||
     (view as string) === 'lab-improvement-responses-public';
+
+  if (view === 'sem5-progress-mathematics') {
+    return <Sem5StudyProgressForm subject="mathematics" />;
+  }
+
+  if (view === 'sem5-progress-physics') {
+    return <Sem5StudyProgressForm subject="physics" />;
+  }
 
   if (view === 'aims-present-view') {
     const finalPresentId = presentId || parsePresentRoute(window.location.pathname)?.id || '';

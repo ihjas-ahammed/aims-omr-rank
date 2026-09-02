@@ -1,0 +1,3634 @@
+================================================================================
+FILE: EXPLORATORY_DATA_ANALYSIS_USING_PYTHON.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+  
+CALICUT UNIVERSITY – FOUR-YEAR 
+UNDERGRADUATE PROGRAMME (CU-FYUGP) 
+ BSc PHYSICS HONOURS 
+ 
+Programme B.Sc. Physics Honours 
+Course Title EXPLORATORY DATA ANALYSIS USING PYTHON 
+Type of Course Major Elective (SPECIALIZATION IV: DATA SCIENCE AND 
+ARTIFICIAL INTELLIGENCE) 
+Semester V 
+Academic Level 300 -399 
+Course Details Credit Lecture 
+per week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total 
+Hours 
+4 4 - - 60 
+Pre-requisites 1. Fundamental Programming Concepts in Python 
+2. Basic idea of Statistics 
+Course 
+Summary 
+This course provides insight into the basic concepts of data analysis and  
+different visualization tools and techniques and  teaches  the  
+application  of  these  techniques  using  Python packages. 
+   
+Course Outcomes (CO):   
+CO CO Statement Cognitive 
+Level* 
+Knowledge 
+Category# 
+Evaluation Tools 
+used 
+CO1 Understand the types of data and the 
+applications of data science 
+U C Instructor-create
+d exams / Quiz 
+CO2 Analyse the irregularities present in 
+the data and perform data cleaning 
+An C Problem-solving 
+assessments 
+CO3 Become familiar with data format & 
+programs used in data analysis 
+U F Practical 
+Assignment / 
+Observation of 
+Practical Skills 
+246 
+ 
+Page 247 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+CO4 Understand & apply Pandas module 
+for data analysis 
+U, 
+Ap 
+P Instructor-created 
+exams, Practical 
+Assignment / 
+Observation of 
+Practical Skills 
+CO5 Understand & apply Seaborn 
+module for data visualization 
+U, 
+Ap 
+P Instructor-created 
+exams, Practical 
+Assignment / 
+Observation of 
+Practical Skills 
+  
+CO6 
+  
+Learners will develop skills in 
+advanced features of spreadsheets 
+such as macros, protecting data 
+sheets and workbooks, utilizing  
+split,  freeze,  and  hide  options 
+effectively 
+  
+Ap 
+  
+P 
+Assignments/ Case 
+Studies 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create(C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) 
+Procedural Knowledge (P) Metacognitive Knowledge (M)  
+   
+Detailed Syllabus: 
+  
+  Module   Unit   Content Hr
+s 
+(48+12
+) 
+  Mar
+k 70 
+I Introduction to Data Science 8 10 
+1 Introduction to Data Science-Definition 2 
+2 Evolution of Data Science 2 
+3 Data Science Roles 2 
+4 Application of data sciences. 2 
+References 
+1.   O'Neil, Cathy, and Rachel Schutt. Doing data science: Straight talk from the 
+frontline. " O'Reilly Media, Inc.", 2013. 
+2.   Machine Learning in Data Science using Python, Dr. R. Nageswara Rao, 
+Dream tech press, 2022 
+3. Shah, Chirag. A  Hands-On  Introduction  to  Data  Science. United  Kingdom, 
+Cambridge  University Press, 2020 
+247 
+ 
+Page 248 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+II Data Collection and Data Pre-Processing 12 18 
+5 Data and Data Attributes , Types of Data & Data 
+Attributes 
+2 
+6 Data Collection Strategies 2 
+7 Data Pre-Processing , Data Cleaning 2 
+8 Data Integration and Transformation 3 
+9 Data Reduction and Discretization 3 
+  References 
+           Chapter 2, 3 of Book 2 
+  Data Analysis and Manipulation using Pandas 12 18 
+III 10 Introducing different data file formats: csv, xls, 
+tab, dat formats. 
+2 
+11 Series - constructing from an array, using 
+explicitly defined indices, using a dictionary 
+2 
+12 Data Frame - constructing from arrays, 
+dictionaries, structured arrays, and series, Indexing 
+of data frames 
+2 
+13 Arithmetic and Binary operations on Data frame 2 
+14 Broadcasting operations 2 
+15 Universal functions, melt() and pivot() 2 
+  References 
+       Chapter 5 of Book 1 
+IV Data Visualization using Seaborn 16 24 
+16 Review of Data Visualization using matplotlib 2 
+17 Loading datasets in Seaborn, Distribution plot 2 
+18 Count plot, box plot, scatter plot, joint plot. 3 
+19 Line Plot, displaying scatter plot with regression 
+line 
+2 
+20 Creating subplots 3 
+21 Heat map - cat plot 2 
+22 Violin plot - pair plot. 2 
+  References 
+          Chapter 6 of Book 1 
+248 
+ 
+Page 249 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+V   Open  ended Module  
+  
+Hands-on Data Visualization:  
+  Working with Pandas data frames 
+  Basic plots using Matplotlib 
+  Distribution Plots: Histogram, Density Plot, Box 
+Plot, Violin Plot etc 
+Plotting Geospatial Data 
+Introduction to Geoplotlib, The Design Principles of 
+Geoplotlib 
+Geospatial Visualizations - Choropleth Plot, GeoJSON 
+File 
+Introduction to Folium 
+Visualizing Data: Building a Google map from 
+geocoded data 
+Making Things Interactive with Bokeh : Introduction to
+Bokeh, Concepts of Bokeh, Interfaces in Bokeh 
+ Bokeh Server, Presentation, Integrating, Adding 
+Widgets 
+12   
+Books and References 
+1.  Data Science and Machine Learning using Python by Reema Thereja Mc Graw 
+Hill(Book1) 
+2. Data Mining Concepts and Techniques by Jiawei Han  , Elsiever(Book 2) 
+3. O'Neil, Cathy, and Rachel Schutt. Doing data science: Straight talk from the frontline. 
+" O'Reilly Media, Inc.", 2013. 
+4. Machine Learning in Data Science using Python, Dr. R. Nageswara Rao, Dream tech 
+press, 2022 
+  
+Mapping of COs with PSOs and POs : 
+  
+ PS
+O1 
+PS
+O2 
+PSO
+3 
+PS
+O4 PS
+O5 
+PSO
+6 
+PO1 PO
+2 
+PO
+3 
+PO
+4 
+PO
+5 PO
+6 
+PO
+7 
+CO 1 2 0 1 0 2 0 2 0 1 2 2 0 0 
+CO 2 1 2 2 1 1 2 2 0 2 2 2 0 0 
+CO 3 2 1 2 1 1 1 2 0 1 2 2 0 0 
+CO 4 2 1 2 2 2 2 2 0 2 3 3 0 1 
+249 
+ 
+Page 250 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+CO 5 2 1 2 2 2 2 2 0 2 3 3 0 1 
+CO 6 1 2 2 1 1 2 2 0 2 2 2 0 0 
+ 
+ Correlation Levels: 
+Level Correlation 
+0 Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+Assessment Rubrics: 
+▪ Quiz / Discussion / Seminar  
+▪ InternalTheory/Practical Exam  
+▪ Assignments /Viva 
+▪ End Semester Exam (70%) 
+Mapping of COs to Assessment Rubrics 
+  Internal Theory 
+/Practical Exam 
+Assignment 
+/Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓ ✓    ✓ 
+CO 2 ✓ ✓    ✓ 
+CO 3 ✓ ✓   ✓ 
+CO 4 ✓ ✓   ✓ 
+CO 5 ✓ ✓   ✓ 
+CO 6   ✓ ✓   
+  
+250 
+ 
+Page 251 of 627
+
+================================================================================
+FILE: FOUNDATIONS_OF_DATA_SCIENCE.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+ CALICUT UNIVERSITY – FOUR-YEAR 
+UNDERGRADUATE PROGRAMME (CU-FYUGP) 
+ BSc PHYSICS HONOURS 
+ 
+Programme B. Sc. Physics Honours 
+Course Title FOUNDATIONS OF DATA SCIENCE 
+Type of Course Major Elective (SPECIALIZATION IV: DATA SCIENCE AND 
+ARTIFICIAL INTELLIGENCE) 
+Semester V 
+Academic Level 300 - 399 
+Course Details Credit Lecture 
+per week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total 
+Hours 
+4 4 - - 60 
+Pre-requisites 1. Fundamental Programming Concepts in Python 
+2. Basic idea of linear algebra 
+Course 
+Summary 
+The course will introduce the fundamental concepts of linear algebra, 
+probability and statistics required for a program in data science 
+  
+  
+Course Outcomes (CO):   
+CO CO Statement Cognitive 
+Level* 
+Knowledge 
+Category# 
+Evaluation 
+Tools  used 
+CO1 tudents will evaluate eigenvalues and 
+igenvectors to decompose matrices, 
+nabling them to analyze and interpret 
+ata transformations effectively 
+An P nstructor- 
+reated exams / 
+Assignment 
+CO2 roficiency in solving linear 
+quations using  linear algebra and 
+nderstanding the geometric 
+nterpretation of solutions. 
+Ap P nstructor- 
+reated exams / 
+Assignment 
+CO3 tudents will apply fundamental 
+robability concepts to solve real- 
+world problems 
+Ap P Assignment / 
+Quiz 
+242 
+ 
+Page 243 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+CO4 tudents   will  utilize   statistical 
+echniques for data interpretation 
+nd decision-making. 
+Ap P nstructor- 
+reated exams / 
+Assignment 
+CO5 tudents   will   apply  sampling 
+echniques and hypothesis tests to 
+make inferences about populations 
+rom sample data, using one-tailed, 
+wo-tailed tests, and ANOVA for 
+nalysis. 
+Ap C Assignment / 
+Case Studies 
+CO6 
+Develop critical thinking and 
+roblem-solving skills 
+E M Assignment / 
+Case Studies 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create(C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) Procedural 
+Knowledge (P) Metacognitive Knowledge (M) 
+   Detailed Syllabus: 
+  
+  Module   Unit   Content Hrs 
+(48+12) 
+  Mark 
+I Linear Algebra 10 12 
+1 Matrices: Properties of matrix, Various kind of 
+Matrices 
+1 
+2 Elementary Transformations of Matrices and Rank of 
+Matrices 
+2 
+3 Determinants, Minors, Cofactors, Inverse of a matrix 2 
+4 Linear Independence: Characteristic equations, Eigen 
+values and Eigen Vector 
+2 
+5 Solving system of linear equations: Gauss Elimination 
+Method, Gauss Jordan method 
+3 
+  Relevant sections of Book 1 
+I
+I 
+Basic Statistics and Descriptive Measures 10 15 
+6 Measures of Central Tendency 2   
+7 Measures of Dispersion 2   
+8 Measures of Skewness 2   
+9 Measures of Kurtosis 2   
+10 Correlation and Regression 2   
+  Relevant sections of Book 2   
+  Theory of Probability 13 21 
+III 11 Classical and Empirical Probability 2   
+243 
+ 
+Page 244 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+12 Events, Algebra of events 2   
+13 Classical approach to probability, Axiomatic 
+definitions of probability, Simple problems 
+2   
+14 Theorems of probability - Addition Theorem, 
+Multiplication Theorem 
+2   
+15 Conditional probability 2   
+16 Bayes’ Theorem  and Geometrical Probability – 
+Examples and Problems 
+3   
+Relevant sections of Book 2   
+I
+V 
+Advanced Probability Distributions 15 22 
+17 Discrete and continuous random variables and 
+probability distribution 
+2 
+18 Binomial distribution: Definition, Expectation, 
+Variance, Moment Generating Function and 
+Problems 
+3 
+19 Poisson distribution: Definition, Expectation, 
+Variance, Moment Generating Function and 
+Problems 
+3 
+20 Normal distribution: Definition, Expectation, 
+Variance, Moment Generating Function, Standard 
+normal curve and Problems 
+3 
+21 Testing of Hypothesis: General principles of testing, 
+Two types of errors 
+2 
+22 Type of Testing: T-Test, ANOVA-Test, Chi-square 
+test (Basics only) 
+2 
+  Relevant sections of Book 2 
+V   Open Ended Module 12   
+ Books and References: 
+1. Gilbert Strang, “Introduction to Linear Algebra”, Wellesley-Cambridge 
+Press (Book 1) 
+2. Fundamentals of Mathematical Statistics. S.C. Gupta , V.K. Kapoor, 
+Sultan Chand & Sons, 2020 (Book 2) 
+3. Introduction to Mathematical Statistics, Hogg R V Craig A T, Macmillan 
+4. Probability and Statistics for Engineers, Miller I Freund J E, Prentice Hall 
+of India 
+5. Advanced Engineering Mathematics, Erwin Kreyszig, Wiley 
+6. Higher Engineering Mathematics, B S Grewal, Khanna Publishers  
+  
+ 
+ 
+ 
+244 
+ 
+Page 245 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+Mapping of COs with PSOs and POs : 
+  
+ PSO 1 PSO-2 PSO 3 PSO4 PSO5 PSO6 PO1 PO2 PO3 PO4 PO5 PO 6 PO 7 
+CO 1 3 1 2 2 3 1 3 1 2 2 3 2 1 
+CO 2 3 1 2 2 3 1 3 1 2 2 3 2 1 
+CO 3 2 2 3 2 2 2 3 1 3 2 3 2 2 
+CO 4 2 2 3 2 2 2 3 1 3 2 3 2 2 
+CO 5 2 2 3 2 2 2 3 1 3 2 3 2 2 
+CO 6 1 1 2 2 1 2 3 3 2 2 3 3 3 
+ 
+Correlation Levels:   
+Level Correlation 
+0 Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+  Assessment Rubrics: 
+  
+▪         Quiz / Discussion / Seminar 
+▪         Internal Theory/Practical Exam 
+▪         Assignments /Viva 
+▪         End Semester Exam (70%) 
+  
+Mapping of COs to Assessment Rubrics 
+  
+ Internal Theory/ 
+Practical Exam 
+Assignment 
+/Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓ ✓   ✓ 
+CO 2 ✓ ✓   ✓ 
+CO 3 ✓ ✓   ✓ 
+CO 4 ✓ ✓   ✓ 
+CO 5 ✓ ✓   ✓ 
+CO 6   ✓ ✓   
+  
+245 
+ 
+Page 246 of 627
+
+================================================================================
+FILE: INTRODUCTORY_MEDICAL_PHYSICS.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+ 
+CALICUT UNIVERSITY – FOUR-YEAR UNDER 
+GRADUATE PROGRAMME (CU-FYUGP) 
+ 
+BSc PHYSICS HONOURS 
+ 
+Programme B.Sc. Physics Honours 
+Course Title INTRODUCTORY MEDICAL PHYSICS  
+Type of Course Major Elective (SPECIALIZATION III: PHYSICS IN BIOLOGY) 
+Semester V 
+Academic 
+Level 
+300 - 399 
+Course Details Credit Lecture 
+per week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total Hours 
+4 4 - - 60 
+Pre-requisites A strong foundation in physics, mathematics, and basic biology 
+concepts. 
+Course 
+Summary 
+The medical physics course provides an interdisciplinary exploration of 
+the application of physics principles to medical imaging, radiation 
+therapy, and radiation protection, emphasizing the theoretical and 
+practical aspects essential for understanding and contributing to 
+advancements in medical diagnostics and treatment. 
+ 
+Course Outcomes (CO):  
+CO CO Statement Cognitive 
+Level* 
+Knowledge 
+Category# 
+Evaluation 
+Tools used 
+CO1 Understand the concept of biometrics and 
+its 
+Understandin
+g 
+Conceptual 
+Knowledge 
+Written exams, 
+quizzes 
+CO2 Analyze bioelectric potentials and their Analyzing Conceptual 
+Knowledge 
+Laboratory 
+reports, 
+projects 
+CO3 Identify and explain the major physiological Understandin
+g 
+Conceptual 
+Knowledge 
+Presentations, 
+written exams 
+CO4 Describe the principles underlying medical Understandin
+g 
+Conceptual 
+Knowledge 
+Practical 
+assessments, 
+exams 
+227 
+ 
+Page 228 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+CO5 Apply the principles of medical imaging to Applying Procedural 
+Knowledge 
+Case studies, 
+laboratory 
+work 
+CO6 Evaluate the cognitive and technical aspects Evaluating Metacognitiv
+e Knowledge 
+Oral exams, 
+practical 
+exams 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive 
+Knowledge (M)    
+ 
+Detailed Syllabus: 
+Modul
+e 
+Uni
+t 
+Content Hrs 
+(48 
++12) 
+Mar
+ks 
+(70) 
+I Biometrics – Man as a Physical Instrument  9 13 
+1 Features of biomedical instrumentation system: Range, sensitivity, 
+linearity, hysteresis, frequency response, Accuracy, 
+Signal to noise ratio, stability, simplicity. 
+2  
+2 Aspects of Man-instrument system: Information gathering, diagnosis, 
+Evaluative, Monitoring, Control. 
+2  
+3 Components of the Man-Instrument system: The subject, stimulus, 
+the transducer, signal conditioning equipment, display 
+equipment, Recorder. 
+2  
+4 Physiological systems of the body - Biochemical system, 
+cardio-vascular, respiratory, nervous systems. (Sufficient exercises) 
+3  
+ Sections 1.2-1.6 of Book 1   
+II Bioelectric Potentials and Major Physiological Systems of Human Body   22 32 
+5 Sources of Bioelectric potentials: Resting and action potentials, 
+propagation of action potentials 
+2  
+6 Bio-electric potentials, ECG, EEG, EMG. 2  
+7 The heart and cardiovascular system: The heart, blood pressure, 
+characteristics of blood flow 
+3  
+8 Electrocardiography-electrodes and leads, principles of recording, 
+Measurement of blood pressure, direct and indirect methods (two 
+methods, qualitative ideas only). 
+3  
+9 Measurements in respiratory system: The physiology of respiratory 
+system 
+3  
+228 
+ 
+Page 229 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+10 Mechanics of breathing-working of Spirometer. 1  
+11 Nervous system-The anatomy of nervous system, neuronal 
+communication 
+3  
+12 Measurements from the nervous system, 
+neuronal firing measurements 
+2  
+13 Principles of EEG and EMG. 3  
+ Sections 3.1-3.3, 5.1-5.4, 6.1, 6.2, 8.1, 8.2, 10.1, 10.2,10,7 of Book 2   
+III                               Principles of Medical Imaging -1 8 12 
+14 Ultrasonic Imaging: properties of ultrasound 2  
+15 modes of ultrasound transmission-pulsed, continuous, pulsed 
+Doppler, ultrasound imaging, ultrasonic diagnosis, ultrasonic 
+transducers 
+2  
+16 Generation of Ionizing Radiation 2  
+17 Instrumentation for Diagnostic X Rays 2  
+18 Special Techniques 2  
+ Sections 9.2, 9.3, 14.1-14.3 of Book 1   
+IV                                  Principles of Medical Imaging-2 9 13 
+19 Radio-isotopes in Medical Diagnosis, Physics of Radioactivity 2  
+20 The Gamma Camera, Emission Computed Tomography (ECT), 
+Positron Emission Tomography (PET Scanner) 
+2  
+21 Principles of NMR Imaging Systems, Image Reconstruction 
+Techniques, Basic NMR Components. 
+3  
+22 Biological Effects of NMR Imaging, Advantages of NMR Imaging 
+System 
+2  
+ Sections 21.1, 21.2, 21.7, 21.9, 21.11, 22.1-22.5 of Book 2   
+    V                        Open Ended Module – Suggestive topics 12  
+ Biological effects of radiation, In vitro and in vivo testing, gamma rays for 
+imaging, radio pharmaceuticals, the gamma camera, single photo emission 
+computed tomography (SPECT), typical nuclear medicine images and 
+normal and abnormal manifestations (Techniques for radiation dosimetry by 
+K Mahesh and D R Vij, Wiley Eastern Limited) 
+Lasers in Medicine - effects of laser radiation on tissue, surgical uses of 
+Lasers, ophthalmic uses, photodynamic therapy, laser hazards-biological 
+effects, photo thermal effects, photochemical effects, laser hazards to the 
+  
+229 
+ 
+Page 230 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+eye, to skin, safe exposure. (Lasers in Medicine - An Introductory Guide, 
+Gregory Absten, Springer Science Publications) 
+Books and References:   
+1. Biomedical Instrumentation and measurement”, Leslie Cromwell, Prentice Hall of India, New 
+Delhi (Book 1) 
+2. Biomedical Instrumentation by R S Khandpur, Tata Mc Graw Hill Publication, New Delhi 
+(Book 2) 
+Mapping of COs with PSOs and POs : 
+ PSO
+1 
+PSO
+2 
+PSO
+3 
+PSO
+4 
+PS
+O5 
+PS
+O6 
+PO1 PO2 PO3 PO4 PO5 PO
+6 
+PO
+7 
+CO 1 0 1 0 0 0 0 2 2 2 0 0 0 0 
+CO 2 0 3 1 0 0 0 2 2 2 0 0 0 0 
+CO 3 0 0 2 0 0 0 2 2 2 0 0 0 0 
+CO 4 0 0 0 2 0 0 2 2 2 0 0 0 0 
+CO 5 0 0 0 0 2 0 2 2 2 0 0 0 0 
+CO 6 0 0 0 0 0 3 2 2 2 0 0 0 0 
+Correlation Levels: 
+Level Correlation 
+0 Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+Assessment Rubrics: 
+·        Quiz / Discussion / Seminar  
+·        InternalTheory/Practical Exam  
+·        Assignments /Viva 
+·        End Semester Exam (70%) 
+ Mapping of COs to Assessment Rubrics 
+  Internal Theory 
+/Practical Exam 
+Assignment 
+/Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓ ✓    ✓ 
+CO 2 ✓ ✓    ✓ 
+CO 3 ✓ ✓   ✓ 
+CO 4 ✓ ✓   ✓ 
+CO 5 ✓ ✓   ✓ 
+CO 6 ✓ ✓   ✓ 
+ 
+230 
+ 
+Page 231 of 627
+
+================================================================================
+FILE: MATERIALS_SCIENCE.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+ 
+CALICUT UNIVERSITY – FOUR-YEAR UNDER 
+GRADUATE PROGRAMME (CU-FYUGP) 
+ 
+BSc PHYSICS HONOURS 
+ 
+Programme B.Sc. Physics Honours 
+Course Title MATERIALS SCIENCE 
+Type of Course Major Elective (SPECIALIZATION I: MATERIALS SCIENCE) 
+Semester V 
+Academic 
+Level 
+300 - 399 
+Course Details Credit Lecture 
+per week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total Hours 
+4 4 - - 60 
+Pre-requisites A strong foundation in physics and chemistry. 
+Course 
+Summary 
+This course aims to provide students with a comprehensive 
+understanding of the fundamental principles underlying the behavior of 
+materials, as well as the cutting-edge technologies driving innovation in 
+this field. 
+ 
+Course Outcomes (CO):  
+CO CO Statement Cognitive 
+Level* 
+Knowledge 
+Category# 
+Evaluation 
+Tools used 
+CO1 Understand the various types of 
+materials, the bonding between the 
+elements and molecules, and type of 
+interacting forces among the 
+molecular systems  
+U, An F Instructor-creat
+ed exams / 
+Quiz 
+CO2 Develop a fundamental understanding 
+of the importance of the structure of 
+the compounds and performance of 
+materials. 
+U,R F Instructor-creat
+ed exams / 
+Quiz 
+196 
+ 
+Page 197 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+CO3 Gain knowledge about the different 
+types of materials that are used in 
+different applications and the 
+different properties of diversified 
+materials. 
+U, Ap F Instructor-creat
+ed exams / 
+Quiz 
+CO4 Familiarize students with advanced 
+characterization techniques used to 
+analyze materials structurally, 
+surface, optically, electrically and 
+magnetically.  
+U, An F Instructor-creat
+ed exams / 
+Quiz 
+CO5 Explore the applications of advanced 
+materials in various industries, energy 
+technology, and electronic and other 
+applications.. 
+U, An F Instructor-creat
+ed exams / 
+Quiz 
+CO6 Make the students capable of 
+developing various materials through 
+project work. 
+U, Ap F Instructor-creat
+ed exams / 
+Quiz 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) 
+Metacognitive Knowledge (M)    
+ 
+Detailed Syllabus: 
+Module Unit Content Hrs 
+(48 
++12) 
+Marks 
+(70) 
+I MATERIALS, INTERATOMIC FORCES, AND BONDING IN 
+SOLIDS 
+10 16 
+1 What is material science and  need of material science 
+(Elementary ideas only) 
+1  
+2 Classification of materials – metals, ceramics, polymers, 
+composites, Advanced materials, need of modern material 
+2  
+3 Bonding forces and energies, Primary Interatomic Bonds  2  
+4 Ionic Bonding, Covalent Bonding, Metallic Bonding, van der 
+Waals Bonding 
+3  
+5 Examples of anomalous volume expansion of water 2  
+ Sections 1.2 – 1.6, 2.5 – 2.8 of Book 1   
+197 
+ 
+Page 198 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+II Crystal Structure and Imperfections in Solids 10 16 
+6 Single Crystals, Polycrystalline materials, Anisotropy, 
+Nanocrystalline solids  
+3  
+7 Imperfections, Vacancies and Self Interstitials 2  
+8 Impurities in Solids, Specification of composition, Dislocations- 
+Linear defects, Interfacial defects, Volume defects 
+3  
+9 Atomic Vibrations, Microstructure, Grain size determination. 2  
+ Sections 3.13 to 3.17, 4.1 to 4.11 of Book 1   
+III TYPES OF MATERIALS 17 22 
+10 Conductors, insulators, and dielectrics: Thermal conductivity and 
+electrical resistivity  
+3  
+11 Drilling down: the origins and manipulation of electrical 
+properties,  
+3  
+12 Magnetic Materials: the physics and manipulation of magnetic 
+properties 
+2  
+13 Materials selection for magnetic design 2  
+14 Materials for optical devices: The interaction of materials and 
+radiation, the physics and manipulation of optical properties 
+4  
+15 The durability of Materials: oxidation, corrosion, and degradation 3  
+ Sections 14.1 – 14.4, 15.1 – 15.4, 16.1 – 16.4, 17.1 – 17.2 of Book 2   
+IV CHARACTERIZATION STUDIES AND TECHNIQUES 11 16 
+16 Electrical and electronic measurements 2  
+17 Hall Effect in Semiconductors Introduction, 2  
+18  Magnetism and Magnetic Measurement 1  
+19 Introduction, Electrochemical Techniques 2  
+20 Introduction, Cyclic Voltammetry 1  
+21 Optical Microscopy, Photoluminescence Spectroscopy 2  
+22 Raman Spectroscopy of Solids. 1  
+Relevant sections from Book 3   
+V OPEN ENDED MODULE 12  
+198 
+ 
+Page 199 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ Synthesis of Gold / Silver Nanoparticle and Introductory Soft 
+Lithography Using PDMS 
+ 
+ 
+ 
+ Thin film deposition by spin coating or Dip coating or spray 
+pyrolysis techniques (Metal Oxides: any compound)  
+  
+  Solid State Reaction of Powder Ceramics   
+ Any two Sections from the  Chapter 8/9/10 of book 4, Book 5 or 
+reference 6 
+  
+Books and References: 
+1. Materials Science and Engineering An Introduction, 7th Edition by William D. Callister, Jr, John 
+Wiley & Sons, Inc (Book 1) 
+2. Materials Engineering, Science, Processing and Design: Michael Ashby, Hugh Shercliff and 
+David Cebon, Published by Elsevier Ltd (Book 2) 
+3. Characterization of Materials: Elton N. Kaufmann, Volumes 1 and 2, John Wiley and Sons 
+Publications,2023(Book 3) 
+4. Nanotechnology: Principles and Practices, Sulabha K. Kulkarni, Springer, 3rd Edition (Book 4) 
+5. Simple Chemical Methods for Thin Film Deposition: Synthesis and Applications, Springer, 
+ISBN 978-981-99-0960-5(Book 5) 
+6. Journal of Materials Science and Technology, 2013, 29 (5), 419 - 422  
+Mapping of COs with PSOs and POs : 
+ PSO
+1 
+PSO
+2 
+PSO
+3 
+PSO4 PS
+O5 
+PS
+O6 
+PO1 PO2 PO3 PO4 PO5 PO
+6 
+PO
+7 
+CO 1 3 2 2 1 3 3 2 2 3 2 2 3 2 
+CO 2 3 1 3 2 3 3 3 2 3 2 3 3 3 
+CO 3 3 2 3 1 3 3 3 2 3 2 2 3 2 
+CO 4 3 1 2 2 3 3 2 2 3 2 3 2 0 
+CO 5 3 2 3 2 3 3 3 2 3 2 3 3 2 
+CO 6 3 0 1 1 3 3 1 2 3 2 3 3 1 
+ 
+ 
+ 
+ 
+199 
+ 
+Page 200 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+Correlation Levels: 
+Level Correlation 
+0 Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+ 
+Assessment Rubrics: 
+▪ Quiz / Discussion / Seminar  
+▪ Internal Theory / Practical Exam  
+▪ Assignments / Viva 
+▪ End Semester Exam (70%) 
+ 
+Mapping of COs to Assessment Rubrics 
+  Internal Theory / 
+Practical Exam 
+Assignment 
+/ Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓ ✓    ✓ 
+CO 2 ✓ ✓    ✓ 
+CO 3 ✓ ✓   ✓ 
+CO 4 ✓ ✓   ✓ 
+CO 5 ✓ ✓   ✓ 
+CO 6   ✓ ✓   
+ 
+200 
+ 
+Page 201 of 627
+
+================================================================================
+FILE: OPTICS.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+ 
+CALICUT UNIVERSITY – FOUR-YEAR UNDER 
+GRADUATE PROGRAMME (CU-FYUGP) 
+ 
+BSc PHYSICS HONOURS 
+ 
+Programme B.Sc. Physics Honours 
+Course Title OPTICS 
+Type of Course Core in Major  
+Semester V 
+Academic Level 300 - 399 
+Course Details Credit Lecture 
+per week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total 
+Hours 
+4 3 - 2 75 
+Pre-requisites Fundamental understanding of basic physics principles, including optics, 
+electromagnetic waves, and mathematical concepts such as calculus and 
+trigonometry. 
+Course 
+Summary 
+The course offers an in-depth study of light phenomena, covering 
+polarization effects, diffraction phenomena, and their applications in 
+optical systems and technologies. 
+Course Outcomes (CO):  
+CO CO Statement Cognitive 
+Level* 
+Knowledge 
+Category# 
+Evaluation 
+Tools used 
+CO1 Define the basic principles 
+of optics. 
+Remember Definitions and 
+basic concepts 
+Quizzes 
+104 
+ 
+Page 105 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+CO2 Analyse optical phenomena 
+using Fermat's Principle, 
+such as reflection and 
+refraction. 
+Analyse Optical 
+phenomena and 
+causes 
+Research papers, 
+case studies 
+CO3 Apply the principles of 
+optics to design optical 
+systems. 
+Apply Application of 
+principles 
+Laboratory 
+experiments, 
+projects 
+CO4 Analyse optical phenomena 
+interference  
+Analyse Optical 
+phenomena and 
+causes 
+Research papers, 
+case studies 
+CO5 Apply diffraction 
+principles to analyze 
+patterns produced by 
+various apertures and 
+obstacles. 
+Apply Application of 
+principles 
+Laboratory 
+experiments, 
+simulations 
+CO6 Apply polarization 
+concepts to analyze optical 
+phenomena. 
+Apply Application of 
+principles 
+Laboratory 
+experiments, 
+simulations 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) 
+Metacognitive Knowledge (M)    
+ 
+Detailed Syllabus: 
+Module Unit Content Hrs 
+(45 
++30) 
+Marks 
+(70) 
+I FERMAT’S PRINCIPLE 8 15 
+1 Laws of reflection and refraction from Fermat’s Principle 2  
+2 Refraction and reflection at a single Spherical surface 2 
+3 The thin lens , Principal foci and focal length 2 
+105 
+ 
+Page 106 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 4 The Newton formula, lateral magnification 2 
+ Sections 3.1, 3.2, 4.1 – 4.7 of Book 1   
+II INTERFERENCE 16 25 
+5 Superpositions of two sinusoidal waves 1  
+6 Interference division of wavefront introduction  1 
+7 Interference of light waves  3 
+8 Fresnel’s two mirror and Fresnel’s Biprism 2 
+9 Interference with white light , Lloyd’s mirror , Phase change on 
+reflection 
+3 
+10 Interference by division of amplitude -Non reflecting films  3 
+11 Colours of thin films, Newton’s rings, Michelson interferometer  3 
+ Sections 13.5, 14.1, 14.3 – 14.12 , 15.1 – 15.4, 15.8 – 15.11 of Book1   
+III DIFFRACTION  10 15 
+12 Single- Slit Fraunhofer diffraction pattern 2  
+13 Two Slit Fraunhofer diffraction pattern 2 
+14 N Slit Fraunhofer diffraction pattern and Grating 2 
+15 Fresnel diffraction – Zone plate 2 
+16 Diffraction by straight edge  2 
+  Sections 18.1, 18.2, 18.6 – 18.8, 20.1 – 20.3, 20.6 of Book 1   
+IV POLARISATION  11 15 
+17 Polarisation Introduction  1  
+18 Production of linearly polarised light  2 
+106 
+ 
+Page 107 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+19 Effects of polariser and analyser  1 
+20 Double refraction -Huygens’ explanation 2 
+21 Wave plates  2 
+22 Production and analysis of different polarised light  3 
+ Sections  20.1 – 20.4, 20.5, 20.6.2 – 20.6.3, 20.8.3, 20.9.1, 20.17 – 20.20 of 
+Book 2 
+  
+V PRACTICALS 30  
+Conduct any 6 experiments from the given list and 1 additional experiment, 
+decided by the teacher-in-charge, related to the content of the course. The 7th 
+experiment may also be selected from the given list. Other experiments listed 
+here may be used as demonstrations of the concepts taught in the course. 
+ 
+ 
+ 
+1 Determine the refractive index of (a) given liquid and (b) the 
+material of a lens, by forming a liquid lens. 
+● Through this experiment the students are expected to get the 
+concepts of image formation, combination of lenses and 
+radius of curvature of the surface of lens.  
+● Determine the radius of curvature of the lens by Boy’s method 
+and hence calculate the refractive indices.  
+  
+2 Determine the focal length of the combination of two lenses 
+separated by a distance. 
+● Determine the focal lengths, f1 and f2 of the two lenses using 
+an illuminated cross‐slit screen holder, nodal slide(for placing 
+the lenses) and plane mirror arrangement. 
+● Place the two lenses separated by a distance d, determine the 
+focal length, F of the  combination and verify the relation  
+● + . 1
+𝐹 = 1
+𝑓1
+1
+𝑓2 − 𝑑
+𝑓1𝑓2
+● The combination of the lenses in the eyepiece of the 
+spectrometer/ travelling microscope may be used for the study. 
+● https://www.youtube.com/watch?v=IOlEEtyNPBg  
+● https://www.youtube.com/watch?v=tNo4Ipk74SU  
+  
+3 Determination of the dispersive power of a solid prism using a 
+spectrometer. 
+● Find the angle of the prism and the angle of minimum 
+deviation for prominent lines of the mercury spectrum using a 
+spectrometer. 
+  
+107 
+ 
+Page 108 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+● Calculate the refractive indices corresponding to the colors 
+and find the dispersive power of the material of the prism for 
+two pairs of wavelengths. 
+4 Refractive indices of quartz prism using spectrometer. 
+● Determine the refractive indices of quartz for the ordinary and 
+extraordinary rays of a sodium vapour lamp by arranging the 
+quartz prism at minimum deviation position in the 
+spectrometer. 
+● Verify the polarizations of the ordinary and extraordinary rays 
+using a polaroid.  
+  
+5 Determination of wavelengths of mercury spectrum using 
+diffraction grating and spectrometer. 
+● Arrange the grating at normal incidence.  
+● Standardize the grating using the green line of mercury and 
+then find the wavelengths of other prominent lines of the 
+spectrum.  
+  
+6 Newton’s rings-determination of the wavelength of sodium light 
+● Form of Newton’s rings in the air-film in between a 
+plano-convex lens and a glass plate using sodium-source. 
+● Determine the radius of curvature by Boy’s method and 
+determine the wavelength of the source. 
+● Optional: In experiment 5 and 6, record a short video of the 
+interference pattern, calibrate the video using scale marked on 
+the glass plate, analyse the video using Tracker tool. From the 
+intensity profile get the locations of the dark rings and 
+calculate the wavelength of the source/thickness of the sample 
+https://physlets.org/tracker/. 
+https://www.youtube.com/watch?v=UCCPkJpUQEw 
+  
+7 Air wedge-determination of the radius of a thin wire/human 
+hair/thin foil. 
+● Form  interference fringes using sodium-source, in the air-film 
+in between wedge formed by placing the given sample 
+between the glass plates. 
+● Measure the positions of the successive dark bands using a 
+travelling microscope and determine the angle of the wedge 
+and thickness of the sample given. 
+  
+8 Single slit diffraction using laser - Determination of slit width. 
+● The laser light diffracted from the narrow slit is allowed to fall 
+on a screen and record the maxima or minima points in a 
+paper. 
+● From the width of the central maxima or the position of 
+minimum intensity points, calculate the slit width. 
+● Verify the slit width using a traveling microscope. 
+● Wavelength of laser can be found using diffraction grating of 
+known N. 
+  
+108 
+ 
+Page 109 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+9 Analysis of the diffraction patterns using Tracker tool. 
+● Project the diffracted laser light from a narrow wire/single 
+slit/double slit/small rectangular/circular aperture into a 
+screen/wall and record a clear short video/image of the 
+diffraction pattern. 
+● Analyse the video/image using Tracker tool - calibrate using 
+the scale marked on the screen/wall and plot the intensity 
+profile. From the location of the maxima/minima, determine 
+the dimension of the scattering source. 
+● The size of the scattering source may be verified using a 
+microscope or by analysing the HD image of the source with 
+an image editing software.  
+● https://physlets.org/tracker/. 
+● https://www.youtube.com/watch?v=UCCPkJpUQEw   
+  
+10 Study the specific rotation of the sugar solution using a 
+polarimeter. 
+● Determine the specific rotation corresponding to different 
+concentrations of the sugar dissolved in water.  
+● Draw a graph between rotation and concentrations and verify 
+the linear relationship. 
+  
+11 Verification of Malus’s law using polarizer, analyzer and photo 
+detector 
+● Unpolarized light is allowed to pass through a polarizer and is 
+observed through an analyzer.  
+● Vary the angle between the axes of polarizer and analyzer and 
+measure the intensity of the light (current output of the 
+photodetector).  
+● Plot  and  graphs and verify Malus' law. θ − 𝐼 𝑐𝑜𝑠2θ − 𝐼
+  
+12 Spectrometer-Determination of the Cauchy’s constants of the 
+given prism 
+● Find the angle of the prism, the minimum deviation angles of 
+the prominent lines of the mercury spectrum and hence 
+calculate the refractive indices for the colors.  
+● Determine A and B from the  
+●  graph.  µ − 1
+λ2
+  
+Books and References:  
+1. Optics by Ajoy Ghatak; 6th Edition (Book 1) 
+2. A Text Book of Optics by N. Subrahmanyam, Brij Lal and M.N Avadhanulu; 2018 Revised 
+Edition (Book 2) 
+3. Optics by Eugene Hecht 
+4. Introduction to Modern Optics by Grant R. Fowles 
+109 
+ 
+Page 110 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+5. Introduction to optics by Frank L. Pedrotti, Leno M. Pedrotti 
+6. Fundamentals of Optics by Jenkins F 
+ 
+Mapping of COs with PSOs and POs : 
+ PSO1 PSO2 PSO3 PSO4 PSO
+5 
+PSO
+6 
+PO
+1 
+PO2 PO
+3 
+PO
+4 
+PO
+5 PO
+6 
+PO
+7 
+CO 1 2 0 0 0 2 0 2 1 0 0 1 1 1 
+CO 2 2 2 0 2 2 0 2 1 1 0 1 1 1 
+CO 3 2 1 0 3 2 1 2 1 1 1 1 1 1 
+CO 4 2 2 0 2 2 0 2 1 1 0 1 1 1 
+CO 5 2 1 0 2 2 1 2 1 1 1 1 1 1 
+CO 6 2 1 0 2 2 1 2 1 1 1 1 1 1 
+Correlation Levels: 
+Level Correlation 
+0 Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+Assessment Rubrics: 
+▪ Quiz / Discussion / Seminar  
+▪ Internal Theory / Practical Exam  
+▪ Assignments / Viva 
+▪ End Semester Exam (70%) 
+Mapping of COs to Assessment Rubrics 
+  Internal Theory / 
+Practical Exam 
+Assignment / 
+Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓ ✓    ✓ 
+CO 2 ✓ ✓    ✓ 
+CO 3 ✓ ✓   ✓ 
+CO 4 ✓ ✓   ✓ 
+CO 5 ✓ ✓   ✓ 
+CO 6   ✓ ✓   
+ 
+110 
+ 
+Page 111 of 627
+
+================================================================================
+FILE: PHOTONICS.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+ 
+CALICUT UNIVERSITY – FOUR-YEAR UNDER 
+GRADUATE PROGRAMME (CU-FYUGP) 
+ 
+BSc PHYSICS HONOURS 
+ 
+Programme B.Sc. Physics Honours 
+Course Title PHOTONICS 
+Type of Course Major Elective (SPECIALIZATION II: PHOTONICS) 
+Semester V 
+Academic 
+Level 
+300 – 399 
+Course Details Credit Lecture 
+per week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total 
+Hours 
+4 4 - - 60 
+Pre-requisites Fundamental knowledge in Optics  
+Course 
+Summary 
+Photonics is the science and technology of generating, controlling, and 
+detecting photons, which are particles of light. This course covers topics 
+such as the fundamentals of light-matter interaction, optical components 
+and systems, laser technology and fiber optics. It's a multidisciplinary 
+field that combines elements of physics, optics and materials science to 
+harness light for a wide range of practical purposes. 
+ 
+Course Outcomes (CO):  
+CO CO Statement Cognitiv
+e Level* 
+Knowledg
+e 
+Category
+# 
+Evaluation Tools 
+used 
+CO1 Understand the concept and principles 
+of energy levels, spontaneous emission 
+and stimulated emission, optical gain, 
+and threshold condition for lasing. 
+U C Written exams and 
+quizzes 
+CO2 Understand the principles and working 
+of various laser systems. 
+An p Presentations, 
+written exam 
+CO3 Giving a rigorous theoretical 
+background and framework for a 
+U C Written exams, 
+Assignments 
+210 
+ 
+Page 211 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+nonlinear optical effect, followed by 
+details of how such an effect is 
+implemented in real applications. 
+CO4 Understand the physical principles of 
+optical fiber and the loss mechanisms in 
+optical fiber. Demonstrate the 
+understanding of fiber optic sensors. 
+U & Ap C Written exams and 
+quizzes,experiment
+s 
+CO5 Apply Photonics principles to 
+real-world applications such as lasers 
+and Optical fiber 
+U & Ap C  Simple projects 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge (F) Conceptual Knowledge (C) Procedural Knowledge (P) 
+Metacognitive Knowledge (M)    
+ 
+Detailed Syllabus: 
+Modul
+e 
+Uni
+t 
+Content Hrs 
+(48+
+12) 
+Mar
+ks 
+(70) 
+I                                         LASERS: AN INTRODUCTION 15 25 
+1 Introduction, spontaneous and stimulated emission, main 
+components of the laser 
+2 
+2 Understanding optical amplification: The EDFA  1 
+3 The resonator, The lasing action. Optical resonators   3 
+4 Einstein’s equation and  Conditions for light amplification, 
+Metastable state, Population Inversion  
+3 
+5 Cavity life time, The threshold condition 2 
+6 Line shape function, Monochromaticity of laser beam   2 
+7 Laser Pumping – Two level system, Three level system 2 
+  Sections 26.1,  26.1.1,   26.1.2, 26.1.3, 26.1.4 , 26.1.5,  26.5,  
+26.6, 26.6.1, 26.6.2 , 26.6.3, 26.7, 26.9  of Book 1  
+  
+II LASER SYSTEMS  AND APPLICATIONS 8 10 
+8  Solid state lasers- Ruby Laser, Nd: YAG Laser 2 
+9  Liquid Lasers – Dye lasers 1 
+10 Gas Lasers – Helium-Neon laser, CO2 laser  1 
+11 Semiconductor Laser-Double heterojunction laser 2 
+12 Chemical Laser – HCl laser, HF laser, Free Electron laser 2 
+211 
+ 
+Page 212 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+  Sections 7.1, 7.5, 10.1, 10.2, 8.1, 8.5.1, 9.1, 10.3,  10.3.1, 
+10.3.2  of Book-2 
+ 
+III NONLINEAR OPTICS 11 
+13 Harmonic generation, Second Harmonic generation, Phase 
+Matching 
+3 15 
+14 Third Harmonic generation, Optical Mixing, Parametric 
+generation of light 
+3 
+15 Frequency Upconversion, Self-focusing of light  2 
+16 Multiphoton processes- Two photon and three photon 
+processes 
+3 
+  Sections 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 14.12, 14.2, 
+14.3, 14.7 of Book-2 
+  
+IV                                        OPTICAL FIBER BASICS  14 20 
+17 Introduction ,Some Historical Remarks 1 
+18 Total Internal Reflection, The Numerical Aperture 2 
+19 Attenuation in Optical Fibers 2 
+20 Multimode Fibers, Pulse Dispersion in Multimode Optical 
+Fibers, Dispersion and Maximum Bit Rates 
+4 
+21 Fiber Optic Sensors 2 
+22 TE Modes of a Symmetric Step Index Planar Waveguide 
+(qualitative idea only Physical Understanding of Modes, TM 
+Modes of a Symmetric Step Index Planar Waveguide 
+(qualitative idea only)  
+3 
+  Sections 27.1, 27.2, 27.3, 27.4, 27.7, 27.8, 27.10, 27.11, 
+27.14, 28.2, 28.3, 28.4 of Book-1 
+  
+V OPEN-ENDED MODULE: PROJECT / HANDS-ON 
+TRAINING 
+12  
+ Study the refraction of a laser beam in a glass slab and 
+measure its refractive index using total internal reflection. 
+  
+ Determine the numerical aperture and acceptance angle of an 
+optical fibre. 
+  
+ Measure the divergence of an edge emitting diode laser beam 
+by measuring the dimensions of the beam projected onto a 
+screen at different distances. Hence to calculate the beam 
+divergence and spot size of the given laser beam 
+  
+212 
+ 
+Page 213 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ References:  
+1. Optics by Ajoy Ghatak  5th Edition  (Book 1) 
+2. Laser and Nonlinear Optics by B B Laud  (Book 2) 
+  
+Mapping of COs with PSOs and POs : 
+ PSO
+1 
+PSO
+2 
+PSO
+3 
+PSO4 PS
+O5 
+PS
+O6 
+PO1 PO2 PO3 PO4 PO5 PO
+6 
+PO
+7 
+CO 1 3 0 0 0 0 0 3 2 0 0 0 0 1 
+CO 2 3 2 0 0 0 0 3 2 0 0 0 0 1 
+CO 3 3 0 0 0 0 0 3 2 0 0 0 0 2 
+CO 4 3 0 0 3 0 0 3 2 0 2 0 0 3 
+CO 5 3 0 0 3 0 0 3 2 0 2 0 0 2 
+CO 6 3 0 0 0 0 0 3 2 0 0 0 0 1 
+Correlation Levels: 
+Level Correlation 
+0 Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+Assessment Rubrics: 
+▪ Quiz / Discussion / Seminar  
+▪ InternalTheory/Practical Exam  
+▪ Assignments /Viva 
+▪ End Semester Exam (70%) 
+Mapping of COs to Assessment Rubrics 
+  Internal Theory/ 
+Practical Exam 
+Assignment 
+/Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓ ✓    ✓ 
+CO 2 ✓ ✓    ✓ 
+CO 3 ✓ ✓   ✓ 
+CO 4 ✓ ✓   ✓ 
+CO 5 ✓ ✓   ✓ 
+CO 6   ✓ ✓   
+ 
+213 
+ 
+Page 214 of 627
+
+================================================================================
+FILE: PHY4CJ203_ELECTRODYNAMICS_II.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+ 
+ 
+CALICUT UNIVERSITY – FOUR-YEAR 
+UNDERGRADUATE PROGRAMME (CU-FYUGP) 
+ 
+BSc PHYSICS HONOURS 
+ 
+Programme B.Sc. Physics Honours 
+Course Title ELECTRODYNAMICS II 
+Type of Course Core in Major  
+Semester V 
+Academic Level 300-399 
+Course Details Credit Lecture 
+per week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total 
+Hours 
+4 3 - 2 75 
+Pre-requisites PHY4CJ203- Electrodynamics I 
+Course 
+Summary 
+The course emphasizes the development of mathematical techniques 
+such as vector calculus and differential equations to solve complex 
+problems in electromagnetism. Through theoretical discussions, 
+problem-solving sections, and possibly laboratory experiments, students 
+gain a deep understanding of electromagnetic phenomena and their 
+applications in various fields such as optics, electronics, and 
+telecommunications. 
+ 
+ 
+ 
+ 
+ 
+95 
+ 
+Page 96 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+Course Outcomes (CO):  
+CO CO Statement Cognitive 
+Level* 
+Knowledge 
+Category# 
+Evaluation 
+Tools used 
+CO1 Explain the fundamental 
+principles of electromagnetism 
+and Maxwell's equations 
+Understanding Conceptual 
+Knowledge 
+Written exams, 
+quizzes 
+CO2 Apply mathematical techniques 
+such as vector calculus and 
+differential equations to solve 
+electromagnetic problems 
+Applying Procedural 
+Knowledge 
+Problem sets, 
+simulations 
+CO3 Analyze the behavior of 
+electromagnetic fields in various 
+media and under different 
+boundary conditions 
+Analyzing Conceptual 
+Knowledge 
+Homework 
+assignments, 
+exams 
+CO4 Derive and interpret the 
+electromagnetic wave equation 
+and its solutions 
+Understanding Conceptual 
+Knowledge 
+Class 
+discussions, 
+presentations 
+CO5 Predict and analyze the behavior 
+of electromagnetic waves in 
+different contexts, such as optics 
+and antenna theory 
+Applying Procedural 
+Knowledge 
+Laboratory 
+experiments, 
+projects 
+CO6 Design and analyze complex 
+electromagnetic systems and 
+devices using advanced 
+electrodynamics principles 
+Creating Procedural 
+Knowledge 
+Research 
+papers, 
+presentations 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive 
+Knowledge (M)    
+ 
+ 
+ 
+ 
+ 
+96 
+ 
+Page 97 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+Detailed Syllabus: 
+Module Unit Content Hrs 
+(45 
++30) 
+Marks 
+(70) 
+I ELECTRIC AND MAGNETIC FIELDS IN MATTER 12 16 
+1 Polarization  2  
+2 The Field of a Polarised Object  2 
+3 The Electric Displacement; Boundary Conditions; Susceptibility, 
+Permittivity, Dielectric Constant of Linear Dielectrics 3 
+4 Magnetisation 2 
+5 The Field of a Magnetised Object, Physical Interpretation of Bound 
+Currents (Physical concept only), Ampère’s Law in Magnetized 
+Materials, Magnetic susceptibility and Permeability; Ferromagnetism 
+3 
+ Sections 4.1.1 – 4.1.4, 4.2.1, 4.2.2, 4.3.1, 4.3.3, 4.4.1 of chapter 4; sections 
+6.1.1 – 6.1.4, 6.2.1 – 6.2.3, 6.3.1, 6.4.1, 6.4.2 of chapter 6 of Book 1 
+  
+II ELECTRODYNAMICS 12 18 
+6 Ohm’s Law; Electromotive Force; Motional emf  3  
+7 Electromagnetic Induction: Faraday’s Law;  The Induced Electric 
+Field; Inductance; Energy in Magnetic Fields  
+4 
+8 
+Maxwell’s Equations: Electrodynamics before Maxwell; How 
+Maxwell Fixed Ampere’s Law; Maxwell’s Equations; Maxwell’s 
+Equations in Matter; Boundary Conditions  
+5 
+ Sections 7.1.1 – 7.1.3, 7.2.1 – 7.2.4, 7.3.1 – 7.3.3, 7.3.5 – 7.3.6 of 
+chapter 7 of Book 1 
+  
+97 
+ 
+Page 98 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+III ELECTROMAGNETIC WAVES  8 18 
+9 Waves in One Dimension, Sinusoidal waves, Polarization of Waves  2  
+10 The Wave Equations for E and B  1 
+11 Monochromatic Plane Waves  1 
+12 Poynting’s Theorem  2 
+13 Energy and Momentum in Electromagnetic Waves 1 
+14 Propagation of Waves in Linear Media  1 
+ Sections 9.1.1, 9.1.2, 9.1.4, 9.2.1, 9.2.2, 8.1.2, 9.2.3, 9.3.1 of Book 1   
+IV TRANSIENT CIRCUITS AND ALTERNATING CURRENTS 13 18 
+15 Growth of Current in Series L-R, C-R, and L-C Circuits (Relevant 
+portions) 2  
+16 Decay of Current in L-R, C-R and L-C Circuits (Relevant portions) 2  
+17 Alternating Current: EMF in a Coil Rotating in a Magnetic Field  2  
+18 AC Circuit Containing: R only, Inductance only, Capacitance only  2  
+19 Use of j Operator in Study of A.C. Circuits (Relevant concepts) 1  
+20 AC Circuit Containing: L and R, C and R, Parallel L and C  2  
+21 Series LCR Circuit 1  
+22 Power in AC  1  
+ Sections 12.1, 12.3, 12.5, 13.1, 13.2, 13.3, 13.5 of Book 2   
+V PRACTICALS 30  
+Conduct any 6 experiments from the given list (one from experiments 1-4 
+and 5 from 5-14) and 1 additional experiment, decided by the 
+  
+98 
+ 
+Page 99 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+teacher-in-charge, related to the content of the course. The 7th experiment 
+may also be selected from the given list. Other experiments listed here may 
+be used as demonstrations of the concepts taught in the course. 
+1 Verification of Faraday’s law and Lenz’s law of electromagnetic 
+induction 
+● Verify Faraday’s law and Lenz’s law by measuring the induced 
+voltage across a coil subjected to the varying magnetic field. 
+(section 7.2.1 of Book 1) 
+● Galvanometer/ExpEYES can be used to measure the induced 
+emf. 
+● In the third experiment, for better coupling between the coils, 
+use a high permeability material like iron or ferrite core, and 
+observe the change in the induced emf. 
+● https://expeyes.in/experiments/school-level/mutual-induction.
+html  
+● Simulation: 
+https://phet.colorado.edu/sims/html/faradays-law/latest/farada
+ys-law_all.html  
+  
+2 Analysis of induced emf developed in a coil as a magnet dropping 
+through it 
+● Drop a neodymium magnet through a coil, guided through a 
+vertical tube.  
+● Repeat the experiment by dropping the magnet, through 
+different heights from the coil and by changing the 
+approaching pole. 
+● Capture the induced emf as a function of time using 
+ExpEYES, note the maximum value of the emf and verify 
+Faraday's law and Lenz’s law of induced emf and flux change.   
+● Example 7.6 of Book 1 
+● https://expeyes.in/experiments/school-level/em-induction.html 
+  
+3 AC three phase generator 
+● Rotate a neodymium magnet about an axis perpendicular to its 
+dipole axis and fix three coils displaced equally from each 
+other, i.e.,  separated.  120𝑜
+● Analyze the induced emf developed in the coils using 
+CRO/ExpEYES and the phase relationship between the three 
+induced voltages.  
+● Optional: Realize star connection (three phase four wire 
+system) and verify the p.d. between the wires. section 13.10 of 
+Book 2 
+● https://expeyes.in/experiments/school-level/ac-generator.html  
+  
+4 Demonstration of Eddy currents  
+● Mount aluminum/copper disk as a pendulum on a horizontal 
+axis and observe the ‘viscous drag’ as it swings down and 
+  
+99 
+ 
+Page 100 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+passes between the poles of a magnet (Can be realized using 
+two pieces of neodymium magnet. The demonstration 
+illustrated in Fig. 7.16 of Book 1). 
+● https://www.youtube.com/watch?v=qTkOpprVITM  
+OR 
+● Form a simple pendulum with a neodymium magnet and 
+observe the ‘viscous drag’ as it swings down when an 
+aluminium/copper sheet/block is placed under the pendulum.   
+● https://www.youtube.com/watch?v=VK40utGgioI  
+● https://www.youtube.com/watch?v=SF4xjO2RN1w  
+         OR 
+● Drop a neodymium magnet through an aluminium/copper tube 
+and observe the delay in the fall of the magnet.  Tubes of 
+different gauge may be used for the demonstration.  
+● Keep the two probes at diametrically opposite points of the 
+pipe and note the emf and current when a magnet is allowed to 
+fall through the pipe. 
+● https://www.youtube.com/watch?v=H31K9qcmeMU  
+5 Ballistic constant of the galvanometer using Hibbert’s Magnetic 
+Standard (HMS) 
+● Give the induced current from HMS to the BG through a 
+series resistance. Read the deflection corresponding to the 
+resistance in the box and hence determine the ballistic 
+constant. 
+● Charge a standard capacitor to its maximum capacity, with a 
+small known voltage (using potential divider). Allow it to 
+discharge through the BG. From the deflection in the BG, 
+determine the charge in the capacitor and verify the relation Q 
+= CV. 
+  
+6 BG-Determination of high resistance by leakage method 
+● Charge the capacitor to its maximum capacity using a small 
+known voltage and measure the charge stored q0 using the 
+BG.  
+● Charge it again and allow it to discharge through a high 
+resistance, R for a small interval of time, T. After this the 
+remaining charge, q is measured using the BG.  
+● Using the values of q0, q, T and C, calculate the value of R. 
+  
+7 Mutual inductance and coefficient of coupling using Anderson’s 
+bridge 
+● Connect the two coils of known self-inductances, L1 and L2 
+in series along with the resistance box in one of the arms of 
+the Anderson’s bridge. Keep one coil flat over the other so that 
+the configuration gives maximum mutual inductance between 
+the two.  
+● Determine the self-inductance L’=L1+L2+2M of the series 
+combination using the null method. Reverse the coupling 
+  
+100 
+ 
+Page 101 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+between the coils by reversing the connections in one of the 
+coils and once again determine the self-inductance 
+L”=L1+L2-2M of the combination.  
+● Compute M=(L’-L”)/4 and k = M/  𝐿1𝐿2
+8 Parallel plate capacitor. (a) verify the relationship between 
+capacitance and the area of the plates (b) determination of 
+dielectric constant of thin dielectric sheet 
+ 
+● Form a parallel plate capacitor with dielectric material filled 
+between the plates. 
+● Multimeter/ ExpEYES can be used to measure the 
+capacitance. (For a significantly measurable value of the 
+capacitance, use plates of dimension 10cmx10cm, or greater) 
+● Change the area of the capacitor plates and verify the 
+relationship of the capacitance on the area (Using the same set 
+of plates, the area can be changed by varying the overlapping 
+region of the plates)  
+● By measuring the capacitance for different areas of the 
+capacitor plates and (or) thickness of the dielectric 
+material,determine the dielectric constant of the given 
+material/liquid.   
+● https://www.youtube.com/watch?v=lKfIkUuFT-U  
+  
+9 Brewster's law experiment, determination of angle of polarisation 
+and refractive index 
+ 
+● Experimental arrangement- Sodium vapour lamp, 
+Spectrometer, Polarizer (Graduated on 360° rotating) coupled 
+in front of the spectrometer telescope, prism or glass plate.  
+● Get the angle of incidence corresponding to the minimum 
+intensity of light and hence calculate the refractive index of 
+the material.  
+● https://www.youtube.com/watch?v=f2A8sM1xhbQ  
+  
+10 RC and RL transients - determination of capacitance and 
+inductance 
+ 
+● Apply a voltage step to a series RC/RL circuit and record the 
+resulting voltage variation across the capacitor/inductor. 
+● Get the value of time constant by an exponential fit to the data. 
+● Repeat the experiment for different resistances. 
+● https://expeyes.in/experiments/electrical/rctransient.html  
+● https://expeyes.in/experiments/electrical/rltransient.html 
+  
+11 RL and RC series AC circuits- Phase relationships of voltage 
+across the elements 
+ 
+  
+101 
+ 
+Page 102 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+● Using a CRO/ ExpEYES, verify the phase relationship 
+between voltage across the inductor/capacitor and the current. 
+● Note the phase difference between the applied voltage and 
+current and determine the value of inductance/capacitance. 
+OR 
+● Note the peak voltage and current and determine the value of 
+inductance/capacitance. 
+● https://expeyes.in/experiments/electrical/rcsteady.html 
+● https://expeyes.in/experiments/electrical/rlsteady.html  
+● https://expeyes.in/experiments/school-level/ac-rc.html  
+● https://expeyes.in/experiments/school-level/ac-rl.html  
+12 Series LCR circuits-Determination of resonance frequency, 
+quality factor and bandwidth 
+● The frequency of the signal generator is changed in steps and 
+the corresponding voltage across the resistance is noted. 
+● From the graph drawn for current against frequency, find the 
+frequency corresponding to maximum voltage- resonant 
+frequency. Also find the bandwidth and quality factor 
+● CRO/Multimeter/ExpEYES can be used. 
+● https://expeyes.in/experiments/electrical/rlcsteady.html  
+  
+13 Simulation of the behavior of RC and RL circuits under AC and 
+DC 
+● Simulate the behavior of RC and RL circuits under AC and 
+DC sources. 
+● Section 8.3, 8.4 & 9.3 of Book 3 can be referred. 
+  
+14 Simulation of the behavior of RC and RL circuits under AC and 
+DC 
+● Simulate the behavior of RC and RL circuits under AC and 
+DC sources. 
+● Section 9.3 of Book 3 can be referred to. 
+  
+Book for Reference:  
+1. Introduction to Electrodynamics (5th Edn.) by David J Griffiths, Cambridge University Press 
+(Book 1) 
+2. Electricity and Magnetism (10 Edn.) by R Murugeshan, S. Chand and Company (Book 2) 
+3. Electrodynamics Tutorials with Python Simulations by Taejoon Kouh, Minjoon Kouh -CRC 
+Press 1st Edition (Book 3) 
+4. Electricity and Magnetism, Berkeley Physics Course Vol.2, by E M Purcell, McGraw Hill Edn. 
+5. Electricity and Magnetism, by D C Pandey, Arihand Prakashan Series 
+6. Electrodynamics Made Simple - e book by E D Dias and Santhosh P Jose  
+https://store.pothi.com/book/ebook-dr-dias-e-d-electrodynamics-made-simple/ 
+102 
+ 
+Page 103 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+7. Classical Electromagnetism by H C Verma, Bharathi Bhavan Publishers and Distributors 
+8. The Feynman Lectures on Physics, Vol - 2, Pearson Education India 
+Mapping of COs with PSOs and POs : 
+ PSO
+1 
+PSO
+2 
+PSO
+3 
+PSO
+4 PS
+O5 
+PSO
+6 
+PO1 PO2 PO3 PO
+4 
+PO
+5 PO
+6 
+PO
+7 
+CO 1 2 1 2 0 2 0 2 1 1 0 2 1 2 
+CO 2 0 2 3 0 2 0 1 3 2 0 2 2 2 
+CO 3 2 0 3 0 2 1 2 2 2 0 3 2 3 
+CO 4 2 2 2 1 3 1 2 2 2 1 3 2 3 
+CO 5 1 3 2 1 3 2 1 3 2 2 3 3 3 
+CO 6 3 2 3 2 3 2 2 3 3 3 3 3 3 
+Correlation Levels: 
+Level Correlation 
+0 Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+Assessment Rubrics: 
+▪ Quiz / Discussion / Seminar  
+▪ Internal Theory / Practical Exam  
+▪ Assignments / Viva 
+▪ End Semester Exam (70%) 
+ 
+Mapping of COs to Assessment Rubrics 
+  Internal Theory / 
+Practical Exam 
+Assignment / 
+Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓ ✓    ✓ 
+CO 2 ✓ ✓    ✓ 
+CO 3 ✓ ✓   ✓ 
+CO 4 ✓ ✓   ✓ 
+CO 5 ✓ ✓   ✓ 
+CO 6   ✓ ✓   
+ 
+103 
+ 
+Page 104 of 627
+
+================================================================================
+FILE: PHY4CJ205_ASTROPHYSICS.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+ 
+CALICUT UNIVERSITY – FOUR-YEAR UNDER 
+GRADUATE PROGRAMME (CU-FYUGP) 
+BSc PHYSICS HONOURS 
+ 
+Programme B.Sc. Physics Honours 
+Course Title ASTROPHYSICS   
+Type of Course Major Elective 
+Semester V 
+Academic Level 300 - 399 
+Course Details Credit Lecture 
+per week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total Hours 
+4 4 - - 60 
+Pre-requisites PHY4CJ205 Modern Physics 
+Course Summary This course gives a pedagogical introduction to astronomy and 
+astrophysics by introducing the students the techniques to measure 
+astronomical parameters, the properties of the Sun, stellar evolution 
+and properties of galaxies and an overview of the Universe. 
+ 
+Course Outcomes (CO):  
+CO CO Statement Cognitive 
+Level* 
+Knowledge 
+Category# 
+Evaluation 
+Tools used 
+CO1 Demonstrate a deep understanding of 
+theoretical frameworks in astronomy, 
+U C Instructor-crea
+ted exams / 
+Quiz 
+260 
+ 
+Page 261 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+including celestial mechanics, stellar 
+structure, and cosmology. 
+CO2 
+ 
+Apply basic physical principles from a 
+broad range of topics in physics to address 
+complex astronomical phenomena. 
+Ap P Viva Voce / 
+Home 
+Assignments/
+Seminar 
+Presentations 
+CO3 Get knowledge of positional astronomy, 
+astronomical parameters and tools. 
+U C Instructor-crea
+ted exams / 
+Quiz 
+CO4 Able to explain the physics of Sun and the 
+evolution of stars. 
+U C Instructor-crea
+ted exams / 
+Quiz 
+CO5 Describe the morphology and 
+classification of galaxies and galaxy 
+clusters. 
+U C Instructor-crea
+ted exams / 
+Quiz 
+CO6 Expose scientific knowledge about the 
+origin and evolution of the universe. 
+U C Instructor-crea
+ted exams / 
+Quiz 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive 
+Knowledge (M)    
+ 
+Detailed Syllabus: 
+Modul
+e 
+Uni
+t 
+Content Hrs 
+(48 
++12) 
+Mar
+ks 
+(70) 
+I ASTRONOMICAL PARAMETERS AND TOOLS 12 18 
+1 The celestial sphere, The constellations, The celestial coordinate 
+system 
+2  
+261 
+ 
+Page 262 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+2 Stellar luminosity, Stellar distances, The parsec, The Cepheid 
+variable distance scale 
+3  
+3 Stellar magnitudes, Apparent magnitudes, Magnitude calculations,  
+The absolute magnitude scale, The standard formula to derive 
+absolute magnitudes 
+3  
+4 Colour and surface temperature, Stellar photometry, Stellar spectra, 
+Spectral types, Spectroscopic parallax. 
+2  
+5 Basics of refracting telescopes- Resolution, Magnification, 
+Newtonian telescope 
+1  
+6 Active and adaptive optics, Active optics, Adaptive optics 1  
+ Sections 1.3, 1.3.1, 1.3.2. 1.3.3, 1.3.4, 1.4, 5.3, 5.4, 5.5, 5.7, 5.10, 5.10.1, 
+5.10.2, 6.1, 6.2, 6.2.1, 6.4, 6.4.1, 6.5, 6.6, 6.7, 6.7.2, 6.8, 8.3.3 of Book 1 
+  
+II THE SUN AND HR DIAGRAM 12 18 
+7 The Sun, Overall properties of the Sun, The Sun’s total energy output, 
+The Fraunhofer lines in the solar spectrum 
+2  
+8 Nuclear fusion, The proton–proton cycle 2  
+9 The solar neutrino problem, The solar atmosphere, chromosphere and 
+corona 
+2  
+10 The solar wind, The sun’s magnetic field and the sunspot cycle,  
+Prominences, flares and the interaction of the solar wind with the 
+earth’s atmosphere 
+3  
+11 The Hertzsprung–Russell diagram, The main sequence, The giant 
+region, The white dwarf region, The stellar mass–luminosity 
+relationship, Stellar lifetimes 
+3  
+ Sections  2.2-2.8, 6.9, 6.12, 6.13 of Book 1   
+III STELLAR EVOLUTION 12 18 
+262 
+ 
+Page 263 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+12 Stellar Evolution, Low mass stars, Mid mass stars. Moving up the 
+main sequence 
+2  
+13 The triple alpha process, The helium flash, Variable stars 3  
+14  Planetary nebula, White dwarfs, The discovery of white dwarfs, The 
+future of white dwarfs, Black dwarfs, The evolution of a sun-like star, 
+Evolution in close binary systems – the Algol paradox 
+3  
+15 High mass stars in the range >8 solar masses, Type II supernova, The 
+Crab Nebula, Neutron stars and black holes,  
+2  
+16 The discovery of pulsars, What can pulsars tell us about the universe? 
+Black holes, The detection of stellar mass black holes 
+2  
+ Chapter 7 of Book 1   
+IV GALAXIES AND THE UNIVERSE 12 16 
+17 The Milky Way, Open star clusters, Globular clusters, The interstellar 
+medium and emission nebulae 
+2  
+18 Size, shape and structure of the Milky Way, A super-massive black 
+hole at the heart of our galaxy 
+2  
+19 Other galaxies, Elliptical galaxies, Spiral galaxies, Evidence for an 
+unseen component in spiral galaxies – dark matter,  Irregular galaxies, 
+The Hubble classification of galaxies 
+3  
+20 Active galaxies, Groups and clusters of galaxies, Superclusters, The 
+structure of the universe 
+2  
+21 Big Bang models of the universe, The expansion of the universe, The 
+cosmological redshift, The steady state model of the universe, Big 
+Bang or Steady State? 
+2  
+22 The cosmic microwave background, The discovery of the cosmic 
+microwave background, Inflation, Formation of the primeval 
+elements 
+1  
+263 
+ 
+Page 264 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ Sections  8.1-8.3, 9.2-9.9 of Book 1   
+V OPEN ENDED MODULE: MASTERING HASHING FOR 
+EFFICIENT DATA HANDLING 
+12  
+ ● VO Tools. Reference 6  
+● Session 8.4, Question 1 of Book 1 
+● Planets, comets, asteroids etc. 
+● Vizier, CDS, NED, SDSS etc. 
+● Observing in other wavebands 
+● Binary stars and Extra-solar Planets 
+12 
+ 
+ 
+ References: Book 2-5   
+Books and References: 
+1. Introduction to Astronomy and Cosmology by Ian Morison, John Wiley & Sons, 2008 (Book 1) 
+2. The physical universe: An introduction to astronomy, F.Shu, Mill Valley: University Science 
+Books. (Book 2) 
+3. Modern Astrophysics, B.W. Carroll & D.A. Ostlie, Addison-Wesley Publishing Co.(Book 3) 
+4. Baidyanath Basu, ‘An introduction to Astrophysics’, Second printing, Prentice -Hall of India 
+Private Limited, New Delhi, 2001.(Book 4) 
+5. Astronomy: A Physical Perspective by Marc L. Kutner, Cambridge University Press(Book 5) 
+6. https://va-iitk.vlabs.ac.in/?page=listexp  
+Mapping of COs with PSOs and POs : 
+ PSO
+1 
+PSO
+2 
+PSO
+3 
+PSO
+4 
+PS
+O5 
+PS
+O6 
+PO1 PO2 PO3 PO4 PO5 PO
+6 
+PO
+7 
+CO 1 2 2 3 1 1 2 3 2 3 1 2 3 3 
+CO 2 3 2 2 1 2 2 3 2 3 1 2 3 3 
+CO 3 2 2 2 2 2 2 3 2 3 1 2 3 3 
+CO 4 2 2 2 2 2 2 3 2 3 1 2 3 3 
+CO 5 3 2 2 1 2 2 3 2 3 1 2 3 3 
+CO 6 3 2 3 2 2 2 3 2 3 1 2 3 3 
+ 
+ 
+264 
+ 
+Page 265 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+Correlation Levels: 
+Level Correlation 
+0 Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+Assessment Rubrics: 
+▪ Quiz / Discussion / Seminar  
+▪ InternalTheory/Practical Exam  
+▪ Assignments /Viva 
+▪ End Semester Exam (70%) 
+Mapping of COs to Assessment Rubrics 
+  Internal Theory 
+/Practical Exam 
+Assignment 
+/Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓ ✓    ✓ 
+CO 2 ✓ ✓    ✓ 
+CO 3 ✓ ✓   ✓ 
+CO 4 ✓ ✓   ✓ 
+CO 5 ✓ ✓   ✓ 
+CO 6   ✓ ✓   
+ 
+265 
+ 
+Page 266 of 627
+
+================================================================================
+FILE: PHY4CJ205_INTRODUCTORY_MOLECULAR_SPECTROSCOPY.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+ 
+CALICUT UNIVERSITY – FOUR-YEAR UNDER 
+GRADUATE PROGRAMME (CU-FYUGP) 
+ 
+BSc PHYSICS HONOURS 
+ 
+Programme B.Sc. Physics Honours 
+Course Title INTRODUCTORY MOLECULAR SPECTROSCOPY  
+Type of Course Major Elective (SPECIALIZATION II: PHOTONICS) 
+Semester V 
+Academic 
+Level 
+300 - 399 
+Course Details Credit Lecture 
+per week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total Hours 
+4 4 - - 60 
+Pre-requisites PHY4CJ205- Modern Physics 
+Course 
+Summary 
+Introductory Molecular Spectroscopy provides a comprehensive 
+overview of the principles governing the interaction between light and 
+molecules. Students delve into spectroscopic techniques such as 
+infrared, ultraviolet-visible, and nuclear magnetic resonance 
+spectroscopy, gaining insights into molecular structure, dynamics, and 
+interactions. 
+ 
+Course Outcomes (CO):  
+CO CO Statement Cognitiv
+e Level* 
+Knowledge 
+Category# 
+Evaluation 
+Tools used 
+CO1 Gain basic knowledge on electromagnetic 
+spectrum, spectral lines and diverse 
+branches in spectroscopy 
+U C Viva Voce/  
+Seminar / 
+Quiz 
+CO2 Gain theoretical know-how on rotational 
+spectrum of diatomic and polyatomic 
+molecules 
+An P Practical 
+Assignment / 
+Group 
+Discussion 
+CO3 Gain theoretical know-how on vibrational 
+spectrum of diatomic and polyatomic 
+molecules 
+Ap P Seminar 
+Presentation / 
+214 
+ 
+Page 215 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+Group 
+Tutorial Work 
+CO4 Gain theoretical know-how on vibrating 
+rotators and Born-Oppenheimer 
+approximation 
+An P Instructor-crea
+ted exams / 
+Home 
+Assignments 
+CO5 Gain theoretical know-how on Raman 
+spectrum 
+Ap M Viva Voce  
+CO6 Gain practical knowledge on emission and 
+absorption spectra   
+C M Group 
+Discussion/ 
+Quiz 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) 
+Metacognitive Knowledge (M)    
+ 
+Detailed Syllabus: 
+Modul
+e 
+Uni
+t 
+Content Hrs 
+(48 
++12) 
+Mark
+s 
+(70) 
+I Introduction to Spectroscopy 5 8 
+1 Quantization of energy, Regions of spectrum 2  
+2 representation of spectra, Basic elements to practical spectroscopy 1  
+3 signal-to-noise ratio 1  
+4 width and intensity of spectral lines 1  
+ Sections 1.1-1.7 of Book 1   
+II Microwave Spectroscopy 11 16 
+5 Rotation of molecules, Rotational spectra 2  
+6 Rigid diatomic molecules, Intensities of spectral lines 2  
+7 Effect of isotopic substitution, Non-rigid rotator 2  
+8 The spectrum of non-rigid rotator 2  
+9 Polyatomic molecules – linear, symmetric and asymmetric top 
+molecules, Stark effect 
+ 
+3  
+ Sections 2.1-2.4 of Book 2   
+III                                               Infra-red Spectroscopy                    16 23 
+215 
+ 
+Page 216 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+10 Vibrating diatomic molecule - Energy of a diatomic molecule 2  
+11 Simple harmonic oscillator, Anharmonic oscillator 3  
+12 Diatomic vibrating rotator,  2  
+13 Vibration-Rotation spectrum of CO, Born – Oppenheimer 
+approximation 
+3  
+14 Effect of Breakdown of Born Oppenheimer approximation 2  
+15 Vibration of polyatomic molecules 2  
+16 Influence of rotation on the spectra of polyatomic molecules, 
+Analysis by infra-red techniques 
+2  
+ Sections 3.1-3.7 of Book 1   
+IV                                            Raman Spectroscopy 16 23 
+17 Quantum and Classical approach towards Raman effect 3  
+18 Pure rotational Raman spectra of linear, Symmetric top and spherical 
+top molecules 
+3  
+19 Vibrational Raman spectra, Rule of mutual exclusion 3  
+20 Overtone and Combination vibrations, Rotational fine structure 2  
+21 Polarization of light and Raman effect 2  
+22 Raman & IR Spectroscopy in structure determination, 
+Instrumentation 
+3  
+ Sections 4.1-4.6 of Book 1   
+    V                                           Open Ended Module    
+ Electronic Spectroscopy of molecules  
+Electronic spectra of diatomic molecules, Vibrational coarse structure: 
+Progressions, Intensity of vibrational-electronic spectra: Franck Condon 
+Principle, Dissociation Energy and Dissociation Products, Rotational fine 
+structure of Electronic-Vibration transitions, Fortrat Diagram, 
+Pre-dissociation  
+  
+Books and References:  
+1.Fundamentals of Molecular Spectroscopy by C N Banwell, McGraw Hill (Book 1) 
+2. Molecular Structure & Spectroscopy by G Aruldhas (Book 2)  
+3.Spectroscopy (volumes) by B P Straughan and S Walker   
+4.Introduction to Molecular Spectroscopy by G M Barrow, McGraw Hill 
+216 
+ 
+Page 217 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+Mapping of COs with PSOs and POs : 
+ PSO
+1 
+PSO
+2 
+PSO
+3 
+PSO4 PS
+O5 
+PS
+O6 
+PO1 PO2 PO3 PO4 PO5 PO
+6 
+PO
+7 
+CO 1 2 0 0 0 0 0 2 2 2 0 0 0 0 
+CO 2 2 0 2 0 0 0 2 2 2 0 0 0 0 
+CO 3 2 0 2 0 0 0 2 2 2 0 0 0 0 
+CO 4 2 0 2 0 0 0 2 2 2 0 0 0 0 
+CO 5 2 0 0 0 2 0 2 2 2 0 0 0 0 
+CO 6 0 0 0 0 0 3 2 2 2 0 0 0 0 
+Correlation Levels: 
+Level Correlation 
+0 Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+Assessment Rubrics: 
+·        Quiz / Discussion / Seminar  
+·        InternalTheory/Practical Exam  
+·        Assignments /Viva 
+·        End Semester Exam (70%) 
+Mapping of COs to Assessment Rubrics 
+  Internal Theory/ 
+Practical Exam 
+Assignment 
+/Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓ ✓    ✓ 
+CO 2 ✓ ✓    ✓ 
+CO 3 ✓ ✓   ✓ 
+CO 4 ✓ ✓   ✓ 
+CO 5 ✓ ✓   ✓ 
+CO 6   ✓ ✓   
+  
+217 
+ 
+Page 218 of 627
+
+================================================================================
+FILE: PHYSICS_OF_THE_HUMAN_BODY.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+ 
+CALICUT UNIVERSITY – FOUR-YEAR UNDER 
+GRADUATE PROGRAMME (CU-FYUGP) 
+ 
+BSc PHYSICS HONOURS 
+ 
+Programme B.Sc. Physics Honours 
+Course Title PHYSICS OF THE HUMAN BODY 
+Type of Course Major Elective (SPECIALIZATION III: PHYSICS IN BIOLOGY) 
+Semester V 
+Academic 
+Level 
+300 - 399 
+Course Details Credit Lecture 
+per week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total Hours 
+4 4 - - 60 
+Pre-requisites Newtonian mechanics. 
+Course 
+Summary 
+This course analyses the human body from the viewpoint of mechanics 
+and its static and dynamic equilibrium. The effects of collisions on 
+human body, leading to fractures are explored. The significance of 
+muscles of the human body is also analysed. 
+ 
+Course Outcomes (CO):  
+CO CO Statement Cognitive 
+Level* 
+Knowledge 
+Category# 
+Evaluation 
+Tools used 
+CO1 Understand & apply the laws of 
+mechanics to the human body w.r.to 
+its static equilibrium. 
+U, Ap F Instructor-creat
+ed exams / 
+Quiz 
+CO2 Understand dynamic equilibrium of 
+human body. 
+U F Instructor-creat
+ed exams / 
+Quiz 
+CO3 Understand and analyse the effects of 
+collision of human body from a 
+mechanical force viewpoint. 
+U, An F Instructor-creat
+ed exams / 
+Quiz 
+CO4 Gain basic knowledge about various 
+supporting structures of bones, a.k.a 
+U F Instructor-creat
+ed exams / 
+Quiz 
+223 
+ 
+Page 224 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+Ligaments, Tendons, Cartilage and 
+how energy is stored in them. 
+CO5 Basic understanding of fractures from 
+mechanical force viewpoint. 
+U, An F Instructor-creat
+ed exams / 
+Quiz 
+CO6 Gain ideas about muscle and muscle 
+activity from a mechanical viewpoint. 
+U, Ap F Instructor-creat
+ed exams / 
+Quiz 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) 
+Metacognitive Knowledge (M)    
+ 
+Detailed Syllabus: 
+Modul
+e 
+Uni
+t 
+Content Hrs 
+(48 
++12) 
+Mark
+s 
+(70) 
+I 
+Static Equilibrium of the Body 12 
+15 
+1 Review of Forces, Torques, and Equilibrium. (Section 2.1) 1 
+2 Statics: Motion in One Plane and Levers. (Section 2.2) 2 
+3 Statics in the Body. The lower arm and hip as examples. (Sections 
+2.3, 2.3.1 (Case 1, Case 2 only), 2.3.2 (variation of problem with cane 
+to provide support on the left side not required). 
+2 
+4 Total body equilibrium. (Section 2.3.2) 2 
+5 Equilibrium of the individual body components. (Section 2.3.2) 2 
+6 Standing: Stability: overall stability, local stability. (Section 3.2) 2 
+7 Forces on the feet. (Section 3.2) 1 
+Sections from References: Chapter 2 and 3 of Book 1  
+II 
+Physical Aspects of Walking 8 
+15 
+8 Kinematics of walking, Friction (Electromyographic activity of the 
+muscles not required). (Section 3.3, 3.3.1, 3.3.3) 3 
+9 Energetics. Collisions of the human body: Kinematics of a collision, 
+partially elastic collisions. (Section 3.3.4, 3.10, 3.10.1) 3 
+10 Consequences of collisions (upto & including calculation of GSI, 
+p.178. Modification of GSI not required). (Section 3.10.2) 2 
+Sections from References: Chapter 3 of Book 1  
+224 
+ 
+Page 225 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+III 
+Material Components of the Body 18 
+25 
+11 Introduction to Bone. (Section 4.1, 4.1.1) 3 
+12 Ligaments and Tendons, Cartilage. (Section 4.1.2, 4.1.3) 1 
+13 Elastic Properties: Basic Stress–Strain Relationships. (Section 4.2.1) 3 
+14 Other Stress–Strain Relations, Bone Shortening. (Section 4.2.2, 4.2.3) 3 
+15 Energy Storage in Elastic Media. (Section 4.2.4) 3 
+16 Energy Storage in Tendons and Long Bones. (Section 4.2.4) 3 
+17 Bone Fractures: Modes of Sudden Breaking of Bones (Section 4.7, 
+4.7.1 up to and excluding Breaking of Bones by Bending). 2 
+Sections from References: Chapter 4 of Book 1  
+IV 
+Physical Aspects of Muscles 10 
+15 
+ Muscles, Skeletal Muscles in the Body. (Section 5, 5.1) 2 
+19 Types of Muscle Activity - The Structure of Muscles (upto electron 
+micrograph figure showing banded myofilament structure (p.339)). 
+(Section 5.1.1, 5.2) 
+2 
+20 Activating Muscles: Macroscopic View. (Section 5.3 only. Section 
+5.3.1 not required). 2 
+21 Muscle Strength and Evolution: Increasing Strength with Training.  2 
+ 22 Muscle Evolution with Age, Muscle Fatigue. (Section 5.11). 2  
+Sections from References: Chapter 5 of Book 1  
+V 
+Open Ended Module 12  
+Advanced features of walking, running, jumping, Avoiding Fractures and 
+Other Injuries: Materials for Helmets 
+  
+ Sections Chapters 3 & 4: 3.3, 3.4, 3.5, 4.9 of Book 1   
+Books and References: 
+1. Physics of the Human Body, 2nd Edition, Irving P. Herman, Springer International Publishing, 
+2016 (Book 1) 
+ 
+ 
+ 
+ 
+225 
+ 
+Page 226 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+Mapping of COs with PSOs and POs : 
+ PSO
+1 
+PSO
+2 
+PSO
+3 
+PSO
+4 
+PS
+O5 
+PS
+O6 
+PO1 PO2 PO3 PO4 PO5 PO
+6 
+PO
+7 
+CO 1 2 1 0 1 0 0 2 2 0 0 1 0 1 
+CO 2 2 0 0 0 0 0 2 2 0 0 0 0 0 
+CO 3 2 0 0 0 0 0 2 2 0 0 0 0 1 
+CO 4 2 0 0 0 0 0 2 2 0 0 0 0 1 
+CO 5 2 0 0 0 0 0 2 2 0 0 0 0 0 
+CO 6 2 1 0 0 0 0 2 2 0 0 0 0 1 
+Correlation Levels: 
+Level Correlation 
+0 Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+Assessment Rubrics: 
+▪ Quiz / Discussion / Seminar  
+▪ InternalTheory/Practical Exam  
+▪ Assignments /Viva 
+▪ End Semester Exam (70%) 
+Mapping of COs to Assessment Rubrics 
+  Internal Theory/ 
+Practical Exam 
+Assignment 
+/Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓ ✓    ✓ 
+CO 2 ✓ ✓    ✓ 
+CO 3 ✓ ✓   ✓ 
+CO 4 ✓ ✓   ✓ 
+CO 5 ✓ ✓   ✓ 
+CO 6   ✓ ✓   
+ 
+226 
+ 
+Page 227 of 627
+
+================================================================================
+FILE: PROPERTIES_OF_SOLIDS.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+ 
+CALICUT UNIVERSITY – FOUR-YEAR UNDER 
+GRADUATE PROGRAMME (CU-FYUGP) 
+ 
+BSc PHYSICS HONOURS 
+ 
+Programme B.Sc. Physics Honours 
+Course Title PROPERTIES OF SOLIDS 
+Type of Course Major Elective (SPECIALIZATION I: MATERIALS SCIENCE) 
+Semester V 
+Academic Level 300 - 399 
+Course Details Credit Lecture 
+per week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total Hours 
+4 4 - - 60 
+Pre-requisites The prerequisites for the course on crystal structure, theory of solids, 
+semiconductor properties, and dielectric and magnetic properties of 
+solids include a solid foundation in physics, mathematics, quantum 
+mechanics, chemistry, electricity, and magnetism. 
+Course Summary The course provides a comprehensive study of crystal structure, 
+theory of solids, semiconductor properties, and dielectric and 
+magnetic properties of solids, aiming to understand the fundamental 
+principles governing the behavior of materials in these domains. 
+ 
+Course Outcomes (CO):  
+CO CO Statement Cognitive 
+Level* 
+Knowledge 
+Category# 
+Evaluation Tools 
+used 
+CO1 Demonstrate an understanding 
+of crystal structures and their 
+impact on material properties 
+Apply Conceptual 
+Understandin
+g 
+Examinations, 
+Assignments 
+CO2 Analyze the theoretical models 
+of solids and their applicability 
+to real-world scenarios 
+Analyze Application Problem Sets, Case 
+Studies 
+191 
+ 
+Page 192 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+CO3 Evaluate semiconductor 
+properties and their role in 
+electronic device functionality 
+Evaluate Application Laboratory 
+Experiments, Projects 
+CO4 Explain the principles 
+underlying dielectric properties 
+of solids and their 
+technological applications 
+Understan
+d 
+Conceptual 
+Understandin
+g 
+Presentations, Written 
+Reports 
+CO5 Investigate magnetic properties 
+of solids and their implications 
+in magnetic storage and 
+sensing technologies 
+Evaluate Application Research Papers, 
+Presentations 
+CO6 Synthesize knowledge of 
+crystal structure, theory of 
+solids, semiconductor, 
+dielectric, and magnetic 
+properties to propose solutions 
+to complex material-related 
+problems 
+Create Synthesis Capstone Projects, 
+Oral Defenses 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge(F), Conceptual Knowledge (C), Procedural Knowledge (P), 
+Metacognitive Knowledge (M)    
+ 
+Detailed Syllabus: 
+Module Unit Content Hrs 
+(48 
++ 12) 
+Mark
+s 
+(70) 
+I CRYSTAL STRUCTURE 15 20 
+1 Crystal lattice and translation vectors, unit cell, basis 3  
+2 Symmetry operations, point groups and space groups 3 
+3 Types of lattices, lattice directions and planes, inter planar spacing 3 
+4 Simple crystal structures with examples 3 
+5 X-ray diffraction and reciprocal lattice. Brillouin zones 3 
+192 
+ 
+Page 193 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+Sections 1.1 – 1.13, 2.1 – 2.2, 2.4, 2.7 of Book 1   
+II THEORY OF SOLIDS 10 15 
+6 Drude – Lorentz’s classical theory 1  
+7 Sommerfeld’s quantum theory- Free electron gas in one dimension 2 
+8 Fermi energy, Total energy Density of states, Filling of energy 
+levels 
+2 
+9 Application of free electron gas model 1 
+10 Band Theory of solids-Bloch theorem-Kronig Penney 
+model-velocity and effective mass of electron 
+3 
+11 Distinction between metal, insulator and semiconductors 1 
+Sections 5.1 – 5.3, 6.1 – 6.5 of Book 1   
+ 
+III 
+SEMICONDUCTOR PROPERTIES 10 10 
+12 Semiconductors – Intrinsic and Extrinsic 2  
+13 Drift velocity 2 
+14 Mobility and conductivity of Intrinsic semiconductors 2 
+15 Carrier concentration, Fermi level 2 
+16 Conductivity for intrinsic and extrinsic semiconductors 2 
+Sections 7.1 – 7.6 of Book 1   
+ 
+IV 
+DIELECTRIC AND MAGNETIC PROPERTIES OF SOLIDS 13 25 
+17 Types of Magnetism – origin of permanent magnetic moment 1  
+18 Diamagnetism and Paramagnetism (classical theory), 
+ferromagnetism (Weiss theory) 
+4 
+19 Antiferromagnetism and ferrimagnetism (Qualitative ideas only) 2 
+20 Polarisation, Susceptibility, Local field 2 
+193 
+ 
+Page 194 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+21 Dielectric constant and polarizability and its sources 2 
+22 Ferro and Piezo electricity (Qualitative ideas only) 2 
+Sections 8.1 – 8.7, 9.1 – 9.7 of Book 1   
+V OPEN ENDED MODULE:   
+CRYSTAL BONDING AND DEFECTS IN CRYSTALS 
+12  
+Books and References:  
+1.Solid State Physics by R. K. Puri and V. K. Babbar (Book 1) 
+2.Solid State Physics by S O Pillai 6th Edition  (Book 2) 
+3.Solid State Physics: Structure and Properties of Materials by M. A. Wahab  (Book 3) 
+ 
+ 
+Mapping of COs with PSOs and POs : 
+ PS
+O1 
+PSO
+2 
+PSO
+3 
+PSO4 PS
+O5 
+PSO
+6 
+PO1 PO2 PO3 PO4 PO5 PO6 PO7 
+CO 1 2 2 2 2 0 0 0 0 0 0 0 0 0 
+CO 2 2 2 2 2 2 0 0 0 0 0 0 0 0 
+CO 3 2 3 2 2 2 0 0 0 0 0 0 0 0 
+CO 4 2 2 2 2 0 0 0 0 0 0 0 0 0 
+CO 5 2 3 2 2 2 0 0 0 0 0 0 0 0 
+CO 6 3 3 2 2 2 3 3 2 0 0 0 0 0 
+ 
+Correlation Levels: 
+Level Correlation 
+0 Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+ 
+ 
+ 
+194 
+ 
+Page 195 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+Assessment Rubrics: 
+▪ Quiz / Discussion / Seminar  
+▪ Internal Theory / Practical Exam  
+▪ Assignments / Viva 
+▪ End Semester Exam (70%) 
+ 
+Mapping of COs to Assessment Rubrics 
+  Internal Theory / 
+Practical Exam 
+Assignment / 
+Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓ ✓    ✓ 
+CO 2 ✓ ✓    ✓ 
+CO 3 ✓ ✓   ✓ 
+CO 4 ✓ ✓   ✓ 
+CO 5 ✓ ✓   ✓ 
+CO 6 ✓ ✓  ✓ 
+ 
+195 
+ 
+Page 196 of 627
+
+================================================================================
+FILE: PYTHON_FOR_DATA_ANALYSIS.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+ 
+CALICUT UNIVERSITY – FOUR-YEAR UNDER 
+GRADUATE PROGRAMME (CU-FYUGP) 
+ 
+                                  BSc PHYSICS HONOURS 
+SEC2 consists of 3 hrs. of lecture and hands-on work per week. 
+Evaluation: Considering the nature of the SEC2 course, the internal evaluation for the 
+25 marks, including the 5 marks in the open ended module, may be entirely based on 
+the performance of the student during the hands-on work and viva. 
+Programme B.Sc. Physics Honours 
+Course Title PYTHON FOR DATA ANALYSIS 
+Type of Course Skill Enhancement Course 2  
+Semester V 
+Academic Level 100-199 
+Course Details Credit Lecture 
+per week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total 
+Hours 
+3 3 - - 45 
+Pre-requisites 1. Fundamentals of Programming Concepts 
+Course Summary This course explores the fundamental concepts of algorithms, control 
+statements, functions, Numpy arrays, Matplotlib, and Seaborn for data 
+visualization and practical application. 
+ 
+ 
+ 
+521 
+ 
+Page 522 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+Course Outcomes (CO):  
+CO CO Statement Cognitiv
+e Level* 
+Knowledge 
+Category# 
+Evaluation 
+Tools used 
+CO1 Demonstrate Python for data analysis, 
+including numerical operations, file 
+handling, control flow, functions, and 
+NumPy arrays.  
+ 
+       U 
+ 
+C 
+ Instructor-crea
+ted exams / 
+Quiz 
+CO2 Understand and master Pandas 
+functionalities for data manipulation, 
+sorting, handling missing data, statistical 
+analysis and data merging/concatenation 
+techniques in Python. 
+ 
+ 
+ 
+Ap 
+ 
+ 
+ 
+P 
+  
+Instructor-creat
+ed exams / 
+Home 
+Assignments 
+CO3 Master the visualisation tools in Pandas 
+and Seaborn libraries using physics data. 
+Draw various plots, interpret findings, and 
+utilise the Seaborn library for advanced 
+visualisation techniques. 
+ 
+ 
+Ap 
+ 
+ 
+P 
+ Seminar 
+Presentation / 
+Group Tutorial 
+Work 
+CO4 Understand the various data file formats 
+and learn to read and handle data files in 
+Jupyter Notebooks, including CSV, XLS, 
+TAB, and DAT formats. 
+ 
+U 
+ 
+C 
+Instructor-creat
+ed exams / 
+Home 
+Assignments 
+CO5 Demonstrate problem-solving skills to 
+solve practical physics problems by 
+creating  programs for real data analysis 
+and utilise the different functionalities 
+available in Pandas and Seaborn Python 
+Packages.  
+ 
+ 
+Ap 
+ 
+ 
+P 
+ One Minute 
+Reflection 
+Writing 
+assignments/Vi
+va Voce 
+CO 
+6 
+Develop skills in data manipulation and 
+analysis using the pandas library, including 
+dataframe creation, data wrangling, 
+descriptive statistics, and visualization 
+techniques using matplotlib and seaborn 
+Ap P Practical 
+Assignment / 
+Observation of 
+Practical Skills 
+522 
+ 
+Page 523 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) 
+Metacognitive Knowledge (M)    
+ 
+Detailed Syllabus: 
+Modul
+e 
+Uni
+t 
+Content Hrs 
+(36 
++9) 
+Mar
+ks 
+(50) 
+I Python Core programming 9 12 
+1 Python - variable, operators, data types - numerical - int, float, 
+complex - list - list operations  
+2  
+2 Tuples - Set - Dictionary, input(), file operations - open() - close() 2  
+3 Conditional & control statements - break & continue  2  
+4 Functions:define functions - Passing Arguments - Return Values 
+Demonstration/ Hands-on training: Write a function that accepts a list 
+of numbers and returns the largest and smallest numbers in the list. 
+1  
+5 Numpy -  Arrays - creation, access, array operations 
+Demonstration/ Hands-on training: Create a 3x3 NumPy array with 
+random integers between 1 and 10. Perform and print the results of 
+basic arithmetic operations (addition, subtraction, multiplication, 
+division) on this array with another 3x3 array. 
+2  
+ Sections from References:  
+1. Sections of Chapter 3 pages 46 - 62, Chapter 4 pages 73 - 87, 
+Chapter 6 pages 117 - 139, Chapter 7 pages 151 - 174, Chapter 17 
+pages 441 - 451 of Book 1 
+2. Sections of Chapter 8 pages 129 - 140 of Book 2 [Topic 4 from this 
+book] 
+  
+II Pandas Dataframe  12 15 
+523 
+ 
+Page 524 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+6 Python Dataframe - Create Dataframe  1  
+7 Dataframe attributes - Pivoting  dataframe - Sort - Sort by labels  2  
+8 Missing Data - fill, drop and replace missing values - Combining 
+Data Frame - Descriptive statistics - describe() - min and max index 
+values   
+3  
+9 Statistical values - count and mode function - Covariance - 
+Correlation - Quantles 
+2  
+10 Aggregation() - Grouping columns - Data wrangling - merging data - 
+joining, concatenating dataframes. 
+Demonstration/ Hands-on training: Example problem showing the 
+operations of pandas dataframe- Illustrate the operations of table 
+read, merge and groupby() in pandas using the data generated by 
+charging three different capacitors using ExpEYES or the raw data of 
+phone sensors using Phyphox/Physics Toolbox Sensor Suite app. 
+4  
+ Sections of  Chapter 5.1 - 5.10, 5.14 of Book 4 
+https://phyphox.org/sensors/ 
+https://www.vieyrasoftware.net/ 
+  
+III Visualisation Tools  10 15 
+11 Importance of data Visualisation - Bar chart 
+Demonstration/ Hands-on training: practice the generation of a bar 
+chart using the data generated for three capacitors using ExpEYES or 
+the raw data of phone sensors using Phyphox/Physics Toolbox Sensor 
+Suite app. 
+2  
+12 Histogram - frequency polygon - Box plot - Scatter Plot - markers - 
+xlabel - ylabel - title - different arguments in scatterplot 
+Demonstration/ Hands-on training: Illustrate the operations of box 
+plot using the data generated by finding the refractive index of a 
+convex lens by liquid lens arrangement.  
+2  
+524 
+ 
+Page 525 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+13 Correlation Matrix Plot - Calculate the correlations - correlation 
+matrix - correlation plot 
+Demonstration/ Hands-on training: Plot the values obtained from 
+sonometer mass versus length*2. Find the correlation matrix for the 
+graph 
+1  
+14 Seaborn library - features - color palette -univariate distribution plot  1  
+15 Seaborn - Histogram - density plot - Bivariate Distribution plots - 
+hexbin plot - violin plots 
+Demonstration/ Hands-on training: Example plot using the standard 
+data set, Iris (https://archive.ics.uci.edu/dataset/53/iris) 
+2  
+16 Statistical estimation - bar plot - Plotting categorical data, Heatmap - 
+cmap attribute. 
+1  
+ Sections 6.1 – 6.8, 6.8.1, 6.8.3, 6.9, 6.10, 6.11.2, 6.12, 6.14, 6.15.1, 6.16, 
+6.20, 6.21 of Book 4 
+  
+IV Data File Formats 5 8 
+17 Series and Dataframes - Introducing different data file formats: csv, 
+xls, tab, dat formats. Create Dataframe from the above mentioned 
+format.  
+2  
+18 Viewing Data frame using loc and iloc - Operations on Dataframes 2  
+19 Jupyter Notebooks using Anaconda and Google Colab: introduction - 
+Familiarization with Google Colab and  Anaconda 
+ 1  
+ Sections from References: Chapter 12 - Page 232 - 248 of Book 3 
+https://colab.google/  
+https://www.anaconda.com/  
+  
+V OPEN ENDED MODULE: Additional Training on Data Analysis 9  
+Implement the following: 
+1. Data File Creation and File Operations: 
+Example1: Write a python program to generate a CSV file using the data 
+generated from Simple Pendulum Experiment as two separate columns as 
+Length and Period using Pandas Dataframe. 
+ 
+ 
+ 
+525 
+ 
+Page 526 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 2. File Read & Plot Data: 
+Example2: Write a Python program to read the data generated using 
+example 1 and calculate the mean period for each pendulum length. Use 
+Seaborn to plot a regression line and analyze the relationship between period 
+and length. 
+ 3. Pandas merge, group by:  
+Example3: Use the data generated by verifying Hooke's Law by measuring 
+the relationship between the force applied to a spring and its resulting 
+extension. Also, use different materials to see how Spring Constant changes 
+with material properties. 
+4. Learn different visualisation tools in Pandas:  
+Plot Histogram, Barchart, Scatter plot and their functionalities 
+5. Learn different visualisation tools in Seaborn:  
+Example4: Using the data generated by example3, draw the linear 
+relationship between the force applied and extension using regplot functions. 
+ Sections from References: 
+1. Example plots can be seen in 
+           https://www.geeksforgeeks.org/pandas-built-in-data-visualization-ml/ 
+2. https://www.datacamp.com/tutorial/types-of-data-plots-and-how-to-c
+reate-them-in-python 
+3. https://www.datacamp.com/tutorial/seaborn-python-tutorial 
+4. https://www.geeksforgeeks.org/data-visualisation-in-python-using-m
+atplotlib-and-seaborn/  
+  
+Books and References: 
+1. Core Python Programming 2nd edition or higher, Dr. R. Nageswara Rao, Dreamtech press, 2020 
+(Book 1) 
+2. Python Crash Course - 3rd Edition by Eric Matthes (Book 2) 
+3. Machine Learning in Data Science using Python by Dr R Nageswara Rao (Book 3) 
+4. Data Science and Machine Learning using Python by Dr Reema Thareja (Book 4) 
+Mapping of COs with PSOs and POs : 
+ PS
+O1 
+PSO
+2 
+PSO
+3 
+PSO4 PS
+O5 
+PSO
+6 
+PO1 PO2 PO3 PO4 PO5 PO6 
+526 
+ 
+Page 527 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+CO 1 2 1 1 0 2 1 1 1 1 1 1 0 
+CO 2 2 1 1 0 2 1 1 1 1 1 1 0 
+CO 3 2 1 1 0 2 1 1 1 1 1 1 0 
+CO 4 1 1 1 0 2 1 1 1 1 1 1 0 
+CO 5 2 2 3 1 2 1 1 1 1 1 1 0 
+CO 6 2 2 1 1 2 1 1 1 1 1 1 0 
+Correlation Levels: 
+Level Correlation 
+- Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+Assessment Rubrics: 
+▪ Quiz / Assignment/ Quiz/ Discussion / Seminar  
+▪ Midterm Exam  
+▪ Programming Assignments/Viva 
+▪ Final Exam (70%) 
+Mapping of COs to Assessment Rubrics : 
+  Internal Theory 
+/Practical Exam 
+Assignment 
+/Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓     ✓ 
+CO 2 ✓     ✓ 
+CO 3 ✓     ✓ 
+CO 4  ✓ ✓   ✓ 
+CO 5  ✓ ✓   ✓ 
+CO 6  ✓   ✓   
+ 
+527 
+ 
+Page 528 of 627
+
+================================================================================
+FILE: QUANTUM_MECHANICS_I.pdf
+================================================================================
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+CALICUT UNIVERSITY – FOUR-YEAR UNDER 
+GRADUATE PROGRAMME (CU-FYUGP) 
+ 
+BSc PHYSICS HONOURS 
+   
+Programme B.Sc. Physics Honours 
+Course Title QUANTUM MECHANICS I 
+Type of Course Core in Major 
+Semester V 
+Academic Level 300 - 399 
+Course Details Credit Lecture per 
+week 
+Tutorial 
+per week 
+Practical 
+per week 
+Total Hours 
+4 4 - - 60 
+Pre-requisites Fundamental Mathematics Concepts: Vector, Matrix, 2nd Order ODE, 
+Probability. 
+Course Summary This comprehensive course aims to provide students with a solid 
+foundation in quantum mechanics, delving into theoretical concepts, 
+honing problem-solving skills, and offering exciting possibilities 
+through hands-on simulations. 
+ 
+Course Outcomes (CO):  
+CO CO Statement Cognitive 
+Level* 
+Knowledge 
+Category# 
+Evaluation 
+Tools used 
+CO1 Demonstrate a deep understanding of the 
+foundational principles of quantum 
+mechanics 
+Understand
+ing 
+Conceptual 
+Knowledge 
+Written exams, 
+quizzes 
+CO2 Solve complex quantum mechanical 
+problems using mathematical formalism 
+such as the Schrödinger equation 
+Applying Procedural 
+Knowledge 
+Problem sets, 
+simulations 
+CO3 Analyze the quantum behavior of systems 
+with discrete and continuous spectra 
+Analyzing Conceptual 
+Knowledge 
+Homework 
+assignments, 
+exams 
+111 
+ 
+Page 112 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+CO4 Explain the physical significance of 
+quantum mechanical operators and their 
+properties 
+Understand
+ing 
+Conceptual 
+Knowledge 
+Class 
+discussions, 
+presentations 
+CO5 Predict the outcomes of quantum 
+experiments and interpret their results 
+within the framework of quantum theory 
+Evaluating Conceptual 
+Knowledge 
+Virtual lab 
+experiments, 
+projects 
+CO6 Apply quantum mechanics principles to 
+understand topics such as box problem and 
+quantum harmonic oscillator 
+Applying Procedural 
+Knowledge 
+Research 
+papers, 
+presentations 
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) 
+Metacognitive Knowledge (M)    
+ 
+ 
+Detailed Syllabus: 
+Module Unit Content 
+Hrs 
+(48 
++12) 
+Marks 
+(70) 
+I 
+THE WAVE FUNCTION 6 10 
+1 The Schrödinger Equation, The Statistical Interpretation.  1  
+2 Probability: Discrete Variables, Continuous Variables. 2 
+3 Normalization 1 
+4 Momentum 1 
+5 The Uncertainty Principle. 1 
+Sections 1.1 – 1.6 of chapter 1 of Book 1 
+II 
+TIME – INDEPENDENT SCHRÖDINGER EQUATION 13 20 
+6 Stationary States – Time-independent Schrodinger Equation, 
+Time-independence of expectation values, A definite value of 
+the total energy, General solution as a linear combination of 
+separable solutions, Probability amplitudes.  
+3  
+7 The Infinite Square Well 3 
+8 The Free Particle – Wave packet, Phase and Group velocities 2 
+Sections 2.1, 2.2 and 2.4 of chapter 2 of Book 1 
+112 
+ 
+Page 113 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+9 The Conservation of Probability: Probability Density, 
+Probability Current Density, Interpretation of Equation of 
+Continuity. 
+1 
+10 The Potential Step : Case E > V0 , Case E < V0.   2 
+11 The Potential Barrier : Case E > V0 , Case E < V0 – Tunneling. 2 
+Sections 3.6.4 of chapter 3, and sections 4.4, 4.5.1 and 4.5.2 of chapter 4 of 
+Book 2 
+III 
+MATHEMATICAL TOOLS OF QUANTUM MECHANICS 20 25 
+12 The Hilbert Space and Wave Functions: The Linear Vector 
+Space, The Hilbert Space, Dimension and Basis of a Vector 
+Space, Square-Integrable Functions – Wave Functions 
+3  
+13 Dirac Notation: Kets, Bras, Bra-Kets and their Properties  2 
+14 Operators: General Definitions, Hermitian Adjoint and Its 
+Properties, Hermitian Operators. 
+2 
+15 Commutator Algebra 1 
+16 Uncertainty Relation between Two Operators – General 
+Relation and Heisenberg Uncertainty Relations 
+1 
+17 Functions of Operators  1 
+18 Eigenvalues and Eigenvectors of an Operator,  
+Theorems 2.1 – 2.5. 
+2 
+19 Representation of Discrete Bases: Matrix Representation of 
+Kets and Bras, Matrix Representation of Operators, Change of 
+Bases and Unitary Transformations, Matrix Representation of 
+the Eigenvalue Problem. 
+3 
+20 Representation of Continuous Basis: General Treatment, 
+Position Representation, Momentum Representation, 
+Connecting Position and Momentum Representations. 
+4 
+21 Matrix and Wave Mechanics: Matrix Mechanics, Wave 
+Mechanics 
+1 
+Sections 2.2, 2.3, 2.4.1, 2.4.2, 2.4.4 – 2.4.6, 2.4.8, 2.5.1.1, 2.5.1.2,2.5.2, 2.5.3, 
+2.6.1 – 2.6.4.3 and 2.7 of chapter 2 of Book 2 
+IV 
+THE QUANTUM HARMONIC OSCILLATOR 9 15 
+22 The Harmonic Oscillator: Energy Eigenvalues, Energy 
+Eigenstates, Energy Eigenstates in Position Space (up to the first 
+excited state only), The Matrix Representation of Various 
+Operators, Expectation Values of Various Operators. 
+6  
+23 3D Problems in Cartesian Coordinates – General Treatment: 1 
+113 
+ 
+Page 114 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+Separation of Variables 
+24 The Box Potential – Rectangular and Cubic Box Potentials, 
+Degeneracy 
+1 
+25 The 3D Harmonic Oscillator: Anisotropic and Isotropic 
+Oscillators, Degeneracy 
+1 
+Sections 4.8 – 4.8.5 of chapter 4, and sections 6.2.1, 6.2.3 and 6.2.4 of chapter 
+6 of Book 2 
+Solved and unsolved problems of the relevant sections from the prescribed texts shall be discussed 
+or given as assignment. 
+V 
+OPEN – ENDED MODULE:  
+COMPUTER SIMULATIONS OF QUANTUM SYSTEMS 
+12  
+Computer Simulations of quantum systems such as potential well, harmonic 
+oscillator etc. can be done using appropriate numerical techniques and 
+eigenvalue solvers in Python. The objectives can be to determine the energies 
+of these systems and plot the probabilities of the states. 
+ 
+Books and References:  
+1. Introduction to Quantum Mechanics (Third Edition) by David J Griffiths (Book 1)  
+2. Quantum Mechanics: Concepts and Applications (Second Edition) by Nouredine Zettili (Book 2) 
+3. Principles of Quantum Mechanics  by Ramamurti Shankar 
+4. Quantum Mechanics: Theory and Applications" by Ajoy Ghatak and S. Lokanathan 
+5. Lectures on Quantum Mechanics by B. K. Agarwal 
+6. Quantum Mechanics: Non-Relativistic Theory" by L. D. Landau and E. M. Lifshitz 
+7. NPTEL video lectures: https://nptel.ac.in/courses/122106034  
+Mapping of COs with PSOs and POs : 
+ PSO
+1 
+PSO
+2 
+PSO
+3 
+PSO
+4 
+PSO
+5 
+PSO
+6 
+PO1 PO2 PO3 PO4 PO5 PO6 PO7 
+CO 1 3 0 0 0 2 0 3 1 0 0 1 1 1 
+CO 2 3 2 3 0 3 0 3 1 1 0 1 1 1 
+CO 3 3 0 3 0 3 0 3 1 0 0 1 1 1 
+CO 4 3 0 0 0 2 0 3 1 0 0 1 1 1 
+CO 5 3 0 3 0 3 0 3 1 0 0 1 1 1 
+CO 6 3 0 3 0 3 0 3 1 0 0 3 1 0 
+ 
+114 
+ 
+Page 115 of 627
+CU - FYUGP | BSc. PHYSICS HONOURS SYLLABUS 2024 
+ 
+ 
+ 
+Correlation Levels: 
+Level Correlation 
+0 Nil 
+1 Slightly / Low 
+2 Moderate / Medium 
+3 Substantial / High 
+Assessment Rubrics: 
+▪ Quiz / Discussion / Seminar  
+▪ InternalTheory / Practical Exam  
+▪ Assignments / Viva 
+▪ End Semester Exam (70%) 
+Mapping of COs to Assessment Rubrics 
+  Internal Theory / 
+Practical Exam 
+Assignment / 
+Viva 
+Practical Skill 
+Evaluation 
+End Semester 
+Examinations 
+CO 1 ✓ ✓    ✓ 
+CO 2 ✓ ✓    ✓ 
+CO 3 ✓ ✓   ✓ 
+CO 4 ✓ ✓   ✓ 
+CO 5 ✓ ✓   ✓ 
+CO 6   ✓ ✓   
+ 
+115 
+ 
+Page 116 of 627
+

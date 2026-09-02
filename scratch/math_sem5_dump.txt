@@ -1,0 +1,521 @@
+================================================================================
+FILE: MAT5CJ301CourseTitleREALANALYS_REAL_ANALYSIS_II.pdf
+================================================================================
+Programme B. Sc. Mathematics Honours Course Code MAT5CJ301 Course Title REAL ANALYSIS II Type of Course Major  Semester V Academic Level 300  399 Course Details Credit Lecture/Tutorial per week Practicum per week Total Hours 4 3  2 75 Pre-requisites 1. Mathematical Logic and necessary exposure to set theory. 2. Basic Calculus  3. Real Analysis I Course Summary Continuous real functions are introduced rigorously using the epsilon-delta argument. The equivalent sequential criterion is established later. Differentiable and (Riemann) Integrable functions are introduced followed by the fundamental theorem of calculus connecting the two notions. The course concludes with a discourse on series of functions and various results discussing the compatibility of the above three notions with the limiting operations on series of functions.  Course Outcomes (CO):  CO CO Statement Cognitive Level* Knowledge Category# Evaluation Tools used CO1 Analyse and explain the concept of continuous functions and their properties on intervals, and apply the principles of uniform continuity. An C Internal Exam/Assignment/Seminar/ Viva/Report/ End Sem Exam CO2 Analyse the vitality of continuous functions when they are defined on intervals. An C Internal Exam/Assignment/Seminar/ Viva/Report/ End Sem Exam CO3 Apply the derivative and the Mean Value Theorem to solve problems and prove related theorems. Ap P Internal Exam/Assignment/Seminar/ Viva/Report/ End Sem Exam * - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) # - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive Knowledge (M)        
+80
+Page 81 of 454
+Detailed Syllabus: Textbook Introduction to Real Analysis, 4/e, Robert G Bartle, Donald R Sherbert John Wiley & Sons(2011) Module Unit Content Hrs (45+30)  Marks Ext:70 I Continuous Functions     14     Min.15 1 Section 5.1  Continuous functions  2 Section 5.3  Continuous functions on intervals  5.3.1 to 5.3.5 3 Section 5.3  from 5.3.7 - 5.3.10 4 Section 5.4  Uniform Continuity-up to 5.4.3 5 Section 5.4  Uniform Continuity-5.4.4 to 5.4.14(proof of Weierstrass Approximation Theorem is optional)  6 Selected problems from the above sections. II Differentiation    10    Min.15 7 Section 6.1  The Derivative  6.1.1 to 6.1.7 8 Section 6.2- The Mean Value Theorem - 6.2.1 to 6.2.6 9 Section 6.2 - from 6.2.7 to 6.2.9 10 Section 6.2-The Mean Value Theorem- 6.2.10 to 6.2.13  11 Selected problems in the above sections. III The Riemann Integral       14       Min.20 12 Section 7.1  Riemann Integral  up to 7.1.4 (a)  13 Section 7.1  from 7.1.5 to 7.1.7 (proof of 7.1.7 is optional) 14 Section 7.2  Riemann Integrable functions  7.2.1 to 7.2.5 (Examples 7.2.2 are optional) 15 Section 7.2  from 7.2.7 to 7.2.13  16 Section 7.3  The Fundamental Theorem  7.3.1 to 7.3.7    17 Section 7.3  from 7.3.8 to 7.3.18 ( proof of theorem 7.3.18 is optional)  18 Selected problems in the above sections. IV Sequences and Series of functions    7    Min.10 19 Section 8.1  Pointwise and Uniform Convergence  8.1.1 to 8.1.3 20 Section 8.1  from 8.1.4 to 8.1.10 21 Section 8.2  Interchange of limits  8.2.1  22 Section 8.2  Interchange of limit and continuity - 8.2.2 V   Practicum:   The goal is for the students to learn the following selected topics in 15 practicum sessions of two hours each via self-study and group activities. The lecturer should  assist them by running group discussions, overseeing class seminars and referring library books for self-study and note preparation.       30  1 Section 5.2  Combinations of continuous functions  2 Section 5.6  from 5.6.5 to 5.6.7 81
+Page 82 of 454
+3 Section 6.1  Inverse Functions  6.1.8 to 6.1.10 4 Section 6.3  -from 6.3.5 to 6.3.7 5 Section 6.4   6.4.1 to 6.4.4 6 Section 8.2  Interchange of Limits  8.2.3 and 8.2.4 7 Section 9.1  Absolute Convergence  9.1.1 to 9.1.3 8 Section 9.1  9.1.4 to 9.1.5 9 Section 9.2  Limit Comparison Test with examples 10 Section 9.2  Root Test with examples 11 Section 9.2  Ratio Test with examples 12 Section 9.2  Integral Test with examples  13 Section 9.2   14 Section 9.3  Alternating Series Test 15 Section 9.4  Infinite Series  Series of Functions  9.4.1 to 9.4.7    Reference 1. Apostol, Tom M. Calculus, Volume 1. John Wiley & Sons, 1991. 2. Tom.M. Apostol, Mathematical Analysis, 2/e, Addison-Wesley, 2002. 3. Richard R Goldberg, Methods of Real Analysis, 2/e, Wiley, 2020 4. Raymond L Wilder, Introduction to the Foundations of Mathematics,2/e, John Wiley & Sons 5. Malik, Subhash Chandra, and Savita Arora. Mathematical analysis. New Age International, 1992. *Optional topics are exempted for end semester examination **70 external marks are distributed over the first four modules subjected to a minimum of 15 marks from each module.              82
+Page 83 of 454
+Mapping of COs with PSOs and POs :  PSO1 PSO2 PSO3 PSO4 PO1 PO2 PO3 PO4 PO5 PO6 PO7 CO 1 2 2 2 1 2 0 2 0 3 0 0 CO 2 2 2 2 1 2 0 2 0 3 0 0 CO 3 3 2 3 1 3 0 3 0 3 0 0 Correlation Levels: Level Correlation - Nil 1 Slightly / Low 2 Moderate / Medium 3 Substantial / High Assessment Rubrics:        Mapping of COs to Assessment Rubrics: Internal Exam Assignment/ Report Seminar Viva End Semester Examinations CO 1     CO 2     CO 3        
+83
+Page 84 of 454
+
+================================================================================
+FILE: MAT5CJ302CourseTitleABSTRACTAL_ABSTRACT_ALGEBRA_I.pdf
+================================================================================
+Programme B. Sc. Mathematics Honours Course Code MAT5CJ302 Course Title ABSTRACT ALGEBRA I Type of Course Major  Semester V Academic Level 300-399  Course Details Credit Lecture/Tutorial per week Practical per week Total Hours 4 4  - 60 Pre-requisites  Basic set theory, algebra of Integers, operations on functions, basic proof techniques etc. Course Summary  This course explores the algebraic concepts of Binary Operations, Binary Structures, Groups, Rings, Integral Domains and Fields. We further study the Theory of Groups. Elementary properties, Subgroups, Finite Groups, Cyclic Groups, Groups of Permutations, Orbits, Cycles, Alternating Groups, Cosets and the Theorem of Lagrange are studied. Then we study mappings between groups or Homomorphisms. Finally, the Open-ended section points to Generating sets, Factor Groups and Field of Quotients of an Integral Domain. Course Outcomes (CO):  CO CO Statement Cognitive Level* Knowledge Category# Evaluation Tools used CO1 Discuss about binary operations, isomorphic binary structures and groups U C Internal Exam/ Assignment/Seminar/ Viva/End Sem Exam CO2 Analyse and classify subgroups and cyclic groups, and determine their properties using group theory. A P Internal Exam/ Assignment/Seminar/ Viva/End Sem Exam CO3 Evaluate and apply theorems related to cosets, Lagrange's theorem, homomorphisms, rings, and fields to solve complex algebraic problems. E F Internal Exam/ Assignment/Seminar/ Viva/End Sem Exam * - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) # - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive Knowledge (M)      
+84
+Page 85 of 454
+Detailed Syllabus:  Text book  A first course in abstract algebra, Fraleigh, John B.. Seventh Edition,  Pearson Education India, 2003 Module Unit Content Hrs (48+12) Marks  Ext(70) I Module I   12     Min.15   1 Section 2- Binary Operations (2.1 to 2.10) 2 Section 2- Binary Operations (2.11 to 2.25) 3 Section 3- Isomorphic Binary Structures (3.1 to 3.11). 4 Section 3- Isomorphic Binary Structures (3.12 to 3.17) 5 Section 4- Groups (4.1 to 4.14) 6 Section 4- Groups  Elementary Properties of Groups, Finite Groups and Group tables (4.15 onwards) II Module II     14     Min.15 7 Section 5- Subgroups (5.1 to 5.16) 8 Section 5 -Subgroup - Cyclic Subgroups (5.17 to 5.23) 9 Section 6 -Cyclic Groups (6.1 to 6.9) (Proof of Theorem 6.3 is optional) 10 Section 6- Cyclic Groups (6.10 to 6.17) (Proof of Theorem 6.14 is optional).1 11 Section 8-Groups of Permutations (up to 8.6) 12 Section 8- Groups of Permutations (8.7 to 8.18) III Module III     10     Min.15 13 Section 9 - Orbits, Cycles, and the Alternating Groups (Up to 9.10) 14 Section 9 - Orbits, Cycles, and the Alternating Groups         ( 9.11 to 9.21) (Proof 2 of theorem 9.15 is optional). 15 Section 10- Cosets and the theorem of Lagrange (Up to 10.9) 16 Section 10- Cosets and the theorem of Lagrange (10.10 to 10.14) 85
+Page 86 of 454
+IV Module IV    12    Min.15 17 Section 13- Homomorphisms (13.1 to 13.10) 18 Section 13-Homomorphism (13.11 to 13.20)  19 Section 18-Rings and Fields (18.1 to 18.13) 20 Section 18-Rings and Fields (18.14 to 18.18) 21 Section 19-Integral Domains (19.1 to 19.8) 22 Section 19-Integral Domains (19.9 to 19.15) V   Module V (Open Ended)   12 -  Generating Sets in Groups   Factor Groups  The Field of Quotients of an Integral Domain  References 1. Herstein, Israel Nathan. Topics in algebra. John Wiley & Sons, 1991. 2. Gallian, Joseph. Contemporary abstract algebra. Chapman and Hall/CRC, 2021. 3. Wallace, David AR. Groups, rings and fields. Springer Science & Business Media, 2001 4. Reis, Clive. Abstract algebra: an introduction to groups, rings and fields. World Scientific Publishing Company, 2011. 5. Allan Clark, Elements of Abstract Algebra, Dover Publications, 1984  6. C Musili, Introduction to Rings and Modules, Narosa Publications, 2009 Suggested Programming Exercises for Open-Ended 1. Form congruence groups, their Cayley tables (Section 9.2, Ref (3)).2. Form symmetric groups of various orders, list the elements, find the power of some elements, find out the product of some of the elements. Find the order of the elements. Form a group table using conditionals and loops. (Section 9.3, Ref (3) or Ref (1)).3. List S3. Find a subgroup from this group. How many distinct subgroups can be found from this group? List all of them.4. Form the Dihedral group D4, check if it is abelian using is_abelian(). Conduct the same experiments as listing the elements ,finding the orders etc as above. (Section 9.4, Ref (3) or Ref (1)).5. Test the command is normal () on a few subgroups of S3. (Ref (1)).6. Create cyclic groups. (Section 9.5, Ref (3)).86
+Page 87 of 454
+7. Form finitely generated abelian groups. (Section 9.6, Ref (3)).8. Form a subgroup of a group (say, S3) (Section 9.8, Ref (3)). References 1. Robert A. Beezer; Group Theory and SAGE: A Primer, http://people.reed. edu/~davidp/332/sage-group-theory.pdf2. Group Theory and Sage - SageMath tutorial https://doc.sagemath.org/html/ en/thematic_tutorials/group_theory.html3. Ajit Kumar, Vikas Bist; Group Theory An Expedition with SageMath, Narosa Publishing House.4. Thomas W. Judson, Robert A. Beezer; Abstract Algebra Theory and Applications with Sage Exercises for Abstract Algebra, http://abstract.ups.edu/download/ aata-20130816.pdf *Optional topics are exempted for end semester examination. **70 external marks are distributed over the first four modules subjected to a minimum of 15 marks from each module.               87
+Page 88 of 454
+Mapping of COs with PSOs and POs:  PSO1 PSO2 PSO3 PSO4 PO1 PO2 PO3 PO4 PO5 PO6 PO7 CO 1 2 2 1 0 2 0 0 0 2 0 0 CO 2 1 2 3 0 2 0 2 0 3 0 0 CO 3 0 1 2 3 2 0 3 0 3 0 0 Correlation Levels: Level Correlation - Nil 1 Slightly / Low 2 Moderate / Medium 3 Substantial / High Assessment Rubrics:       Mapping of COs to Assessment Rubrics:   Internal Exam Assignment Seminar Viva End Semester Examinations CO 1     CO 2     CO 3          
+88
+Page 89 of 454
+
+================================================================================
+FILE: MAT5CJ303CourseTitleCOMPLEXANA_COMPLEX_ANALYSIS_I.pdf
+================================================================================
+Programme B. Sc. Mathematics Honours Course Code MAT5CJ303 Course Title COMPLEX ANALYSIS I Type of Course Major Semester V Academic Level 300-399 Course Details Credit Lecture/Tutorial per week Practicum per week Total Hours 4 4  - 60 Pre-requisites  Basics of Real Number System and Calculus.  Course Summary  This course begins with the concepts of complex numbers. complex plane, polar form of complex numbers, powers and roots, etc. Next we discuss complex functions including power functions and nth root functions. Then we discuss limits, continuity, differentiability and analyticity of complex functions. Cauchy Riemann equations and Harmonic conjugates are also studied. Finally the course discusses some standard complex functions like Exponential functions, Logarithmic functions, Trigonometric and Hyperbolic functions.  Course Outcomes (CO):  CO CO Statement Cognitive Level* Knowledge Category# Evaluation Tools used CO1 Understand and explain the properties and representations of complex numbers, including their polar form and operations. U C Internal Exam/ Assignment/Seminar/ Viva/End Sem Exam CO2 Apply the principles of limits, continuity, and differentiability to complex functions and utilize the Cauchy-Riemann equations. Ap P Internal Exam/ Assignment/Seminar/ Viva/End Sem Exam CO3 Evaluate and create complex exponential, logarithmic, trigonometric, and hyperbolic functions, understanding their properties and applications. C F Internal Exam/ Assignment/Seminar/ Viva/End Sem Exam * - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) # - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive Knowledge (M)         
+89
+Page 90 of 454
+Detailed Syllabus: Textbook Complex Analysis (Third Edition): Dennis G. Zill & Patric D. Shanahan,  Module Unit Content Hrs 60 External Marks (70) I Module I  13  Min.15 1 Section 1.1-Complex Numbers and Their Properties 2 Section 1.2-Complex Plane 3 Section 1.3- Polar Form of Complex Numbers 4 Section 1.4- Powers and Roots 5 Section 1.5 -Sets of Points in Complex Plane II Module II      12    Min.15 6 Section 2.1 -Complex Functions 7 Section 2.2- Complex Functions as Mappings- up to and including Example 4. 8 Section 2.4- Special Power Functions- The Power Function (All the topics in 2.4.1) 9 Section 2.4- Special Power Functions-The power function     (Topics in 2.4.2, up to and including Example 5.) 10 Section 2.4- Special Power Functions-Principal nth Root Functions and Example 9. III Module III 15      Min.20   11 Section 3.1- Limits and Continuity-Limits (All the topics in 3.1.1) 12 Section 3.1- Limits and Continuity-Continuity (Topics in 3.1.2, up to Example 7. ) 13 Section 3.1-Limits and Continuity-Continuity (Theorem 3.1.4 to up to and including a bounding property. 14 Section 3.2- Differentiability and Analyticity- up to and including Example 2. 15 Section 3.2- Differentiability and Analyticity- All the topics after Example 2. 16 Section 3.3- Cauchy-Riemann Equations-up to and including Theorem 3.3.2 17 Section 3.3 - Cauchy Riemann Equations: -All the topics after Theorem 3.3.2. 18 Section 3.4 - Harmonic Functions IV Module IV 8    Min.15 19 Section 4.1 Exponential and Logarithmic Functions- Complex Exponential Function (Topics in 4.1.1 up to and including Periodicity) 90
+Page 91 of 454
+20 Section 4.1 Exponential and Logarithmic Functions- Complex Logarithmic Function (Topics in 4.1.2 up to and        including Example 4) 21 Section 4.3 Trigonometric and Hyperbolic Functions- Complex Trigonometric Functions (Topics in 4.3.1, up to and excluding trigonometric mapping.) 22 Section 4.3 Trigonometric and Hyperbolic Functions- Complex Hyperbolic Functions (All the topics in 4.3.2) V  Module V (Open Ended)  12    Linear Mappings, Reciprocal Functions Branches, Branch Cuts and Points, Complex Powers Inverse Trigonometric and Hyperbolic Functions. References 1. Brown, James Ward, and Ruel V. Churchill. Complex variables and applications. McGraw-Hill, 2009. 2. Stein, Elias M., and Rami Shakarchi. Complex analysis. Vol. 2. Princeton University Press, 2010. 3. Burckel, Robert B. An Introduction to Classical Complex Analysis: Vol. 1. Vol. 64. Birkhäuser, 2012 4. Hormander, Lars. An introduction to complex analysis in several variables. Elsevier, 1973. 5. Priestley, Hilary A. Introduction to complex analysis. OUP Oxford, 2003. 6. Silverman, Richard A. Introductory complex analysis. Courier Corporation, 2013 7. Bak, Joseph, Donald J. Newman, and Donald J. Newman. Complex analysis. Vol. 8. New York: Springer, 2010.  *70 external marks are distributed over the first four modules subjected to a minimum of 15 marks from each module.                      91
+Page 92 of 454
+ Mapping of COs with PSOs and POs :  PSO1 PSO2 PSO3 PSO4 PO1 PO2 PO3 PO4 PO5 PO6 PO7 CO 1 3 1 0 0 3 0 0 0 2 0 0 CO 2 0 3 1 0 2 0 3 0 3 0 0 CO 3 1 0 3 0 2 0 3 0 3 0 0 Correlation Levels: Level Correlation - Nil 1 Slightly / Low 2 Moderate / Medium 3 Substantial / High Assessment Rubrics:      Mapping of COs to Assessment Rubrics:   Internal Exam Assignment Seminar Viva End Semester Examinations CO 1     CO 2     CO 3            
+92
+Page 93 of 454
+
+================================================================================
+FILE: MAT5EJ3011CourseTitleMATHEMATI_MATHEMATICAL_FOUNDATIONS_OF_COMPUTING.pdf
+================================================================================
+Programme B. Sc. Mathematics Honours Course Code MAT5EJ301(1) Course Title MATHEMATICAL FOUNDATIONS OF COMPUTING Type of Course Elective (Specialisation- Mathematical Computing) Semester V Academic Level 300 - 399 Course Details Credit Lecture/Tutorial per week Practical per week Total Hours 4 4 - 60 Pre-requisites  Fundamental Mathematics Concepts: Set, Functions, Logic Course Summary This course familiarises students with a selection of topics from discrete mathematics which find regular applications in Computer Science.   CO CO Statement Cognitive Level* Knowledge Category# Evaluation Tools used CO1 Apply mathematical induction to solve a variety of combinatorial problems. Ap P Internal Exam/Assignment/Seminar/ Viva / End Sem Exam CO2 Analyse and classify different types of relations and equivalences in combinatorial settings. An C Internal Exam/Assignment/Seminar/ Viva / End Sem Exam CO3 Evaluate and demonstrate proficiency in using combinatorial techniques such as permutations, factorials, and binomial coefficients to solve complex problems. E P Internal Exam/Assignment/Seminar/ Viva / End Sem Exam * - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) # - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive Knowledge (M)            137
+Page 138 of 454
+Detailed Syllabus: Text Book  Oxford University Press  (II) Robin J Wilson, Introduction to Graph Theory (4/e), Prentice Hall Module Unit Content Hrs (48+12) Ext. Marks (70) I Combinatorial Counting (Text 1) 12  1 1.1 An Assortment of problems  2 1.3 Mathematical Induction (Proof of Theorem 1.3.1 is optional) 3 1.5 Relations, 1.6 Equivalences and other special type of relation 4 3.1 Functions and subsets, 3.2 Permutations and factorials 5 3.3 Binomial Coefficients-  6 3.7 Inclusion-Exclusion Principle. (Third proof of Theorem 3.7.2 is        optional) II Basics of Graph Theory (Text 1) 12 7 4.1 The notion of a graph; Isomorphism  8 4.2 Subgraphs, Components, Adjacency Matrix 9 4.3 Graph Score (Proof of Theorem 4.3.3 is optional) 10 4.4 Eulerian Graphs (Second proof of Theorem 4.4.1 and lemma 4.4.2         are optional)   11 4.5 Eulerian Directed Graph  12 5.1 Definition and characterizations of trees III Matching and Colouring (Text 2) 12 13 12. Planar Graphs (Proof of Theorem 12.2 and Theorem 12.3 are                               optional)  14  15 formula (from Corollary 13.4) 16 17. Coloring Graphs 138
+Page 139 of 454
+17 19. Coloring Maps (Proof of Theorem 19.2 and Theorem 19.4 are                                 optional) 18  IV Probabilistic Method (Text 1) 12 19 10.1 Proofs by Counting (2-Coloting revisited and related topics are       optional)  20 10.2 Finite Probability Spaces (up to Random graphs)  22 10.2 Finite Probability Spaces (From Random graphs) 22 10.3 Random Variables and their Expectations V  Open Ended 12 Hamiltonian Graphs, 2-Connectivity, Examples of applications of Probabilistic Method, Ramsey Theory, Generating Functions, simulating random experiments  References:      1. Discrete Mathematics by Norman L. Biggs (2nd Edition, 2002), Oxford University Press (ISBN- 13: 978-0198507178) 2. Discrete Mathematics and Applications by Kenneth Rosen (7th Edition, 2012), McGraw-Hill Education (ISBN-13: 978-0073383095) 3. Discrete Mathematics: Elementary and Beyond by László Lovász, József Pelikán, Katalin Vesztergombi, Springer 2003, ISBN-13: 978-0387955858.   Note: 1) Optional topics are exempted for end semester examination                  2) 70 external marks are distributed over the first four modules subjected to a minimum of 15 marks from each module.         139
+Page 140 of 454
+Mapping of COs with PSOs and POs :  PSO1 PSO2 PSO3 PSO4 PO1 PO2 PO3 PO4 PO5 PO6 PO7 CO 1 2 2 1 1 3 1 3 1 3 0 2 CO 2 2 2 1 1 3 1 3 2 3 0 2 CO 3 2 3 2 2 3 1 3 2 3 0 3 Correlation Levels: Level Correlation - Nil 1 Slightly / Low 2 Moderate / Medium 3 Substantial / High Assessment Rubrics:      Mapping of COs to Assessment Rubrics:   Internal Exam Assignment Seminar Viva End Semester Examinations CO 1     CO 2     CO 3         
+140
+Page 141 of 454
+
+================================================================================
+FILE: MAT5EJ3021CourseTitleDATASTRUC_DATA_STRUCTURES_AND_ALGORITHMS.pdf
+================================================================================
+ CO CO Statement Cognitive Level* Knowledge Category# Evaluation Tools used CO1 Analyse and compare the efficiency of algorithms for computing Fibonacci numbers, distinguishing between exponential and polynomial approaches. E P Internal Exam/Assignment/Seminar/ Viva / End Sem Exam CO2 Demonstrate proficiency in asymptotic analysis to assess the efficiency of algorithms. Ap P Internal Exam/Assignment/Seminar/ Viva / End Sem Exam CO3 Apply classical algorithms for number operations, including addition, multiplication, and modular arithmetic, to solve computational problems efficiently. Ap P Internal Exam/Assignment/Seminar/ Viva / End Sem Exam * - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) # - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive Knowledge (M)          
+Programme B. Sc. Mathematics Honours Course Code MAT5EJ302(1) Course Title DATA STRUCTURES AND ALGORITHMS Type of Course Elective (Specialisation- Mathematical Computing) Semester V Academic Level 300 - 399 Course Details Credit Lecture/Tutorial per week Practical per week Total Hours 4 4 - 60 Pre-requisites 1. Fundamental Mathematics Concepts: Sets, Functions 2. Discrete Mathematics  Course Summary This course familiarises students with computational problems and computational thinking using some of the basic algorithmic strategies. 
+141
+Page 142 of 454
+Detailed Syllabus: Text Book Algorithms by Sanjoy Dasgupta, Christos H. Papadimitriou, Umesh Vazirani. McGraw- Hill Education, 2006. ISBN: 978-0073523408. Module Unit Content Hrs (48+12) Ext. Marks (70) I Introduction  12  1 Computing Fibonacci Numbers:  Exponential and Polynomial Algorithms   2 Efficiency of Algorithms: Asymptotic Analysis, Big-O Notation 3 Algorithms with Numbers: Efficiency of classical Addition and Multiplication algorithms 4 Algorithms for Modular Arithmetic 5  6 Primality Testing Sections from Text: 0.2, 0.3, 1.1, 1.2, 1.3  II Divide and Conquer Algorithms and Graph Search 12 7 Fast Integer Multiplication  8 Recursive Relations 9 Binary Search 10 Merge Sort 11 Graph Representations: Adjacency Matrix, Adjacency List 12 Depth First Search Undirected Graphs 13 Depth First Search in Directed Graphs Sections from Text: 2.1, 2.2. 2.3, 3.1-3.3.    III Graph Algorithms 12 14 Checking connectivity  15 Directed Acyclic Graphs, Strongly Connected Components 16 Breadth First Search and Computation of distances. 17  18 Priority queue implementations 19 Shortest Paths in Directed Acyclic Graphs 142
+Page 143 of 454
+Note: 70 external marks are distributed over the first four modules subjected to a 
+minimum of 15 marks from each module. 
+Sections from Text:  3.4, 4.1 to 4.4, 4.5, 4.7
+IV Greedy & Dynamic Programming Algorithms 12
+20Minimum Spanning Trees:   Cut Property
+21Kruskal’s Algorithm 
+22Data structure for disjoint sets. 
+23Prim’s algorithm
+24Dynamic Programming and Shortest Path in Directed 
+Acyclic Graphs (DAG)
+25All pairs of Shortest Paths and Floyd Warshall Algorithm
+Sections from Text: 5.1, 5.4, 6.1,  6.6.  
+V 
+(Open 
+Ended)
+Advanced Topics 12
+27Implement the following algorithms in Python 
+- Fibonacci Numbers (exponential and polynomial) 
+- Euclid’s algorithm (extended version) 
+- Primality Testing 
+- Depth First Search (and checking connectivity) 
+- Breadth First Search (and calculating distances) 
+- Dijkstra’s Algorithm
+References:  
+1.The Design and Analysis of Algorithms by Dexter C Kozen. Texts and Monographs in 
+Computer Science, Springer, 1992. ISBN:0-387-97687-6. 
+2.Introduction to Algorithms (3rd Edition) by Thomas H. Cormen, Charles E. Leiserson, 
+Ronald L Rivest, Clifford Stein. PHI Learning, 2009. ISBN:978-81-203-4007-7. 
+3.Algorithm Design by Jon Kleinberg and Eva Tardos. Pearson, 2015. 
+ISBN:978-93-325-1864. 
+141	
+143
+Page 144 of 454
+Mapping of COs with PSOs and POs :  PSO1 PSO2 PSO3 PSO4 PSO5 PSO6 PO1 PO2 PO3 PO4 PO5 PO6 PO7 CO 1 2 2 3 2   3 1 3 3 3 0 3 CO 2 2 3 2 2   3 1 3 3 3 0 2 CO 3 2 3 3 2   3 1 3 3 3 0 2 Correlation Levels: Level Correlation - Nil 1 Slightly / Low 2 Moderate / Medium 3 Substantial / High Assessment Rubrics:      Mapping of COs to Assessment Rubrics:   Internal Exam Assignment Seminar Viva End Semester Examinations CO 1     CO 2     CO 3                 144
+Page 145 of 454
+
+================================================================================
+FILE: MAT5EJ3032CourseTitleCONVEXOPT_CONVEX_OPTIMIZATION.pdf
+================================================================================
+ CO CO Statement Cognitive Level* Knowledge Category# Evaluation Tools used CO1 Prove the basic properties of convex sets and   functions. Ap C Internal Exam/Assignment/Seminar/ Viva / End Sem Exam CO2 Model simple problems using convex optimization methods and solve them.  Ap P Internal Exam/Assignment/Seminar/ Viva / End Sem Exam CO3 Formulate the dual of a convex optimization problem and describe the properties. U C Internal Exam/Assignment/Seminar/ Viva / End Sem Exam * - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) # - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive Knowledge (M)       
+Programme B. Sc. Mathematics Honours  Course Code MAT5EJ303 (2) Course Title CONVEX OPTIMIZATION Type of Course Elective (Specialisation- Data Science) Semester V Academic Level 300 - 399 Course Details Credit Lecture/Tutorial per week Practical per week Total Hours 4 4 - 60 Pre-requisites  Linear Algebra and Multi Variable Calculus Course Summary The course covers the basic theory of convex sets and functions, optimization theory of convex functions and Lagrangian duality.  The concepts explored in this course are important for data science, as they underpin many algorithms and methods in machine learning, optimization, and statistical analysis. For instance, understanding gradients and Hessians is essential for optimizing cost functions, while knowledge of convex optimization is vital for developing efficient algorithms. This mathematical foundation will enable data scientists to design, analyse, and implement sophisticated models and solutions.  
+152
+Page 153 of 454
+Detailed Syllabus: Text Book 1. K. G. Binmore, Mathematical Analysis:  A straightforward approach, 2nd edition, Cambridge University Press, 1982.  2. Stephen Boyd, and Lieven Vandenberghe. Convex optimization. Cambridge university press, 2004. Module Unit Content Hrs (48+12) Ext. Marks(70) I Review of Multivariable Calculus 10  1 Scalar and vector fields - Directional and Partial Derivatives       Min 15          Min 15        
+2 Differentiable functions and total Derivative - Matrix representation - Gradient and Jacobian  3 Chain rule for differentiation - matrix form 4 Stationary points - conditional for stationarity 5 Second derivatives and Hessian Matrix.   6  7 Eigenvalues of Hessian  8 Classification of stationary points.   Chapter 19 of Text Book 1 - pages 190-231.   II Convexity 14 9 Affine and Convex Sets   10 Convexity preserving operations  11 Generalized inequalities  12 Supporting and separating hyperplanes 13 Dual cones and generalized inequality  14 Basic properties and examples of convex functions 15 Convexity preserving operations  16 Quasi convex, log convex functions  17 Convexity and generalized inequalities      Chapter 2 and 3 of Text Book 2.   III Convex Optimization Problems 12 18 Optimization problems and convex optimization ` 153
+Page 154 of 454
+19 Linear optimization problems  Min 15         Min 15 20 Quadratic optimization problems  21 Geometric programming  22 Generalized inequality constraints  19 Vector optimization  Chapter 4 of Text Book 2 IV                                                Duality 12 20 The Lagrange dual function   21 The Lagrangian dual and geometric interpretation  22 Saddle point interpretation  23 Optimality condition  24 Theorems of alternatives  25 Generalized inequalities  Chapter 5 of Text Book 2 V (Open Ended) Open Ended 12 27 Instances of practical problems that can be solved with convex optimization methods discussed in the course such as linear classifiers, support vector machines, linear and logistic regression.    References:  1. David G. Luenberger and Yinyu Ye. Linear and nonlinear programming. 4th edition. Springer, 2015. 2.  Niels Lauritzen, Undergraduate Convexity: From Fourier And Motzkin To Kuhn And Tucker, World Scientific, 2013.      Note: 70 external marks are distributed over the first four modules subjected to a minimum of 15 marks from each module.       154
+Page 155 of 454
+Mapping of COs with PSOs and POs : Correlation Levels: Level Correlation 2-3 1N2il 1 Slightly / Low 2 Moderate / Medium 3 Substantial / High Assessment Rubrics:     Mapping of COs to Assessment Rubrics:   Internal Exam Assignment Seminar Viva End Semester Examinations CO 1     CO 2     CO 3     
+ PSO1 PSO2 PSO3 PSO4 PO1 PO2 PO3 PO4 PO5 PO6 PO7 CO 1 3 2 0 2 3 2 3 2 3 1 2 CO 2 2 3 1 2 3 2 3 3 3 1 3 CO 3 2 2 0 3 3 2 3 2 3 1 2 
+155
+Page 156 of 454
+
+================================================================================
+FILE: MAT5EJ305CourseTitleHIGHERALGE_HIGHER_ALGEBRA.pdf
+================================================================================
+Programme B. Sc. Mathematics Honours Course Code MAT5EJ305 Course Title HIGHER ALGEBRA  Type of Course Elective Semester V Academic Level 300 - 399 Course Details Credit Lecture/Tutorial per week Practical per week Total Hours 4 4 - 60 Pre-requisites Fundamental Mathematics Concepts: Set, Functions, Logic Course Summary This course explores topics that follow as a direct continuation of high school algebra, like the general theory of equations, and classification of second-degree curves and surfaces. Course Outcomes (CO): CO CO Statement Cognitive Level* Knowledge Category# Evaluation Tools used CO1 Understand and apply the algebraic methods used in solving polynomial equations of low degrees and place them in a general context Ap P Internal Exam/Assignment/Seminar/ Viva / End Sem Exam CO2 Understanding of the fundamental concepts of algebraic equations, including the Identity Theorem and the Fundamental Theorem of Algebra. U C Internal Exam/Assignment/Seminar/ Viva / End Sem Exam CO3 Analyse and evaluate various solutions of and trigonometric solutions, and identify the irreducible cases. An C Internal Exam/Assignment/Seminar/ Viva / End Sem Exam * - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C)            # - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive Knowledge (M)      168
+Page 169 of 454
+Detailed Syllabus: Text 1. Geometry(2/e), David A Brannan, Mathew F. Esplen, Jeremy J Gray, Cambridge University Press (2012) ISBN: 978-1-107-64783-1 2. Theory of Equations, J. V. Uspensky, McGraw Hill (1948), ISBN:07-066735-7  Module Unit Content Hrs (48+12) Ext. Marks (70 I Theory of Equations 16  1    2  3  4  5  6  7  II Cubic And Biquadratic Equations 16 8   9  10  11  12  13  14  169
+Page 170 of 454
+III Conic Sections 12 15   16  17  18  IV Quadric Surfaces 4 19    20 Recognizing Conics 21  22  V Open Ended Module: Affine Maps 12 1 Geometry and Transformations - What is Euclidean Geometry? Isometry, Euclidean properties, Euclidean transformation, Euclidean-Congruence  2 Affine Transformations, Basic Properties of Affine Transformations 3 Fundamental Theorem of Affine Geometry References: Press, NY, USA (Public Domain, Copyright exhausted) 2.     Thomas & Finney, Calculus & Analytic Geometry, Addison Wesley 3.     George A Jennings: Modern Geometry with Applications Universitext, Springer (1994) ISBN: 0-387-94222-X 4.     Walter Meyer: Geometry and its Application(2/e) Elsever, Academic Press(2006) ISBN: 0-12-369427-0 Note: 70 external marks are distributed over the first four modules subjected to a minimum of 15 marks from each module.   
+170
+Page 171 of 454
+Mapping of COs with PSOs and POs :  PSO1 PSO2 PSO3 PSO4 PO1 PO2 PO3 PO4 PO5 PO6 PO7 CO 1 3 3 3 2 3 1 2 1 3 0 1 CO 2 3 3 2 2 3 1 2 1 3 0 1 CO 3 2 3 3 2 3 1 3 1 3 0 2 Correlation Levels: Level Correlation - Nil 1 Slightly / Low 2 Moderate / Medium 3 Substantial / High Assessment Rubrics:      Mapping of COs to Assessment Rubrics:   Internal Exam Assignment Seminar Viva End Semester Examinations CO 1     CO 2     CO 3                 171
+Page 172 of 454
+
+================================================================================
+FILE: MAT5EJ306CourseTitleLINEARPROG_LINEAR_PROGRAMMING.pdf
+================================================================================
+Programme B. Sc. Mathematics Honours Course Code MAT5EJ306 Course Title LINEAR PROGRAMMING Type of Course Elective Semester V Academic Level 300 - 399 Course Details Credit Lecture/Tutorial per week Practical per week Total Hours 4 4 - 60 Pre-requisites  Basic Calculus and Linear Algebra Course Summary  Linear Programming is a mathematical modelling technique in which a linear function is maximized or minimized when subjected to various constraints. This technique has been useful for guiding quantitative decisions in business planning, in industrial engineering, andto a lesser extentin the social and physical sciences. This course begins with convex sets and extrema of functions for a sound basis of the subject. It then develops into LP problems including Transportation and Assignment problems.  Course Outcomes (CO): CO CO Statement Cognitive Level* Knowledge Category# Evaluation Tools used CO1 Able to identify and analyse the properties of convex sets, including open and closed sets, convex hulls, and vertices. An C Internal Exam/Assignment/Seminar/ Viva / End Sem Exam CO2 To demonstrate proficiency in applying optimization techniques such as gradient descent, constrained extrema, and the method of Lagrange multipliers to solve real-valued functions. Ap P Internal Exam/Assignment/Seminar/ Viva / End Sem Exam CO3 To formulate and solve linear programming problems, including transportation and assignment problems, using techniques such as simplex method and duality U P Internal Exam/Assignment/Seminar/ Viva / End Sem Exam * - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C)           # - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive Knowledge (M)    172
+Page 173 of 454
+Detailed Syllabus: Text book  Optimization Methods in Operation Research and System Analysis (4th edition), K.V Mittal, C Mohan, New Age International (P)Limited (2016) Module Unit Content I Module I  1  2  3   4 Convex Polyhedron  5 Separating and Supporting Hyperplanes () Vertices of a Closed Bounded Convex Set ()  Quadratic Forms II   6  7  8  9       10     11   12  III   13  14    15    16  IV Module IV 173
+Page 174 of 454
+17      18  19   20   21   22   V Open Ended  Linear Programming Using Scipy, Prog Reference 1.  Dual Simplex Solved Programming Exercises in Python from Vanderbei (Reference 1),  Prog Reference 2.  Linear Programming in Python using IBM CPlex Community Edition. Prog Reference 3.  Transportation Problem in Python. Prog Reference 4.  Linear Programming in Julia. Prog Reference 5. Ch 3 Basics of Julia Programming Language, Ch 5 The Simplex Method.    References: 1.     G. Hadley : Linear Programming Addison-Wesley Pub Co Reading, Mass (1975) 2.      S.S. Rao : Optimization  Theory and Applications (2nd Edn.) Wiley Eastern (P) Ltd. New Delhi. 3.      Russel L Ackoff and : Fundamentals of Operation Research Maurice W.Sasioni Wiley Eastern Ltd. New Delhi. (1991) 4.      Charles S. Beightler, : Foundations of Optimization D.T. Philips & D.J. Wilde (2nd Edn.) Prentice Hall of India, Delhi (1979)   Programming References for Open-Ended section: 1. Linear Programming using Scipy, https://python.quantecon.org/lp_intro.html  https://vanderbei.princeton.edu/LPbook/ 3. CPlex Jupyter Notebook: https://github.com/IBMDecisionOptimization/tutorials/blob/master/jupyter/Linear_Programming.ipynb Installation: http://ibmdecisionoptimization.github.io/docplex-doc/README.md.html 174
+Page 175 of 454
+4. Solving Transportation Problem using Linear Programming in Python: https://machinelearninggeek.com/solving-transportation-problem-using-linear-programming-in-python/ 5. Changhyun Kwon, Julia Programming for Operations Research 2/e , https://www.softcover.io/read/7b8eb7d0/juliabook2/simplex   Note: 70 external marks are distributed over the first four modules subjected to a minimum of 15 marks from each module.  Mapping of COs with PSOs and POs :  PSO1 PSO2 PSO3 PSO4 PO1 PO2 PO3 PO4 PO5 PO6 PO7 CO 1 3 2 2 1 3 1 2 1 3 0 1 CO 2 3 3 3 2 2 1 3 1 3 0 1 CO 3 2 3 3 2 3 1 3 1 3 0 2 Correlation Levels: Level Correlation - Nil 1 Slightly / Low 2 Moderate / Medium 3 Substantial / High Assessment Rubrics:      Mapping of COs to Assessment Rubrics:   Internal Exam Assignment Seminar Viva End Semester Examinations CO 1     CO 2     CO 3        
+175
+Page 176 of 454
+
+================================================================================
+FILE: MAT5EJ307_Foundations_of_Mathematics.pdf
+================================================================================
+Course Outcomes (CO):  
+Programme B. Sc. Mathematics Honours
+Course Code MAT5EJ307
+Course Title Foundations of Mathematics
+Type of Course Major 
+Semester V
+Academic Level300 - 399
+Course Details Credit Lecture per 
+week
+Tutorial 
+per week
+Practical 
+per week
+Total Hours
+4 4 - - 60
+Pre-requisites 1. Fundamental Mathematics Concepts: Set, Functions, Logic
+Course SummaryThis course exposes the set theoretic foundations of mathematics, 
+exposes the problems and challenges that it is wrought with, and briefly 
+introduces rigorous ways of tackling the same. 
+CO CO Statement Cognitive 
+Level*
+Knowledge 
+Category#
+Evaluation Tools 
+used
+CO1Understand the broad, intuitive 
+foundations on which all of 
+modern mathematics is based
+U C Internal 
+Examination/Seminar/ 
+Assignment/ End Sem 
+examination
+CO2Learn a reasonably rigorous, 
+though informal way of defining 
+and establishing properties of 
+transfinite arithmetic –cardinals 
+and ordinals
+Ap P Internal 
+Examination/Seminar/ 
+Assignment/ End Sem 
+examination
+CO3Understand and appreciate the 
+paradoxes that arise from the 
+informal foundations that are 
+taken for granted.
+An C Internal 
+Examination/Seminar/ 
+Assignment/ End Sem 
+examination
+CO4Understand how a consistent 
+framework of set theory could 
+be attempted by modifying, 
+limiting, and extending the 
+intuitive framework.
+C M Internal 
+Examination/Seminar/ 
+Assignment/ End Sem 
+examination
+176
+Page 177 of 454
+Detailed Syllabus: 
+CO5Appreciate the role of rigour 
+and formal symbolic logic in 
+clarifying and establishing 
+mathematical foundations.
+U C Internal 
+Examination/Seminar/ 
+Assignment/ End Sem 
+examination
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) 
+Metacognitive Knowledge (M)   
+Textbook Set Theory & Logic, Robert R. Stoll, 1979, Dover Pub. Inc., ISBN-10 : 
+ 0486638294, ISBN-13:  978-0486638294
+ModuleUnit Content Hrs 
+(48 
++12)
+Marks 
+(70)
+I Naive Set Theory :Chapter 1: Sets & Relations 11 25
+1 §1,2: Cantor’s Concept of a Set, The Basis of Intuitive 
+Set Theory
+2
+2 §3,4,5: Inclusion, Operations for Sets, The Algebra of 
+Sets
+2
+3 §6, §7, §8: Relations, Equivalence Relations, Functions 1
+4 §9: Composition & Inversion for Functions 1
+5 §10: Operations for Collections of Sets 1
+6 §11: Ordering Relations – POSETs, TOSETs, WOSETs 2
+II Cardinal & Ordinal Numbers: Chapter 2: The Natural 
+Number Sequence & Its Generalisations
+20 25
+7 §1: The Natural Number Sequence 3
+8 §2: Proof & Definition by Induction 2
+9 §3: Cardinal Numbers 2
+10§4: Countable Sets 2
+11§5: Cardinal Arithmetic 2
+12§6, §7: Order Types, Well Ordered Sets & Ordinal 
+Numbers
+1
+177
+Page 178 of 454
+13§8: Axiom of Choice, Well Ordering Theorem & 
+Zorn’s Lemma 
+(Proof of the technical Theorem 8.1 relegated to 
+OpenEnded Module)
+2
+14§9, §11,: Further Properties of Cardinal Numbers, The 
+Paradoxes of Intuitive Set Theory
+2
+III Mathematical Logic: Chapter 4: Logic  
+Chapter 5: Informal Axiomatic Mathematics
+9 10
+15§1-5: Statement Calculus – Connectives, Truth Tables, 
+Validity, Consequence, Applications
+3
+16§6-9: Predicate Calculus – Formulation, Validity, 
+Consequence, Applications
+3
+17Chapter 5: Informal Axiomatic Mathematics – A Quick 
+Review of Chapter 5
+3
+IV Axiomatic Set Theory 
+Chapter 7: Informal Axiomatic Set Theory
+8 10
+18§1, §2, §3: The Axioms of Extension & Set Formation, 
+Pairing, Union & Power Set
+1
+19§4, §5, §6: The Axiom of Infinity, The Axiom of 
+Choice, The Axiom Schemas of Replacement & 
+Restriction
+1
+20§7: Ordinal Numbers 1
+21§8: Ordinal Arithmetic 1
+22§9: Cardinal Numbers & Their Arithmetic 1
+V Open Ended Module 12
+1 Chap 2 Section 10: Some Theorems Equivalent to 
+Axiom of Choice
+3 
+2 Chap 2 Proof of Theorem 8.1 3
+3 Chap 3: The Extension of the Natural Numbers to the 
+Real Numbers
+3
+4 Chap 7 Section 10: The von Neumann-Bernays-Godel 
+Theory of Sets
+3
+178
+Page 179 of 454
+Note:  The 70 marks shown in the last column, distributed over the first four modules, is only 
+for the external examination. 
+Mapping of COs with PSOs and POs : 
+Correlation Levels:           
+     
+    
+Assessment Rubrics: 
+•Quiz / Assignment/ Quiz/ Discussion / Seminar 
+•Internal Exam  
+•Viva  
+•Final Exam (70%) 
+References: 
+1.Naive Set Theory, Paul R. Halmos, Dover (2015). 
+2.Axiomatic Set Theory, Patrick Suppes, 1972, Dover. 
+3.A Tour Through Mathematical Logic, Robert Wolff, 2005, MAA Press. 
+4.Set Theory, Thomas Jech, Springer (2003)
+PSO1PSO2PSO3 PSO4 PO1 PO2 PO3 PO4 PO5 PO6 PO7
+CO 1 3 1 1 3 3 0 1 0 3 1 2
+CO 2 3 3 2 3 3 0 1 0 3 1 2
+CO 3 3 0 0 3 3 0 1 0 3 1 2
+CO 4 3 2 2 3 3 0 1 0 3 1 2
+CO 5 3 1 1 3 3 0 1 0 3 1 2
+Level Correlation
+0 Nil
+1 Slightly / Low
+2 Moderate / Medium
+3 Substantial / High
+179
+Page 180 of 454
+Mapping of COs to Assessment Rubrics : 
+ Internal ExamAssignmentSeminarVivaEnd Semester Examinations
+CO 1 ✓ ✓ ✓ ✓ ✓
+CO 2 ✓ ✓ ✓ ✓ ✓
+CO 3 ✓ ✓ ✓ ✓ ✓
+CO 4 ✓ ✓ ✓ ✓ ✓
+CO 5 ✓ ✓ ✓ ✓ ✓
+180
+Page 181 of 454
+
+================================================================================
+FILE: MAT5EJ308_BASICS_OF_CLASSICAL_MECHANICS.pdf
+================================================================================
+Course Outcomes (CO):  
+Programme B. Sc. Mathematics Honours
+Course Code MAT5EJ308
+Course Title BASICS OF CLASSICAL MECHANICS
+Type of CourseMajor 
+Semester V
+Academic Level300 - 399
+Course Details Credit Lecture per 
+week
+Tutorial 
+per week
+Practical 
+per week
+Total Hours
+4 4 - - 60
+Pre-requisites Higher secondary mathematics and physics 
+Course 
+Summary
+This course offers quick glimpses in to topics is mathematical statistics 
+that can be of interest to a practitioner of science, with special emphasis 
+on statistical inference.
+CO CO Statement Cognitive 
+Level*
+Knowledge 
+Category#
+Evaluation 
+Tools used
+CO1Understand the basic problems that 
+mechanics seeks to solve
+Ap P  Instructor-
+created exams 
+CO2Place the Newtonian formulation of 
+dynamics from high school on a 
+rigorous footing 
+U C Seminar 
+Presentation/ 
+Group Tutorials
+CO3Understand the limitations of the 
+Newtonian formulation of mechanics
+Ap P Instructor-
+created exams
+CO4Learn how to improve upon the 
+Newtonian formulation using 
+concepts like Lagrangian & 
+Hamiltonian
+Ap P Instructor-
+created exams
+CO5Appreciate how different 
+formulations to the same problem are 
+equivalent but differ in convenience
+U C Instructor-
+created exams
+* - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) 
+# - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) 
+Metacognitive Knowledge (M)   
+181
+Page 182 of 454
+Detailed Syllabus: 
+Textbook Classical Mechanics: The Theoretical Minimum, Leonard Susskind, 
+Penguin Books, 2014,  ISBN 978-0141976228
+ModuleUnit Content Hrs 
+(48 
++12)
+Marks 
+(70)
+I Newtonian Dynamics 12 15
+1 Chapter 1: The Nature of Classical Physics
+2 Chapter 2: Motion
+3 Chapter 3: Dynamics: Aristotle’s Law of Motion
+4 Chapter 3: Dynamics: Mass, Acceleration & Force
+5 Chapter 3: Dynamics: Some Simple Examples of 
+Solving Newton’s Equations
+6 Appendix 1: Central Forces & Planetary Orbits
+II Transition to Advanced Mechanics – Lagrangian 
+Formulation
+12 20
+7 Chapter 4: SoMTOP: Systems of Particles, Space of 
+States, Momentum & Phase Space
+8 Chapter 4: SoMTOP: Action, Reaction & Conservation 
+of Momentum
+9 Chapter 5: Energy: Force & Potential Energy
+10Chapter 5: Energy: More Than One Dimension
+11Chapter 6: PoLA: The Transition to Advanced 
+Mechanics, Derivation of Euler-Lagrange Equation
+12Chapter 6: PoLA: More Particles & More Dimensions, 
+What’s Good About Least Action?
+13Chapter 6: PoLA: Generalised Coordinates & Moments, 
+Cyclic Coordinates
+III The Transition to Hamiltonian Formulation 12 20
+14Chapter 7: S&CL: Preliminaries, Examples of 
+Symmetries, More General Symmetries
+15Chapter 7: S&CL: The Consequences of Symmetry, 
+Back to Examples
+182
+Page 183 of 454
+Mapping of COs with PSOs and POs : 
+16Chapter8: Hamiltonian Mechanics & Time-Translation 
+Invariance: Time-Translation Symmetry, Energy 
+Conservation, Phase Space & Hamilton’s Equations
+17Chapter8: HM&TTI: The Harmonic Oscillator 
+Hamiltonian, Derivation of Hamilton’s Equations
+18Chapter 9: The Phase Space Fluid & the Gibbs-Liouville 
+Theorem: The Phase Space Fluid, A Quick Reminder
+19Chapter 9: PSF&GLT: Flow & Divergence, Poisson 
+Brackets
+IV Poisson’s Formulation & Electromagnetism 12 15
+20Chapter 10: PBAMS: An Axiomatic Formulation of 
+Mechanics, Angular Momentum, Levi-Civita Symbol, 
+Back to Angular Momentum
+21Chapter 10: PBAMS: Rotors & Precession, Symmetry 
+& Conservation
+22Chapter 11: Electric & Magnetic Forces
+V Open Ended Module 12
+1 Content from Quantum Mechanics: The Theoretical 
+Minimum, Leonard Susskind & Art Friedman, Basic 
+Books, 2014
+2 Content from Special Relativity & Classical Field 
+Theory: The Theoretical Minimum, Leonard Susskind & 
+Art Friedman, Basic Books, 2017
+References: 
+1.Classical Mechanics, John R. Tyler, University Science Books, 2005. 
+2.Classical Mechanics, 3rd Edition, Herbert Goldstein, Charles P. Poole Jr., John L. 
+Safko, Pearson Education Limited, 2014. 
+3.Principles of Mechanics, J. L. Synge & B. A. Griffith, 
+PSO1PSO2PSO3 PSO4 PO1 PO2 PO3 PO4 PO5 PO6 PO7
+CO 1 3 1 1 3 3 0 1 0 3 1 2
+CO 2 3 3 2 3 3 0 1 0 3 1 2
+CO 3 3 0 0 3 3 0 1 0 3 1 2
+CO 4 3 2 2 3 3 0 1 0 3 1 2
+CO 5 3 1 1 3 3 0 1 0 3 1 2
+183
+Page 184 of 454
+Correlation Levels: 
+Assessment Rubrics: 
+▪Quiz / Assignment/ Quiz/ Discussion / Seminar 
+▪Midterm Exam  
+▪Programming Assignments (20%) 
+▪Final Exam (70%) 
+Mapping of COs to Assessment Rubrics : 
+Level Correlation
+- Nil
+1 Slightly / Low
+2 Moderate / Medium
+3 Substantial / High
+ Internal Exam AssignmentSeminarVivaEnd Semester Examinations
+CO 1 ✓ ✓ ✓ ✓ ✓
+CO 2 ✓ ✓ ✓ ✓ ✓
+CO 3 ✓ ✓ ✓ ✓ ✓
+CO 4 ✓ ✓ ✓ ✓ ✓
+CO 5 ✓ ✓ ✓ ✓ ✓
+184
+Page 185 of 454
+
+================================================================================
+FILE: MAT5FS112TypeofCourseSECForPat_MATHEMATICAL_TYPE_SETTING_SYSTEM_-_LATEX_Course_Code_MAT5FS1.pdf
+================================================================================
+ Programme B. Sc. Mathematics Honours Course Title MATHEMATICAL TYPE SETTING SYSTEM - LATEX Course Code MAT5FS112 Type of Course  SEC (For Pathways 1  4) Semester V Academic Level 300-399  Course Details Credit Lecture/Tutorial per week Practical per week Total Hours 3 3 - 45 Pre-requisites 1. Fundamental Mathematics Concepts Course Summary The course will cover topics such as document formatting, mathematical typesetting, graphics and tables, bibliography management, beamer presentation and understanding the Indian language transliteration package for typesetting Sanskrit or Hindi or Malayalam using LaTeX.  Course Outcomes (CO): CO CO Statement Cognitive Level* Knowledge Category# Evaluation Tools used CO1 Preparing a LaTex document with title page including contents, references and index Ap C Internal Exam/ Assignment/ Seminar/ Viva / End Sem Exam CO2 To Display documents with bullets, numbering and aligning or ordering and adding rows and tables Ap C Internal Exam/ Assignment/ Seminar/ Viva / End Sem Exam CO3 Use mathematical typesetting and equation environments to create professional looking equations and mathematical notation  U F Internal Exam/ Assignment/ Seminar/ Viva / End Sem Exam * - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C)         # - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive Knowledge (M)      250
+Page 251 of 454
+ Detailed Syllabus: Textbook Text 1: LATEX TUTORIAL, A PRIMER by Indian TEX Users Group, Edited by E. Krishnan, 2003. Text 2: George Gratzer, More Math Into LaTeX-Springer 2016 (5th Edition),   Module Unit Content Hrs (36+9) Ex. Marks (50) I Getting Started with LaTeX  (Text-1)    8     Min 10         1 The basics- Tutorial I 2 The documents  Tutorial II 3 Bibliographic Database- Tutorial III & IV 4 Table of contents and Index- Tutorial V( Omit glossary) II Styling Pages   6   Min 10        5 Displayed Text  Tutorial VI 6 Rows and columns  Tutorial VII 7 Tables  Tutorial VII .2 III Typesetting Mathematics      10      Min 10          8 Basic Mathematical equation- Tutorial VIII.1, VIII.2 9 Groups of Equations and numbering  Tutorial VIII.3 10 Matrices, dots, delimiters and affixing symbols- Tutorial VIII.4 11 Operators, Equations, Symbols, notations, Greek letters etc. Tutorial VIII.5, VIII.6, VIII.7, VIII.8(In VIII.8 focus only on usual symbols, Greek letters, operations etc. commonly used in mathematics)  IV Theorems, figures, Cross references and Presentation(Text-1 and 2)       12 Theorem in Latex  Tutorial IX.1 251
+Page 252 of 454
+13 The AMS theorem package- Tutorial IX.2 (Omit IX.2.2 , IX.2.3)  12  Min 10                  14 Boxes  Tutorial X (Section X.1 , X.2 Only) 15 Floating Images- Tutorial XI ( Section XI.I.I , XI.I.2 and XI.I.5 Only) 16 Cross Reference  Tutorial XII (Section XII.1, XII.2 Only) 17 Footnotes- Tutorial XIII (Section XIII.1 Only) 18 Presentation  Text 2, Section 12.1 to 12.2.4   19 Presentation  Text 2, Section 12.2.6 to 12.2.9 (Omit 12.2.5 and 12.2.7 ) V Open Ended 9                       1 Installation of LaTeX 2 Familiarising Overleaf Platform 3 Write a chapter in a book that you are studying in any semester having mathematical symbol theorems and figures.   4 Create Slides with beamers and posters   5 Transliteration symbols with Illustrative examples of the Indian Languages, such as Sanskrit, Hindi (Devanagari) and Malayalam.  References:  1) Tobias Oetiker, Hubert Partl, Irene Hyna and Elisabeth Schlegl, The Not So Short -   The Not So Short Introduction to LaTeX (oetiker.ch))2) Harvey J. Greenberg, A simplified introduction to LaTeX (Online version)3) Leslie Lamport (second edition. Addison Wiley,1994)- LaTeX, a Document Preparation System.4) Donald Knuth (Addison-Wesley, 1984), The TeX book 5) Frank Mittelbach and Michel Goossens (second edition), Addison-Wesley, 2004).     252
+Page 253 of 454
+  Mapping of COs with PSOs and POs :   PSO1 PSO2 PSO3 PSO4 PSO5 PSO6 PO1 PO2 PO3 PO4 PO5 PO6 PO7 CO 1 3 2 1 0 1 1 2 2 1 0 2 3 0 CO 2 2 3 1 0 1 1 1 3 1 0 2 3 0 CO 3 3 2 1 0 1 1 2 1 1 0 2 2 0 Correlation Levels: Level Correlation - Nil 1 Slightly / Low 2 Moderate / Medium 3 Substantial / High Assessment Rubrics:      Mapping of COs to Assessment Rubrics:   Internal Exam Assignment Seminar Viva End Semester Examinations CO 1     CO 2     CO 3             253
+Page 254 of 454
+
+================================================================================
+FILE: MAT6EJ3032CourseTitleMACHINELE_MACHINE_LEARNING_-_I.pdf
+================================================================================
+ CO CO Statement Cognitive Level* Knowledge Category# Evaluation Tools used CO1 Describe various regression and classification methods and apply them for simple problems.   Ap P Internal Exam/Assignment/Seminar/ Viva / End Sem Exam CO2  Apply methods of Bayesian inference to learning problems and analyse the solutions   An P Internal Exam/Assignment/Seminar/ Viva / End Sem Exam CO3 Describe the functioning of feedforward neural network models of learning.   U C Internal Exam/Assignment/Seminar/ Viva / End Sem Exam * - Remember (R), Understand (U), Apply (Ap), Analyse (An), Evaluate (E), Create (C) # - Factual Knowledge(F) Conceptual Knowledge (C) Procedural Knowledge (P) Metacognitive Knowledge (M)          
+Programme B. Sc. Mathematics Honours Course Code MAT6EJ303 (2) Course Title MACHINE LEARNING - I Type of Course Elective (Specialisation- Data Science) Semester V Academic Level 300 - 399 Course Details Credit Lecture/Tutorial per week Practical per week Total Hours 4 4 - 60 Pre-requisites Linear Algebra Course Summary The course develops the basic theory of linear discriminative and generative learning models and techniques for linear regression and classification.  Understanding both classical methods and modern neural network approaches will prepare students to tackle a wide range of data science challenges. 
+156
+Page 157 of 454
+Detailed Syllabus: Text Book Pattern Recognition and Machine Learning - Christopher M. Bishop - Springer -2006 Module Unit Content Hrs (48+12) Ext. Marks (70) I Introduction to Statistical Learning 12  1 Review of probability theory, density and distribution functions                                             Min 15         Min 15         Min 15   
+2 expectation and covariance, Bayesian probabilities.   3 Gaussian distribution:  conditional and marginal distributions  4 Maximum Likelihood and Bayesian inference for Gaussian   5 Decision Theory - inference and decision, loss functions   6 Entropy, relative entropy and mutual information  Chapter 1 and Section 3 of Chapter 2 from text book.  II Linear Regression  12 7 Maximum likelihood and least squares  8 Regularized least squares 9 Bias-Variance Decomposition 10 Bayesian Linear Regression 11 Parameter and Predictive Distributions  12 Bayesian model comparison  Chapter 3 of text book III  Linear Classification  12 13 Discriminant functions   14 Least squares, Fischer discriminant and the relation between them. 15 The perceptron algorithm 16 Maximum likelihood classifier   17 Probabilistic generative models and Logistic Regression  18 Bayesian logistic regression  Chapter 4 of text book  157
+Page 158 of 454
+IV   Neural Networks 12      Min 15 19 Feed forward neural networks   20 Network training and gradient descent optimization  21 Analysis of error backpropagation   22 Hessian matrix and diagonal approximation  23 Regularization in neural networks.   Chapter 5 of text book V  Open Ended 12  Model Selection and Validation Non-Uniform Learnability The Run Time of Learning  References:  1)Understanding Machine Learning From Theory to Algorithms - Shai Shalev Shwartz, Shai Ben David - Cambridge University Press - ISBN 978-1-107-05713-5 - 2014 2) Foundations of Machine Learning - Mehryar Mohri, Afshin Rostamizadeh, and Ameet Talwalkar -The MIT Press - 2012   Note: 70 external marks are distributed over the first four modules subjected to a minimum of 15 marks from each module.             158
+Page 159 of 454
+Mapping of COs with PSOs and POs : Correlation Levels: Level Correlation - Nil 1 Slightly / Low 2 Moderate / Medium 3 Substantial / High Assessment Rubrics:     Mapping of COs to Assessment Rubrics:   Internal Exam Assignment Seminar Viva End Semester Examinations CO 1     CO 2     CO 3     
+ PSO1 PSO2 PSO3 PSO4 PO1 PO2 PO3 PO4 PO5 PO6 PO7 CO 1 3 3 2 2 3 2 3 3 3 1 3 CO 2 3 3 2 2 3 2 3 3 3 1 3 CO 3 3 2 2 2 3 2 3 3 3 1 3 
+159
+Page 160 of 454
+

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature, Presentation, ClipboardList, Moon } from 'lucide-react';
+import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature, Presentation, ClipboardList, Moon, Calculator, Zap, GraduationCap } from 'lucide-react';
 
 interface LabProps {
   onNavigate: (view: 'lab-crop' | 'lab-exams' | 'admin-online-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses') => void;
@@ -14,6 +14,51 @@ export default function Lab({ onNavigate }: LabProps) {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        {/* Sem 5 Mathematics Study Progress */}
+        <div 
+          onClick={() => {
+            window.history.pushState({}, '', '/form/progress/mathematics/5');
+            window.location.reload();
+          }}
+          className="bg-gradient-to-br from-cyan-50 to-blue-50 border-2 border-cyan-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-cyan-400 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-cyan-100 text-cyan-700 rounded-lg group-hover:bg-cyan-200 transition-colors">
+              <Calculator className="w-6 h-6" />
+            </div>
+            <span className="px-2 py-0.5 bg-cyan-600 text-white text-[10px] font-black rounded-md uppercase tracking-wider">
+              SEM 5
+            </span>
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Sem 5 Maths Progress (/form/progress/mathematics/5)</h3>
+          <p className="text-sm text-gray-700 flex-1">
+            B.Sc. Mathematics Honours Semester 5 official curriculum tracker (Real Analysis II, Abstract Algebra, Complex Analysis, Electives & LaTeX), target date countdown, and concept mastery logs.
+          </p>
+        </div>
+
+        {/* Sem 5 Physics Study Progress */}
+        <div 
+          onClick={() => {
+            window.history.pushState({}, '', '/form/progress/physics/5');
+            window.location.reload();
+          }}
+          className="bg-gradient-to-br from-rose-50 to-indigo-50 border-2 border-rose-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-rose-400 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-rose-100 text-rose-700 rounded-lg group-hover:bg-rose-200 transition-colors">
+              <Zap className="w-6 h-6" />
+            </div>
+            <span className="px-2 py-0.5 bg-rose-600 text-white text-[10px] font-black rounded-md uppercase tracking-wider">
+              SEM 5
+            </span>
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Sem 5 Physics Progress (/form/progress/physics/5)</h3>
+          <p className="text-sm text-gray-700 flex-1">
+            B.Sc. Physics Honours Semester 5 official curriculum tracker (Quantum Mechanics I, Optics, Electrodynamics II, Materials Science & Python), target completion countdown, and mastery checklists.
+          </p>
+        </div>
+
         <div
           onClick={() => onNavigate('home')}
           className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-blue-400 transition-all cursor-pointer group flex flex-col"
