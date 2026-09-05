@@ -267,6 +267,55 @@ export default function AdminTimetable({ onBack }: Props) {
     await persistDays(updated);
   };
 
+  const handleDuplicateClass = async (
+    sourceDate: string,
+    sourceClassData: any,
+    newClassName: string,
+    targetDate: string
+  ) => {
+    let updatedDays = [...days];
+    const targetIdx = updatedDays.findIndex(d => d.date === targetDate);
+
+    const clonedClass = {
+      ...JSON.parse(JSON.stringify(sourceClassData)),
+      class_name: newClassName,
+      title: `${newClassName} - TIME TABLE`,
+    };
+
+    if (targetIdx >= 0) {
+      const targetDay = updatedDays[targetIdx];
+      const classes = [...(targetDay.classes || [])];
+      const existingClassIdx = classes.findIndex(c => c.class_name === newClassName);
+      if (existingClassIdx >= 0) {
+        classes[existingClassIdx] = clonedClass;
+      } else {
+        classes.push(clonedClass);
+      }
+      updatedDays[targetIdx] = {
+        ...targetDay,
+        classes
+      };
+    } else {
+      const parts = targetDate.split('/');
+      let targetIso = '';
+      let targetDayName = '';
+      if (parts.length === 3) {
+        const [d, m, y] = parts;
+        targetIso = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        const dt = new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+        targetDayName = dt.toLocaleDateString('en-US', { weekday: 'long' });
+      }
+      updatedDays.unshift({
+        date: targetDate,
+        isoDate: targetIso,
+        dayName: targetDayName,
+        classes: [clonedClass]
+      });
+    }
+
+    await persistDays(updatedDays);
+  };
+
   if (loading && days.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center py-24 gap-3">
@@ -376,6 +425,7 @@ export default function AdminTimetable({ onBack }: Props) {
           onDuplicateDay={handleDuplicateDay}
           onAddClassToDay={handleAddClassToDay}
           onDeleteClassFromDay={handleDeleteClassFromDay}
+          onDuplicateClass={handleDuplicateClass}
           onUpdateTeacherMappings={persistTeacherMappings}
           onCreateNewCardDirect={handleCreateNewCardDirect}
         />

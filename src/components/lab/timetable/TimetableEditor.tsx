@@ -6,6 +6,7 @@ import {
 import { PosterCardPreview, PosterSubject } from './PosterCardPreview';
 import { downloadTimetableCardImage, copyTimetableCardToClipboard } from '../../../utils/timetableCardExport';
 import { getAutoIconForSubject } from '../../../services/timetableAiService';
+import { parseClipboardTimetable } from '../../../utils/timetableClipboardParser';
 
 interface Props {
   initialDate: string;
@@ -146,6 +147,8 @@ export const TimetableEditor: React.FC<Props> = ({
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [copying, setCopying] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateClassName, setDuplicateClassName] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -260,12 +263,40 @@ export const TimetableEditor: React.FC<Props> = ({
     });
   };
 
-  // Quick WhatsApp Text Parser
+  // Quick WhatsApp / Excel Text Parser
   const handleParseRawText = () => {
     if (!rawPasteText.trim()) return;
     const text = rawPasteText.trim();
-    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
+    // 1. Try parsing as multi-column / Excel table format first
+    const parsedTable = parseClipboardTimetable(text);
+    if (parsedTable.success && parsedTable.classes.length > 0) {
+      const matched = parsedTable.classes.find(c => c.class_name.toUpperCase() === batchName.toUpperCase()) || parsedTable.classes[0];
+      if (matched) {
+        if (matched.class_name) setBatchName(matched.class_name);
+        if (parsedTable.date) setDate(parsedTable.date);
+        if (parsedTable.isoDate) setIsoDate(parsedTable.isoDate);
+        if (parsedTable.dayName) setDayName(parsedTable.dayName);
+        if (matched.time) setTime(matched.time);
+        if (matched.apt_exam) setAptExam(matched.apt_exam);
+        if (matched.extra_note) setExtraNote(matched.extra_note);
+        if (matched.subjects && matched.subjects.length > 0) {
+          setSubjects(matched.subjects.map(s => ({
+            id: s.id,
+            name: s.name,
+            teacher_code: s.teacher_code,
+            color: s.color,
+            icon_type: s.icon_type,
+            icon: s.icon
+          })));
+        }
+        showToast(`Parsed ${matched.class_name} with ${matched.subjects.length} subjects from table!`);
+        setShowPasteBox(false);
+        return;
+      }
+    }
+
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     let extBatch = '';
     let extDate = '';
     let extTime = '';
@@ -367,6 +398,44 @@ export const TimetableEditor: React.FC<Props> = ({
     }
   };
 
+  const handleOpenDuplicate = () => {
+    const current = batchName.trim();
+    if (current === 'A1') setDuplicateClassName('A2');
+    else if (current === 'A2') setDuplicateClassName('B1');
+    else if (current === 'PLUS ONE') setDuplicateClassName('PLUS TWO');
+    else setDuplicateClassName(`${current} (Copy)`);
+    setShowDuplicateModal(true);
+  };
+
+  const handleConfirmDuplicate = async () => {
+    if (!duplicateClassName.trim()) return;
+    const newName = duplicateClassName.trim().toUpperCase();
+    setSaving(true);
+    try {
+      const payload = {
+        class_name: newName,
+        title: `${newName} - TIME TABLE`,
+        date,
+        isoDate,
+        time,
+        apt_exam: aptExam,
+        extra_note: extraNote,
+        phone1,
+        phone2,
+        subjects
+      };
+      await onSave(payload);
+      setBatchName(newName);
+      setCustomTitle(`${newName} - TIME TABLE`);
+      showToast(`Duplicated and saved schedule as ${newName}!`);
+      setShowDuplicateModal(false);
+    } catch (e: any) {
+      alert(`Failed to duplicate: ${e?.message || 'Error'}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleDownload = async () => {
     setDownloading(true);
     try {
@@ -457,6 +526,16 @@ export const TimetableEditor: React.FC<Props> = ({
           >
             <Save className="w-3.5 h-3.5" />
             {saving ? 'Saving...' : 'Save Schedule'}
+          </button>
+
+          <button
+            onClick={handleOpenDuplicate}
+            disabled={saving}
+            className="px-3 py-1.5 text-xs font-bold border border-slate-300 hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 transition-colors shadow-xs"
+            title="Duplicate this class timetable card under a new class name"
+          >
+            <Copy className="w-3.5 h-3.5 text-slate-600" />
+            Duplicate
           </button>
 
           <button
@@ -1106,6 +1185,66 @@ export const TimetableEditor: React.FC<Props> = ({
               >
                 <Share2 className="w-3.5 h-3.5" />
                 Open in WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Duplicate Class Modal */}
+      {showDuplicateModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 w-full max-w-sm shadow-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+              <span className="font-black text-sm text-[#062e5b] flex items-center gap-1.5">
+                <Copy className="w-4 h-4" /> Duplicate Class Timetable
+              </span>
+              <button onClick={() => setShowDuplicateModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                New Class Name:
+              </label>
+              <input
+                type="text"
+                value={duplicateClassName}
+                onChange={(e) => setDuplicateClassName(e.target.value)}
+                placeholder="e.g. A2, B1, PLUS TWO"
+                className="w-full p-2 bg-slate-50 border border-slate-300 font-bold text-sm text-slate-900 focus:border-[#062e5b] focus:outline-none"
+                autoFocus
+              />
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {['PLUS ONE', 'PLUS TWO', 'A1', 'A2', 'B1', 'B2', 'B3'].map(p => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setDuplicateClassName(p)}
+                    className={`px-2 py-0.5 text-[10px] font-bold ${
+                      duplicateClassName.toUpperCase() === p
+                        ? 'bg-[#062e5b] text-white'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setShowDuplicateModal(false)}
+                className="px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDuplicate}
+                disabled={!duplicateClassName.trim() || saving}
+                className="px-4 py-1.5 text-xs font-bold bg-[#062e5b] text-white hover:bg-[#0d427d] disabled:opacity-50 flex items-center gap-1"
+              >
+                <Copy className="w-3.5 h-3.5" /> Duplicate Class
               </button>
             </div>
           </div>

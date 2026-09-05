@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aims-plus-pwa-v4';
+const CACHE_NAME = 'aims-plus-pwa-v5';
 const ASSETS_TO_CACHE = [
   '/',
   '/form/improvement',

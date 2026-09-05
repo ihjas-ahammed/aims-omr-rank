@@ -210,6 +210,9 @@ function resolveInitialView(): ViewState {
     return 'lab-course-progress';
   }
   if (path === '/admin/timetable' || path === '/admin/timetable/' || path === '/timetable' || path === '/timetable/') {
+    if (path !== '/admin/timetable') {
+      window.history.replaceState(null, '', '/admin/timetable');
+    }
     return 'lab-timetable';
   }
 
@@ -257,8 +260,12 @@ function resolveInitialView(): ViewState {
       window.history.replaceState(null, '', '/admin/exams');
       return 'admin-online-exams';
     }
+    if (lastActivePortal === 'lab-timetable') {
+      window.history.replaceState(null, '', '/admin/timetable');
+      return 'lab-timetable';
+    }
     if (lastActivePortal && [
-      'lab-course-progress', 'lab-timetable', 'lab-atr-list', 'lab-qp-maker', 
+      'lab-course-progress', 'lab-atr-list', 'lab-qp-maker', 
       'lab-fee-logger', 'lab-cloud-sessions', 'lab-score-analysis', 'lab-descriptive'
     ].includes(lastActivePortal)) {
       return lastActivePortal as ViewState;
@@ -1348,7 +1355,7 @@ export default function App() {
               window.history.pushState({}, '', '/course-progress');
               setView('lab-course-progress');
             } else if (v === 'lab-timetable') {
-              window.history.pushState({}, '', '/timetable');
+              window.history.pushState({}, '', '/admin/timetable');
               setView('lab-timetable');
             } else if (v === 'lab-aims-present') {
               window.history.pushState({}, '', '/aims-present');

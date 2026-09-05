@@ -186,7 +186,7 @@ export default function Lab({ onNavigate }: LabProps) {
 
         <div
           onClick={() => {
-            window.history.pushState({}, '', '/timetable');
+            window.history.pushState({}, '', '/admin/timetable');
             onNavigate('lab-timetable');
           }}
           className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-orange-300 transition-all cursor-pointer group flex flex-col"
@@ -197,9 +197,9 @@ export default function Lab({ onNavigate }: LabProps) {
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-colors" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Timetable</h3>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Timetable Manager</h3>
           <p className="text-sm text-gray-600 flex-1">
-            Manage daily timetables, assign teachers to specific batches and time slots seamlessly.
+            Day-wise schedule dashboard, clipboard table paste, AI scanner, and high-resolution poster generator.
           </p>
         </div>
 

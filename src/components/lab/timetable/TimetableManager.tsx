@@ -2,12 +2,14 @@ import React, { useState, useMemo, useRef } from 'react';
 import { 
   CalendarDays, Plus, Search, Sliders, ScanLine, Download, Trash2, 
   Copy, Edit2, Calendar, Clock, BookOpen, AlertTriangle, ArrowRight, X, Check,
-  Archive, Loader2, FileDown, Sparkles
+  Archive, Loader2, FileDown, Sparkles, ClipboardPaste
 } from 'lucide-react';
 
 import { TeacherMappingsModal } from './TeacherMappingsModal';
 import { ScanTimetableModal } from './ScanTimetableModal';
 import { TimetableAiSettingsModal } from './TimetableAiSettingsModal';
+import { PasteTimetableModal } from './PasteTimetableModal';
+import { DuplicateClassModal } from './DuplicateClassModal';
 import { PosterCardPreview } from './PosterCardPreview';
 import { downloadTimetableCardImage, captureTimetableCardBlob, createTimetableZipArchive } from '../../../utils/timetableCardExport';
 import { getTimetableAiConfig, TimetableAiConfig } from '../../../services/timetableAiService';
@@ -29,6 +31,12 @@ interface Props {
   onDuplicateDay: (sourceDay: DaySchedule) => Promise<void> | void;
   onAddClassToDay: (dateStr: string, newClassName: string) => Promise<void> | void;
   onDeleteClassFromDay: (dateStr: string, className: string) => Promise<void> | void;
+  onDuplicateClass: (
+    sourceDate: string,
+    sourceClassData: any,
+    newClassName: string,
+    targetDate: string
+  ) => Promise<void> | void;
   onUpdateTeacherMappings: (newMappings: Record<string, string>) => void;
   onCreateNewCardDirect: () => void;
 }
@@ -44,6 +52,7 @@ export const TimetableManager: React.FC<Props> = ({
   onDuplicateDay,
   onAddClassToDay,
   onDeleteClassFromDay,
+  onDuplicateClass,
   onUpdateTeacherMappings,
   onCreateNewCardDirect
 }) => {
@@ -51,6 +60,8 @@ export const TimetableManager: React.FC<Props> = ({
   const [showMappingsModal, setShowMappingsModal] = useState(false);
   const [showScanModal, setShowScanModal] = useState(false);
   const [showAiSettingsModal, setShowAiSettingsModal] = useState(false);
+  const [showPasteModal, setShowPasteModal] = useState(false);
+  const [duplicateTarget, setDuplicateTarget] = useState<{ dayDate: string; classData: any } | null>(null);
   const [aiConfig, setAiConfig] = useState<TimetableAiConfig>(() => getTimetableAiConfig());
 
 
@@ -244,6 +255,15 @@ export const TimetableManager: React.FC<Props> = ({
           </button>
 
           <button
+            onClick={() => setShowPasteModal(true)}
+            className="px-3 py-1.5 text-xs font-bold border border-emerald-600 text-emerald-700 bg-emerald-50/50 hover:bg-emerald-100/60 flex items-center gap-1.5 transition-colors"
+            title="Paste timetable table directly from Excel, Sheets, or text without AI"
+          >
+            <ClipboardPaste className="w-3.5 h-3.5 text-emerald-600" />
+            Paste from Clipboard
+          </button>
+
+          <button
             onClick={() => setShowScanModal(true)}
             className="px-3 py-1.5 text-xs font-bold border border-[#78b82a] text-[#5c921c] hover:bg-[#78b82a]/10 flex items-center gap-1.5 transition-colors"
           >
@@ -282,7 +302,13 @@ export const TimetableManager: React.FC<Props> = ({
               Scan a timetable image or add a new schedule day to get started.
             </p>
           </div>
-          <div className="flex justify-center gap-3">
+          <div className="flex justify-center flex-wrap gap-3">
+            <button
+              onClick={() => setShowPasteModal(true)}
+              className="px-4 py-2 text-xs font-bold border border-emerald-600 text-emerald-700 hover:bg-emerald-50 flex items-center gap-1.5"
+            >
+              <ClipboardPaste className="w-4 h-4" /> Paste Excel / Text
+            </button>
             <button
               onClick={() => setShowScanModal(true)}
               className="px-4 py-2 text-xs font-bold border border-[#78b82a] text-[#5c921c] hover:bg-[#78b82a]/10 flex items-center gap-1.5"
@@ -420,6 +446,13 @@ export const TimetableManager: React.FC<Props> = ({
                               </span>
                               <div className="flex items-center gap-1">
                                 <button
+                                  onClick={() => setDuplicateTarget({ dayDate: day.date, classData: c })}
+                                  className="p-1 text-slate-600 hover:text-[#062e5b] hover:bg-slate-200"
+                                  title={`Duplicate ${c.class_name} timetable card`}
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                                <button
                                   onClick={() => handleQuickDownload(day.date, c)}
                                   className="p-1 text-[#062e5b] hover:bg-slate-200"
                                   title="Quick Download PNG Card"
@@ -528,6 +561,34 @@ export const TimetableManager: React.FC<Props> = ({
           setAiConfig(newCfg);
         }}
       />
+
+      {/* Paste Timetable Modal (Direct Excel / Text Paste without AI) */}
+      <PasteTimetableModal
+        isOpen={showPasteModal}
+        onClose={() => setShowPasteModal(false)}
+        teacherMappings={teacherMappings}
+        onUpdateMappings={onUpdateTeacherMappings}
+        onImport={(pastedData) => {
+          onAddNewDay({
+            date: pastedData.date,
+            isoDate: pastedData.isoDate,
+            dayName: pastedData.dayName,
+            classes: pastedData.classes
+          });
+        }}
+      />
+
+      {/* Duplicate Class Modal */}
+      {duplicateTarget && (
+        <DuplicateClassModal
+          isOpen={!!duplicateTarget}
+          onClose={() => setDuplicateTarget(null)}
+          sourceDayDate={duplicateTarget.dayDate}
+          sourceClassData={duplicateTarget.classData}
+          availableDays={days.map(d => ({ date: d.date, dayName: d.dayName }))}
+          onConfirmDuplicate={onDuplicateClass}
+        />
+      )}
 
 
       {/* Add Day Modal */}
