@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature, Presentation, ClipboardList, Moon, Calculator, Zap, GraduationCap } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'admin-online-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'admin-online-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses' | 'teacher-log-form' | 'study-progress-form' | 'sem5-progress-mathematics' | 'sem5-progress-physics') => void;
 }
 
 export default function Lab({ onNavigate }: LabProps) {
@@ -17,10 +17,7 @@ export default function Lab({ onNavigate }: LabProps) {
         
         {/* Sem 5 Mathematics Study Progress */}
         <div 
-          onClick={() => {
-            window.history.pushState({}, '', '/form/progress/mathematics/5');
-            window.location.reload();
-          }}
+          onClick={() => onNavigate('sem5-progress-mathematics')}
           className="bg-gradient-to-br from-cyan-50 to-blue-50 border-2 border-cyan-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-cyan-400 transition-all cursor-pointer group flex flex-col"
         >
           <div className="flex items-start justify-between">
@@ -39,10 +36,7 @@ export default function Lab({ onNavigate }: LabProps) {
 
         {/* Sem 5 Physics Study Progress */}
         <div 
-          onClick={() => {
-            window.history.pushState({}, '', '/form/progress/physics/5');
-            window.location.reload();
-          }}
+          onClick={() => onNavigate('sem5-progress-physics')}
           className="bg-gradient-to-br from-rose-50 to-indigo-50 border-2 border-rose-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-rose-400 transition-all cursor-pointer group flex flex-col"
         >
           <div className="flex items-start justify-between">
@@ -126,10 +120,7 @@ export default function Lab({ onNavigate }: LabProps) {
         </div>
 
         <div 
-          onClick={() => {
-            window.history.pushState({}, '', '/form/teacher');
-            window.location.reload();
-          }}
+          onClick={() => onNavigate('teacher-log-form')}
           className="bg-gradient-to-br from-blue-50 to-emerald-50 border-2 border-blue-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-blue-400 transition-all cursor-pointer group flex flex-col"
         >
           <div className="flex items-start justify-between">
@@ -147,10 +138,7 @@ export default function Lab({ onNavigate }: LabProps) {
         </div>
 
         <div 
-          onClick={() => {
-            window.history.pushState({}, '', '/form/studyprogress');
-            window.location.reload();
-          }}
+          onClick={() => onNavigate('study-progress-form')}
           className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group flex flex-col"
         >
           <div className="flex items-start justify-between">
@@ -166,10 +154,7 @@ export default function Lab({ onNavigate }: LabProps) {
         </div>
 
         <div 
-          onClick={() => {
-            window.history.pushState({}, '', '/course-progress');
-            onNavigate('lab-course-progress');
-          }}
+          onClick={() => onNavigate('lab-course-progress')}
           className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-green-300 transition-all cursor-pointer group flex flex-col"
         >
           <div className="flex items-start justify-between">
@@ -185,10 +170,7 @@ export default function Lab({ onNavigate }: LabProps) {
         </div>
 
         <div
-          onClick={() => {
-            window.history.pushState({}, '', '/admin/timetable');
-            onNavigate('lab-timetable');
-          }}
+          onClick={() => onNavigate('lab-timetable')}
           className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-orange-300 transition-all cursor-pointer group flex flex-col"
         >
           <div className="flex items-start justify-between">

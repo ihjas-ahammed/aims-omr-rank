@@ -130,12 +130,88 @@ function parseOnlineExamRoute(pathname: string, hash: string, search: string): {
   return null;
 }
 
+export function checkIsStandaloneApp(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as any).standalone === true ||
+    document.referrer.includes('android-app://') ||
+    new URLSearchParams(window.location.search).get('source') === 'pwa' ||
+    new URLSearchParams(window.location.search).get('mode') === 'standalone'
+  );
+}
+
+export function getPathForView(view: ViewState): string {
+  switch (view) {
+    case 'home':
+      return '/omr';
+    case 'lab':
+      return '/';
+    case 'lab-timetable':
+      return '/admin/timetable';
+    case 'lab-course-progress':
+      return '/course-progress';
+    case 'lab-atr-list':
+      return '/atr-list';
+    case 'lab-qp-maker':
+      return '/qp-maker';
+    case 'lab-fee-logger':
+      return '/fee-logger';
+    case 'lab-cloud-sessions':
+      return '/cloud-sessions';
+    case 'lab-score-analysis':
+      return '/score-analysis';
+    case 'lab-descriptive':
+      return '/descriptive';
+    case 'lab-crop':
+      return '/crop';
+    case 'lab-exams':
+      return '/exams';
+    case 'exam-setup':
+      return '/exam-setup';
+    case 'admin-online-exams':
+      return '/admin/exams';
+    case 'lab-aims-present':
+      return '/aims-present';
+    case 'teacher-log-form':
+      return '/form/teacher';
+    case 'teacher-log-admin':
+      return '/admin/teacher';
+    case 'study-progress-form':
+      return '/form/studyprogress';
+    case 'study-progress-admin':
+      return '/admin/studyprogress';
+    case 'improvement-form':
+      return '/form/improvement';
+    case 'lab-improvement-responses-public':
+    case 'lab-improvement-responses':
+      return '/admin/improvement';
+    case 'compensation-form':
+      return '/form/compensation';
+    case 'lab-compensation-responses-public':
+    case 'lab-compensation-responses':
+      return '/admin/compensation';
+    case 'sem5-progress-mathematics':
+      return '/form/progress/mathematics/5';
+    case 'sem5-progress-physics':
+      return '/form/progress/physics/5';
+    case 'ranklist':
+      return '/ranklist';
+    case 'detail':
+      return '/detail';
+    case 'printableRanklist':
+      return '/printable';
+    default:
+      return '/';
+  }
+}
+
 function resolveInitialView(): ViewState {
   const path = window.location.pathname;
   const hash = window.location.hash;
   const search = window.location.search;
 
-  // Check Semester 5 Study Progress Routes
+  // 1. Check Semester 5 Study Progress Routes
   if (
     path === '/form/progress/mathematics/5' || 
     path === '/form/progress/mathematics/sem5' || 
@@ -161,7 +237,7 @@ function resolveInitialView(): ViewState {
     return 'sem5-progress-physics';
   }
 
-  // Check Online Exam Routes
+  // 2. Check Online Exam Routes
   const onlineExam = parseOnlineExamRoute(path, hash, search);
   if (onlineExam) {
     if (onlineExam.mode === 'admin-list') return 'admin-online-exams';
@@ -169,6 +245,7 @@ function resolveInitialView(): ViewState {
     if (onlineExam.mode === 'student-form') return 'online-exam-portal';
   }
 
+  // 3. Teacher Log Routes
   if (path === '/form/teacher' || path === '/teacher' || path === '/form/teacherlog' || path === '/form/teacherslog' || path === '/teacherlog') {
     if (hash.includes('admin')) {
       return 'teacher-log-admin';
@@ -179,6 +256,7 @@ function resolveInitialView(): ViewState {
     return 'teacher-log-admin';
   }
 
+  // 4. Student Study Progress Routes
   if (path === '/form/studyprogress' || path === '/studyprogress') {
     if (hash.includes('admin')) {
       return 'study-progress-admin';
@@ -188,27 +266,32 @@ function resolveInitialView(): ViewState {
   if (path === '/admin/studyprogress' || hash.includes('studyprogress-admin')) {
     return 'study-progress-admin';
   }
+
+  // 5. Improvement Routes
   if (path === '/form/improvement' || path === '/improvement' || path === '/improvement-study-progress' || path === '/improvement-progress' || path === '/form/improvement-progress') {
     return 'improvement-form';
   }
   if (path === '/admin/responses/3f9a7c' || path === '/admin/improvement' || path === '/admin/improvement/3f9a7c' || path === '/admin/improvement-progress') {
     return 'lab-improvement-responses-public';
   }
+
+  // 6. Compensation Routes
   if (path === '/form/compensation' || path === '/compensation') {
     return 'compensation-form';
   }
   if (path === '/admin/compensation' || path === '/admin/compensation/3f9a7c') {
     return 'lab-compensation-responses-public';
   }
+
+  // 7. Aims Present Routes
   const present = parsePresentRoute(path);
   if (present) {
     if (present.mode === 'control') return 'aims-present-control';
     if (present.mode === 'view') return 'aims-present-view';
     return 'lab-aims-present';
   }
-  if (path === '/course-progress') {
-    return 'lab-course-progress';
-  }
+
+  // 8. Timetable Routes
   if (path === '/admin/timetable' || path === '/admin/timetable/' || path === '/timetable' || path === '/timetable/') {
     if (path !== '/admin/timetable') {
       window.history.replaceState(null, '', '/admin/timetable');
@@ -216,74 +299,122 @@ function resolveInitialView(): ViewState {
     return 'lab-timetable';
   }
 
-  // -------------------------------------------------------------
-  // SMART PWA & ROOT REDIRECTOR:
-  // When launching from installed PWA or visiting root '/',
-  // restore the latest opened portal so current users won't lose it!
-  // -------------------------------------------------------------
-  try {
-    const lastActivePortal = localStorage.getItem('aims_last_active_portal');
-    const hasImprovementProfile = !!localStorage.getItem('improvement_study_progress_active_profile');
-    const hasStudyProgressProfile = !!localStorage.getItem('study_progress_student_profile');
-    const hasTeacherProfile = !!localStorage.getItem('aims_teacher_profile');
-
-    // Priority 1: User's explicit last visited portal
-    if (lastActivePortal === 'teacher-log-form') {
-      window.history.replaceState(null, '', '/form/teacher');
-      return 'teacher-log-form';
-    }
-    if (lastActivePortal === 'teacher-log-admin') {
-      window.history.replaceState(null, '', '/admin/teacher');
-      return 'teacher-log-admin';
-    }
-    if (lastActivePortal === 'improvement-form') {
-      window.history.replaceState(null, '', '/form/improvement');
-      return 'improvement-form';
-    }
-    if (lastActivePortal === 'study-progress-form') {
-      window.history.replaceState(null, '', '/form/studyprogress');
-      return 'study-progress-form';
-    }
-    if (lastActivePortal === 'compensation-form') {
-      window.history.replaceState(null, '', '/form/compensation');
-      return 'compensation-form';
-    }
-    if (lastActivePortal === 'study-progress-admin') {
-      window.history.replaceState(null, '', '/admin/studyprogress');
-      return 'study-progress-admin';
-    }
-    if (lastActivePortal === 'lab-improvement-responses-public') {
-      window.history.replaceState(null, '', '/admin/improvement');
-      return 'lab-improvement-responses-public';
-    }
-    if (lastActivePortal === 'admin-online-exams') {
-      window.history.replaceState(null, '', '/admin/exams');
-      return 'admin-online-exams';
-    }
-    if (lastActivePortal === 'lab-timetable') {
-      window.history.replaceState(null, '', '/admin/timetable');
-      return 'lab-timetable';
-    }
-    if (lastActivePortal && [
-      'lab-course-progress', 'lab-atr-list', 'lab-qp-maker', 
-      'lab-fee-logger', 'lab-cloud-sessions', 'lab-score-analysis', 'lab-descriptive'
-    ].includes(lastActivePortal)) {
-      return lastActivePortal as ViewState;
-    }
-
-    // Priority 2: Fallback to existing profile on device
-    if (hasImprovementProfile) {
-      window.history.replaceState(null, '', '/form/improvement');
-      return 'improvement-form';
-    }
-    if (hasStudyProgressProfile) {
-      window.history.replaceState(null, '', '/form/studyprogress');
-      return 'study-progress-form';
-    }
-  } catch (e) {
-    console.warn('Failed to parse last active portal preference:', e);
+  // 9. Course Progress Routes
+  if (path === '/course-progress' || path === '/courseprogress') {
+    return 'lab-course-progress';
   }
 
+  // 10. ATR List Routes
+  if (path === '/atr-list' || path === '/atr' || path === '/admin/atr' || path === '/admin/atr-list') {
+    return 'lab-atr-list';
+  }
+
+  // 11. QP Maker Routes
+  if (path === '/qp-maker' || path === '/qp' || path === '/admin/qp' || path === '/question-paper') {
+    return 'lab-qp-maker';
+  }
+
+  // 12. Fee Logger Routes
+  if (path === '/fee-logger' || path === '/fees' || path === '/fee' || path === '/admin/fees') {
+    return 'lab-fee-logger';
+  }
+
+  // 13. Cloud Data Sessions Routes
+  if (path === '/cloud-sessions' || path === '/cloud' || path === '/sessions') {
+    return 'lab-cloud-sessions';
+  }
+
+  // 14. Score Analysis Routes
+  if (path === '/score-analysis' || path === '/scores' || path === '/score') {
+    return 'lab-score-analysis';
+  }
+
+  // 15. Descriptive Exam Routes
+  if (path === '/descriptive' || path === '/descriptive-evaluation' || path === '/descriptive-exam') {
+    return 'lab-descriptive';
+  }
+
+  // 16. Auto Crop Tool Routes
+  if (path === '/crop' || path === '/auto-crop' || path === '/lab-crop') {
+    return 'lab-crop';
+  }
+
+  // 17. Exams Dashboard & Setup Routes
+  if (path === '/exams' || path === '/lab-exams') {
+    return 'lab-exams';
+  }
+  if (path === '/exam-setup') {
+    return 'exam-setup';
+  }
+
+  // 18. OMR / Home & Ranklist Routes
+  if (path === '/omr' || path === '/evaluator' || path === '/evaluation') {
+    return 'home';
+  }
+  if (path === '/ranklist') {
+    return 'ranklist';
+  }
+  if (path === '/detail') {
+    return 'detail';
+  }
+  if (path === '/printable') {
+    return 'printableRanklist';
+  }
+
+  // Explicit Lab route
+  if (path === '/lab') {
+    return 'lab';
+  }
+
+  // -------------------------------------------------------------
+  // ROOT ROUTE ('/') & PWA APP HANDLING
+  // Rules:
+  // 1. NEVER auto redirect to study progress on regular browsers visiting '/'
+  // 2. ONLY consider study progress if:
+  //      - It is an installed standalone PWA app, AND
+  //      - The root path is '/'
+  // 3. BUT in the installed standalone app, ALWAYS redirect to the last opened page FIRST!
+  //    Only if there is no last opened page recorded does it fallback to study progress.
+  // -------------------------------------------------------------
+  const isRootPath = path === '/' || path === '';
+
+  if (isRootPath) {
+    const isStandaloneApp = checkIsStandaloneApp();
+
+    if (isStandaloneApp) {
+      try {
+        const lastActivePortal = localStorage.getItem('aims_last_active_portal');
+        if (lastActivePortal && lastActivePortal !== 'lab') {
+          const targetPath = getPathForView(lastActivePortal as ViewState);
+          if (targetPath && targetPath !== '/') {
+            window.history.replaceState(null, '', targetPath);
+          }
+          return lastActivePortal as ViewState;
+        }
+
+        // Only in installed standalone app with NO last active portal recorded:
+        const hasStudyProgressProfile = !!localStorage.getItem('study_progress_student_profile');
+        const hasImprovementProfile = !!localStorage.getItem('improvement_study_progress_active_profile');
+
+        if (hasStudyProgressProfile) {
+          window.history.replaceState(null, '', '/form/studyprogress');
+          return 'study-progress-form';
+        }
+        if (hasImprovementProfile) {
+          window.history.replaceState(null, '', '/form/improvement');
+          return 'improvement-form';
+        }
+      } catch (e) {
+        console.warn('Failed to parse last active portal in standalone app:', e);
+      }
+    }
+
+    // Regular browser on root '/' or standalone app with no stored portal/profile:
+    // ALWAYS stay on 'lab' - NEVER auto redirect to study progress!
+    return 'lab';
+  }
+
+  // Unknown path: default to 'lab' (never auto-redirect to study progress)
   return 'lab';
 }
 
@@ -489,27 +620,6 @@ export default function App() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
   const averageTimeRef = useRef<number>(8000);
-
-  useEffect(() => {
-    const handlePopState = () => {
-      const nextView = resolveInitialView();
-      setView(nextView);
-      const present = parsePresentRoute(window.location.pathname);
-      if (present) {
-        setPresentId(present.id);
-      }
-      const onlineExam = parseOnlineExamRoute(window.location.pathname, window.location.hash, window.location.search);
-      if (onlineExam) {
-        setOnlineExamId(onlineExam.examId);
-      }
-    };
-    window.addEventListener('popstate', handlePopState);
-    window.addEventListener('hashchange', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('hashchange', handlePopState);
-    };
-  }, []);
 
   // Synchronize latest active portal in local storage
   useEffect(() => {
@@ -1068,6 +1178,14 @@ export default function App() {
     if (hasPrevDetail) setSelectedStudent(sortedResults[currentDetailIndex - 1]);
   };
 
+  const navigateToView = (nextView: ViewState, customPath?: string) => {
+    const targetPath = customPath || getPathForView(nextView);
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({}, '', targetPath);
+    }
+    setView(nextView);
+  };
+
   const isPublicView = 
     view === 'sem5-progress-mathematics' ||
     view === 'sem5-progress-physics' ||
@@ -1075,6 +1193,7 @@ export default function App() {
     view === 'teacher-log-admin' || 
     view === 'improvement-form' || 
     view === 'compensation-form' ||
+    (view as string) === 'lab-compensation-responses' ||
     (view as string) === 'lab-compensation-responses-public' ||
     (view as string) === 'study-progress-form' || 
     (view as string) === 'study-progress-admin' || 
@@ -1083,8 +1202,10 @@ export default function App() {
     view === 'admin-online-exams' ||
     view === 'admin-online-exam-detail' ||
     view === 'lab-timetable' ||
+    view === 'lab-course-progress' ||
     view === 'aims-present-view' || 
     view === 'aims-present-control' ||
+    (view as string) === 'lab-improvement-responses' ||
     (view as string) === 'lab-improvement-responses-public';
 
   if (view === 'sem5-progress-mathematics') {
@@ -1106,8 +1227,7 @@ export default function App() {
       <PresentControl
         presentationId={finalPresentId}
         onBack={() => {
-          window.history.pushState({}, '', '/aims-present');
-          setView('lab-aims-present');
+          navigateToView('lab-aims-present');
         }}
       />
     );
@@ -1117,8 +1237,7 @@ export default function App() {
     return (
       <AdminTimetable 
         onBack={() => {
-          window.history.pushState({}, '', '/');
-          setView('lab');
+          navigateToView('lab');
         }} 
       />
     );
@@ -1135,10 +1254,9 @@ export default function App() {
       <OnlineExamEvaluationAdmin 
         examId={finalExamId} 
         onBack={() => {
-          window.history.pushState({}, '', '/admin/exams');
           window.location.hash = '';
           setOnlineExamId(null);
-          setView('admin-online-exams');
+          navigateToView('admin-online-exams');
         }} 
       />
     );
@@ -1148,8 +1266,7 @@ export default function App() {
     return (
       <OnlineExamsAdmin 
         onBack={() => {
-          window.history.pushState({}, '', '/');
-          setView('lab');
+          navigateToView('lab');
         }}
         onNavigateToEvaluation={(examId) => {
           window.history.pushState({}, '', `/admin/exam/#${examId}`);
@@ -1237,13 +1354,13 @@ export default function App() {
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans print:bg-white">
       <header className="bg-white shadow-sm border-b border-gray-200 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => { window.history.pushState({}, '', '/'); setView('lab'); }}>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigateToView('lab')}>
             <Beaker className="w-6 h-6 text-purple-600" />
             <h1 className="text-xl font-semibold tracking-tight">AIMS Lab</h1>
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => { window.history.pushState({}, '', '/'); setView('lab'); }}
+              onClick={() => navigateToView('lab')}
               className={`flex items-center gap-2 p-2 rounded-md transition-colors ${view === 'lab' || view.startsWith('lab-') || view.startsWith('exam') ? 'text-purple-600 bg-purple-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
             >
               <Beaker className="w-5 h-5" />
@@ -1262,8 +1379,7 @@ export default function App() {
                   if (window.confirm('Are you sure you want to sign out?')) {
                     localStorage.removeItem('aims_admin_logged_in');
                     setIsAdminLoggedIn(false);
-                    window.history.pushState({}, '', '/');
-                    setView('lab');
+                    navigateToView('lab');
                   }
                 }}
                 className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
@@ -1345,30 +1461,13 @@ export default function App() {
 
         {view === 'lab' && (
           <Lab onNavigate={(v) => {
-            if (v === 'home') {
-              window.history.pushState({}, '', '/');
-              setView('home');
-            } else if (v === 'admin-online-exams') {
-              window.history.pushState({}, '', '/admin/exams');
-              setView('admin-online-exams');
-            } else if (v === 'lab-course-progress') {
-              window.history.pushState({}, '', '/course-progress');
-              setView('lab-course-progress');
-            } else if (v === 'lab-timetable') {
-              window.history.pushState({}, '', '/admin/timetable');
-              setView('lab-timetable');
-            } else if (v === 'lab-aims-present') {
-              window.history.pushState({}, '', '/aims-present');
-              setView('lab-aims-present');
-            } else {
-              setView(v);
-            }
+            navigateToView(v);
           }} />
         )}
 
         {view === 'lab-aims-present' && (
           <PresentDashboard
-            onBack={() => { window.history.pushState({}, '', '/'); setView('lab'); }}
+            onBack={() => navigateToView('lab')}
             onOpenControl={(id) => {
               window.history.pushState({}, '', `/aims-present/control/${id}`);
               setPresentId(id);
@@ -1378,46 +1477,42 @@ export default function App() {
         )}
 
         {view === 'lab-crop' && (
-          <AutoCropTool apiKeys={apiKeys} liteModel={liteModel} onBack={() => setView('lab')} />
+          <AutoCropTool apiKeys={apiKeys} liteModel={liteModel} onBack={() => navigateToView('lab')} />
         )}
         
         {view === 'lab-exams' && (
           <ExamDashboard 
             onNavigate={(v, id) => { 
               if (id) setSelectedExamId(id); 
-              setView(v); 
+              navigateToView(v); 
             }} 
-            onBack={() => setView('lab')} 
+            onBack={() => navigateToView('lab')} 
           />
         )}
         
         {view === 'exam-setup' && (
-          <ExamSetup onNavigate={(v) => setView(v)} />
+          <ExamSetup onNavigate={(v) => navigateToView(v)} />
         )}
 
         {view === 'exam-results' && selectedExamId && (
-          <ExamResults examId={selectedExamId} onBack={() => setView('lab-exams')} />
+          <ExamResults examId={selectedExamId} onBack={() => navigateToView('lab-exams')} />
         )}
 
         {view === 'lab-course-progress' && (
-          <CourseProgress onBack={() => {
-            window.history.pushState({}, '', '/');
-            setView('lab');
-          }} />
+          <CourseProgress onBack={() => navigateToView('lab')} />
         )}
 
         {view === 'lab-atr-list' && (
-
-          <ATRList onBack={() => setView('lab')} />
+          <ATRList onBack={() => navigateToView('lab')} />
         )}
 
         {view === 'lab-qp-maker' && (
-          <QPMaker onBack={() => setView('lab')} />
+          <QPMaker onBack={() => navigateToView('lab')} />
         )}
 
         {view === 'lab-fee-logger' && (
           <FeeLogger 
-            onBack={() => setView('lab')} 
+            onBack={() => navigateToView('lab')} 
             apiKeys={apiKeys} 
             model={proModel} 
             concurrency={concurrency}
@@ -1426,33 +1521,27 @@ export default function App() {
         )}
 
         {view === 'lab-cloud-sessions' && (
-          <CloudSessions onBack={() => setView('lab')} />
+          <CloudSessions onBack={() => navigateToView('lab')} />
         )}
 
         {view === 'lab-score-analysis' && (
-          <ScoreAnalysisDashboard onBack={() => setView('lab')} />
+          <ScoreAnalysisDashboard onBack={() => navigateToView('lab')} />
         )}
 
         {view === 'lab-descriptive' && (
-          <DescriptiveDashboard onBack={() => setView('lab')} />
+          <DescriptiveDashboard onBack={() => navigateToView('lab')} />
         )}
 
         {((view as string) === 'lab-improvement-responses' || (view as string) === 'lab-improvement-responses-public') && (
           <ImprovementAdmin 
-            onBack={() => {
-              window.history.pushState({}, '', '/');
-              setView('lab');
-            }} 
+            onBack={() => navigateToView('lab')} 
             hideBack={(view as string) === 'lab-improvement-responses-public'}
           />
         )}
 
         {((view as string) === 'lab-compensation-responses' || (view as string) === 'lab-compensation-responses-public') && (
           <CompensationAdmin 
-            onBack={() => {
-              window.history.pushState({}, '', '/');
-              setView('lab');
-            }} 
+            onBack={() => navigateToView('lab')} 
             hideBack={(view as string) === 'lab-compensation-responses-public'}
           />
         )}
@@ -1469,7 +1558,7 @@ export default function App() {
           <StudyProgressForm 
             onNavigateAdmin={() => {
               window.location.hash = 'admin';
-              setView('study-progress-admin');
+              navigateToView('study-progress-admin');
             }}
           />
         )}
@@ -1477,9 +1566,8 @@ export default function App() {
         {(view as string) === 'study-progress-admin' && (
           <StudyProgressAdmin 
             onBack={() => {
-              window.history.pushState({}, '', '/form/studyprogress');
               window.location.hash = '';
-              setView('study-progress-form');
+              navigateToView('study-progress-form');
             }}
           />
         )}
@@ -1490,12 +1578,12 @@ export default function App() {
             topicMapping={topicMappingByDay[currentDay] || ''}
             parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
             numQuestions={numQuestions}
-            onBack={() => setView('home')} 
+            onBack={() => navigateToView('home')} 
             onStudentClick={(student) => {
               setSelectedStudent(student);
-              setView('detail');
+              navigateToView('detail');
             }}
-            onPrintableClick={() => setView('printableRanklist')}
+            onPrintableClick={() => navigateToView('printableRanklist')}
           />
         )}
 
@@ -1505,7 +1593,7 @@ export default function App() {
             topicMapping={topicMappingByDay[currentDay] || ''}
             parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
             numQuestions={numQuestions}
-            onBack={() => setView('ranklist')}
+            onBack={() => navigateToView('ranklist')}
           />
         )}
 
@@ -1514,7 +1602,7 @@ export default function App() {
             student={selectedStudent}
             topicMapping={topicMappingByDay[currentDay] || ''}
             parsedTopicMapping={parsedTopicMappingByDay[currentDay]}
-            onBack={() => setView('ranklist')} 
+            onBack={() => navigateToView('ranklist')} 
             onNext={handleDetailNext}
             onPrev={handleDetailPrev}
             hasNext={hasNextDetail}
@@ -1579,7 +1667,7 @@ export default function App() {
                 onFixNames={fixNames}
                 onExportCSV={exportCSV}
                 onImportCSVClick={() => csvInputRef.current?.click()}
-                onViewRankList={() => setView('ranklist')}
+                onViewRankList={() => navigateToView('ranklist')}
                 allSuccess={files.length > 0 && files.every(f => f.status === 'success')}
                 selectedCount={selectedFileIds.size}
                 isAllSelected={isAllSelected}
