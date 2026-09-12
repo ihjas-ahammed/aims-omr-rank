@@ -62,7 +62,7 @@ export default function AdminTimetable({ onBack }: Props) {
   const [selectedClassData, setSelectedClassData] = useState<any>(null);
 
   useEffect(() => {
-    document.title = "AIMS - Timetable Manager";
+    document.title = "AIMS TIMETABLE";
     // Sync with Firebase in background immediately
     syncWithDatabase();
     return () => {
@@ -320,7 +320,7 @@ export default function AdminTimetable({ onBack }: Props) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center py-24 gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-[#062e5b]" />
-        <span className="text-xs font-bold text-slate-500">Loading Timetable Manager...</span>
+        <span className="text-xs font-bold text-slate-500">Loading AIMS TIMETABLE...</span>
       </div>
     );
   }
@@ -367,13 +367,10 @@ export default function AdminTimetable({ onBack }: Props) {
               <div className="h-6 w-px bg-slate-200 hidden sm:block" />
               <div>
                 <h1 className="text-sm font-black text-[#062e5b] leading-tight flex items-center gap-1.5">
-                  <span>Timetable System</span>
-                  <span className="px-1.5 py-0.2 bg-[#78b82a]/20 text-[#5c921c] font-black text-[9px]">
-                    PLUS
-                  </span>
+                  <span>AIMS TIMETABLE</span>
                 </h1>
                 <p className="text-[11px] font-medium text-slate-500">
-                  AI Schedule Scanner & Poster Generator
+                  Day Schedule & Poster Generator
                 </p>
               </div>
             </div>

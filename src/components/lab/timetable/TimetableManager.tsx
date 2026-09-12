@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { 
   CalendarDays, Plus, Search, Sliders, ScanLine, Download, Trash2, 
   Copy, Edit2, Calendar, Clock, BookOpen, AlertTriangle, ArrowRight, X, Check,
-  Archive, Loader2, FileDown, Sparkles, ClipboardPaste
+  Archive, Loader2, FileDown, Sparkles, ClipboardPaste, Link2
 } from 'lucide-react';
 
 import { TeacherMappingsModal } from './TeacherMappingsModal';
@@ -63,6 +63,15 @@ export const TimetableManager: React.FC<Props> = ({
   const [showPasteModal, setShowPasteModal] = useState(false);
   const [duplicateTarget, setDuplicateTarget] = useState<{ dayDate: string; classData: any } | null>(null);
   const [aiConfig, setAiConfig] = useState<TimetableAiConfig>(() => getTimetableAiConfig());
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/admin/timetable`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    });
+  };
 
 
   // Add Day Modal State
@@ -213,15 +222,34 @@ export const TimetableManager: React.FC<Props> = ({
         <div>
           <div className="flex items-center gap-2 text-xl font-black text-[#062e5b]">
             <CalendarDays className="w-6 h-6 text-[#062e5b]" />
-            Timetable Manager
+            AIMS TIMETABLE
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Day-wise schedule dashboard, AI timetable scanner, and high-resolution poster card generator.
+            Day-wise schedule dashboard, Quick Local OCR / AI scanner, and high-resolution poster card generator.
           </p>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center flex-wrap gap-2">
+          {/* Copy Canonical Link */}
+          <button
+            onClick={handleCopyLink}
+            className="px-3 py-1.5 text-xs font-bold border border-slate-300 hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 transition-colors"
+            title="Copy direct canonical link to AIMS TIMETABLE (/admin/timetable)"
+          >
+            {copiedLink ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-emerald-700 font-bold">Link Copied!</span>
+              </>
+            ) : (
+              <>
+                <Link2 className="w-3.5 h-3.5 text-blue-600" />
+                <span>Copy Link</span>
+              </>
+            )}
+          </button>
+
           {/* Search */}
           <div className="relative">
             <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -230,7 +258,7 @@ export const TimetableManager: React.FC<Props> = ({
               placeholder="Search day or class..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 w-44 text-slate-900 font-medium focus:border-[#062e5b] focus:outline-none"
+              className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-300 w-40 text-slate-900 font-medium focus:border-[#062e5b] focus:outline-none"
             />
           </div>
 

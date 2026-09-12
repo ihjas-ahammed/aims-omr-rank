@@ -480,7 +480,7 @@ export const TimetableEditor: React.FC<Props> = ({
           <button
             onClick={onBack}
             className="p-2 border border-slate-300 hover:bg-slate-50 text-slate-700 transition-colors"
-            title="Back to Timetable Manager"
+            title="Back to AIMS TIMETABLE"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>

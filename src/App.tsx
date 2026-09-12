@@ -30,6 +30,8 @@ import StudyProgressForm from './components/lab/study-progress/StudyProgressForm
 import StudyProgressAdmin from './components/lab/study-progress/StudyProgressAdmin';
 import CompensationForm from './components/lab/compensation/CompensationForm';
 import CompensationAdmin from './components/lab/compensation/CompensationAdmin';
+import RevaluationForm from './components/lab/revaluation/RevaluationForm';
+import RevaluationAdmin from './components/lab/revaluation/RevaluationAdmin';
 import TeacherLogForm from './components/lab/teacher-log/TeacherLogForm';
 import TeacherLogAdmin from './components/lab/teacher-log/TeacherLogAdmin';
 import { Sem5StudyProgressForm } from './components/lab/sem5-progress';
@@ -77,7 +79,7 @@ const DEFAULT_ANSWER_KEY = `{
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public' | 'teacher-log-form' | 'teacher-log-admin' | 'sem5-progress-mathematics' | 'sem5-progress-physics';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public' | 'revaluation-form' | 'lab-revaluation-responses' | 'lab-revaluation-responses-public' | 'teacher-log-form' | 'teacher-log-admin' | 'sem5-progress-mathematics' | 'sem5-progress-physics';
 
 // Parse /aims-present/<mode>/<id> from a pathname. Returns null if it isn't a presenter route.
 function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dashboard'; id: string | null } | null {
@@ -191,6 +193,11 @@ export function getPathForView(view: ViewState): string {
     case 'lab-compensation-responses-public':
     case 'lab-compensation-responses':
       return '/admin/compensation';
+    case 'revaluation-form':
+      return '/form/revaluation';
+    case 'lab-revaluation-responses-public':
+    case 'lab-revaluation-responses':
+      return '/admin/revaluation';
     case 'sem5-progress-mathematics':
       return '/form/progress/mathematics/5';
     case 'sem5-progress-physics':
@@ -283,6 +290,14 @@ function resolveInitialView(): ViewState {
     return 'lab-compensation-responses-public';
   }
 
+  // 7. Revaluation Routes
+  if (path === '/form/revaluation' || path === '/revaluation' || path === '/form/reval' || path === '/reval') {
+    return 'revaluation-form';
+  }
+  if (path === '/admin/revaluation' || path === '/admin/revaluation/3f9a7c' || path === '/admin/reval' || path === '/revaluation-admin') {
+    return 'lab-revaluation-responses-public';
+  }
+
   // 7. Aims Present Routes
   const present = parsePresentRoute(path);
   if (present) {
@@ -291,9 +306,18 @@ function resolveInitialView(): ViewState {
     return 'lab-aims-present';
   }
 
-  // 8. Timetable Routes
-  if (path === '/admin/timetable' || path === '/admin/timetable/' || path === '/timetable' || path === '/timetable/') {
-    if (path !== '/admin/timetable') {
+  // 8. Timetable Routes (Canonical: /admin/timetable)
+  const rawPath = path || '';
+  const normalizedPath = rawPath.toLowerCase().replace(/\/+$/, '') || '/';
+  if (
+    normalizedPath === '/admin/timetable' || 
+    normalizedPath === '/timetable' ||
+    normalizedPath.startsWith('/admin/timetable') ||
+    normalizedPath.startsWith('/timetable') ||
+    normalizedPath === '/admin/time-table' ||
+    normalizedPath === '/time-table'
+  ) {
+    if (rawPath !== '/admin/timetable') {
       window.history.replaceState(null, '', '/admin/timetable');
     }
     return 'lab-timetable';
@@ -1195,6 +1219,9 @@ export default function App() {
     view === 'compensation-form' ||
     (view as string) === 'lab-compensation-responses' ||
     (view as string) === 'lab-compensation-responses-public' ||
+    view === 'revaluation-form' ||
+    (view as string) === 'lab-revaluation-responses' ||
+    (view as string) === 'lab-revaluation-responses-public' ||
     (view as string) === 'study-progress-form' || 
     (view as string) === 'study-progress-admin' || 
     view === 'online-exam-portal' ||
@@ -1297,6 +1324,18 @@ export default function App() {
     return (
       <div className="min-h-screen bg-slate-50 p-2 sm:p-4">
         <CompensationAdmin hideBack={true} />
+      </div>
+    );
+  }
+
+  if (view === 'revaluation-form') {
+    return <RevaluationForm />;
+  }
+
+  if ((view as string) === 'lab-revaluation-responses-public') {
+    return (
+      <div className="min-h-screen bg-slate-50 p-2 sm:p-4">
+        <RevaluationAdmin hideBack={true} />
       </div>
     );
   }
@@ -1544,6 +1583,17 @@ export default function App() {
             onBack={() => navigateToView('lab')} 
             hideBack={(view as string) === 'lab-compensation-responses-public'}
           />
+        )}
+
+        {((view as string) === 'lab-revaluation-responses' || (view as string) === 'lab-revaluation-responses-public') && (
+          <RevaluationAdmin 
+            onBack={() => navigateToView('lab')} 
+            hideBack={(view as string) === 'lab-revaluation-responses-public'}
+          />
+        )}
+
+        {(view as string) === 'revaluation-form' && (
+          <RevaluationForm />
         )}
 
         {(view as string) === 'compensation-form' && (

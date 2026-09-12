@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   X, ClipboardPaste, FileSpreadsheet, Check, AlertTriangle, 
   Calendar, Clock, BookOpen, Sparkles, ArrowRight, RotateCcw,
-  Layers, Plus
+  Layers, Plus, ScanLine, Loader2
 } from 'lucide-react';
 import { 
   parseClipboardTimetable, 
@@ -10,6 +10,7 @@ import {
   ParsedClipboardClass 
 } from '../../../utils/timetableClipboardParser';
 import { saveTeacherMappingsData } from '../../../services/firebaseService';
+import { extractTextWithQuickOcr } from '../../../services/quickOcrService';
 
 interface Props {
   isOpen: boolean;
@@ -56,6 +57,33 @@ export const PasteTimetableModal: React.FC<Props> = ({
 
   // Clipboard read feedback
   const [clipboardNotice, setClipboardNotice] = useState<string | null>(null);
+
+  // Quick OCR Extraction State
+  const imageOcrInputRef = useRef<HTMLInputElement>(null);
+  const [ocrExtracting, setOcrExtracting] = useState(false);
+  const [ocrExtractStatus, setOcrExtractStatus] = useState('');
+
+  const handleOcrImageFile = async (imgFile: File) => {
+    setOcrExtracting(true);
+    setOcrExtractStatus('Reading screenshot text...');
+    try {
+      const text = await extractTextWithQuickOcr(imgFile, (p) => {
+        setOcrExtractStatus(p.status);
+      });
+      if (text && text.trim()) {
+        setRawText(text);
+        setClipboardNotice('Extracted text from screenshot using Quick OCR!');
+        setTimeout(() => setClipboardNotice(null), 3500);
+      } else {
+        alert('No legible text was found in this screenshot. Please try a clearer image.');
+      }
+    } catch (err: any) {
+      alert(`OCR Error: ${err?.message || 'Could not extract text'}`);
+    } finally {
+      setOcrExtracting(false);
+      setOcrExtractStatus('');
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -270,7 +298,7 @@ export const PasteTimetableModal: React.FC<Props> = ({
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1 text-xs">
           {/* Top Control Bar */}
           <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-100 p-2.5 border border-slate-200">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center flex-wrap gap-2">
               <button
                 onClick={handleManualPasteFromClipboard}
                 className="px-3 py-1.5 font-bold bg-[#062e5b] text-white hover:bg-[#0d427d] flex items-center gap-1.5 transition-colors shadow-xs"
@@ -278,6 +306,37 @@ export const PasteTimetableModal: React.FC<Props> = ({
                 <ClipboardPaste className="w-3.5 h-3.5" />
                 Paste from Clipboard
               </button>
+
+              <button
+                type="button"
+                onClick={() => imageOcrInputRef.current?.click()}
+                disabled={ocrExtracting}
+                className="px-3 py-1.5 font-bold text-indigo-700 bg-indigo-50 border border-indigo-300 hover:bg-indigo-100 flex items-center gap-1.5 transition-colors shadow-xs"
+                title="Upload screenshot or photo to extract text automatically via Quick OCR"
+              >
+                {ocrExtracting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                    <span>{ocrExtractStatus || 'Running OCR...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <ScanLine className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Extract from Screenshot (OCR)</span>
+                  </>
+                )}
+              </button>
+              <input
+                ref={imageOcrInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleOcrImageFile(e.target.files[0]);
+                  }
+                }}
+              />
 
               <button
                 onClick={() => setRawText(EXAMPLE_CLIPBOARD_TEXT)}

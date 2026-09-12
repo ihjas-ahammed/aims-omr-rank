@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   X, Upload, ScanLine, Loader2, AlertCircle, Check, CheckCircle2, 
   UserCheck, Calendar, Clock, Camera, Sparkles, Layers, RefreshCw,
-  Key, Cpu, Settings, ChevronDown, ChevronUp, Eye, EyeOff, ShieldCheck, Zap
+  Key, Cpu, Settings, ChevronDown, ChevronUp, Eye, EyeOff, ShieldCheck, Zap,
+  FileText, Copy
 } from 'lucide-react';
 import { 
   scanTimetableImageFromClient, 
@@ -16,6 +17,7 @@ import {
   testGeminiApiKeyAndModel
 } from '../../../services/timetableAiService';
 import { saveTeacherMappingsData } from '../../../services/firebaseService';
+import { scanTimetableWithQuickOcr, OcrProgress } from '../../../services/quickOcrService';
 import { TimetableAiSettingsModal } from './TimetableAiSettingsModal';
 
 interface Props {
@@ -50,6 +52,13 @@ export const ScanTimetableModal: React.FC<Props> = ({
   const [scanResult, setScanResult] = useState<ScanTimetableResult | null>(null);
   const [unmappedSelections, setUnmappedSelections] = useState<Record<string, string>>({});
   const [saveMappingsChecked, setSaveMappingsChecked] = useState(true);
+
+  // Scanner Engine Mode: 'quick-ocr' (default, 0 API key required) vs 'gemini'
+  const [scanMode, setScanMode] = useState<'quick-ocr' | 'gemini'>('quick-ocr');
+  const [ocrProgress, setOcrProgress] = useState<OcrProgress | null>(null);
+  const [extractedOcrText, setExtractedOcrText] = useState<string>('');
+  const [showOcrTextPreview, setShowOcrTextPreview] = useState<boolean>(false);
+  const [copiedOcrText, setCopiedOcrText] = useState<boolean>(false);
   
   // AI Config States
   const [aiConfig, setAiConfig] = useState<TimetableAiConfig>(getTimetableAiConfig());
@@ -78,38 +87,79 @@ export const ScanTimetableModal: React.FC<Props> = ({
 
   if (!isOpen) return null;
 
-  const handleFileChange = async (selectedFile: File) => {
+  const handleFileChange = async (selectedFile: File, forcedMode?: 'quick-ocr' | 'gemini') => {
+    const activeMode = forcedMode || scanMode;
     setFile(selectedFile);
     setError(null);
     setScanning(true);
     setScanResult(null);
+    setExtractedOcrText('');
+    setOcrProgress({ status: 'Starting scan...', progress: 0.05 });
 
     try {
-      const res = await scanTimetableImageFromClient(selectedFile, {
-        customApiKey: aiConfig.customApiKey,
-        customModel: aiConfig.customModel,
-        useCustomAsPrimary: aiConfig.useCustomAsPrimary
-      });
-      setScanResult(res);
+      if (activeMode === 'quick-ocr') {
+        const ocrData = await scanTimetableWithQuickOcr(
+          selectedFile,
+          teacherMappings,
+          (prog) => setOcrProgress(prog)
+        );
+        setExtractedOcrText(ocrData.rawText);
 
-      // Pre-populate unmapped selections with fallback
-      const initialSelections: Record<string, string> = {};
-      res.unmapped_teachers.forEach(code => {
-        initialSelections[code] = 'PHYSICS';
-      });
-      setUnmappedSelections(initialSelections);
+        const res: ScanTimetableResult = {
+          success: true,
+          date: ocrData.parsed.date,
+          isoDate: ocrData.parsed.isoDate,
+          dayName: ocrData.parsed.dayName,
+          time: ocrData.parsed.time,
+          time_slots: ocrData.parsed.timeSlots,
+          classes: ocrData.parsed.classes as any,
+          unmapped_teachers: ocrData.parsed.unmappedTeachers,
+          usedModel: 'Quick Local OCR (WebAssembly)',
+          usedKeyType: 'global'
+        };
+        setScanResult(res);
 
-      // Pre-populate classwise APT exams
-      const initialClassApts: Record<string, string> = {};
-      (res.classes || []).forEach(c => {
-        initialClassApts[c.class_name] = c.apt_exam || '';
-      });
-      setClassAptExams(initialClassApts);
+        // Pre-populate unmapped selections with fallback
+        const initialSelections: Record<string, string> = {};
+        res.unmapped_teachers.forEach(code => {
+          initialSelections[code] = 'PHYSICS';
+        });
+        setUnmappedSelections(initialSelections);
+
+        // Pre-populate classwise APT exams
+        const initialClassApts: Record<string, string> = {};
+        (res.classes || []).forEach(c => {
+          initialClassApts[c.class_name] = c.apt_exam || '';
+        });
+        setClassAptExams(initialClassApts);
+      } else {
+        const res = await scanTimetableImageFromClient(selectedFile, {
+          customApiKey: aiConfig.customApiKey,
+          customModel: aiConfig.customModel,
+          useCustomAsPrimary: aiConfig.useCustomAsPrimary
+        });
+        setScanResult(res);
+
+        // Pre-populate unmapped selections with fallback
+        const initialSelections: Record<string, string> = {};
+        res.unmapped_teachers.forEach(code => {
+          initialSelections[code] = 'PHYSICS';
+        });
+        setUnmappedSelections(initialSelections);
+
+        // Pre-populate classwise APT exams
+        const initialClassApts: Record<string, string> = {};
+        (res.classes || []).forEach(c => {
+          initialClassApts[c.class_name] = c.apt_exam || '';
+        });
+        setClassAptExams(initialClassApts);
+      }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Failed to scan image with AI.');
+      setError(err.message || 'Failed to scan image.');
     } finally {
       setScanning(false);
+      setOcrProgress(null);
     }
   };
 
@@ -235,7 +285,7 @@ export const ScanTimetableModal: React.FC<Props> = ({
         <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2 text-[#062e5b] font-black text-base">
             <ScanLine className="w-5 h-5 text-[#78b82a]" />
-            Scan Timetable Schedule with AI
+            Scan Timetable Schedule (Quick OCR / AI Vision)
           </div>
           <button onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600">
             <X className="w-5 h-5" />
@@ -268,180 +318,247 @@ export const ScanTimetableModal: React.FC<Props> = ({
             }}
           />
 
-          {/* AI Configuration Bar & Quick Settings Toggle */}
-          <div className="border border-slate-200 bg-slate-50 p-3 space-y-2.5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center flex-wrap gap-1.5">
-                <span className="text-xs font-black text-[#062e5b] flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>AI Engine:</span>
-                </span>
-                
-                {/* Active Model Pill */}
-                <span className="px-2 py-0.5 bg-[#062e5b] text-white font-mono font-bold text-[10px]">
-                  {aiConfig.customModel || DEFAULT_TIMETABLE_PRIMARY_MODEL}
-                </span>
+          {/* Scan Engine Mode Selector Tabs */}
+          <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 border border-slate-200">
+            <button
+              type="button"
+              onClick={() => {
+                setScanMode('quick-ocr');
+                if (file && !scanning && scanResult && scanMode !== 'quick-ocr') {
+                  handleFileChange(file, 'quick-ocr');
+                }
+              }}
+              className={`flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold transition-all ${
+                scanMode === 'quick-ocr'
+                  ? 'bg-white text-[#062e5b] shadow-xs border border-slate-300'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5 text-emerald-600" />
+              <span>⚡ Quick Local OCR</span>
+              <span className="text-[9px] px-1.5 py-0.2 bg-emerald-100 text-emerald-800 font-black uppercase">
+                Fast & 0 API Key
+              </span>
+            </button>
 
-                {/* Key Status Pill */}
-                {aiConfig.customApiKey.trim() ? (
-                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-[10px] flex items-center gap-1">
-                    <Key className="w-3 h-3" />
-                    {aiConfig.useCustomAsPrimary ? 'Custom Key (Primary)' : 'Custom Key'}
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 bg-slate-200 text-slate-700 font-semibold text-[10px]">
-                    System Key
-                  </span>
-                )}
-              </div>
+            <button
+              type="button"
+              onClick={() => {
+                setScanMode('gemini');
+                if (file && !scanning && scanResult && scanMode !== 'gemini') {
+                  handleFileChange(file, 'gemini');
+                }
+              }}
+              className={`flex items-center justify-center gap-2 py-2 px-3 text-xs font-bold transition-all ${
+                scanMode === 'gemini'
+                  ? 'bg-white text-[#062e5b] shadow-xs border border-slate-300'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>✨ Gemini AI Vision</span>
+              <span className="text-[9px] px-1.5 py-0.2 bg-indigo-100 text-indigo-800 font-black uppercase">
+                Multi-Modal
+              </span>
+            </button>
+          </div>
 
-              <div className="flex items-center gap-1.5 self-end sm:self-auto">
-                <button
-                  type="button"
-                  onClick={() => setShowAiSettingsInline(!showAiSettingsInline)}
-                  className="px-2.5 py-1 text-[11px] font-bold border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 flex items-center gap-1 shadow-2xs"
-                >
-                  <Settings className="w-3 h-3 text-[#062e5b]" />
-                  {showAiSettingsInline ? 'Hide AI Config' : 'Configure Key & Model'}
-                  {showAiSettingsInline ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                </button>
+          {/* Quick OCR Banner */}
+          {scanMode === 'quick-ocr' && (
+            <div className="p-2.5 bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span className="font-medium text-[11px]">
+                  <strong>Quick Local OCR:</strong> Client-side WebAssembly OCR. Zero API key needed, zero latency/quota limits, ideal for doc screenshots and photos.
+                </span>
               </div>
             </div>
+          )}
 
-            {/* Inline Expandable AI Settings Panel */}
-            {showAiSettingsInline && (
-              <div className="pt-2 border-t border-slate-200 space-y-3 bg-white p-3 border">
-                {/* Test Feedback if any */}
-                {aiTestResult && (
-                  <div
-                    className={`p-2 border text-[11px] flex items-center gap-1.5 ${
-                      aiTestResult.success
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                        : 'bg-red-50 border-red-200 text-red-700'
-                    }`}
-                  >
-                    {aiTestResult.success ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />}
-                    <span className="font-semibold">{aiTestResult.message}</span>
-                  </div>
-                )}
+          {/* AI Configuration Bar & Quick Settings Toggle (Only when Gemini mode active) */}
+          {scanMode === 'gemini' && (
+            <div className="border border-slate-200 bg-slate-50 p-3 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center flex-wrap gap-1.5">
+                  <span className="text-xs font-black text-[#062e5b] flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>AI Engine:</span>
+                  </span>
+                  
+                  {/* Active Model Pill */}
+                  <span className="px-2 py-0.5 bg-[#062e5b] text-white font-mono font-bold text-[10px]">
+                    {aiConfig.customModel || DEFAULT_TIMETABLE_PRIMARY_MODEL}
+                  </span>
 
-                {/* Custom API Key Input */}
-                <div className="space-y-1">
-                  <label className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
-                    <span className="flex items-center gap-1">
-                      <Key className="w-3 h-3 text-amber-600" />
-                      Custom Gemini API Key:
+                  {/* Key Status Pill */}
+                  {aiConfig.customApiKey.trim() ? (
+                    <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-[10px] flex items-center gap-1">
+                      <Key className="w-3 h-3" />
+                      {aiConfig.useCustomAsPrimary ? 'Custom Key (Primary)' : 'Custom Key'}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-normal">
-                      (Leave blank to use system key)
+                  ) : (
+                    <span className="px-2 py-0.5 bg-slate-200 text-slate-700 font-semibold text-[10px]">
+                      System Key
                     </span>
-                  </label>
-                  <div className="relative flex items-center">
-                    <input
-                      type={showApiKeyText ? 'text' : 'password'}
-                      value={aiConfig.customApiKey}
-                      onChange={(e) => handleUpdateInlineAiConfig({ customApiKey: e.target.value })}
-                      placeholder="AIzaSy... (Paste custom Gemini API key)"
-                      className="w-full pl-2.5 pr-20 py-1.5 text-xs font-mono bg-slate-50 border border-slate-300 text-slate-900 focus:border-[#062e5b] focus:outline-none"
-                    />
-                    <div className="absolute right-1.5 flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setShowApiKeyText(!showApiKeyText)}
-                        className="p-1 text-slate-400 hover:text-slate-700"
-                        title={showApiKeyText ? 'Hide' : 'Show'}
-                      >
-                        {showApiKeyText ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                      </button>
-                      {aiConfig.customApiKey && (
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateInlineAiConfig({ customApiKey: '' })}
-                          className="text-[10px] text-slate-400 hover:text-red-600 px-1"
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                  </div>
+                  )}
                 </div>
 
-                {/* Model Selection */}
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-                    <Cpu className="w-3 h-3 text-indigo-600" />
-                    Select Gemini Model:
-                  </label>
-                  <div className="flex flex-wrap gap-1">
-                    {PRESET_TIMETABLE_MODELS.map(m => {
-                      const isSel = aiConfig.customModel === m.id;
-                      return (
-                        <button
-                          key={m.id}
-                          type="button"
-                          onClick={() => handleUpdateInlineAiConfig({ customModel: m.id })}
-                          className={`px-2 py-1 text-[10px] font-bold transition-colors ${
-                            isSel
-                              ? 'bg-[#062e5b] text-white shadow-xs'
-                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
-                          }`}
-                        >
-                          {m.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <input
-                    type="text"
-                    value={aiConfig.customModel}
-                    onChange={(e) => handleUpdateInlineAiConfig({ customModel: e.target.value.trim() })}
-                    placeholder="Or type custom model name (e.g. gemini-2.5-flash)"
-                    className="w-full px-2.5 py-1 text-xs font-mono bg-slate-50 border border-slate-300 text-slate-900 font-bold focus:border-[#062e5b] focus:outline-none"
-                  />
-                </div>
-
-                {/* Use Custom as Primary Checkbox */}
-                <div className="pt-1">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-900">
-                    <input
-                      type="checkbox"
-                      checked={aiConfig.useCustomAsPrimary}
-                      onChange={(e) => handleUpdateInlineAiConfig({ useCustomAsPrimary: e.target.checked })}
-                      className="rounded border-amber-400 text-amber-600 focus:ring-amber-500"
-                    />
-                    <span className="flex items-center gap-1">
-                      <Zap className="w-3 h-3 text-amber-600" />
-                      Use this custom API Key & Model as Primary
-                    </span>
-                  </label>
-                  <p className="text-[10px] text-slate-500 ml-5">
-                    When active, timetable generation will prioritize your custom key and selected model.
-                  </p>
-                </div>
-
-                {/* Bottom actions inside inline drawer */}
-                <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                <div className="flex items-center gap-1.5 self-end sm:self-auto">
                   <button
                     type="button"
-                    onClick={() => setShowFullAiModal(true)}
-                    className="text-[11px] font-semibold text-[#062e5b] hover:underline flex items-center gap-1"
+                    onClick={() => setShowAiSettingsInline(!showAiSettingsInline)}
+                    className="px-2.5 py-1 text-[11px] font-bold border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 flex items-center gap-1 shadow-2xs"
                   >
-                    <Settings className="w-3 h-3" /> Full AI Settings & Live Model Fetcher
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleTestInlineKey}
-                    disabled={testingAi || !aiConfig.customApiKey.trim()}
-                    className="px-2.5 py-1 text-[11px] font-bold border border-slate-300 hover:bg-slate-50 text-slate-700 disabled:opacity-40 flex items-center gap-1"
-                  >
-                    <RefreshCw className={`w-3 h-3 ${testingAi ? 'animate-spin' : 'text-blue-600'}`} />
-                    {testingAi ? 'Testing...' : 'Test Connection'}
+                    <Settings className="w-3 h-3 text-[#062e5b]" />
+                    {showAiSettingsInline ? 'Hide AI Config' : 'Configure Key & Model'}
+                    {showAiSettingsInline ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   </button>
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* Inline Expandable AI Settings Panel */}
+              {showAiSettingsInline && (
+                <div className="pt-2 border-t border-slate-200 space-y-3 bg-white p-3 border">
+                  {/* Test Feedback if any */}
+                  {aiTestResult && (
+                    <div
+                      className={`p-2 border text-[11px] flex items-center gap-1.5 ${
+                        aiTestResult.success
+                          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                          : 'bg-red-50 border-red-200 text-red-700'
+                      }`}
+                    >
+                      {aiTestResult.success ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 text-red-600 shrink-0" />}
+                      <span className="font-semibold">{aiTestResult.message}</span>
+                    </div>
+                  )}
+
+                  {/* Custom API Key Input */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-slate-700 flex items-center justify-between">
+                      <span className="flex items-center gap-1">
+                        <Key className="w-3 h-3 text-amber-600" />
+                        Custom Gemini API Key:
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-normal">
+                        (Leave blank to use system key)
+                      </span>
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        type={showApiKeyText ? 'text' : 'password'}
+                        value={aiConfig.customApiKey}
+                        onChange={(e) => handleUpdateInlineAiConfig({ customApiKey: e.target.value })}
+                        placeholder="AIzaSy... (Paste custom Gemini API key)"
+                        className="w-full pl-2.5 pr-20 py-1.5 text-xs font-mono bg-slate-50 border border-slate-300 text-slate-900 focus:border-[#062e5b] focus:outline-none"
+                      />
+                      <div className="absolute right-1.5 flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setShowApiKeyText(!showApiKeyText)}
+                          className="p-1 text-slate-400 hover:text-slate-700"
+                          title={showApiKeyText ? 'Hide' : 'Show'}
+                        >
+                          {showApiKeyText ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        </button>
+                        {aiConfig.customApiKey && (
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateInlineAiConfig({ customApiKey: '' })}
+                            className="text-[10px] text-slate-400 hover:text-red-600 px-1"
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Model Selection */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                      <Cpu className="w-3 h-3 text-indigo-600" />
+                      Select Gemini Model:
+                    </label>
+                    <div className="flex flex-wrap gap-1">
+                      {PRESET_TIMETABLE_MODELS.map(m => {
+                        const isSel = aiConfig.customModel === m.id;
+                        return (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => handleUpdateInlineAiConfig({ customModel: m.id })}
+                            className={`px-2 py-1 text-[11px] border font-mono transition-colors flex items-center gap-1 ${
+                              isSel
+                                ? 'bg-[#062e5b] text-white border-[#062e5b] font-bold shadow-2xs'
+                                : 'bg-slate-50 text-slate-700 border-slate-300 hover:bg-slate-100'
+                            }`}
+                          >
+                            {isSel && <Check className="w-3 h-3 text-emerald-400" />}
+                            {m.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Custom Model Text Override */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-500 flex items-center gap-1">
+                      Or type custom model name (e.g. models/gemini-2.5-flash):
+                    </label>
+                    <input
+                      type="text"
+                      value={aiConfig.customModel}
+                      onChange={(e) => handleUpdateInlineAiConfig({ customModel: e.target.value })}
+                      placeholder="e.g. gemini-2.5-flash"
+                      className="w-full px-2.5 py-1 text-xs font-mono bg-slate-50 border border-slate-300 text-slate-900 focus:border-[#062e5b] focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Use Custom as Primary Checkbox */}
+                  <div className="pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-amber-900">
+                      <input
+                        type="checkbox"
+                        checked={aiConfig.useCustomAsPrimary}
+                        onChange={(e) => handleUpdateInlineAiConfig({ useCustomAsPrimary: e.target.checked })}
+                        className="rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                      />
+                      <span className="flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-amber-600" />
+                        Use this custom API Key & Model as Primary
+                      </span>
+                    </label>
+                    <p className="text-[10px] text-slate-500 ml-5">
+                      When active, timetable generation will prioritize your custom key and selected model.
+                    </p>
+                  </div>
+
+                  {/* Bottom actions inside inline drawer */}
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setShowFullAiModal(true)}
+                      className="text-[11px] font-semibold text-[#062e5b] hover:underline flex items-center gap-1"
+                    >
+                      <Settings className="w-3 h-3" /> Full AI Settings & Live Model Fetcher
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleTestInlineKey}
+                      disabled={testingAi || !aiConfig.customApiKey.trim()}
+                      className="px-2.5 py-1 text-[11px] font-bold border border-slate-300 hover:bg-slate-50 text-slate-700 disabled:opacity-40 flex items-center gap-1"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${testingAi ? 'animate-spin' : 'text-blue-600'}`} />
+                      {testingAi ? 'Testing...' : 'Test Connection'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Upload Drop Zone & Camera Buttons */}
           <div className="space-y-2">
@@ -455,8 +572,19 @@ export const ScanTimetableModal: React.FC<Props> = ({
                 <div className="flex flex-col items-center gap-2 text-indigo-600">
                   <Loader2 className="w-8 h-8 animate-spin" />
                   <span className="font-bold text-sm">
-                    Scanning with {aiConfig.customModel || DEFAULT_TIMETABLE_PRIMARY_MODEL} ({aiConfig.customApiKey ? 'Custom Key' : 'System Key'})...
+                    {scanMode === 'quick-ocr'
+                      ? (ocrProgress?.status || 'Analyzing screenshot with Quick Local OCR...')
+                      : `Scanning with ${aiConfig.customModel || DEFAULT_TIMETABLE_PRIMARY_MODEL} (${aiConfig.customApiKey ? 'Custom Key' : 'System Key'})...`
+                    }
                   </span>
+                  {scanMode === 'quick-ocr' && ocrProgress && typeof ocrProgress.progress === 'number' && ocrProgress.progress > 0 && (
+                    <div className="w-48 bg-slate-200 h-1.5 overflow-hidden rounded-full mt-1">
+                      <div 
+                        className="bg-emerald-600 h-1.5 transition-all duration-200 rounded-full"
+                        style={{ width: `${Math.round(ocrProgress.progress * 100)}%` }}
+                      />
+                    </div>
+                  )}
                   <span className="text-xs text-slate-500">Extracting time slots, batch rows, teacher codes & notes</span>
                 </div>
               ) : (
@@ -466,7 +594,7 @@ export const ScanTimetableModal: React.FC<Props> = ({
                     {file ? `File: ${file.name}` : 'Click or Drag & Drop Timetable Image Here'}
                   </span>
                   <span className="text-xs text-slate-500">
-                    Supports JPEG, PNG, WEBP (e.g. photo or screenshot)
+                    Supports JPEG, PNG, WEBP (e.g. screenshot or photo of timetable)
                   </span>
                 </div>
               )}
@@ -503,7 +631,7 @@ export const ScanTimetableModal: React.FC<Props> = ({
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {scanResult.usedModel && (
                     <span className="text-[10px] font-mono font-bold bg-emerald-200/80 text-emerald-900 px-2 py-0.5 border border-emerald-300">
-                      ⚡ {scanResult.usedModel} ({scanResult.usedKeyType === 'custom' ? 'Custom Key' : 'System Key'})
+                      ⚡ {scanResult.usedModel} {scanResult.usedKeyType === 'custom' ? '(Custom Key)' : ''}
                     </span>
                   )}
                   <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5">
@@ -511,6 +639,39 @@ export const ScanTimetableModal: React.FC<Props> = ({
                   </span>
                 </div>
               </div>
+
+              {/* Extracted OCR Raw Text Inspection Toggle */}
+              {extractedOcrText && (
+                <div className="border border-slate-200 bg-slate-50 p-2.5">
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setShowOcrTextPreview(!showOcrTextPreview)}
+                      className="text-xs font-bold text-slate-700 flex items-center gap-1.5 hover:text-[#062e5b]"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>{showOcrTextPreview ? 'Hide Extracted OCR Raw Text' : 'View Extracted OCR Raw Text'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(extractedOcrText);
+                        setCopiedOcrText(true);
+                        setTimeout(() => setCopiedOcrText(false), 2000);
+                      }}
+                      className="text-[11px] font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1"
+                    >
+                      <Copy className="w-3 h-3" />
+                      {copiedOcrText ? 'Copied!' : 'Copy OCR Text'}
+                    </button>
+                  </div>
+                  {showOcrTextPreview && (
+                    <pre className="mt-2 p-2 bg-white border border-slate-200 text-[10px] font-mono whitespace-pre-wrap max-h-40 overflow-y-auto text-slate-800">
+                      {extractedOcrText}
+                    </pre>
+                  )}
+                </div>
+              )}
 
 
               {/* Unmapped Teachers Prompt */}
