@@ -13,6 +13,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="AIMS" />
     <meta name="theme-color" content="#0f172a" />
+    <script>
+      (function() {
+        var p = window.location.pathname;
+        if (p.indexOf('class-10-term-1') !== -1 || p.indexOf('class10-term-1') !== -1 || p.indexOf('inspire-cheekkode') !== -1) {
+          document.title = 'Inspire';
+          var icon = document.querySelector("link[rel*='icon']");
+          if (icon) icon.setAttribute('href', 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>');
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,500&display=swap" rel="stylesheet" />

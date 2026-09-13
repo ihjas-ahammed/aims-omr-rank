@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature, Presentation, ClipboardList, Moon, Calculator, Zap, GraduationCap } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'admin-online-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses' | 'lab-revaluation-responses' | 'teacher-log-form' | 'study-progress-form' | 'sem5-progress-mathematics' | 'sem5-progress-physics') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'admin-online-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses' | 'lab-revaluation-responses' | 'teacher-log-form' | 'study-progress-form' | 'sem5-progress-mathematics' | 'sem5-progress-physics' | 'class10-term1-form' | 'class10-term1-admin') => void;
 }
 
 export default function Lab({ onNavigate }: LabProps) {
@@ -14,6 +14,42 @@ export default function Lab({ onNavigate }: LabProps) {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        {/* Class 10 Term 1 Marks (INSPIRE Cheekkode) */}
+        <div 
+          onClick={() => onNavigate('class10-term1-form')}
+          className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-400 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-indigo-100 text-indigo-700 rounded-lg group-hover:bg-indigo-200 transition-colors">
+              <GraduationCap className="w-6 h-6" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="px-2 py-0.5 bg-indigo-600 text-white text-[10px] font-black rounded-md uppercase tracking-wider">
+                CLASS 10
+              </span>
+              <span className="px-2 py-0.5 bg-purple-600 text-white text-[10px] font-black rounded-md uppercase tracking-wider">
+                TERM 1
+              </span>
+            </div>
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Class 10 Term 1 Marks (/form/class-10-term-1)</h3>
+          <p className="text-sm text-gray-700 flex-1">
+            INSPIRE Cheekkode • Kerala SCERT Class 10 First Term evaluation marks collection across all 10 subjects with auto-calculated total, percentage, and SSLC grade.
+          </p>
+          <div className="mt-4 pt-3 border-t border-indigo-100 flex items-center justify-between text-xs">
+            <span className="font-bold text-indigo-600 group-hover:underline">Open Marks Form &rarr;</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigate('class10-term1-admin');
+              }}
+              className="text-slate-500 hover:text-indigo-700 font-semibold underline cursor-pointer"
+            >
+              Admin View (/admin/class-10-term-1)
+            </button>
+          </div>
+        </div>
         
         {/* Sem 5 Mathematics Study Progress */}
         <div 
