@@ -160,9 +160,7 @@ export async function shareTimetableCardImage(
   if (canShareFiles) {
     try {
       await navigator.share({
-        files: [file],
-        title: `${batchName} - TIMETABLE`,
-        text: `Timetable: ${batchName} (${date})`
+        files: [file]
       });
       return { success: true, method: 'share', message: 'Shared successfully!' };
     } catch (shareErr: any) {
