@@ -5,6 +5,7 @@ import {
   Layers, Zap, BookOpen, UserPlus, Save, AlertCircle, Sparkles, RefreshCw, Archive
 } from 'lucide-react';
 import { PosterCardPreview, PosterSubject } from './PosterCardPreview';
+import { AutoFitPosterPreview } from './AutoFitPosterPreview';
 import { 
   downloadTimetableCardImage, 
   shareTimetableCardImage, 
@@ -1513,9 +1514,9 @@ export const QuickTimetableCreate: React.FC<Props> = ({
                       <span className="text-[11px] text-slate-400 font-medium">{dateStr}</span>
                     </div>
 
-                    {/* Responsive Container for Poster Card Preview */}
-                    <div className="w-full overflow-x-auto flex justify-center py-2 bg-slate-50/50 rounded-xl border border-slate-100">
-                      <div className="origin-top transform scale-[0.85] sm:scale-100 transition-transform">
+                    {/* Auto-Fit Container for Poster Card Preview (always fits width & mobile screens) */}
+                    <div className="w-full flex justify-center py-2 bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden">
+                      <AutoFitPosterPreview className="w-full" padding={6}>
                         <PosterCardPreview
                           id={cardDomId}
                           batchName={cName}
@@ -1528,7 +1529,7 @@ export const QuickTimetableCreate: React.FC<Props> = ({
                           phone2="9072652666"
                           subjects={conf.subjects}
                         />
-                      </div>
+                      </AutoFitPosterPreview>
                     </div>
 
                     {/* Action Buttons: Direct Share, Download PNG, Copy */}

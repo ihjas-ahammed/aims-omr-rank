@@ -5,6 +5,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { PosterCardPreview, PosterSubject } from './PosterCardPreview';
+import { AutoFitPosterPreview } from './AutoFitPosterPreview';
 import { downloadTimetableCardImage, copyTimetableCardToClipboard, shareTimetableCardImage } from '../../../utils/timetableCardExport';
 import { getAutoIconForSubject } from '../../../services/timetableAiService';
 import { parseClipboardTimetable } from '../../../utils/timetableClipboardParser';
@@ -31,63 +32,6 @@ const SUBJECT_PRESETS = [
   { name: 'COMPUTER SCIENCE', code: 'CS', icon_type: 'icon', icon: 'terminal' },
   { name: 'ENGLISH', code: 'ENG', icon_type: 'icon', icon: 'menu_book' }
 ];
-
-const AutoFitPosterPreview: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(1);
-  const [naturalHeight, setNaturalHeight] = useState(720);
-
-  useEffect(() => {
-    const updateScale = () => {
-      if (!containerRef.current) return;
-      const containerWidth = containerRef.current.clientWidth;
-      const availableWidth = Math.max(containerWidth - 24, 240);
-      const cardBaseWidth = 480;
-      
-      const newScale = Math.min(1, availableWidth / cardBaseWidth);
-      setScale(newScale);
-
-      const cardEl = containerRef.current.querySelector('#timetable-poster-card') as HTMLElement;
-      if (cardEl && cardEl.offsetHeight > 0) {
-        setNaturalHeight(cardEl.offsetHeight);
-      }
-    };
-
-    updateScale();
-    window.addEventListener('resize', updateScale);
-    const observer = new ResizeObserver(updateScale);
-    if (containerRef.current) observer.observe(containerRef.current);
-
-    return () => {
-      window.removeEventListener('resize', updateScale);
-      observer.disconnect();
-    };
-  }, [children]);
-
-  return (
-    <div ref={containerRef} className="w-full flex flex-col items-center justify-start overflow-hidden py-1">
-      <div 
-        style={{
-          width: `${480 * scale}px`,
-          height: `${naturalHeight * scale}px`,
-          position: 'relative',
-          overflow: 'hidden',
-          transition: 'width 0.15s ease, height 0.15s ease'
-        }}
-      >
-        <div 
-          style={{
-            transform: `scale(${scale})`,
-            transformOrigin: 'top left',
-            width: '480px'
-          }}
-        >
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export const TimetableEditor: React.FC<Props> = ({
   initialDate,
@@ -1099,20 +1043,20 @@ export const TimetableEditor: React.FC<Props> = ({
         </div>
 
         {/* Right Column: High Fidelity Poster Card Preview */}
-        <div className={`lg:col-span-6 xl:col-span-5 space-y-3 ${mobileTab === 'edit' ? 'hidden lg:block' : 'block'}`}>
+        <div className={`lg:col-span-6 xl:col-span-5 space-y-3 lg:sticky lg:top-16 self-start ${mobileTab === 'edit' ? 'hidden lg:block' : 'block'}`}>
           <div className="flex items-center justify-between bg-white px-4 py-2 border border-slate-200 shadow-xs">
             <span className="text-xs font-black text-[#062e5b] flex items-center gap-1.5">
               <Eye className="w-4 h-4 text-[#78b82a]" />
               Live Poster Card Preview
             </span>
             <span className="text-[10px] font-mono font-bold bg-slate-100 px-2 py-0.5 text-slate-600 border border-slate-200">
-              Auto-Fit Preview
+              Auto-Fit to Preview
             </span>
           </div>
 
           {/* Auto-Scaled Card Frame */}
-          <div className="p-2 sm:p-4 bg-slate-100 border border-slate-200 flex justify-center items-center overflow-hidden shadow-inner">
-            <AutoFitPosterPreview>
+          <div className="p-2 sm:p-4 bg-slate-100 border border-slate-200 flex justify-center items-center overflow-hidden shadow-inner max-h-[calc(100vh-140px)]">
+            <AutoFitPosterPreview fitHeight maxHeight="calc(100vh - 160px)" className="w-full">
               <PosterCardPreview
                 batchName={batchName}
                 title={effectiveTitle}

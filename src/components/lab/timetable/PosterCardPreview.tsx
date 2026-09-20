@@ -164,6 +164,7 @@ export const PosterCardPreview: React.FC<PosterCardProps> = ({
   return (
     <div
       id={id}
+      data-poster-card="true"
       style={{
         width: '480px',
         minWidth: '480px',
