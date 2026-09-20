@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Palette,
   Code,
@@ -18,10 +18,16 @@ import {
   Edit3,
   Check,
   FileText,
-  Sliders,
-  Layers
+  Layers,
+  Search,
+  X,
+  Maximize2,
+  Minimize2,
+  ChevronDown,
+  ChevronRight,
+  Sparkles
 } from 'lucide-react';
-import { GeneratedPaper, QPSection, QPQuestion, QPAsset } from './types';
+import { GeneratedPaper, QPSection, QPAsset } from './types';
 import { QpTemplate } from './defaultDartTemplates';
 import { compileQpHtml } from './qpCompiler';
 
@@ -74,6 +80,15 @@ export default function QPMakerPaperViewer({
   // Mobile active tab: 'questions' | 'preview'
   const [mobileTab, setMobileTab] = useState<'questions' | 'preview'>('preview');
 
+  // Desktop sidebar collapse for distraction-free full canvas
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Search filter for questions in navigator
+  const [searchFilter, setSearchFilter] = useState('');
+
+  // Collapsed sections map
+  const [collapsedSections, setCollapsedSections] = useState<Record<number, boolean>>({});
+
   // Zoom & duplex
   const [zoomScale, setZoomScale] = useState(1.0);
   const [duplex, setDuplex] = useState(false);
@@ -82,7 +97,11 @@ export default function QPMakerPaperViewer({
 
   // Drag & drop question reordering state
   const [dragged, setDragged] = useState<{ sectionIdx: number; questionIdx: number } | null>(null);
-  const [dragOver, setDragOver] = useState<{ sectionIdx: number; questionIdx: number | null; position: 'before' | 'after' | 'inside' } | null>(null);
+  const [dragOver, setDragOver] = useState<{
+    sectionIdx: number;
+    questionIdx: number | null;
+    position: 'before' | 'after' | 'inside';
+  } | null>(null);
 
   const activePaper = papers[activePaperIdx] || papers[0];
 
@@ -104,6 +123,22 @@ export default function QPMakerPaperViewer({
     return map;
   }, [assets]);
 
+  // Aggregate paper metrics
+  const totalPaperQuestions = useMemo(() => {
+    return activePaper?.sections?.reduce((s, sec) => s + (sec.questions?.length || 0), 0) || 0;
+  }, [activePaper]);
+
+  const calculatedTotalMarks = useMemo(() => {
+    return (
+      activePaper?.sections?.reduce((s, sec) => {
+        return (
+          s +
+          (sec.questions?.reduce((qSum, q) => qSum + (parseFloat(q.marks) || 0), 0) || 0)
+        );
+      }, 0) || 0
+    );
+  }, [activePaper]);
+
   // Recompile active paper HTML whenever controls or active paper changes
   useEffect(() => {
     if (!activePaper) return;
@@ -112,7 +147,10 @@ export default function QPMakerPaperViewer({
     const isSingleSet =
       activePaper.hideSet !== undefined
         ? activePaper.hideSet
-        : !activePaper.set || activePaper.set.trim() === '' || activePaper.set.toLowerCase() === 'none' || batchCount <= 1;
+        : !activePaper.set ||
+          activePaper.set.trim() === '' ||
+          activePaper.set.toLowerCase() === 'none' ||
+          batchCount <= 1;
 
     const html = compileQpHtml({
       templateId: currentTemplateId,
@@ -154,7 +192,7 @@ export default function QPMakerPaperViewer({
 
   if (!activePaper) {
     return (
-      <div className="p-12 text-center text-gray-500 bg-white rounded-2xl border border-gray-200">
+      <div className="p-12 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
         No generated question papers available to view.
       </div>
     );
@@ -350,65 +388,95 @@ export default function QPMakerPaperViewer({
     });
   };
 
+  const toggleSectionCollapse = (sIdx: number) => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [sIdx]: !prev[sIdx]
+    }));
+  };
+
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] min-h-[600px] bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden animate-fadeIn">
-      {/* Top Toolbar */}
-      <div className="p-3 sm:px-5 border-b border-gray-200 bg-slate-50/80 flex flex-wrap items-center justify-between gap-3 shrink-0">
-        {/* Paper Tabs */}
+    <div className="flex flex-col h-[calc(100vh-140px)] min-h-[620px] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fadeIn">
+      {/* ========================================================================= */}
+      {/* 1. TOP STUDIO TOOLBAR                                                    */}
+      {/* ========================================================================= */}
+      <div className="p-2.5 sm:px-4 border-b border-slate-200/90 bg-gradient-to-r from-slate-50 via-white to-slate-50 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
+        {/* Left: Paper Selector Tabs */}
         <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar max-w-full pb-1 sm:pb-0">
           {papers.map((p, idx) => {
             const batchCount = papers.filter((o) => o.batch === p.batch).length;
             const isSingle =
               p.hideSet || !p.set || p.set === 'None' || p.set.trim() === '' || batchCount <= 1;
-            const tabLabel = isSingle ? p.batch : `${p.batch} - ${p.set}`;
+            const tabLabel = isSingle ? p.batch : `${p.batch} • ${p.set}`;
             const isSel = idx === activePaperIdx;
+            const qCount =
+              p.sections?.reduce((s, sec) => s + (sec.questions?.length || 0), 0) || 0;
 
             return (
               <button
                 key={idx}
+                type="button"
                 onClick={() => onSelectPaper(idx)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all shadow-xs ${
+                className={`group flex items-center gap-2 px-3 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all ${
                   isSel
-                    ? 'bg-indigo-600 text-white shadow-indigo-200'
-                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                    ? 'bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-600/30'
+                    : 'bg-white text-slate-700 hover:bg-slate-100/90 border border-slate-200/90 shadow-2xs hover:border-slate-300'
                 }`}
               >
-                <FileText className="w-3.5 h-3.5" />
+                <FileText
+                  className={`w-3.5 h-3.5 ${
+                    isSel ? 'text-indigo-200' : 'text-slate-400 group-hover:text-indigo-600'
+                  }`}
+                />
                 <span>{tabLabel}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-extrabold transition-colors ${
+                    isSel ? 'bg-indigo-700/90 text-indigo-100' : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {qCount}Q
+                </span>
               </button>
             );
           })}
         </div>
 
-        {/* Mobile View Toggle: Questions vs Preview */}
-        <div className="flex md:hidden items-center bg-gray-200 p-0.5 rounded-lg text-xs font-bold w-full justify-center">
+        {/* Mobile Segmented Toggle (Questions vs Preview) */}
+        <div className="flex md:hidden items-center bg-slate-200/80 p-0.5 rounded-xl text-xs font-bold w-full justify-center">
           <button
+            type="button"
             onClick={() => setMobileTab('preview')}
-            className={`flex-1 py-1.5 rounded-md transition-colors ${
-              mobileTab === 'preview' ? 'bg-white text-indigo-600 shadow-xs' : 'text-gray-600'
+            className={`flex-1 py-1.5 rounded-lg transition-all ${
+              mobileTab === 'preview'
+                ? 'bg-white text-indigo-600 shadow-xs font-extrabold'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Live Preview
           </button>
           <button
+            type="button"
             onClick={() => setMobileTab('questions')}
-            className={`flex-1 py-1.5 rounded-md transition-colors ${
-              mobileTab === 'questions' ? 'bg-white text-indigo-600 shadow-xs' : 'text-gray-600'
+            className={`flex-1 py-1.5 rounded-lg transition-all ${
+              mobileTab === 'questions'
+                ? 'bg-white text-indigo-600 shadow-xs font-extrabold'
+                : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Questions Editor ({activePaper.sections?.reduce((s, sec) => s + (sec.questions?.length || 0), 0) || 0})
+            Questions Editor ({totalPaperQuestions})
           </button>
         </div>
 
-        {/* Controls Toolbar */}
+        {/* Controls Toolbar Clusters */}
         <div className="flex items-center gap-2 flex-wrap ml-auto">
-          {/* Design Template Switcher */}
-          <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-xl border border-gray-200 shadow-2xs">
+          {/* Cluster 1: Template & Code */}
+          <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-xl border border-slate-200 shadow-2xs">
             <Palette className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
             <select
               value={currentTemplateId}
               onChange={(e) => handleSwitchTemplate(e.target.value)}
-              className="text-xs font-bold text-gray-800 bg-transparent outline-none cursor-pointer max-w-[130px] truncate"
+              className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer max-w-[130px] truncate"
+              title="Switch Dart CSS/HTML Design Template"
             >
               {templates.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -417,31 +485,33 @@ export default function QPMakerPaperViewer({
               ))}
             </select>
             <button
+              type="button"
               onClick={() => {
                 const curT = templates.find((t) => t.id === currentTemplateId) || templates[0];
                 onOpenDesignEditor(curT);
               }}
-              title="Edit Design HTML Permanently"
-              className="p-1 text-indigo-600 hover:bg-indigo-50 rounded"
+              title="Edit Design HTML/CSS Permanently"
+              className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
             >
               <Code className="w-3.5 h-3.5" />
             </button>
             <button
+              type="button"
               onClick={onOpenDartSync}
               title="Sync latest templates from Dart"
-              className="p-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded"
+              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          {/* Font & LaTeX Math Size */}
-          <div className="hidden lg:flex items-center gap-1.5 bg-white px-2 py-1 rounded-xl border border-gray-200 shadow-2xs">
-            <span className="text-[11px] font-bold text-gray-500">Font:</span>
+          {/* Cluster 2: Typography & LaTeX Scaling */}
+          <div className="hidden lg:flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
+            <span className="text-[11px] font-bold text-slate-500">Font:</span>
             <select
               value={currentFontSize}
               onChange={(e) => handleSwitchFontSize(e.target.value)}
-              className="text-xs font-bold text-gray-800 bg-transparent outline-none cursor-pointer"
+              className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
             >
               {['10px', '11px', '12px', '13px', '14px', '15px', '16px', '18px'].map((sz) => (
                 <option key={sz} value={sz}>
@@ -449,11 +519,12 @@ export default function QPMakerPaperViewer({
                 </option>
               ))}
             </select>
-            <span className="text-[11px] font-bold text-gray-500 ml-1">LaTeX:</span>
+            <div className="w-px h-3.5 bg-slate-200 mx-0.5" />
+            <span className="text-[11px] font-bold text-slate-500">LaTeX:</span>
             <select
               value={currentLatexSize}
               onChange={(e) => handleSwitchLatexSize(e.target.value)}
-              className="text-xs font-bold text-gray-800 bg-transparent outline-none cursor-pointer"
+              className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
             >
               {['80%', '85%', '90%', '95%', '100%', '105%', '110%', '120%', '130%'].map((ls) => (
                 <option key={ls} value={ls}>
@@ -463,284 +534,443 @@ export default function QPMakerPaperViewer({
             </select>
           </div>
 
-          {/* Zoom Scale */}
-          <div className="hidden sm:flex items-center gap-0.5 bg-white px-1.5 py-1 rounded-xl border border-gray-200 shadow-2xs">
+          {/* Cluster 3: Layout Toggle Pills (Tactile Switch Affordance) */}
+          <button
+            type="button"
+            onClick={() => handleToggleTwoCol(!currentTwoCol)}
+            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border ${
+              currentTwoCol
+                ? 'bg-indigo-50 border-indigo-300 text-indigo-700 shadow-2xs'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-2xs'
+            }`}
+            title="Toggle 2-Column Newspaper Layout"
+          >
+            <Columns className={`w-3.5 h-3.5 ${currentTwoCol ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span>2-Col</span>
+            <span
+              className={`w-2 h-2 rounded-full transition-colors ${
+                currentTwoCol ? 'bg-indigo-600' : 'bg-slate-300'
+              }`}
+            />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDuplex(!duplex)}
+            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border ${
+              duplex
+                ? 'bg-indigo-50 border-indigo-300 text-indigo-700 shadow-2xs'
+                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-2xs'
+            }`}
+            title="Toggle 2-Up Duplex Sheet Printing"
+          >
+            <BookOpen className={`w-3.5 h-3.5 ${duplex ? 'text-indigo-600' : 'text-slate-400'}`} />
+            <span>Duplex</span>
+            <span
+              className={`w-2 h-2 rounded-full transition-colors ${
+                duplex ? 'bg-indigo-600' : 'bg-slate-300'
+              }`}
+            />
+          </button>
+
+          {/* Cluster 4: Zoom Controls */}
+          <div className="hidden sm:flex items-center gap-0.5 bg-white px-1.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
             <button
+              type="button"
               onClick={() => setZoomScale((prev) => Math.max(0.4, Math.round((prev - 0.05) * 100) / 100))}
               disabled={zoomScale <= 0.4}
               title="Zoom Out (-5%)"
-              className="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30 rounded"
+              className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-30 rounded-lg hover:bg-slate-100 transition-colors"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
-            <span className="text-xs font-bold text-gray-700 min-w-[42px] text-center">
-              {Math.round(zoomScale * 100)}%
-            </span>
             <button
+              type="button"
+              onClick={() => setZoomScale(1.0)}
+              title="Click to reset zoom to 100%"
+              className="text-xs font-bold text-slate-700 min-w-[42px] text-center hover:text-indigo-600 transition-colors"
+            >
+              {Math.round(zoomScale * 100)}%
+            </button>
+            <button
+              type="button"
               onClick={() => setZoomScale((prev) => Math.min(1.6, Math.round((prev + 0.05) * 100) / 100))}
               disabled={zoomScale >= 1.6}
               title="Zoom In (+5%)"
-              className="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30 rounded"
+              className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-30 rounded-lg hover:bg-slate-100 transition-colors"
             >
               <ZoomIn className="w-3.5 h-3.5" />
             </button>
             {zoomScale !== 1.0 && (
               <button
+                type="button"
                 onClick={() => setZoomScale(1.0)}
                 title="Reset Zoom to 100%"
-                className="p-1 text-indigo-600 hover:bg-indigo-50 rounded"
+                className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
               >
                 <RotateCcw className="w-3 h-3" />
               </button>
             )}
           </div>
 
-          {/* 2-Column Toggle */}
-          <label className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-gray-700 cursor-pointer bg-white px-2.5 py-1.5 rounded-xl border border-gray-200 shadow-2xs">
-            <Columns className="w-3.5 h-3.5 text-indigo-600" />
-            <span>2-Col</span>
-            <input
-              type="checkbox"
-              checked={currentTwoCol}
-              onChange={(e) => handleToggleTwoCol(e.target.checked)}
-              className="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 ml-0.5"
-            />
-          </label>
+          {/* Desktop Full-Width Toggle */}
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="hidden md:flex p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl border border-slate-200 bg-white shadow-2xs transition-all"
+            title={sidebarCollapsed ? 'Show Questions Navigator' : 'Hide Questions Navigator (Full Canvas)'}
+          >
+            {sidebarCollapsed ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+          </button>
 
-          {/* Duplex Toggle */}
-          <label className="hidden md:flex items-center gap-1.5 text-xs font-bold text-gray-700 cursor-pointer bg-white px-2.5 py-1.5 rounded-xl border border-gray-200 shadow-2xs">
-            <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Duplex</span>
-            <input
-              type="checkbox"
-              checked={duplex}
-              onChange={(e) => setDuplex(e.target.checked)}
-              className="rounded text-indigo-600 focus:ring-indigo-500 w-3.5 h-3.5 ml-0.5"
-            />
-          </label>
-
-          {/* Action Buttons */}
+          {/* Cluster 5: Actions (Fitts's Law Priority) */}
           <div className="flex items-center gap-1">
             <button
+              type="button"
               onClick={handleOpenNewWindow}
-              title="Open Paper in New Tab"
-              className="p-1.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg border border-gray-200 bg-white"
+              title="Open Paper in New Browser Tab"
+              className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl border border-slate-200 bg-white shadow-2xs transition-all"
             >
-              <ExternalLink className="w-4 h-4" />
+              <ExternalLink className="w-3.5 h-3.5" />
             </button>
+
             <button
+              type="button"
               onClick={handleDownloadHtml}
-              title="Download HTML File"
-              className="p-1.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg border border-gray-200 bg-white"
+              title="Download Standalone HTML File"
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs transition-all hover:text-indigo-600"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden xl:inline">Export</span>
             </button>
+
             <button
+              type="button"
               onClick={handleCopyHtml}
-              title="Copy HTML to Clipboard"
-              className="p-1.5 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg border border-gray-200 bg-white"
+              title="Copy compiled HTML to clipboard"
+              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+                copied
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-2xs'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 hover:text-indigo-600 shadow-2xs'
+              }`}
             >
-              {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              <span className="hidden xl:inline">{copied ? 'Copied!' : 'Copy'}</span>
             </button>
+
             <button
+              type="button"
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition-colors ml-1"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-white bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-slate-800 hover:to-indigo-900 rounded-xl shadow-xs hover:shadow-sm transition-all active:scale-95 ml-0.5"
             >
-              <Printer className="w-4 h-4 text-white" />
+              <Printer className="w-3.5 h-3.5 text-indigo-300" />
               <span>Print</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main Split Body */}
+      {/* ========================================================================= */}
+      {/* 2. MAIN SPLIT BODY (QUESTIONS NAVIGATOR & LIVE PREVIEW FRAME)              */}
+      {/* ========================================================================= */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side: Questions Quick Navigator & Drag-Drop Reordering */}
         <div
           className={`${
-            mobileTab === 'questions' ? 'flex w-full' : 'hidden md:flex md:w-[320px] lg:w-[360px]'
-          } flex-col border-r border-gray-200 bg-white overflow-y-auto custom-scrollbar p-3 space-y-3 shrink-0`}
+            mobileTab === 'questions'
+              ? 'flex w-full'
+              : sidebarCollapsed
+              ? 'hidden'
+              : 'hidden md:flex md:w-[320px] lg:w-[370px]'
+          } flex-col border-r border-slate-200 bg-slate-50/50 overflow-hidden shrink-0 transition-all`}
         >
-          <div className="flex items-center justify-between pb-1">
-            <span className="text-xs font-extrabold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-indigo-600" /> Questions Navigator
-            </span>
-            <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-              Drag to Reorder
-            </span>
-          </div>
-
-          {activePaper.sections?.map((sec, sIdx) => (
-            <div
-              key={sIdx}
-              onDragOver={(e) => handleSectionDragOver(e, sIdx)}
-              onDrop={(e) => handleDrop(e, sIdx, null)}
-              className={`p-2 rounded-xl transition-colors ${
-                dragOver?.sectionIdx === sIdx && dragOver?.position === 'inside'
-                  ? 'bg-indigo-50/70 border-2 border-dashed border-indigo-400'
-                  : 'bg-slate-50/60 border border-gray-200/80'
-              }`}
-            >
-              {/* Section Header */}
-              <div className="flex items-center justify-between gap-1 p-2 rounded-lg bg-white border border-gray-200 shadow-2xs mb-2">
-                <div
-                  onClick={() =>
-                    onOpenEditSection({
-                      sectionIdx: sIdx,
-                      badge: sec.badge,
-                      title: sec.title,
-                      instruction: sec.instruction
-                    })
-                  }
-                  className="flex items-center gap-2 cursor-pointer flex-1 min-w-0 group"
-                  title="Click to edit section badge & instructions"
-                >
-                  <span className="px-1.5 py-0.5 text-[10px] font-black bg-indigo-50 text-indigo-700 rounded shrink-0">
-                    {sec.badge}
+          {/* Navigator Header */}
+          <div className="p-3 border-b border-slate-200 bg-white space-y-2.5 shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                  <Layers className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-xs font-extrabold text-slate-900 block">
+                    Questions Navigator
                   </span>
-                  <span className="text-xs font-bold text-gray-800 truncate group-hover:text-indigo-600 transition-colors">
-                    {sec.title || 'Untitled Section'}
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {totalPaperQuestions} Questions • {calculatedTotalMarks} Marks
                   </span>
                 </div>
-                <button
-                  onClick={() =>
-                    onOpenEditSection({
-                      sectionIdx: sIdx,
-                      badge: sec.badge,
-                      title: sec.title,
-                      instruction: sec.instruction
-                    })
-                  }
-                  className="p-1 text-gray-400 hover:text-indigo-600 rounded"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                </button>
               </div>
+              <span className="text-[10px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-full shadow-2xs">
+                Drag to Reorder
+              </span>
+            </div>
 
-              {sec.instruction && (
-                <p className="text-[11px] text-gray-500 italic px-1 mb-2 line-clamp-1">
-                  &ldquo;{sec.instruction}&rdquo;
-                </p>
+            {/* Quick Search in Questions */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Filter questions or keywords..."
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium text-slate-800 placeholder-slate-400"
+              />
+              {searchFilter && (
+                <button
+                  type="button"
+                  onClick={() => setSearchFilter('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded"
+                >
+                  <X className="w-3 h-3" />
+                </button>
               )}
+            </div>
+          </div>
 
-              {/* Questions List */}
-              <div className="space-y-1.5">
-                {sec.questions?.map((q, qIdx) => {
-                  const isDraggingThis =
-                    dragged?.sectionIdx === sIdx && dragged?.questionIdx === qIdx;
-                  const isTargetTop =
-                    dragOver?.sectionIdx === sIdx &&
-                    dragOver?.questionIdx === qIdx &&
-                    dragOver?.position === 'before';
-                  const isTargetBottom =
-                    dragOver?.sectionIdx === sIdx &&
-                    dragOver?.questionIdx === qIdx &&
-                    dragOver?.position === 'after';
+          {/* Navigator Scrollable Body */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-3">
+            {activePaper.sections?.map((sec, sIdx) => {
+              const isCollapsed = Boolean(collapsedSections[sIdx]);
+              const secMarks =
+                sec.questions?.reduce((sum, q) => sum + (parseFloat(q.marks) || 0), 0) || 0;
 
-                  return (
-                    <div key={qIdx} className="relative">
-                      {isTargetTop && (
-                        <div className="h-1 bg-indigo-600 rounded-full mb-1 shadow-sm animate-pulse" />
-                      )}
+              // Filter questions if search is active
+              const displayedQuestions = (sec.questions || []).filter((q) => {
+                if (!searchFilter.trim()) return true;
+                const clean = q.text.replace(/<[^>]*>?/gm, '').toLowerCase();
+                return clean.includes(searchFilter.toLowerCase()) || q.number.includes(searchFilter);
+              });
+
+              if (searchFilter.trim() && displayedQuestions.length === 0) {
+                return null;
+              }
+
+              return (
+                <div
+                  key={sIdx}
+                  onDragOver={(e) => handleSectionDragOver(e, sIdx)}
+                  onDrop={(e) => handleDrop(e, sIdx, null)}
+                  className={`rounded-2xl transition-all border ${
+                    dragOver?.sectionIdx === sIdx && dragOver?.position === 'inside'
+                      ? 'bg-indigo-50/80 border-2 border-dashed border-indigo-500 shadow-sm'
+                      : 'bg-white border-slate-200/90 shadow-2xs hover:shadow-xs'
+                  }`}
+                >
+                  {/* Section Header Strip */}
+                  <div className="p-2.5 bg-gradient-to-r from-slate-50 to-white rounded-t-2xl border-b border-slate-100 flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleSectionCollapse(sIdx)}
+                        className="text-slate-400 hover:text-slate-700 p-0.5 rounded transition-colors"
+                        title={isCollapsed ? 'Expand Section' : 'Collapse Section'}
+                      >
+                        {isCollapsed ? (
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        ) : (
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+
+                      <span className="px-1.5 py-0.5 text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200/80 rounded-md shrink-0">
+                        {sec.badge || `Sec ${sIdx + 1}`}
+                      </span>
 
                       <div
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, sIdx, qIdx)}
-                        onDragOver={(e) => handleDragOver(e, sIdx, qIdx)}
-                        onDrop={(e) => handleDrop(e, sIdx, qIdx)}
                         onClick={() =>
-                          onOpenEditQuestion({
+                          onOpenEditSection({
                             sectionIdx: sIdx,
-                            questionIdx: qIdx,
-                            number: q.number,
-                            text: q.text,
-                            marks: q.marks,
-                            sectionBadge: sec.badge,
-                            sectionTitle: sec.title
+                            badge: sec.badge,
+                            title: sec.title,
+                            instruction: sec.instruction
                           })
                         }
-                        className={`p-2 rounded-lg border transition-all cursor-pointer group ${
-                          isDraggingThis
-                            ? 'bg-indigo-50 border-indigo-300 opacity-40'
-                            : 'bg-white border-gray-200 hover:border-indigo-400 hover:shadow-xs'
-                        }`}
+                        className="cursor-pointer truncate group flex-1"
+                        title="Click to edit section title & instructions"
                       >
-                        <div className="flex items-center justify-between gap-1 mb-1">
-                          <div className="flex items-center gap-1">
-                            <span
-                              className="text-gray-400 group-hover:text-indigo-600 cursor-grab"
-                              title="Drag to reorder"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <GripVertical className="w-3.5 h-3.5" />
-                            </span>
-                            <span className="text-xs font-black text-indigo-700">Q.{q.number}</span>
-                          </div>
-
-                          <div className="flex items-center gap-1">
-                            {/* Nudge Buttons */}
-                            <button
-                              disabled={qIdx === 0}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleMoveQuestion(sIdx, qIdx, -1);
-                              }}
-                              className="p-0.5 text-gray-400 hover:text-indigo-600 disabled:opacity-20"
-                              title="Move Up"
-                            >
-                              <ArrowUp className="w-3 h-3" />
-                            </button>
-                            <button
-                              disabled={qIdx === (sec.questions.length - 1)}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleMoveQuestion(sIdx, qIdx, 1);
-                              }}
-                              className="p-0.5 text-gray-400 hover:text-indigo-600 disabled:opacity-20"
-                              title="Move Down"
-                            >
-                              <ArrowDown className="w-3 h-3" />
-                            </button>
-                            <span className="px-1.5 py-0.2 text-[10px] font-extrabold bg-gray-100 text-gray-700 rounded">
-                              {q.marks}M
-                            </span>
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-gray-700 line-clamp-2 pl-4 leading-snug">
-                          {q.text.replace(/<[^>]*>?/gm, '')}
-                        </p>
+                        <span className="text-xs font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">
+                          {sec.title || 'Untitled Section'}
+                        </span>
                       </div>
+                    </div>
 
-                      {isTargetBottom && (
-                        <div className="h-1 bg-indigo-600 rounded-full mt-1 shadow-sm animate-pulse" />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                        {sec.questions?.length || 0}Q • {secMarks}M
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenEditSection({
+                            sectionIdx: sIdx,
+                            badge: sec.badge,
+                            title: sec.title,
+                            instruction: sec.instruction
+                          })
+                        }
+                        className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                        title="Edit Section Details"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Section Instruction Preview */}
+                  {sec.instruction && !isCollapsed && (
+                    <div className="px-3 pt-2 pb-1 text-[11px] text-slate-500 italic line-clamp-1 border-b border-slate-50">
+                      &ldquo;{sec.instruction}&rdquo;
+                    </div>
+                  )}
+
+                  {/* Questions List */}
+                  {!isCollapsed && (
+                    <div className="p-2 space-y-2">
+                      {displayedQuestions.map((q) => {
+                        // Find original index in sec.questions
+                        const originalQIdx = (sec.questions || []).findIndex(
+                          (original) => original === q
+                        );
+                        const qIdx = originalQIdx >= 0 ? originalQIdx : 0;
+
+                        const isDraggingThis =
+                          dragged?.sectionIdx === sIdx && dragged?.questionIdx === qIdx;
+                        const isTargetTop =
+                          dragOver?.sectionIdx === sIdx &&
+                          dragOver?.questionIdx === qIdx &&
+                          dragOver?.position === 'before';
+                        const isTargetBottom =
+                          dragOver?.sectionIdx === sIdx &&
+                          dragOver?.questionIdx === qIdx &&
+                          dragOver?.position === 'after';
+
+                        return (
+                          <div key={qIdx} className="relative">
+                            {isTargetTop && (
+                              <div className="h-1.5 bg-indigo-600 rounded-full mb-1 shadow-sm animate-pulse" />
+                            )}
+
+                            <div
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, sIdx, qIdx)}
+                              onDragOver={(e) => handleDragOver(e, sIdx, qIdx)}
+                              onDrop={(e) => handleDrop(e, sIdx, qIdx)}
+                              onClick={() =>
+                                onOpenEditQuestion({
+                                  sectionIdx: sIdx,
+                                  questionIdx: qIdx,
+                                  number: q.number,
+                                  text: q.text,
+                                  marks: q.marks,
+                                  sectionBadge: sec.badge,
+                                  sectionTitle: sec.title
+                                })
+                              }
+                              className={`p-2.5 rounded-xl border transition-all cursor-pointer group ${
+                                isDraggingThis
+                                  ? 'bg-indigo-50 border-indigo-300 opacity-40 shadow-inner'
+                                  : 'bg-slate-50/70 hover:bg-white border-slate-200/90 hover:border-indigo-400 hover:shadow-xs'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-1 mb-1.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className="text-slate-400 group-hover:text-indigo-600 cursor-grab active:cursor-grabbing p-0.5"
+                                    title="Drag to reorder question"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <GripVertical className="w-3.5 h-3.5" />
+                                  </span>
+                                  <span className="px-1.5 py-0.5 text-[10px] font-black bg-indigo-100/70 text-indigo-800 rounded">
+                                    Q.{q.number}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                  {/* Quick Nudge Up/Down */}
+                                  <button
+                                    type="button"
+                                    disabled={qIdx === 0}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleMoveQuestion(sIdx, qIdx, -1);
+                                    }}
+                                    className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition-colors"
+                                    title="Move Up"
+                                  >
+                                    <ArrowUp className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={qIdx === (sec.questions?.length || 0) - 1}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleMoveQuestion(sIdx, qIdx, 1);
+                                    }}
+                                    className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition-colors"
+                                    title="Move Down"
+                                  >
+                                    <ArrowDown className="w-3 h-3" />
+                                  </button>
+
+                                  <span className="px-1.5 py-0.5 text-[10px] font-black bg-slate-200/70 text-slate-700 rounded ml-1">
+                                    {q.marks}M
+                                  </span>
+                                </div>
+                              </div>
+
+                              <p className="text-xs text-slate-700 line-clamp-2 pl-4 leading-relaxed font-normal">
+                                {q.text.replace(/<[^>]*>?/gm, '')}
+                              </p>
+                            </div>
+
+                            {isTargetBottom && (
+                              <div className="h-1.5 bg-indigo-600 rounded-full mt-1 shadow-sm animate-pulse" />
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {(!sec.questions || sec.questions.length === 0) && (
+                        <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-300 rounded-xl bg-slate-50/50">
+                          Drop questions here
+                        </div>
                       )}
                     </div>
-                  );
-                })}
-
-                {(!sec.questions || sec.questions.length === 0) && (
-                  <div className="p-3 text-center text-xs text-gray-400 border border-dashed border-gray-300 rounded-lg">
-                    Drop questions here
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Right Side: Live Compiled Paper Preview */}
         <div
           className={`${
             mobileTab === 'preview' ? 'flex flex-1' : 'hidden md:flex md:flex-1'
-          } bg-slate-100 p-2 sm:p-4 overflow-hidden items-center justify-center`}
+          } bg-gradient-to-br from-slate-100 via-slate-200/60 to-slate-100 p-2 sm:p-4 overflow-hidden flex-col items-center justify-center relative`}
         >
-          <iframe
-            id="qp-preview-iframe"
-            srcDoc={compiledHtml}
-            title="Question Paper Preview"
-            className="w-full h-full rounded-xl border-0 shadow-md bg-white"
-          />
+          {/* Subtle Paper Status Pill */}
+          <div className="absolute top-3 left-4 z-10 hidden sm:flex items-center gap-2 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full border border-slate-300/70 shadow-xs text-[11px] font-bold text-slate-700">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>
+              {activePaper.batch} • {activePaper.set || 'Set A'}
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="text-slate-500">
+              {templates.find((t) => t.id === currentTemplateId)?.name || 'Default'} Design
+            </span>
+          </div>
+
+          <div className="w-full h-full pt-6 sm:pt-7 flex items-center justify-center">
+            <iframe
+              id="qp-preview-iframe"
+              srcDoc={compiledHtml}
+              title="Question Paper Live Preview"
+              className="w-full h-full rounded-2xl border border-slate-300/80 shadow-2xl bg-white transition-all"
+            />
+          </div>
         </div>
       </div>
     </div>

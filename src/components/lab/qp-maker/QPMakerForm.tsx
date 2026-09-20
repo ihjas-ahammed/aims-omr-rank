@@ -24,7 +24,15 @@ import {
   HelpCircle,
   BrainCircuit,
   Sliders,
-  Maximize2
+  Maximize2,
+  Check,
+  ArrowRight,
+  ArrowLeft,
+  Zap,
+  Bookmark,
+  ShieldCheck,
+  Send,
+  BookOpen
 } from 'lucide-react';
 import {
   QPMakerDayData,
@@ -51,6 +59,43 @@ interface QPMakerFormProps {
   describingIds: string[];
 }
 
+type FormPhase = 'BLUEPRINT' | 'SOURCES' | 'DESIGN' | 'ALL';
+
+// Psychology-based presets for rapid cognitive flow & reduced keystroke overhead
+const SUBTITLE_PRESETS = [
+  'Daily Examination',
+  'Weekly Test',
+  'Unit Examination',
+  'Model Exam',
+  'Revision Series',
+  'NEET Mock Test'
+];
+
+const DURATION_PRESETS = [
+  { label: '30 Mins', value: '30' },
+  { label: '45 Mins', value: '45' },
+  { label: '1 Hour', value: '60' },
+  { label: '90 Mins', value: '90' },
+  { label: '2 Hours', value: '120' }
+];
+
+const MARKS_PRESETS = ['15', '20', '25', '30', '45', '50', '75', '100'];
+
+const TARGET_PRESETS = [
+  {
+    label: 'Standard 2 Sets (B1, B2: Set A, B)',
+    value: 'B1: Set A, Set B\nB2: Set A, Set B'
+  },
+  {
+    label: 'Single Set (B1, B2: Set A)',
+    value: 'B1: Set A\nB2: Set A'
+  },
+  {
+    label: 'Campus 4 Batches (A1, A2, B1, B2: Set A, B)',
+    value: 'A1: Set A, Set B\nA2: Set A, Set B\nB1: Set A, Set B\nB2: Set A, Set B'
+  }
+];
+
 export default function QPMakerForm({
   dayNum,
   data,
@@ -67,6 +112,9 @@ export default function QPMakerForm({
   onAutoDescribeItem,
   describingIds
 }: QPMakerFormProps) {
+  // Navigation Phase State (Progressive Disclosure)
+  const [activePhase, setActivePhase] = useState<FormPhase>('BLUEPRINT');
+
   // Target Papers Matrix states
   const [showRawTargets, setShowRawTargets] = useState(false);
   const [newBatch, setNewBatch] = useState('B1');
@@ -168,7 +216,27 @@ export default function QPMakerForm({
   }, [data.subjectDivisions]);
 
   const targetTotalMarksNum = parseInt(data.totalMarks || '0', 10) || 0;
-  const isDefaultBalanced = defaultAllocatedMarks === targetTotalMarksNum;
+  const isDefaultBalanced = defaultAllocatedMarks === targetTotalMarksNum && targetTotalMarksNum > 0;
+
+  // Question & Material Counts
+  const sourcesCount = (data.items || []).length;
+  const assetsCount = (data.assets || []).length;
+  const totalMaterials = sourcesCount + assetsCount;
+
+  // Psychology-based Milestone Verification (Goal Gradient Effect)
+  const milestoneExamInfo = Boolean(data.subtitle && data.subtitle.trim() && data.date && data.date.trim());
+  const milestoneMarks = isDefaultBalanced;
+  const milestoneTargets = targetPapersList.length > 0;
+  const milestoneSources = totalMaterials > 0;
+
+  const readinessPercent = useMemo(() => {
+    let pts = 0;
+    if (milestoneExamInfo) pts += 25;
+    if (milestoneMarks) pts += 25;
+    if (milestoneTargets) pts += 25;
+    if (milestoneSources) pts += 25;
+    return pts;
+  }, [milestoneExamInfo, milestoneMarks, milestoneTargets, milestoneSources]);
 
   // Prompt Preset Chips
   const handleAddPresetPrompt = (presetText: string) => {
@@ -328,1135 +396,1031 @@ export default function QPMakerForm({
     }
   };
 
+  // Helper to switch phase & scroll smoothly to top
+  const switchPhase = (phase: FormPhase) => {
+    setActivePhase(phase);
+    window.scrollTo({ top: 100, behavior: 'smooth' });
+  };
+
   return (
-    <div className="space-y-6 animate-fadeIn pb-12">
-      {/* Top Sticky/Header Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-2xl border border-gray-200/80 shadow-xs">
-        <div className="flex items-center gap-3">
-          <span className="px-3 py-1 text-sm font-black bg-indigo-600 text-white rounded-xl shadow-xs">
-            Day {dayNum}
-          </span>
-          <div>
-            <h3 className="text-base sm:text-lg font-bold text-gray-900">
-              Question Paper Setup & Structure
-            </h3>
-            <p className="text-xs text-gray-500">
-              Configure subject marks, Dart templates, questions sources, and AI instructions.
-            </p>
+    <div className="space-y-6 animate-fadeIn pb-16 max-w-7xl mx-auto">
+      {/* ------------------------------------------------------------- */}
+      {/* TOP ACTION HEADER & EXAM READINESS HUD */}
+      {/* ------------------------------------------------------------- */}
+      <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="px-3.5 py-1.5 text-xs font-black bg-indigo-600 text-white rounded-xl shadow-xs">
+              Day {dayNum}
+            </span>
+            <div>
+              <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
+                <span>{data.subtitle || 'Daily Examination'}</span>
+                <span className="text-xs font-bold text-slate-400 font-mono">({data.date || 'No Date'})</span>
+              </h3>
+              <p className="text-xs text-slate-500 font-medium">
+                Structured Question Paper Generator with Dart Engine &amp; Multi-Set Compiler
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              type="button"
+              onClick={onSaveDay}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+            >
+              Save Day
+            </button>
+            <button
+              type="button"
+              onClick={onGenerate}
+              disabled={isGenerating}
+              className="flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-50 rounded-xl shadow-md transition-all active:scale-95 hover:shadow-indigo-100"
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
+                  <span>Generate All Papers</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+        {/* Real-time Readiness Scorecard (Goal Gradient Effect) */}
+        <div className="pt-3 border-t border-slate-100 space-y-2.5">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-indigo-600" />
+              <span>Blueprint Readiness ({readinessPercent}%)</span>
+            </span>
+            <span className="text-[11px] font-medium text-slate-500">
+              {readinessPercent === 100
+                ? '✓ All parameters verified and ready for generation'
+                : 'Complete the milestones below for optimal output'}
+            </span>
+          </div>
+
+          {/* Micro Progress Bar */}
+          <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+            <div
+              className={`h-full transition-all duration-300 rounded-full ${
+                readinessPercent === 100
+                  ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                  : 'bg-gradient-to-r from-indigo-600 to-purple-500'
+              }`}
+              style={{ width: `${readinessPercent}%` }}
+            />
+          </div>
+
+          {/* Milestone Badges */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+            {/* 1. Exam Info */}
+            <div
+              onClick={() => setActivePhase('BLUEPRINT')}
+              className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all ${
+                milestoneExamInfo
+                  ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                  : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-indigo-300'
+              }`}
+            >
+              <span className="truncate">1. Exam Basics</span>
+              <span>{milestoneExamInfo ? '✓' : '•'}</span>
+            </div>
+
+            {/* 2. Marks Balance */}
+            <div
+              onClick={() => setActivePhase('BLUEPRINT')}
+              className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all ${
+                milestoneMarks
+                  ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                  : 'bg-amber-50/70 border-amber-200 text-amber-900 hover:border-amber-400'
+              }`}
+            >
+              <span className="truncate">2. Marks ({defaultAllocatedMarks}/{targetTotalMarksNum})</span>
+              <span>{milestoneMarks ? '✓' : '!'}</span>
+            </div>
+
+            {/* 3. Target Papers */}
+            <div
+              onClick={() => setActivePhase('BLUEPRINT')}
+              className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all ${
+                milestoneTargets
+                  ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                  : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-indigo-300'
+              }`}
+            >
+              <span className="truncate">3. Targets ({targetPapersList.length}P)</span>
+              <span>{milestoneTargets ? '✓' : '•'}</span>
+            </div>
+
+            {/* 4. Sources */}
+            <div
+              onClick={() => setActivePhase('SOURCES')}
+              className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all ${
+                milestoneSources
+                  ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                  : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-indigo-300'
+              }`}
+            >
+              <span className="truncate">4. Sources ({totalMaterials})</span>
+              <span>{milestoneSources ? '✓' : '•'}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Phase Navigation Tabs (Hick's Law / Progressive Disclosure) */}
+        <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 overflow-x-auto custom-scrollbar">
+          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl">
+            <button
+              type="button"
+              onClick={() => setActivePhase('BLUEPRINT')}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                activePhase === 'BLUEPRINT'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Target className="w-3.5 h-3.5" />
+              <span>1. Exam Blueprint</span>
+              {milestoneExamInfo && milestoneMarks && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActivePhase('SOURCES')}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                activePhase === 'SOURCES'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <ImageIcon className="w-3.5 h-3.5" />
+              <span>2. Questions &amp; Sources ({totalMaterials})</span>
+              {milestoneSources && (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActivePhase('DESIGN')}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                activePhase === 'DESIGN'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Palette className="w-3.5 h-3.5" />
+              <span>3. Design &amp; Launchpad</span>
+            </button>
+          </div>
+
           <button
-            onClick={onSaveDay}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+            type="button"
+            onClick={() => setActivePhase(activePhase === 'ALL' ? 'BLUEPRINT' : 'ALL')}
+            className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors whitespace-nowrap ${
+              activePhase === 'ALL'
+                ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+            }`}
           >
-            Save Day
-          </button>
-          <button
-            onClick={onGenerate}
-            disabled={isGenerating}
-            className="flex items-center gap-2 px-5 py-2 text-xs sm:text-sm font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-xl shadow-sm transition-all hover:shadow-indigo-100"
-          >
-            {isGenerating ? (
-              <>
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-4 h-4" />
-                <span>Generate All Papers</span>
-              </>
-            )}
+            {activePhase === 'ALL' ? '✓ Continuous View Active' : 'View All Sections'}
           </button>
         </div>
       </div>
 
-      {/* Generation Progress Bar */}
+      {/* Generation Progress Bar (when generating) */}
       {isGenerating && (
-        <div className="p-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl space-y-2 animate-fadeIn">
-          <div className="flex items-center justify-between text-xs font-bold text-indigo-900">
-            <span className="flex items-center gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-              Generating {generateProgress.target} ({generateProgress.current + 1} of{' '}
-              {generateProgress.total})...
+        <div className="p-4 bg-indigo-50/90 border border-indigo-200 rounded-3xl space-y-2 animate-fadeIn shadow-xs">
+          <div className="flex items-center justify-between text-xs font-black text-indigo-900">
+            <span className="flex items-center gap-2">
+              <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" />
+              <span>Generating {generateProgress.target} ({generateProgress.current + 1} of {generateProgress.total})...</span>
             </span>
-            <span>{generateProgress.percent}%</span>
+            <span className="font-mono">{generateProgress.percent}%</span>
           </div>
           <div className="w-full bg-indigo-200/70 h-2.5 rounded-full overflow-hidden">
             <div
-              className="bg-indigo-600 h-full transition-all duration-300 rounded-full"
+              className="bg-gradient-to-r from-indigo-600 to-indigo-700 h-full transition-all duration-300 rounded-full"
               style={{ width: `${generateProgress.percent}%` }}
             />
           </div>
         </div>
       )}
 
-      {/* Main 2-Column Responsive Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* ===================== COLUMN 1 ===================== */}
-        <div className="space-y-6">
-          {/* CARD 1: EXAM METADATA */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 text-sm font-extrabold text-gray-900">
-              <Target className="w-4 h-4 text-indigo-600" />
-              <span>1. Exam Metadata</span>
-            </div>
+      {/* ------------------------------------------------------------- */}
+      {/* PHASE 1: EXAM BLUEPRINT (METADATA + SUBJECTS + TARGETS) */}
+      {/* ------------------------------------------------------------- */}
+      {(activePhase === 'BLUEPRINT' || activePhase === 'ALL') && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* COLUMN A: EXAM METADATA */}
+            <div className="space-y-6">
+              {/* CARD 1: EXAM METADATA */}
+              <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                    <Target className="w-4 h-4 text-indigo-600" />
+                    <span>1. Examination Basics</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-400">Step 1 of 3</span>
+                </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">
-                  Subtitle / Examination Title
-                </label>
-                <input
-                  type="text"
-                  value={data.subtitle}
-                  onChange={(e) => onUpdate({ subtitle: e.target.value })}
-                  placeholder="e.g. Daily Examination / Mid-Term Test"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm font-semibold outline-none"
-                />
-              </div>
+                <div className="space-y-3.5">
+                  {/* Subtitle / Exam Title */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Subtitle / Examination Title
+                    </label>
+                    <input
+                      type="text"
+                      value={data.subtitle}
+                      onChange={(e) => onUpdate({ subtitle: e.target.value })}
+                      placeholder="e.g. Daily Examination / Mid-Term Test"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-sm font-semibold outline-none transition-all"
+                    />
 
-              {/* Date with quick chips */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-indigo-500" /> Exam Date
-                  </label>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = new Date();
-                        const day = String(d.getDate()).padStart(2, '0');
-                        const m = String(d.getMonth() + 1).padStart(2, '0');
-                        onUpdate({ date: `${day}/${m}/${d.getFullYear()}` });
+                    {/* Subtitle Quick Chips */}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {SUBTITLE_PRESETS.map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => onUpdate({ subtitle: preset })}
+                          className={`px-2 py-0.5 text-[10px] font-bold rounded-lg border transition-all ${
+                            data.subtitle === preset
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Exam Date */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-indigo-600" /> Exam Date
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const d = new Date();
+                            const day = String(d.getDate()).padStart(2, '0');
+                            const m = String(d.getMonth() + 1).padStart(2, '0');
+                            onUpdate({ date: `${day}/${m}/${d.getFullYear()}` });
+                          }}
+                          className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+                        >
+                          Today
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() + 1);
+                            const day = String(d.getDate()).padStart(2, '0');
+                            const m = String(d.getMonth() + 1).padStart(2, '0');
+                            onUpdate({ date: `${day}/${m}/${d.getFullYear()}` });
+                          }}
+                          className="px-2 py-0.5 text-[10px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors"
+                        >
+                          Tomorrow
+                        </button>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      value={data.date}
+                      onChange={(e) => onUpdate({ date: e.target.value })}
+                      placeholder="DD/MM/YYYY"
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-sm font-semibold outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* Duration & Marks */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-indigo-600" /> Duration (Mins)
+                      </label>
+                      <input
+                        type="text"
+                        value={data.duration}
+                        onChange={(e) => onUpdate({ duration: e.target.value })}
+                        placeholder="30"
+                        className="w-full px-3.5 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-sm font-bold outline-none"
+                      />
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {DURATION_PRESETS.map((dp) => (
+                          <button
+                            key={dp.value}
+                            type="button"
+                            onClick={() => onUpdate({ duration: dp.value })}
+                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded border ${
+                              data.duration === dp.value
+                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                            }`}
+                          >
+                            {dp.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                        <Bookmark className="w-3.5 h-3.5 text-indigo-600" /> Total Marks
+                      </label>
+                      <input
+                        type="text"
+                        value={data.totalMarks}
+                        onChange={(e) => onUpdate({ totalMarks: e.target.value })}
+                        placeholder="15"
+                        className="w-full px-3.5 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-sm font-bold outline-none"
+                      />
+                      <div className="flex flex-wrap gap-1 mt-1.5">
+                        {MARKS_PRESETS.map((mp) => (
+                          <button
+                            key={mp}
+                            type="button"
+                            onClick={() => onUpdate({ totalMarks: mp })}
+                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded border ${
+                              data.totalMarks === mp
+                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                            }`}
+                          >
+                            {mp}M
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* AI Model Selector */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" /> AI Engine Model
+                    </label>
+                    <select
+                      value={selectedModel}
+                      onChange={(e) => {
+                        setSelectedModel(e.target.value);
+                        localStorage.setItem('omr_proModel', e.target.value);
                       }}
-                      className="px-2 py-0.5 text-[10px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-xs font-bold outline-none bg-white"
                     >
-                      Today
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const d = new Date();
-                        d.setDate(d.getDate() + 1);
-                        const day = String(d.getDate()).padStart(2, '0');
-                        const m = String(d.getMonth() + 1).padStart(2, '0');
-                        onUpdate({ date: `${day}/${m}/${d.getFullYear()}` });
-                      }}
-                      className="px-2 py-0.5 text-[10px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
-                    >
-                      Tomorrow
-                    </button>
+                      <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fast, Accurate &amp; Reliable)</option>
+                      <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview (Deep Mathematical Reasoning)</option>
+                      <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash Lite (Ultra-Low Latency)</option>
+                    </select>
                   </div>
                 </div>
-                <input
-                  type="text"
-                  value={data.date}
-                  onChange={(e) => onUpdate({ date: e.target.value })}
-                  placeholder="DD/MM/YYYY"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm font-medium outline-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">
-                    Duration (Minutes)
-                  </label>
-                  <input
-                    type="text"
-                    value={data.duration}
-                    onChange={(e) => onUpdate({ duration: e.target.value })}
-                    placeholder="30"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm font-semibold outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">
-                    Total Target Marks
-                  </label>
-                  <input
-                    type="text"
-                    value={data.totalMarks}
-                    onChange={(e) => onUpdate({ totalMarks: e.target.value })}
-                    placeholder="15"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm font-semibold outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">
-                  AI Model
-                </label>
-                <select
-                  value={selectedModel}
-                  onChange={(e) => {
-                    setSelectedModel(e.target.value);
-                    localStorage.setItem('omr_proModel', e.target.value);
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-xs sm:text-sm font-semibold outline-none bg-white"
-                >
-                  <option value="gemini-2.5-flash">gemini-2.5-flash (Fast & Accurate)</option>
-                  <option value="gemini-3.1-pro-preview">gemini-3.1-pro-preview (Advanced Reasoning)</option>
-                  <option value="gemini-3.1-flash-lite-preview">gemini-3.1-flash-lite-preview (Ultra Fast)</option>
-                </select>
               </div>
             </div>
-          </div>
 
-          {/* CARD 2: SUBJECT DIVISIONS & CLASS OVERRIDES */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-sm font-extrabold text-gray-900">
-                <BrainCircuit className="w-4 h-4 text-indigo-600" />
-                <span>2. Subject Divisions & Class Scores</span>
-              </div>
-              {selectedDivisionClass === 'ALL' ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const updated = [
-                      ...(data.subjectDivisions || []),
-                      { id: String(Date.now()), subject: 'Chemistry', marks: '15' }
-                    ];
-                    onUpdate({ subjectDivisions: updated });
-                  }}
-                  className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add Subject
-                </button>
-              ) : (
-                data.classDivisions?.[selectedDivisionClass]?.enabled && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const existing = data.classDivisions[selectedDivisionClass];
-                      const updatedSubjects = [
-                        ...(existing.subjects || []),
-                        { id: String(Date.now()), subject: 'Mathematics', marks: '15' }
-                      ];
-                      onUpdate({
-                        classDivisions: {
-                          ...data.classDivisions,
-                          [selectedDivisionClass]: { ...existing, subjects: updatedSubjects }
-                        }
-                      });
-                    }}
-                    className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Add Subject
-                  </button>
-                )
-              )}
-            </div>
-
-            {/* Class Tabs */}
-            <div className="flex items-center gap-1.5 flex-wrap p-1.5 bg-slate-50 border border-gray-200 rounded-xl">
-              <span className="text-[10px] font-black uppercase text-gray-500 tracking-wider px-1">
-                Target:
-              </span>
-              <button
-                type="button"
-                onClick={() => setSelectedDivisionClass('ALL')}
-                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
-                  selectedDivisionClass === 'ALL'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                }`}
-              >
-                All Classes (Default)
-              </button>
-              {availableClasses.map((cls) => {
-                const hasCustom = Boolean(data.classDivisions?.[cls]?.enabled);
-                const isSel = selectedDivisionClass === cls;
-                return (
-                  <button
-                    key={cls}
-                    type="button"
-                    onClick={() => setSelectedDivisionClass(cls)}
-                    className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
-                      isSel
-                        ? 'bg-indigo-600 text-white shadow-xs'
-                        : hasCustom
-                        ? 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
-                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                    }`}
-                  >
-                    Class: {cls}
-                    {hasCustom && (
-                      <span className="ml-1 text-[10px] font-black opacity-80">
-                        ({data.classDivisions[cls].maxMarks}M)
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Default Subject Divisions */}
-            {selectedDivisionClass === 'ALL' ? (
-              <div className="space-y-3">
-                {/* Marks balance banner */}
-                <div
-                  className={`p-2.5 px-3 rounded-xl border flex items-center justify-between gap-2 text-xs font-bold ${
-                    isDefaultBalanced
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                      : 'bg-amber-50 text-amber-800 border-amber-200'
-                  }`}
-                >
-                  <span className="flex items-center gap-1.5">
-                    {isDefaultBalanced ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    ) : (
-                      <AlertTriangle className="w-4 h-4 text-amber-600" />
-                    )}
-                    {isDefaultBalanced
-                      ? `Marks Balanced: ${defaultAllocatedMarks} / ${targetTotalMarksNum}`
-                      : `Marks Mismatch: Allocated ${defaultAllocatedMarks} vs Target ${targetTotalMarksNum}`}
-                  </span>
-                  {!isDefaultBalanced && (
+            {/* COLUMN B: SUBJECT DIVISIONS & TARGET PAPERS */}
+            <div className="space-y-6">
+              {/* CARD 2: SUBJECT DIVISIONS */}
+              <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                    <BrainCircuit className="w-4 h-4 text-indigo-600" />
+                    <span>2. Subject Divisions &amp; Marks</span>
+                  </div>
+                  {selectedDivisionClass === 'ALL' ? (
                     <button
                       type="button"
-                      onClick={() => onUpdate({ totalMarks: String(defaultAllocatedMarks) })}
-                      className="text-[11px] underline hover:text-amber-950"
+                      onClick={() => {
+                        const updated = [
+                          ...(data.subjectDivisions || []),
+                          { id: String(Date.now()), subject: 'Chemistry', marks: '15' }
+                        ];
+                        onUpdate({ subjectDivisions: updated });
+                      }}
+                      className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800"
                     >
-                      Auto-Sync Target
+                      <Plus className="w-3.5 h-3.5" /> Add Subject
                     </button>
+                  ) : (
+                    data.classDivisions?.[selectedDivisionClass]?.enabled && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const existing = data.classDivisions[selectedDivisionClass];
+                          const updatedSubjects = [
+                            ...(existing.subjects || []),
+                            { id: String(Date.now()), subject: 'Mathematics', marks: '15' }
+                          ];
+                          onUpdate({
+                            classDivisions: {
+                              ...data.classDivisions,
+                              [selectedDivisionClass]: { ...existing, subjects: updatedSubjects }
+                            }
+                          });
+                        }}
+                        className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add Subject
+                      </button>
+                    )
                   )}
                 </div>
 
-                {/* Subject List */}
-                <div className="space-y-2">
-                  {(data.subjectDivisions || []).map((sub, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={sub.subject}
-                        onChange={(e) => {
-                          const updated = [...data.subjectDivisions];
-                          updated[idx] = { ...updated[idx], subject: e.target.value };
-                          onUpdate({ subjectDivisions: updated });
-                        }}
-                        placeholder="Subject Name (e.g. Physics)"
-                        className="flex-2 px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold outline-none"
-                      />
-                      <input
-                        type="text"
-                        value={sub.marks}
-                        onChange={(e) => {
-                          const updated = [...data.subjectDivisions];
-                          updated[idx] = { ...updated[idx], marks: e.target.value };
-                          onUpdate({ subjectDivisions: updated });
-                        }}
-                        placeholder="Marks"
-                        className="w-20 px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold outline-none"
-                      />
-                      {data.subjectDivisions.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = data.subjectDivisions.filter((_, i) => i !== idx);
-                            onUpdate({ subjectDivisions: updated });
-                          }}
-                          className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                {/* Target Class Switcher Pills */}
+                <div className="flex items-center gap-1.5 flex-wrap p-1.5 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider px-1">
+                    Scope:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedDivisionClass('ALL')}
+                    className={`px-2.5 py-1 text-xs font-bold rounded-xl transition-all ${
+                      selectedDivisionClass === 'ALL'
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    All Classes (Default)
+                  </button>
+                  {availableClasses.map((cls) => {
+                    const hasCustom = Boolean(data.classDivisions?.[cls]?.enabled);
+                    const isSel = selectedDivisionClass === cls;
+                    return (
+                      <button
+                        key={cls}
+                        type="button"
+                        onClick={() => setSelectedDivisionClass(cls)}
+                        className={`px-2.5 py-1 text-xs font-bold rounded-xl transition-all ${
+                          isSel
+                            ? 'bg-indigo-600 text-white shadow-xs'
+                            : hasCustom
+                            ? 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
+                            : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                        }`}
+                      >
+                        {cls}
+                        {hasCustom && (
+                          <span className="ml-1 text-[10px] font-black opacity-80">
+                            ({data.classDivisions[cls].maxMarks}M)
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
-            ) : (
-              /* Specific Target Class Custom Configuration */
-              (() => {
-                const cls = selectedDivisionClass;
-                const clsConfig = data.classDivisions?.[cls] || {
-                  enabled: false,
-                  maxMarks: data.totalMarks,
-                  subjects: data.subjectDivisions.map((s) => ({
-                    ...s,
-                    id: Math.random().toString(36).substring(2, 7)
-                  }))
-                };
-                const classAllocated = (clsConfig.subjects || []).reduce(
-                  (sum, s) => sum + (parseInt(s.marks, 10) || 0),
-                  0
-                );
-                const classTargetNum = parseInt(clsConfig.maxMarks || '0', 10) || 0;
-                const isClassBalanced = classAllocated === classTargetNum;
 
-                return (
+                {/* Subject Divisions List */}
+                {selectedDivisionClass === 'ALL' ? (
                   <div className="space-y-3">
-                    {/* Class Custom Toggle */}
-                    <div className="flex items-center justify-between p-3 bg-slate-50 border border-gray-200 rounded-xl">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={clsConfig.enabled}
-                          onChange={(e) => {
-                            const enabled = e.target.checked;
-                            onUpdate({
-                              classDivisions: {
-                                ...data.classDivisions,
-                                [cls]: { ...clsConfig, enabled }
-                              }
-                            });
-                          }}
-                          className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
-                        />
-                        <span className="text-xs font-bold text-gray-800">
-                          Custom Scores & Subjects for Class {cls}
+                    {/* Live Balance Banner */}
+                    <div
+                      className={`p-3 rounded-2xl border flex items-center justify-between gap-2 text-xs font-bold ${
+                        isDefaultBalanced
+                          ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                          : 'bg-amber-50 text-amber-900 border-amber-200'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        {isDefaultBalanced ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                        )}
+                        <span>
+                          {isDefaultBalanced
+                            ? `Marks Balanced: ${defaultAllocatedMarks} / ${targetTotalMarksNum} Marks`
+                            : `Marks Mismatch: Subjects sum to ${defaultAllocatedMarks} vs Target ${targetTotalMarksNum}`}
                         </span>
-                      </label>
-                      {clsConfig.enabled && (
+                      </span>
+                      {!isDefaultBalanced && (
                         <button
                           type="button"
-                          onClick={() => {
-                            onUpdate({
-                              classDivisions: {
-                                ...data.classDivisions,
-                                [cls]: {
-                                  enabled: true,
-                                  maxMarks: data.totalMarks,
-                                  subjects: data.subjectDivisions.map((s) => ({
-                                    ...s,
-                                    id: Math.random().toString(36).substring(2, 7)
-                                  }))
-                                }
-                              }
-                            });
-                          }}
-                          className="text-[11px] font-bold text-indigo-600 hover:underline"
+                          onClick={() => onUpdate({ totalMarks: String(defaultAllocatedMarks) })}
+                          className="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-extrabold rounded-lg shadow-2xs transition-colors shrink-0"
                         >
-                          Copy from Default
+                          Auto-Sync Target
                         </button>
                       )}
                     </div>
 
-                    {clsConfig.enabled ? (
-                      <div className="space-y-3 p-3 bg-white border border-gray-200 rounded-xl">
-                        <div>
-                          <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">
-                            Max Score for Class {cls}
-                          </label>
+                    <div className="space-y-2">
+                      {(data.subjectDivisions || []).map((sub, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
                           <input
                             type="text"
-                            value={clsConfig.maxMarks}
+                            value={sub.subject}
                             onChange={(e) => {
-                              onUpdate({
-                                classDivisions: {
-                                  ...data.classDivisions,
-                                  [cls]: { ...clsConfig, maxMarks: e.target.value }
-                                }
-                              });
+                              const updated = [...data.subjectDivisions];
+                              updated[idx] = { ...updated[idx], subject: e.target.value };
+                              onUpdate({ subjectDivisions: updated });
                             }}
-                            className="w-full sm:w-48 px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold outline-none"
+                            placeholder="Subject Name (e.g. Physics)"
+                            className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600"
                           />
-                        </div>
-
-                        {/* Balance pill */}
-                        <div
-                          className={`p-2 px-3 rounded-lg border flex items-center justify-between gap-2 text-xs font-bold ${
-                            isClassBalanced
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                              : 'bg-amber-50 text-amber-800 border-amber-200'
-                          }`}
-                        >
-                          <span className="flex items-center gap-1">
-                            {isClassBalanced ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
-                            )}
-                            Allocated {classAllocated} / Target {classTargetNum}
-                          </span>
-                          {!isClassBalanced && (
+                          <input
+                            type="text"
+                            value={sub.marks}
+                            onChange={(e) => {
+                              const updated = [...data.subjectDivisions];
+                              updated[idx] = { ...updated[idx], marks: e.target.value };
+                              onUpdate({ subjectDivisions: updated });
+                            }}
+                            placeholder="Marks"
+                            className="w-20 px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-center outline-none focus:border-indigo-600"
+                          />
+                          {data.subjectDivisions.length > 1 && (
                             <button
                               type="button"
                               onClick={() => {
-                                onUpdate({
-                                  classDivisions: {
-                                    ...data.classDivisions,
-                                    [cls]: { ...clsConfig, maxMarks: String(classAllocated) }
-                                  }
-                                });
+                                const updated = data.subjectDivisions.filter((_, i) => i !== idx);
+                                onUpdate({ subjectDivisions: updated });
                               }}
-                              className="text-[11px] underline hover:text-amber-950"
+                              className="p-2 text-slate-400 hover:text-rose-600 rounded-xl transition-colors"
+                              title="Delete Subject"
                             >
-                              Auto-Sync Class
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  // Custom Per-Class Overrides
+                  (() => {
+                    const clsConfig = data.classDivisions?.[selectedDivisionClass] || {
+                      enabled: false,
+                      maxMarks: data.totalMarks,
+                      subjects: []
+                    };
+                    const isEnabled = clsConfig.enabled;
 
-                        {/* Subject list */}
-                        <div className="space-y-2">
-                          {(clsConfig.subjects || []).map((sub, sIdx) => (
-                            <div key={sIdx} className="flex items-center gap-2">
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-purple-50/70 border border-purple-200 rounded-2xl">
+                          <div>
+                            <span className="text-xs font-bold text-purple-900 block">
+                              Custom Marks for Batch {selectedDivisionClass}
+                            </span>
+                            <span className="text-[11px] text-purple-700">
+                              Override subject divisions specifically for this batch
+                            </span>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isEnabled}
+                              onChange={(e) => {
+                                const en = e.target.checked;
+                                onUpdate({
+                                  classDivisions: {
+                                    ...data.classDivisions,
+                                    [selectedDivisionClass]: {
+                                      enabled: en,
+                                      maxMarks: clsConfig.maxMarks || data.totalMarks,
+                                      subjects:
+                                        clsConfig.subjects && clsConfig.subjects.length > 0
+                                          ? clsConfig.subjects
+                                          : JSON.parse(JSON.stringify(data.subjectDivisions || []))
+                                    }
+                                  }
+                                });
+                              }}
+                              className="sr-only peer"
+                            />
+                            <div className="w-10 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600" />
+                          </label>
+                        </div>
+
+                        {isEnabled && (
+                          <div className="space-y-2 pt-1">
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs font-bold text-slate-700">Batch Max Marks:</label>
                               <input
                                 type="text"
-                                value={sub.subject}
+                                value={clsConfig.maxMarks}
                                 onChange={(e) => {
-                                  const updated = [...clsConfig.subjects];
-                                  updated[sIdx] = { ...updated[sIdx], subject: e.target.value };
                                   onUpdate({
                                     classDivisions: {
                                       ...data.classDivisions,
-                                      [cls]: { ...clsConfig, subjects: updated }
+                                      [selectedDivisionClass]: {
+                                        ...clsConfig,
+                                        maxMarks: e.target.value
+                                      }
                                     }
                                   });
                                 }}
-                                className="flex-2 px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold outline-none"
+                                className="w-24 px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-bold outline-none"
                               />
-                              <input
-                                type="text"
-                                value={sub.marks}
-                                onChange={(e) => {
-                                  const updated = [...clsConfig.subjects];
-                                  updated[sIdx] = { ...updated[sIdx], marks: e.target.value };
-                                  onUpdate({
-                                    classDivisions: {
-                                      ...data.classDivisions,
-                                      [cls]: { ...clsConfig, subjects: updated }
-                                    }
-                                  });
-                                }}
-                                className="w-20 px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold outline-none"
-                              />
-                              {(clsConfig.subjects || []).length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const updated = clsConfig.subjects.filter((_, i) => i !== sIdx);
+                            </div>
+
+                            {(clsConfig.subjects || []).map((sub: SubjectDivision, idx: number) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={sub.subject}
+                                  onChange={(e) => {
+                                    const updated = [...clsConfig.subjects];
+                                    updated[idx] = { ...updated[idx], subject: e.target.value };
                                     onUpdate({
                                       classDivisions: {
                                         ...data.classDivisions,
-                                        [cls]: { ...clsConfig, subjects: updated }
+                                        [selectedDivisionClass]: { ...clsConfig, subjects: updated }
                                       }
                                     });
                                   }}
-                                  className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                                  placeholder="Subject"
+                                  className="flex-1 px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-semibold outline-none"
+                                />
+                                <input
+                                  type="text"
+                                  value={sub.marks}
+                                  onChange={(e) => {
+                                    const updated = [...clsConfig.subjects];
+                                    updated[idx] = { ...updated[idx], marks: e.target.value };
+                                    onUpdate({
+                                      classDivisions: {
+                                        ...data.classDivisions,
+                                        [selectedDivisionClass]: { ...clsConfig, subjects: updated }
+                                      }
+                                    });
+                                  }}
+                                  placeholder="Marks"
+                                  className="w-16 px-2 py-1.5 border border-slate-300 rounded-xl text-xs font-bold text-center outline-none"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="p-4 bg-slate-50 border border-dashed border-gray-300 rounded-xl text-center space-y-2">
-                        <p className="text-xs text-gray-600">
-                          <strong>Class {cls}</strong> uses the Default Subject Divisions (
-                          {defaultAllocatedMarks} marks).
-                        </p>
+                    );
+                  })()
+                )}
+              </div>
+
+              {/* CARD 3: TARGET PAPERS MATRIX */}
+              <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                    <Layers className="w-4 h-4 text-indigo-600" />
+                    <span>3. Target Papers ({targetPapersList.length} Papers)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowRawTargets(!showRawTargets)}
+                    className="text-xs font-bold text-indigo-600 hover:underline"
+                  >
+                    {showRawTargets ? 'Visual Mode' : 'Raw Text Mode'}
+                  </button>
+                </div>
+
+                {/* Target Presets */}
+                <div className="flex flex-wrap gap-1.5">
+                  {TARGET_PRESETS.map((tp) => (
+                    <button
+                      key={tp.label}
+                      type="button"
+                      onClick={() => onUpdate({ batchesAndSets: tp.value })}
+                      className="px-2.5 py-1 text-[11px] font-bold bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-800 rounded-xl border border-slate-200 transition-colors"
+                    >
+                      + {tp.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Target Variant Chips */}
+                {targetPapersList.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {targetPapersList.map((t, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200 shadow-2xs"
+                      >
+                        <span>{t.label}</span>
                         <button
                           type="button"
                           onClick={() => {
-                            onUpdate({
-                              classDivisions: {
-                                ...data.classDivisions,
-                                [cls]: { ...clsConfig, enabled: true }
-                              }
-                            });
+                            const remaining = targetPapersList
+                              .filter((_, i) => i !== idx)
+                              .map((x) => x.label);
+                            onUpdate({ batchesAndSets: syncTargetsToText(remaining) });
                           }}
-                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors"
+                          className="hover:text-rose-600"
                         >
-                          Enable Separate Scores & Subjects for Class {cls}
+                          &times;
                         </button>
-                      </div>
-                    )}
+                      </span>
+                    ))}
                   </div>
-                );
-              })()
-            )}
+                )}
+
+                {!showRawTargets ? (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                      Add Custom Variant:
+                    </span>
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                      <input
+                        type="text"
+                        value={newBatch}
+                        onChange={(e) => setNewBatch(e.target.value.toUpperCase())}
+                        placeholder="Batch (e.g. B1)"
+                        className="w-full sm:w-32 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold outline-none uppercase"
+                      />
+                      <select
+                        value={newSelectedSet}
+                        onChange={(e) => setNewSelectedSet(e.target.value)}
+                        className="w-full sm:w-36 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold outline-none"
+                      >
+                        {['Set A', 'Set B', 'Set C', 'Set D', 'Set E', 'Single Set (No Set)', 'Custom...'].map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                      {newSelectedSet === 'Custom...' && (
+                        <input
+                          type="text"
+                          value={customSet}
+                          onChange={(e) => setCustomSet(e.target.value)}
+                          placeholder="Custom Set Name"
+                          className="w-full sm:w-32 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold outline-none"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newBatch.trim()) return;
+                          const chosenSet =
+                            newSelectedSet === 'Single Set (No Set)'
+                              ? ''
+                              : newSelectedSet === 'Custom...'
+                              ? customSet.trim()
+                              : newSelectedSet;
+                          const currentLabels = targetPapersList.map((x) => x.label);
+                          const newLabel = chosenSet ? `${newBatch.trim()} - ${chosenSet}` : newBatch.trim();
+                          if (!currentLabels.includes(newLabel)) {
+                            currentLabels.push(newLabel);
+                            onUpdate({ batchesAndSets: syncTargetsToText(currentLabels) });
+                          }
+                          setCustomSet('');
+                        }}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs shrink-0"
+                      >
+                        + Add Target
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <textarea
+                      rows={4}
+                      value={data.batchesAndSets}
+                      onChange={(e) => onUpdate({ batchesAndSets: e.target.value })}
+                      placeholder="B1: Set A, Set B&#10;B2: Set A, Set B"
+                      className="w-full p-3 font-mono text-xs border border-slate-300 rounded-2xl outline-none focus:border-indigo-600 bg-slate-50"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* CARD 3: TARGET PAPERS MATRIX */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-sm font-extrabold text-gray-900">
-                <Layers className="w-4 h-4 text-indigo-600" />
-                <span>3. Target Papers ({targetPapersList.length} Variants)</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowRawTargets(!showRawTargets)}
-                className="text-xs font-bold text-gray-600 hover:text-indigo-600"
-              >
-                {showRawTargets ? 'Adaptive Mode' : 'Raw Text Mode'}
-              </button>
-            </div>
-
-            {/* Target Variant Chips */}
-            {targetPapersList.length > 0 && (
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {targetPapersList.map((t, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs"
-                  >
-                    <span>{t.label}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const remaining = targetPapersList
-                          .filter((_, i) => i !== idx)
-                          .map((x) => x.label);
-                        onUpdate({ batchesAndSets: syncTargetsToText(remaining) });
-                      }}
-                      className="hover:text-red-600"
-                    >
-                      &times;
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {!showRawTargets ? (
-              <div className="p-3 bg-slate-50 border border-gray-200 rounded-xl space-y-2">
-                <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider block">
-                  Add New Target Variant:
-                </span>
-                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                  <input
-                    type="text"
-                    value={newBatch}
-                    onChange={(e) => setNewBatch(e.target.value)}
-                    placeholder="Batch (e.g. B1)"
-                    className="w-full sm:w-32 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold outline-none"
-                  />
-                  <select
-                    value={newSelectedSet}
-                    onChange={(e) => setNewSelectedSet(e.target.value)}
-                    className="w-full sm:w-36 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold outline-none"
-                  >
-                    {['Set A', 'Set B', 'Set C', 'Set D', 'Set E', 'Custom...'].map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                  {newSelectedSet === 'Custom...' && (
-                    <input
-                      type="text"
-                      value={customSet}
-                      onChange={(e) => setCustomSet(e.target.value)}
-                      placeholder="Custom Set (e.g. Set 1)"
-                      className="w-full sm:w-36 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-semibold outline-none"
-                    />
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const batch = newBatch.trim();
-                      const set =
-                        newSelectedSet === 'Custom...' ? customSet.trim() : newSelectedSet;
-                      if (!batch || !set) return;
-                      const targetLabel = `${batch} - ${set}`;
-                      const currentLabels = targetPapersList.map((x) => x.label);
-                      if (!currentLabels.includes(targetLabel)) {
-                        const updated = [...currentLabels, targetLabel];
-                        onUpdate({ batchesAndSets: syncTargetsToText(updated) });
-                        if (newSelectedSet === 'Custom...') setCustomSet('');
-                      }
-                    }}
-                    className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shrink-0 transition-colors"
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <textarea
-                rows={3}
-                value={data.batchesAndSets}
-                onChange={(e) => onUpdate({ batchesAndSets: e.target.value })}
-                placeholder="B1: Set A, Set B&#10;B2: Set A, Set B"
-                className="w-full font-mono text-xs p-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            )}
+          {/* Phase 1 Footer Action */}
+          <div className="pt-4 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={onSaveDay}
+              className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+            >
+              Save Draft
+            </button>
+            <button
+              type="button"
+              onClick={() => switchPhase('SOURCES')}
+              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md transition-all"
+            >
+              <span>Next: Question Sources &amp; Materials ({totalMaterials})</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
+      )}
 
-        {/* ===================== COLUMN 2 ===================== */}
-        <div className="space-y-6">
-          {/* CARD 4: QP DESIGN TEMPLATE */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-sm font-extrabold text-gray-900">
-                <Palette className="w-4 h-4 text-indigo-600" />
-                <span>4. QP Design Template ({templates.length} Active)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const curT =
-                      templates.find((t) => t.id === data.templateId) || templates[0];
-                    onOpenDesignEditor(curT);
-                  }}
-                  className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline"
-                >
-                  <Code className="w-3.5 h-3.5" /> Edit HTML
-                </button>
-                <button
-                  type="button"
-                  onClick={onOpenDartSync}
-                  className="flex items-center gap-1 text-xs font-bold text-gray-600 hover:text-indigo-600"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" /> Sync Dart
-                </button>
-              </div>
-            </div>
-
-            {/* Layout & Typography bar */}
-            <div className="p-3 bg-slate-50 border border-gray-200 rounded-xl space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={data.twoColumn}
-                    onChange={(e) => onUpdate({ twoColumn: e.target.checked })}
-                    className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
-                  />
-                  <div>
-                    <span className="text-xs font-bold text-gray-800 flex items-center gap-1">
-                      <Columns className="w-3.5 h-3.5 text-indigo-600" /> Two-Column Layout
-                    </span>
-                    <span className="text-[11px] text-gray-500 block">
-                      Renders continuous 2-column examination stream
-                    </span>
-                  </div>
-                </label>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200/60">
-                <div>
-                  <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider block mb-1">
-                    Base Font Size
-                  </span>
-                  <select
-                    value={data.fontSize}
-                    onChange={(e) => onUpdate({ fontSize: e.target.value })}
-                    className="w-full px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-800 outline-none cursor-pointer"
-                  >
-                    {['10px', '11px', '12px', '13px', '14px', '15px', '16px', '18px'].map((sz) => (
-                      <option key={sz} value={sz}>
-                        {sz}
-                      </option>
-                    ))}
-                  </select>
+      {/* ------------------------------------------------------------- */}
+      {/* PHASE 2: QUESTION SOURCES & MATERIALS (ITEMS + ASSETS) */}
+      {/* ------------------------------------------------------------- */}
+      {(activePhase === 'SOURCES' || activePhase === 'ALL') && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* CARD 6: SOURCE QUESTIONS */}
+            <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+              <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                  <ImageIcon className="w-4 h-4 text-indigo-600" />
+                  <span>4. Question Source Materials ({sourcesCount} Items)</span>
                 </div>
-                <div>
-                  <span className="text-[11px] font-bold text-gray-600 uppercase tracking-wider block mb-1">
-                    LaTeX Math Size
-                  </span>
-                  <select
-                    value={data.latexSize}
-                    onChange={(e) => onUpdate({ latexSize: e.target.value })}
-                    className="w-full px-2.5 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-800 outline-none cursor-pointer"
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handlePasteClipboard('source')}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
+                    title="Paste Image or Document from Clipboard"
                   >
-                    {['80%', '85%', '90%', '95%', '100%', '105%', '110%', '120%', '130%'].map(
-                      (ls) => (
-                        <option key={ls} value={ls}>
-                          {ls}
-                        </option>
-                      )
-                    )}
-                  </select>
+                    <Clipboard className="w-3.5 h-3.5" /> Paste
+                  </button>
+                  <label className="flex items-center gap-1 px-3 py-1 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl cursor-pointer shadow-xs transition-colors">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Images/PDF</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,application/pdf"
+                      onChange={handleAddFiles}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
               </div>
-            </div>
 
-            {/* Template Selector Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
-              {templates.map((t) => {
-                const isSel = data.templateId === t.id;
-                return (
-                  <div
-                    key={t.id}
-                    onClick={() => onUpdate({ templateId: t.id })}
-                    className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
-                      isSel
-                        ? 'bg-indigo-50/70 border-indigo-600 ring-2 ring-indigo-600/20'
-                        : 'bg-white border-gray-200 hover:border-indigo-300'
-                    }`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-1 mb-1">
-                        <span className="text-xs font-black text-gray-900 truncate">
-                          {t.name}
-                        </span>
-                        {t.isCustomized && (
-                          <span className="px-1.5 py-0.2 text-[9px] font-extrabold bg-amber-100 text-amber-800 rounded">
-                            Custom
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-gray-500 line-clamp-2 leading-tight">
-                        {t.description}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 pt-1">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onOpenPreviewTemplate(t);
-                        }}
-                        className="flex-1 py-1 text-[11px] font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors text-center"
-                      >
-                        Preview
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onOpenDesignEditor(t);
-                        }}
-                        className="py-1 px-2 text-[11px] font-bold text-indigo-600 hover:bg-indigo-100 rounded-md transition-colors"
-                        title="Edit HTML"
-                      >
-                        <Code className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+              {/* Upload Drop Area */}
+              {sourcesCount === 0 ? (
+                <div className="border-2 border-dashed border-slate-300 rounded-3xl p-8 text-center space-y-3 bg-slate-50/50">
+                  <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto">
+                    <Upload className="w-6 h-6" />
                   </div>
-                );
-              })}
-            </div>
-          </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-bold text-slate-800">Upload Question Sources or Question Images</h4>
+                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                      Drop images, past papers, or PDFs. Gemini AI will automatically extract and structure questions.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[460px] overflow-y-auto custom-scrollbar pr-1">
+                  {(data.items || []).map((item, idx) => {
+                    const isDescribing = describingIds.includes(item.id);
+                    const isImageOrPdf = item.type === 'image' || item.type === 'pdf';
 
-          {/* CARD 5: PROMPT PRESETS & DIRECTIVES */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs space-y-3">
-            <div className="flex items-center gap-2 text-sm font-extrabold text-gray-900">
-              <Sparkles className="w-4 h-4 text-indigo-600" />
-              <span>5. AI Directives & Prompt Presets</span>
-            </div>
-
-            {/* Presets Chips */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <button
-                type="button"
-                onClick={() =>
-                  handleAddPresetPrompt(
-                    'Format all multi-part sub-questions using HTML <ol type="a"> or <ol type="i"> tags, with each sub-question enclosed in <li>.'
-                  )
-                }
-                className="px-2.5 py-1 text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg border border-indigo-200 transition-colors"
-              >
-                Sub-questions (&lt;ol&gt; tags)
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  handleAddPresetPrompt(
-                    'Strictly write only questions. Do NOT provide any answers, solutions, explanations, or hints under any circumstances.'
-                  )
-                }
-                className="px-2.5 py-1 text-[11px] font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg border border-rose-200 transition-colors"
-              >
-                Questions Only (No Answers)
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  handleAddPresetPrompt(
-                    'Ensure each question has exact sub-marks and formulas in MathJax format.'
-                  )
-                }
-                className="px-2.5 py-1 text-[11px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-              >
-                Strict Marking Scheme
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  handleAddPresetPrompt(
-                    'Include theoretical derivations and reference diagram assets where applicable.'
-                  )
-                }
-                className="px-2.5 py-1 text-[11px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-              >
-                Diagrams & Derivations
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  handleAddPresetPrompt(
-                    'Format math equations compactly for optimal two-column presentation.'
-                  )
-                }
-                className="px-2.5 py-1 text-[11px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
-              >
-                Two-Column Math Density
-              </button>
-            </div>
-
-            <textarea
-              rows={3}
-              value={data.extraInstructions}
-              onChange={(e) => onUpdate({ extraInstructions: e.target.value })}
-              placeholder="Additional instructions for question selection, allocation, or formatting..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 text-xs sm:text-sm outline-none resize-none"
-            />
-          </div>
-
-          {/* CARD 6: SOURCE MATERIALS */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-2 text-sm font-extrabold text-gray-900">
-                <FileText className="w-4 h-4 text-indigo-600" />
-                <span>6. Source Materials ({data.items?.length || 0})</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg cursor-pointer transition-colors">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Add Files</span>
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    multiple
-                    hidden
-                    onChange={handleAddFiles}
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => handlePasteClipboard('source')}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors"
-                >
-                  <Clipboard className="w-3.5 h-3.5" />
-                  <span>Paste</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newItem: QPItem = {
-                      id: 't_' + Date.now(),
-                      type: 'text',
-                      isText: true,
-                      description: '',
-                      textContent: '',
-                      filename: 'Text Source Block'
-                    };
-                    onUpdate({ items: [...(data.items || []), newItem] });
-                  }}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  <TypeIcon className="w-3.5 h-3.5" />
-                  <span>Add Text</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Items List */}
-            {(!data.items || data.items.length === 0) ? (
-              <div className="p-6 text-center border-2 border-dashed border-gray-200 rounded-xl space-y-1">
-                <p className="text-xs font-bold text-gray-600">No Question Sources Added Yet</p>
-                <p className="text-[11px] text-gray-400">
-                  Upload question images/PDFs, paste from clipboard (Ctrl+V), or add text blocks.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[380px] overflow-y-auto custom-scrollbar pr-1">
-                {data.items.map((item, idx) => {
-                  const isPdf = item.type === 'pdf';
-                  const isDescribing = describingIds.includes(item.id);
-
-                  return (
-                    <div
-                      key={item.id}
-                      className="p-3 bg-slate-50 border border-gray-200 rounded-xl flex items-start gap-3"
-                    >
-                      {/* Thumbnail or Icon */}
-                      {item.type === 'text' ? (
-                        <div className="w-16 h-16 bg-white border border-gray-200 rounded-lg flex items-center justify-center shrink-0 text-gray-400">
-                          <TypeIcon className="w-6 h-6" />
-                        </div>
-                      ) : isPdf ? (
-                        <div
-                          onClick={() =>
-                            onZoomMedia({
-                              src: item.imageBytes || item.dataUrl || '',
-                              title: item.filename || 'PDF Document',
-                              isPdf: true
-                            })
-                          }
-                          className="w-16 h-16 bg-red-50 border border-red-200 rounded-lg flex flex-col items-center justify-center shrink-0 cursor-pointer text-red-500 hover:bg-red-100 transition-colors"
-                        >
-                          <FileText className="w-6 h-6" />
-                          <span className="text-[9px] font-black uppercase mt-0.5">PDF</span>
-                        </div>
-                      ) : (
-                        <div
-                          onClick={() =>
-                            onZoomMedia({
-                              src: item.imageBytes || item.dataUrl || '',
-                              title: item.filename || 'Question Source',
-                              isPdf: false
-                            })
-                          }
-                          className="w-16 h-16 bg-white border border-gray-200 rounded-lg overflow-hidden shrink-0 cursor-pointer group relative"
-                        >
-                          <img
-                            src={item.imageBytes || item.dataUrl}
-                            alt="Source"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-bold transition-opacity">
-                            <Eye className="w-4 h-4" />
+                    return (
+                      <div
+                        key={item.id || idx}
+                        className="p-3.5 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-2.5 hover:border-slate-300 transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-700 rounded-lg">
+                              {item.type.toUpperCase()}
+                            </span>
+                            <span className="text-xs font-bold text-slate-800 truncate">
+                              {item.filename || `Item #${idx + 1}`}
+                            </span>
                           </div>
-                        </div>
-                      )}
 
-                      {/* Content / description */}
-                      <div className="flex-1 min-w-0 space-y-1.5">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className="text-xs font-bold text-gray-800 truncate">
-                            {item.filename || 'Source Material'}
-                          </span>
-                          <div className="flex items-center gap-1">
-                            {!isPdf && item.type !== 'text' && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            {isImageOrPdf && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onZoomMedia({
+                                    src: item.imageBytes || item.dataUrl || '',
+                                    title: item.filename || 'Source Image',
+                                    isPdf: item.type === 'pdf'
+                                  })
+                                }
+                                className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg"
+                                title="Zoom Image"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            )}
+
+                            {isImageOrPdf && (
                               <button
                                 type="button"
                                 disabled={isDescribing}
                                 onClick={() => onAutoDescribeItem(item)}
-                                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50 rounded transition-colors"
+                                className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-indigo-700 bg-white hover:bg-indigo-50 border border-indigo-200 rounded-xl transition-colors shadow-2xs"
+                                title="Run Gemini Vision OCR description"
                               >
                                 {isDescribing ? (
-                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                  <RefreshCw className="w-3 h-3 animate-spin text-indigo-600" />
                                 ) : (
-                                  <Sparkles className="w-3 h-3" />
+                                  <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
                                 )}
-                                <span>Auto-Describe</span>
+                                <span>{isDescribing ? 'Extracting...' : 'AI Describe'}</span>
                               </button>
                             )}
+
                             <button
                               type="button"
                               onClick={() => {
                                 const updated = data.items.filter((_, i) => i !== idx);
                                 onUpdate({ items: updated });
                               }}
-                              className="p-1 text-gray-400 hover:text-red-600 rounded"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg"
+                              title="Delete Item"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                         </div>
 
-                        {item.type === 'text' && (
+                        {/* Text description or raw text */}
+                        {item.isText ? (
                           <textarea
                             rows={3}
-                            value={item.textContent || ''}
+                            value={item.textContent}
                             onChange={(e) => {
                               const updated = [...data.items];
                               updated[idx] = { ...updated[idx], textContent: e.target.value };
                               onUpdate({ items: updated });
                             }}
-                            placeholder="Paste questions here with choices or LaTeX..."
-                            className="w-full p-2 bg-white border border-gray-300 rounded-lg text-xs outline-none"
+                            placeholder="Enter raw question text or LaTeX equations..."
+                            className="w-full p-2.5 text-xs font-mono bg-white border border-slate-300 rounded-xl outline-none focus:border-indigo-600"
+                          />
+                        ) : (
+                          <textarea
+                            rows={2}
+                            value={item.description}
+                            onChange={(e) => {
+                              const updated = [...data.items];
+                              updated[idx] = { ...updated[idx], description: e.target.value };
+                              onUpdate({ items: updated });
+                            }}
+                            placeholder="Image description or instructions for question generation..."
+                            className="w-full p-2.5 text-xs bg-white border border-slate-300 rounded-xl outline-none focus:border-indigo-600"
                           />
                         )}
-
-                        <input
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => {
-                            const updated = [...data.items];
-                            updated[idx] = { ...updated[idx], description: e.target.value };
-                            onUpdate({ items: updated });
-                          }}
-                          placeholder="Instructions/description for AI (e.g. For B1 Set A Section 1)"
-                          className="w-full px-2.5 py-1 bg-white border border-gray-300 rounded-lg text-xs outline-none"
-                        />
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* CARD 7: ASSETS / EXTERNAL DIAGRAMS */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs space-y-4">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-2 text-sm font-extrabold text-gray-900">
-                <ImageIcon className="w-4 h-4 text-indigo-600" />
-                <span>7. Assets / External Images ({data.assets?.length || 0})</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg cursor-pointer transition-colors">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Upload Assets</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    hidden
-                    onChange={handleAddAssets}
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => handlePasteClipboard('asset')}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors"
-                >
-                  <Clipboard className="w-3.5 h-3.5" />
-                  <span>Paste Diagram</span>
-                </button>
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
-            <p className="text-xs text-gray-500">
-              Upload diagrams or charts (e.g. <code>triangle.png</code>). The AI will embed them into questions using <code>&lt;img src="filename"&gt;</code>.
-            </p>
-
-            {(!data.assets || data.assets.length === 0) ? (
-              <div className="p-6 text-center border-2 border-dashed border-gray-200 rounded-xl space-y-1">
-                <p className="text-xs font-bold text-gray-600">No Diagram Assets Added</p>
-                <p className="text-[11px] text-gray-400">
-                  Upload figures or circuit diagrams that need to appear within questions.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
-                {data.assets.map((asset, idx) => (
-                  <div
-                    key={asset.id}
-                    className="p-3 bg-slate-50 border border-gray-200 rounded-xl flex items-start gap-3"
+            {/* CARD 7: DIAGRAMS & ASSETS */}
+            <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+              <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                  <FileCode className="w-4 h-4 text-indigo-600" />
+                  <span>5. Diagrams &amp; Assets ({assetsCount} Files)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => handlePasteClipboard('asset')}
+                    className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
                   >
-                    {/* Thumbnail */}
-                    <div
-                      onClick={() =>
-                        onZoomMedia({
-                          src: asset.bytes || asset.imageBytes || '',
-                          title: asset.filename,
-                          isPdf: false
-                        })
-                      }
-                      className="w-16 h-16 bg-white border border-gray-200 rounded-lg overflow-hidden shrink-0 cursor-pointer group relative"
-                    >
-                      <img
-                        src={asset.bytes || asset.imageBytes}
-                        alt={asset.filename}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-bold transition-opacity">
-                        <Eye className="w-4 h-4" />
-                      </div>
-                    </div>
+                    <Clipboard className="w-3.5 h-3.5" /> Paste
+                  </button>
+                  <label className="flex items-center gap-1 px-3 py-1 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl cursor-pointer shadow-xs transition-colors">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Upload Diagram</span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleAddAssets}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
 
-                    {/* Details */}
-                    <div className="flex-1 min-w-0 space-y-1.5">
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-xs font-bold text-gray-800 truncate">
+              {assetsCount === 0 ? (
+                <div className="border-2 border-dashed border-slate-300 rounded-3xl p-8 text-center space-y-2 bg-slate-50/50">
+                  <ImageIcon className="w-8 h-8 text-slate-300 mx-auto" />
+                  <p className="text-xs font-bold text-slate-600">No Diagrams Uploaded</p>
+                  <p className="text-[11px] text-slate-400">
+                    Upload standalone images referenced in questions as &lt;img src=&quot;filename.png&quot;&gt;.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[460px] overflow-y-auto custom-scrollbar pr-1">
+                  {(data.assets || []).map((asset, idx) => (
+                    <div
+                      key={asset.id || idx}
+                      className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-800 truncate max-w-[140px]">
                           {asset.filename}
                         </span>
                         <button
@@ -1465,10 +1429,18 @@ export default function QPMakerForm({
                             const updated = data.assets.filter((_, i) => i !== idx);
                             onUpdate({ assets: updated });
                           }}
-                          className="p-1 text-gray-400 hover:text-red-600 rounded"
+                          className="p-1 text-slate-400 hover:text-rose-600 rounded"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
+                      </div>
+
+                      <div className="aspect-video bg-white rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center">
+                        <img
+                          src={asset.bytes || asset.imageBytes}
+                          alt={asset.filename}
+                          className="max-h-full max-w-full object-contain"
+                        />
                       </div>
 
                       <input
@@ -1479,42 +1451,280 @@ export default function QPMakerForm({
                           updated[idx] = { ...updated[idx], filename: e.target.value };
                           onUpdate({ assets: updated });
                         }}
-                        placeholder="Filename (e.g. triangle.png)"
-                        className="w-full px-2.5 py-1 bg-white border border-gray-300 rounded-lg text-xs outline-none font-mono"
+                        className="w-full px-2 py-1 text-xs font-mono bg-white border border-slate-300 rounded-lg outline-none"
                       />
-
-                      <div className="grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          value={asset.width || 'auto'}
-                          onChange={(e) => {
-                            const updated = [...data.assets];
-                            updated[idx] = { ...updated[idx], width: e.target.value };
-                            onUpdate({ assets: updated });
-                          }}
-                          placeholder="Width (default: auto)"
-                          className="px-2 py-1 bg-white border border-gray-300 rounded-lg text-[11px] outline-none"
-                        />
-                        <input
-                          type="text"
-                          value={asset.height || 'auto'}
-                          onChange={(e) => {
-                            const updated = [...data.assets];
-                            updated[idx] = { ...updated[idx], height: e.target.value };
-                            onUpdate({ assets: updated });
-                          }}
-                          placeholder="Height (default: auto)"
-                          className="px-2 py-1 bg-white border border-gray-300 rounded-lg text-[11px] outline-none"
-                        />
-                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Phase 2 Footer Actions */}
+          <div className="pt-4 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => switchPhase('BLUEPRINT')}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Blueprint</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => switchPhase('DESIGN')}
+              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md transition-all"
+            >
+              <span>Next: Design &amp; Launchpad →</span>
+            </button>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* PHASE 3: DESIGN TEMPLATES & AI LAUNCHPAD */}
+      {/* ------------------------------------------------------------- */}
+      {(activePhase === 'DESIGN' || activePhase === 'ALL') && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* CARD 4: QP DESIGN TEMPLATE */}
+            <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+              <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                  <Palette className="w-4 h-4 text-indigo-600" />
+                  <span>5. QP Design Template ({templates.length} Templates)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const curT = templates.find((t) => t.id === data.templateId) || templates[0];
+                      onOpenDesignEditor(curT);
+                    }}
+                    className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline"
+                  >
+                    <Code className="w-3.5 h-3.5" /> Edit HTML
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onOpenDartSync}
+                    className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-indigo-600"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Sync Dart
+                  </button>
+                </div>
+              </div>
+
+              {/* Layout & Typography settings */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={data.twoColumn}
+                    onChange={(e) => onUpdate({ twoColumn: e.target.checked })}
+                    className="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                  />
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
+                      <Columns className="w-3.5 h-3.5 text-indigo-600" /> Two-Column Stream Layout
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      Renders continuous dual columns like standard high-school entrance papers
+                    </span>
+                  </div>
+                </label>
+
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200">
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                      Base Font Size
+                    </span>
+                    <select
+                      value={data.fontSize}
+                      onChange={(e) => onUpdate({ fontSize: e.target.value })}
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 outline-none"
+                    >
+                      {['10px', '11px', '12px', '13px', '14px', '15px', '16px', '18px'].map((sz) => (
+                        <option key={sz} value={sz}>
+                          {sz}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-1">
+                      LaTeX Math Size
+                    </span>
+                    <select
+                      value={data.latexSize}
+                      onChange={(e) => onUpdate({ latexSize: e.target.value })}
+                      className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 outline-none"
+                    >
+                      {['80%', '85%', '90%', '95%', '100%', '105%', '110%', '120%', '130%'].map((ls) => (
+                        <option key={ls} value={ls}>
+                          {ls}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Template Selection Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
+                {templates.map((t) => {
+                  const isSel = data.templateId === t.id;
+                  return (
+                    <div
+                      key={t.id}
+                      onClick={() => onUpdate({ templateId: t.id })}
+                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between gap-2 ${
+                        isSel
+                          ? 'bg-indigo-50/80 border-indigo-600 ring-2 ring-indigo-600/20 shadow-xs'
+                          : 'bg-white border-slate-200 hover:border-indigo-300'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-xs font-black text-slate-900 truncate">
+                            {t.name}
+                          </span>
+                          {t.isCustomized && (
+                            <span className="px-1.5 py-0.2 text-[9px] font-extrabold bg-amber-100 text-amber-800 rounded">
+                              Custom
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 line-clamp-2 leading-snug">
+                          {t.description || 'Structured examination template'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-slate-100">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenPreviewTemplate(t);
+                          }}
+                          className="text-[11px] font-bold text-indigo-600 hover:underline flex items-center gap-1"
+                        >
+                          <Eye className="w-3 h-3" /> Preview
+                        </button>
+                        {isSel && (
+                          <span className="text-[10px] font-black text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* CARD 5 & LAUNCHPAD: PROMPT DIRECTIVES & LAUNCHPAD */}
+            <div className="space-y-6">
+              {/* CARD 5: AI DIRECTIVES */}
+              <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2 text-sm font-black text-slate-900">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <span>6. AI Directives &amp; Guidelines</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <textarea
+                    rows={4}
+                    value={data.extraInstructions}
+                    onChange={(e) => onUpdate({ extraInstructions: e.target.value })}
+                    placeholder="Instructions for Gemini: e.g. strictly NEET syllabus, balanced options..."
+                    className="w-full p-3 text-xs bg-slate-50 border border-slate-300 rounded-2xl outline-none focus:border-indigo-600 focus:bg-white transition-all font-medium leading-relaxed"
+                  />
+
+                  {/* Preset Directive Chips */}
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {[
+                      'Strict NEET syllabus adherence',
+                      'Include step-by-step numericals',
+                      'Assertion-Reasoning question format',
+                      'Vary options order between Set A & Set B'
+                    ].map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => handleAddPresetPrompt(chip)}
+                        className="px-2.5 py-1 text-[11px] font-bold bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-800 rounded-xl border border-slate-200 transition-colors"
+                      >
+                        + {chip}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* LAUNCHPAD ACTION CARD */}
+              <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-[#062e5b] p-6 rounded-3xl text-white shadow-lg space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-amber-300 text-xs font-bold">
+                      <Zap className="w-3.5 h-3.5 fill-amber-300" />
+                      <span>Ready to Compile</span>
+                    </div>
+                    <h4 className="text-lg font-black tracking-tight">Generate All Variants</h4>
+                  </div>
+                  <span className="text-2xl font-black text-amber-300 font-mono">
+                    {targetPapersList.length} Papers
+                  </span>
+                </div>
+
+                <p className="text-xs text-indigo-100 leading-relaxed font-medium">
+                  Compiles Dart template &ldquo;{data.templateId}&rdquo; with {data.totalMarks} marks, {data.duration} mins duration, and distributes unique question permutations across all target batches.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={onGenerate}
+                  disabled={isGenerating}
+                  className="w-full py-3.5 px-6 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm rounded-2xl flex items-center justify-center gap-2 shadow-md transition-all active:scale-98 disabled:opacity-50"
+                >
+                  {isGenerating ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Generating Question Papers...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 fill-slate-950" />
+                      <span>Launch &amp; Compile All Papers Now</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Phase 3 Footer Actions */}
+          <div className="pt-4 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => switchPhase('SOURCES')}
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Sources</span>
+            </button>
+            <button
+              type="button"
+              onClick={onSaveDay}
+              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+            >
+              Save Day
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

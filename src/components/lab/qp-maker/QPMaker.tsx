@@ -543,70 +543,102 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="p-2 hover:bg-gray-200 rounded-xl transition-colors border border-gray-200 bg-white shadow-xs"
+            className="p-2 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 bg-white shadow-xs text-slate-700"
             title="Return to Lab"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-700" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-xs">
+            <div className="p-2.5 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white rounded-2xl shadow-sm">
               <FileText className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black text-gray-900 tracking-tight">
+                <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
                   Question Paper Studio
                 </h2>
-                <span className="hidden sm:inline-flex px-2 py-0.5 text-[10px] font-black bg-indigo-50 text-indigo-700 rounded-full border border-indigo-200">
-                  Dart Synced ({templates.length})
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setDartSyncModalOpen(true)}
+                  className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-black bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-full border border-indigo-200 transition-colors"
+                  title="View & sync Dart-ported question paper templates"
+                >
+                  <Sparkles className="w-3 h-3 text-indigo-500" />
+                  <span>{templates.length} Templates</span>
+                </button>
               </div>
-              <p className="text-xs text-gray-500 font-medium">
-                Structured Question Paper Generator with Dynamic Dart Templates
+              <p className="text-xs text-slate-500 font-medium">
+                Structured Question Paper Generator &amp; Multi-Set Compiler
               </p>
             </div>
           </div>
         </div>
 
-        {/* View Mode Switcher Pills */}
-        <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200/90 shadow-2xs w-full sm:w-auto justify-center">
-          <button
-            onClick={() => setViewMode('DAYS_LIST')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              viewMode === 'DAYS_LIST'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
-          >
-            <CalendarDays className="w-3.5 h-3.5" />
-            <span>Exam Days</span>
-          </button>
+        {/* View Mode Switcher & Day Selector */}
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-end">
+          {/* Direct Day Selector Dropdown when in Editor or Viewer */}
+          {days.length > 1 && viewMode !== 'DAYS_LIST' && (
+            <div className="flex items-center gap-1 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+              <CalendarDays className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <select
+                value={selectedDay}
+                onChange={(e) => {
+                  const newDay = parseInt(e.target.value, 10);
+                  setSelectedDay(newDay);
+                  setActivePaperIdx(0);
+                }}
+                className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
+              >
+                {days.map((d) => (
+                  <option key={d} value={d}>
+                    Day {d} {dataByDay[d]?.date ? `(${dataByDay[d].date})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          <button
-            onClick={() => setViewMode('DAY_EDITOR')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              viewMode === 'DAY_EDITOR'
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>Day {selectedDay} Setup</span>
-          </button>
-
-          {papersCount > 0 && (
+          {/* View Mode Switcher Pills */}
+          <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-2xs">
             <button
-              onClick={() => setViewMode('PAPER_VIEWER')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                viewMode === 'PAPER_VIEWER'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'text-amber-700 bg-amber-50 hover:bg-amber-100'
+              onClick={() => setViewMode('DAYS_LIST')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                viewMode === 'DAYS_LIST'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>View Papers ({papersCount})</span>
+              <CalendarDays className="w-3.5 h-3.5" />
+              <span>Days ({days.length})</span>
             </button>
-          )}
+
+            <button
+              onClick={() => setViewMode('DAY_EDITOR')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                viewMode === 'DAY_EDITOR'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Day {selectedDay} Setup</span>
+            </button>
+
+            {papersCount > 0 && (
+              <button
+                onClick={() => setViewMode('PAPER_VIEWER')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  viewMode === 'PAPER_VIEWER'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/60'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5 text-amber-600" />
+                <span>View Papers ({papersCount})</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
