@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { 
   CalendarDays, Plus, Search, Sliders, ScanLine, Download, Trash2, 
   Copy, Edit2, Calendar, Clock, BookOpen, AlertTriangle, ArrowRight, X, Check,
-  Archive, Loader2, FileDown, Sparkles, ClipboardPaste, Link2, Share2
+  Archive, Loader2, FileDown, Sparkles, ClipboardPaste, Link2, Share2, Zap
 } from 'lucide-react';
 
 import { TeacherMappingsModal } from './TeacherMappingsModal';
@@ -39,6 +39,7 @@ interface Props {
   ) => Promise<void> | void;
   onUpdateTeacherMappings: (newMappings: Record<string, string>) => void;
   onCreateNewCardDirect: () => void;
+  onOpenQuickMode?: () => void;
 }
 
 const STARTER_CLASSES = ['PLUS ONE', 'PLUS TWO', 'A1', 'A2', 'B1', 'B2', 'B3'];
@@ -54,7 +55,8 @@ export const TimetableManager: React.FC<Props> = ({
   onDeleteClassFromDay,
   onDuplicateClass,
   onUpdateTeacherMappings,
-  onCreateNewCardDirect
+  onCreateNewCardDirect,
+  onOpenQuickMode
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showMappingsModal, setShowMappingsModal] = useState(false);
@@ -326,6 +328,17 @@ export const TimetableManager: React.FC<Props> = ({
             Scan Image
           </button>
 
+
+          {onOpenQuickMode && (
+            <button
+              onClick={onOpenQuickMode}
+              className="px-3.5 py-1.5 text-xs font-black bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white flex items-center gap-1.5 shadow-sm transition-all"
+              title="Fast 3-step timetable creator at /admin/timetable/quick"
+            >
+              <Zap className="w-3.5 h-3.5 fill-white" />
+              <span>Quick Mode</span>
+            </button>
+          )}
 
           <button
             onClick={() => setShowAddDayModal(true)}

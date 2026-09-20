@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Loader2, ArrowLeft, Cloud, CloudCheck, RefreshCw } from 'lucide-react';
 import { TimetableManager } from './TimetableManager';
 import { TimetableEditor } from './TimetableEditor';
+import { QuickTimetableCreate } from './QuickTimetableCreate';
 import { 
   getTimetablesDataset, 
   saveTimetablesDataset, 
@@ -15,10 +16,18 @@ const LOCAL_STORAGE_MAPPINGS_KEY = 'aims_teacher_mappings_cache';
 
 interface Props {
   onBack?: () => void;
+  initialScreen?: 'manager' | 'editor' | 'quick';
 }
 
-export default function AdminTimetable({ onBack }: Props) {
-  const [screen, setScreen] = useState<'manager' | 'editor'>('manager');
+export default function AdminTimetable({ onBack, initialScreen }: Props) {
+  const isQuickUrl = typeof window !== 'undefined' && 
+    (window.location.pathname.includes('/timetable/quick') || window.location.pathname.includes('/admin/timetable/quick'));
+
+  const [screen, setScreen] = useState<'manager' | 'editor' | 'quick'>(() => {
+    if (initialScreen) return initialScreen;
+    if (isQuickUrl) return 'quick';
+    return 'manager';
+  });
 
   // Fast synchronous initial cache retrieval (0ms loading!)
   const [days, setDays] = useState<any[]>(() => {
@@ -146,6 +155,57 @@ export default function AdminTimetable({ onBack }: Props) {
     setSelectedClassName(classData.class_name);
     setSelectedClassData(classData);
     setScreen('editor');
+  };
+
+  const handleOpenQuickMode = () => {
+    setScreen('quick');
+    window.history.pushState(null, '', '/admin/timetable/quick');
+  };
+
+  const handleExitQuickMode = () => {
+    setScreen('manager');
+    window.history.pushState(null, '', '/admin/timetable');
+  };
+
+  const handleSaveQuickTimetables = async (
+    targetDate: string,
+    targetIso: string,
+    targetDayName: string,
+    newClasses: any[]
+  ) => {
+    const existingDayIdx = days.findIndex(d => d.date === targetDate);
+    let updatedDays = [...days];
+
+    if (existingDayIdx >= 0) {
+      const existingDay = updatedDays[existingDayIdx];
+      const classes = [...(existingDay.classes || [])];
+      
+      newClasses.forEach((nClass) => {
+        const cIdx = classes.findIndex(c => c.class_name === nClass.class_name);
+        if (cIdx >= 0) {
+          classes[cIdx] = nClass;
+        } else {
+          classes.push(nClass);
+        }
+      });
+
+      updatedDays[existingDayIdx] = {
+        ...existingDay,
+        date: targetDate,
+        isoDate: targetIso,
+        dayName: targetDayName,
+        classes
+      };
+    } else {
+      updatedDays.unshift({
+        date: targetDate,
+        isoDate: targetIso,
+        dayName: targetDayName,
+        classes: newClasses
+      });
+    }
+
+    await persistDays(updatedDays);
   };
 
   const handleCreateNewCardDirect = () => {
@@ -325,6 +385,18 @@ export default function AdminTimetable({ onBack }: Props) {
     );
   }
 
+  if (screen === 'quick') {
+    return (
+      <QuickTimetableCreate
+        onBack={handleExitQuickMode}
+        days={days}
+        teacherMappings={teacherMappings}
+        onUpdateTeacherMappings={persistTeacherMappings}
+        onSaveQuickTimetables={handleSaveQuickTimetables}
+      />
+    );
+  }
+
   if (screen === 'editor') {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -425,6 +497,7 @@ export default function AdminTimetable({ onBack }: Props) {
           onDuplicateClass={handleDuplicateClass}
           onUpdateTeacherMappings={persistTeacherMappings}
           onCreateNewCardDirect={handleCreateNewCardDirect}
+          onOpenQuickMode={handleOpenQuickMode}
         />
       </main>
     </div>

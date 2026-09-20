@@ -337,9 +337,21 @@ function resolveInitialView(): ViewState {
     return 'lab-aims-present';
   }
 
-  // 8. Timetable Routes (Canonical: /admin/timetable)
+  // 8. Timetable Routes (Canonical: /admin/timetable, Quick: /admin/timetable/quick)
   const rawPath = path || '';
   const normalizedPath = rawPath.toLowerCase().replace(/\/+$/, '') || '/';
+  if (
+    normalizedPath === '/admin/timetable/quick' ||
+    normalizedPath === '/timetable/quick' ||
+    normalizedPath.startsWith('/admin/timetable/quick') ||
+    normalizedPath.startsWith('/timetable/quick')
+  ) {
+    if (rawPath !== '/admin/timetable/quick') {
+      window.history.replaceState(null, '', '/admin/timetable/quick');
+    }
+    return 'lab-timetable';
+  }
+
   if (
     normalizedPath === '/admin/timetable' || 
     normalizedPath === '/timetable' ||
