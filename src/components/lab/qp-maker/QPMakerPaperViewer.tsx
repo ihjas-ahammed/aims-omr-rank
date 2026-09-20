@@ -370,247 +370,55 @@ export default function QPMakerPaperViewer({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] min-h-[620px] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fadeIn">
+    <div className="flex flex-col h-[calc(100dvh-110px)] sm:h-[calc(100vh-140px)] min-h-[460px] w-full max-w-full bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fadeIn min-w-0">
       {/* ========================================================================= */}
-      {/* 1. TOP STUDIO TOOLBAR (ICON-FIRST WITH MATERIAL ICONS)                    */}
+      {/* 1. TOP STUDIO TOOLBAR (RESPONSIVE TWO-TIER / DESKTOP ADAPTIVE)            */}
       {/* ========================================================================= */}
-      <div className="p-2.5 sm:px-4 border-b border-slate-200/90 bg-gradient-to-r from-slate-50 via-white to-slate-50 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
-        {/* Left: Paper Selector Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar max-w-full pb-1 sm:pb-0">
-          {papers.map((p, idx) => {
-            const batchCount = papers.filter((o) => o.batch === p.batch).length;
-            const isSingle =
-              p.hideSet || !p.set || p.set === 'None' || p.set.trim() === '' || batchCount <= 1;
-            const tabLabel = isSingle ? p.batch : `${p.batch} • ${p.set}`;
-            const isSel = idx === activePaperIdx;
-            const qCount =
-              p.sections?.reduce((s, sec) => s + (sec.questions?.length || 0), 0) || 0;
+      <div className="border-b border-slate-200/90 bg-gradient-to-r from-slate-50 via-white to-slate-50 shrink-0">
+        {/* Tier 1: Paper Tabs & Primary Actions */}
+        <div className="px-2.5 sm:px-4 py-2 flex items-center justify-between gap-2">
+          {/* Paper Selector Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar no-scrollbar flex-1 min-w-0 pr-1">
+            {papers.map((p, idx) => {
+              const batchCount = papers.filter((o) => o.batch === p.batch).length;
+              const isSingle =
+                p.hideSet || !p.set || p.set === 'None' || p.set.trim() === '' || batchCount <= 1;
+              const tabLabel = isSingle ? p.batch : `${p.batch} • ${p.set}`;
+              const isSel = idx === activePaperIdx;
+              const qCount =
+                p.sections?.reduce((s, sec) => s + (sec.questions?.length || 0), 0) || 0;
 
-            return (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => onSelectPaper(idx)}
-                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all ${
-                  isSel
-                    ? 'bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-600/30'
-                    : 'bg-white text-slate-700 hover:bg-slate-100/90 border border-slate-200/90 shadow-2xs hover:border-slate-300'
-                }`}
-              >
-                <MatIcon
-                  name="description"
-                  size={16}
-                  className={isSel ? 'text-indigo-200' : 'text-slate-400 group-hover:text-indigo-600'}
-                />
-                <span>{tabLabel}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-extrabold transition-colors ${
-                    isSel ? 'bg-indigo-700/90 text-indigo-100' : 'bg-slate-100 text-slate-500'
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => onSelectPaper(idx)}
+                  className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all shrink-0 ${
+                    isSel
+                      ? 'bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-600/30'
+                      : 'bg-white text-slate-700 hover:bg-slate-100/90 border border-slate-200/90 shadow-2xs hover:border-slate-300'
                   }`}
                 >
-                  {qCount}Q
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Mobile Segmented Toggle */}
-        <div className="flex md:hidden items-center bg-slate-200/80 p-0.5 rounded-xl text-xs font-bold w-full justify-center">
-          <button
-            type="button"
-            onClick={() => setMobileTab('preview')}
-            className={`flex-1 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-              mobileTab === 'preview'
-                ? 'bg-white text-indigo-600 shadow-xs font-extrabold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <MatIcon name="visibility" size={16} />
-            <span>Preview</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setMobileTab('questions')}
-            className={`flex-1 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-              mobileTab === 'questions'
-                ? 'bg-white text-indigo-600 shadow-xs font-extrabold'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <MatIcon name="format_list_bulleted" size={16} />
-            <span>Questions ({totalPaperQuestions})</span>
-          </button>
-        </div>
-
-        {/* Controls Toolbar Clusters */}
-        <div className="flex items-center gap-2 flex-wrap ml-auto">
-          {/* Cluster 1: Template & Code */}
-          <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-xl border border-slate-200 shadow-2xs">
-            <MatIcon name="palette" size={18} className="text-indigo-600" />
-            <select
-              value={currentTemplateId}
-              onChange={(e) => handleSwitchTemplate(e.target.value)}
-              className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer max-w-[130px] truncate"
-              title="Switch Dart CSS/HTML Design Template"
-            >
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} {t.isCustomized ? '(Custom)' : ''}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={() => {
-                const curT = templates.find((t) => t.id === currentTemplateId) || templates[0];
-                onOpenDesignEditor(curT);
-              }}
-              title="Edit Design HTML/CSS Permanently"
-              className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center"
-            >
-              <MatIcon name="code" size={16} />
-            </button>
-            <button
-              type="button"
-              onClick={onOpenDartSync}
-              title="Sync latest templates from Dart"
-              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center"
-            >
-              <MatIcon name="sync" size={16} />
-            </button>
+                  <MatIcon
+                    name="description"
+                    size={16}
+                    className={isSel ? 'text-indigo-200' : 'text-slate-400 group-hover:text-indigo-600'}
+                  />
+                  <span>{tabLabel}</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-md font-extrabold transition-colors ${
+                      isSel ? 'bg-indigo-700/90 text-indigo-100' : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {qCount}Q
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
-          {/* Cluster 2: Typography & LaTeX Scaling */}
-          <div className="hidden lg:flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
-            <MatIcon name="format_size" size={16} className="text-slate-500" title="Font Size" />
-            <select
-              value={currentFontSize}
-              onChange={(e) => handleSwitchFontSize(e.target.value)}
-              className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
-              title="Font Size"
-            >
-              {['10px', '11px', '12px', '13px', '14px', '15px', '16px', '18px'].map((sz) => (
-                <option key={sz} value={sz}>
-                  {sz}
-                </option>
-              ))}
-            </select>
-            <div className="w-px h-3.5 bg-slate-200 mx-0.5" />
-            <MatIcon name="functions" size={16} className="text-slate-500" title="LaTeX Size" />
-            <select
-              value={currentLatexSize}
-              onChange={(e) => handleSwitchLatexSize(e.target.value)}
-              className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
-              title="LaTeX Formula Scale"
-            >
-              {['80%', '85%', '90%', '95%', '100%', '105%', '110%', '120%', '130%'].map((ls) => (
-                <option key={ls} value={ls}>
-                  {ls}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Cluster 3: Layout Toggle Pills with Material Icons */}
-          <button
-            type="button"
-            onClick={() => handleToggleTwoCol(!currentTwoCol)}
-            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border ${
-              currentTwoCol
-                ? 'bg-indigo-50 border-indigo-300 text-indigo-700 shadow-2xs'
-                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-2xs'
-            }`}
-            title="Toggle Two-Column Newspaper Layout"
-          >
-            <MatIcon
-              name="view_column"
-              size={18}
-              className={currentTwoCol ? 'text-indigo-600' : 'text-slate-400'}
-            />
-            <span className="hidden xl:inline">2-Col</span>
-            <span
-              className={`w-2 h-2 rounded-full transition-colors ${
-                currentTwoCol ? 'bg-indigo-600' : 'bg-slate-300'
-              }`}
-            />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setDuplex(!duplex)}
-            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border ${
-              duplex
-                ? 'bg-indigo-50 border-indigo-300 text-indigo-700 shadow-2xs'
-                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-2xs'
-            }`}
-            title="Toggle 2-Up Duplex Sheet Printing"
-          >
-            <MatIcon
-              name="auto_stories"
-              size={18}
-              className={duplex ? 'text-indigo-600' : 'text-slate-400'}
-            />
-            <span className="hidden xl:inline">Duplex</span>
-            <span
-              className={`w-2 h-2 rounded-full transition-colors ${
-                duplex ? 'bg-indigo-600' : 'bg-slate-300'
-              }`}
-            />
-          </button>
-
-          {/* Cluster 4: Zoom Controls with Material Icons */}
-          <div className="hidden sm:flex items-center gap-0.5 bg-white px-1.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setZoomScale((prev) => Math.max(0.4, Math.round((prev - 0.05) * 100) / 100))}
-              disabled={zoomScale <= 0.4}
-              title="Zoom Out (-5%)"
-              className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-30 rounded-lg hover:bg-slate-100 transition-colors flex items-center justify-center"
-            >
-              <MatIcon name="zoom_out" size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={() => setZoomScale(1.0)}
-              title="Click to reset zoom to 100%"
-              className="text-xs font-bold text-slate-700 min-w-[42px] text-center hover:text-indigo-600 transition-colors"
-            >
-              {Math.round(zoomScale * 100)}%
-            </button>
-            <button
-              type="button"
-              onClick={() => setZoomScale((prev) => Math.min(1.6, Math.round((prev + 0.05) * 100) / 100))}
-              disabled={zoomScale >= 1.6}
-              title="Zoom In (+5%)"
-              className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-30 rounded-lg hover:bg-slate-100 transition-colors flex items-center justify-center"
-            >
-              <MatIcon name="zoom_in" size={18} />
-            </button>
-            {zoomScale !== 1.0 && (
-              <button
-                type="button"
-                onClick={() => setZoomScale(1.0)}
-                title="Reset Zoom to 100%"
-                className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center"
-              >
-                <MatIcon name="restart_alt" size={16} />
-              </button>
-            )}
-          </div>
-
-          {/* Desktop Full Canvas Toggle */}
-          <button
-            type="button"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="hidden md:flex p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl border border-slate-200 bg-white shadow-2xs transition-all"
-            title={sidebarCollapsed ? 'Show Questions Navigator' : 'Hide Questions Navigator (Full Canvas)'}
-          >
-            <MatIcon name={sidebarCollapsed ? 'fullscreen_exit' : 'fullscreen'} size={18} />
-          </button>
-
-          {/* Cluster 5: Action Triggers (Using Material Icons) */}
-          <div className="flex items-center gap-1">
+          {/* Action Triggers (Print, Copy, Download, New Tab) */}
+          <div className="flex items-center gap-1 shrink-0">
             <button
               type="button"
               onClick={handleOpenNewWindow}
@@ -650,10 +458,208 @@ export default function QPMakerPaperViewer({
               type="button"
               onClick={handlePrint}
               title="Print Question Paper"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-white bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-slate-800 hover:to-indigo-900 rounded-xl shadow-xs hover:shadow-sm transition-all active:scale-95 ml-0.5"
+              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 text-xs font-black text-white bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-slate-800 hover:to-indigo-900 rounded-xl shadow-xs hover:shadow-sm transition-all active:scale-95 ml-0.5"
             >
               <MatIcon name="print" size={18} className="text-indigo-300" />
-              <span>Print</span>
+              <span className="hidden sm:inline">Print</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Tier 2: Mobile Mode Switcher + Controls */}
+        <div className="px-2.5 sm:px-4 pb-2 flex flex-wrap items-center justify-between gap-2">
+          {/* Mobile Segmented Toggle (Preview vs Questions) */}
+          <div className="flex md:hidden items-center bg-slate-200/80 p-0.5 rounded-xl text-xs font-bold flex-1 min-w-[180px]">
+            <button
+              type="button"
+              onClick={() => setMobileTab('preview')}
+              className={`flex-1 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                mobileTab === 'preview'
+                  ? 'bg-white text-indigo-600 shadow-xs font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <MatIcon name="visibility" size={16} />
+              <span>Preview</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab('questions')}
+              className={`flex-1 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                mobileTab === 'questions'
+                  ? 'bg-white text-indigo-600 shadow-xs font-extrabold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <MatIcon name="format_list_bulleted" size={16} />
+              <span>Q&apos;s ({totalPaperQuestions})</span>
+            </button>
+          </div>
+
+          {/* Controls Cluster */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap ml-auto">
+            {/* Cluster 1: Template & Dart Sync */}
+            <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-xl border border-slate-200 shadow-2xs">
+              <MatIcon name="palette" size={16} className="text-indigo-600" />
+              <select
+                value={currentTemplateId}
+                onChange={(e) => handleSwitchTemplate(e.target.value)}
+                className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer max-w-[105px] sm:max-w-[130px] truncate"
+                title="Switch Dart CSS/HTML Design Template"
+              >
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} {t.isCustomized ? '(Custom)' : ''}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  const curT = templates.find((t) => t.id === currentTemplateId) || templates[0];
+                  onOpenDesignEditor(curT);
+                }}
+                title="Edit Design HTML/CSS Permanently"
+                className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center"
+              >
+                <MatIcon name="code" size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={onOpenDartSync}
+                title="Sync latest templates from Dart"
+                className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center"
+              >
+                <MatIcon name="sync" size={16} />
+              </button>
+            </div>
+
+            {/* Cluster 2: Typography & LaTeX Scaling (Desktop) */}
+            <div className="hidden lg:flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
+              <MatIcon name="format_size" size={16} className="text-slate-500" title="Font Size" />
+              <select
+                value={currentFontSize}
+                onChange={(e) => handleSwitchFontSize(e.target.value)}
+                className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
+                title="Font Size"
+              >
+                {['10px', '11px', '12px', '13px', '14px', '15px', '16px', '18px'].map((sz) => (
+                  <option key={sz} value={sz}>
+                    {sz}
+                  </option>
+                ))}
+              </select>
+              <div className="w-px h-3.5 bg-slate-200 mx-0.5" />
+              <MatIcon name="functions" size={16} className="text-slate-500" title="LaTeX Size" />
+              <select
+                value={currentLatexSize}
+                onChange={(e) => handleSwitchLatexSize(e.target.value)}
+                className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
+                title="LaTeX Formula Scale"
+              >
+                {['80%', '85%', '90%', '95%', '100%', '105%', '110%', '120%', '130%'].map((ls) => (
+                  <option key={ls} value={ls}>
+                    {ls}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Cluster 3: Layout Toggle Pills */}
+            <button
+              type="button"
+              onClick={() => handleToggleTwoCol(!currentTwoCol)}
+              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border ${
+                currentTwoCol
+                  ? 'bg-indigo-50 border-indigo-300 text-indigo-700 shadow-2xs'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-2xs'
+              }`}
+              title="Toggle Two-Column Newspaper Layout"
+            >
+              <MatIcon
+                name="view_column"
+                size={18}
+                className={currentTwoCol ? 'text-indigo-600' : 'text-slate-400'}
+              />
+              <span className="hidden xl:inline">2-Col</span>
+              <span
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  currentTwoCol ? 'bg-indigo-600' : 'bg-slate-300'
+                }`}
+              />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDuplex(!duplex)}
+              className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all border ${
+                duplex
+                  ? 'bg-indigo-50 border-indigo-300 text-indigo-700 shadow-2xs'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-2xs'
+              }`}
+              title="Toggle 2-Up Duplex Sheet Printing"
+            >
+              <MatIcon
+                name="auto_stories"
+                size={18}
+                className={duplex ? 'text-indigo-600' : 'text-slate-400'}
+              />
+              <span className="hidden xl:inline">Duplex</span>
+              <span
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  duplex ? 'bg-indigo-600' : 'bg-slate-300'
+                }`}
+              />
+            </button>
+
+            {/* Cluster 4: Zoom Controls (hidden on mobile, touch pinch is used there) */}
+            <div className="hidden sm:flex items-center gap-0.5 bg-white px-1.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => setZoomScale((prev) => Math.max(0.4, Math.round((prev - 0.05) * 100) / 100))}
+                disabled={zoomScale <= 0.4}
+                title="Zoom Out (-5%)"
+                className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-30 rounded-lg hover:bg-slate-100 transition-colors flex items-center justify-center"
+              >
+                <MatIcon name="zoom_out" size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoomScale(1.0)}
+                title="Click to reset zoom to 100%"
+                className="text-xs font-bold text-slate-700 min-w-[42px] text-center hover:text-indigo-600 transition-colors"
+              >
+                {Math.round(zoomScale * 100)}%
+              </button>
+              <button
+                type="button"
+                onClick={() => setZoomScale((prev) => Math.min(1.6, Math.round((prev + 0.05) * 100) / 100))}
+                disabled={zoomScale >= 1.6}
+                title="Zoom In (+5%)"
+                className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-30 rounded-lg hover:bg-slate-100 transition-colors flex items-center justify-center"
+              >
+                <MatIcon name="zoom_in" size={18} />
+              </button>
+              {zoomScale !== 1.0 && (
+                <button
+                  type="button"
+                  onClick={() => setZoomScale(1.0)}
+                  title="Reset Zoom to 100%"
+                  className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  <MatIcon name="restart_alt" size={16} />
+                </button>
+              )}
+            </div>
+
+            {/* Desktop Full Canvas Toggle */}
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="hidden md:flex p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl border border-slate-200 bg-white shadow-2xs transition-all"
+              title={sidebarCollapsed ? 'Show Questions Navigator' : 'Hide Questions Navigator (Full Canvas)'}
+            >
+              <MatIcon name={sidebarCollapsed ? 'fullscreen_exit' : 'fullscreen'} size={18} />
             </button>
           </div>
         </div>
@@ -910,7 +916,7 @@ export default function QPMakerPaperViewer({
                                 </div>
                               </div>
 
-                              <p className="text-xs text-slate-700 line-clamp-2 pl-4 leading-relaxed font-normal">
+                              <p className="text-xs text-slate-700 line-clamp-2 pl-4 leading-relaxed font-normal break-words">
                                 {q.text.replace(/<[^>]*>?/gm, '')}
                               </p>
                             </div>
@@ -940,7 +946,7 @@ export default function QPMakerPaperViewer({
         <div
           className={`${
             mobileTab === 'preview' ? 'flex flex-1' : 'hidden md:flex md:flex-1'
-          } bg-gradient-to-br from-slate-100 via-slate-200/60 to-slate-100 p-2 sm:p-4 overflow-hidden flex-col items-center justify-center relative`}
+          } bg-gradient-to-br from-slate-100 via-slate-200/60 to-slate-100 p-1.5 sm:p-4 overflow-hidden flex-col items-center justify-center relative`}
         >
           {/* Subtle Paper Status Pill with Material Icons */}
           <div className="absolute top-3 left-4 z-10 hidden sm:flex items-center gap-2 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full border border-slate-300/70 shadow-xs text-[11px] font-bold text-slate-700">
@@ -955,12 +961,12 @@ export default function QPMakerPaperViewer({
             </span>
           </div>
 
-          <div className="w-full h-full pt-6 sm:pt-7 flex items-center justify-center">
+          <div className="w-full h-full pt-0 sm:pt-7 flex items-center justify-center">
             <iframe
               id="qp-preview-iframe"
               srcDoc={compiledHtml}
               title="Question Paper Live Preview"
-              className="w-full h-full rounded-2xl border border-slate-300/80 shadow-2xl bg-white transition-all"
+              className="w-full h-full rounded-xl sm:rounded-2xl border border-slate-300/80 shadow-2xl bg-white transition-all"
             />
           </div>
         </div>

@@ -369,28 +369,28 @@ export default function QPMakerForm({
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn pb-16 max-w-7xl mx-auto">
+    <div className="space-y-6 animate-fadeIn pb-16 w-full max-w-7xl mx-auto min-w-0 overflow-x-hidden">
       {/* ------------------------------------------------------------- */}
       {/* TOP ACTION HEADER & EXAM READINESS HUD */}
       {/* ------------------------------------------------------------- */}
-      <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="px-3.5 py-1.5 text-xs font-black bg-indigo-600 text-white rounded-xl shadow-xs">
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-4 min-w-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 min-w-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <span className="px-3.5 py-1.5 text-xs font-black bg-indigo-600 text-white rounded-xl shadow-xs shrink-0">
               Day {dayNum}
             </span>
-            <div>
-              <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-                <span>{data.subtitle || 'Daily Examination'}</span>
-                <span className="text-xs font-bold text-slate-400 font-mono">({data.date || 'No Date'})</span>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight flex items-center gap-2 min-w-0">
+                <span className="truncate">{data.subtitle || 'Daily Examination'}</span>
+                <span className="text-xs font-bold text-slate-400 font-mono shrink-0">({data.date || 'No Date'})</span>
               </h3>
-              <p className="text-xs text-slate-500 font-medium">
+              <p className="text-xs text-slate-500 font-medium truncate">
                 Structured Question Paper Generator with Dart Engine &amp; Multi-Set Compiler
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
             <button
               type="button"
               onClick={onSaveDay}
@@ -419,15 +419,15 @@ export default function QPMakerForm({
 
         {/* Real-time Readiness Scorecard (Goal Gradient Effect) */}
         <div className="pt-3 border-t border-slate-100 space-y-2.5">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-            <span className="flex items-center gap-1.5">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-700 gap-2">
+            <span className="flex items-center gap-1.5 shrink-0">
               <MatIcon name="shield" size={18} className="text-indigo-600" />
               <span>Blueprint Readiness ({readinessPercent}%)</span>
             </span>
-            <span className="text-[11px] font-medium text-slate-500">
+            <span className="text-[11px] font-medium text-slate-500 truncate text-right">
               {readinessPercent === 100
-                ? '✓ All parameters verified and ready for generation'
-                : 'Complete the milestones below for optimal output'}
+                ? '✓ Ready for generation'
+                : 'Complete milestones below'}
             </span>
           </div>
 
@@ -448,92 +448,92 @@ export default function QPMakerForm({
             {/* 1. Exam Info */}
             <div
               onClick={() => setActivePhase('BLUEPRINT')}
-              className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all ${
+              className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all min-w-0 ${
                 milestoneExamInfo
                   ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
                   : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-indigo-300'
               }`}
             >
-              <span className="flex items-center gap-1.5 truncate">
+              <span className="flex items-center gap-1.5 truncate min-w-0 pr-1">
                 <MatIcon name="event_note" size={16} />
                 <span className="truncate">1. Basics</span>
               </span>
               <MatIcon
                 name={milestoneExamInfo ? 'check_circle' : 'radio_button_unchecked'}
                 size={16}
-                className={milestoneExamInfo ? 'text-emerald-600' : 'text-slate-300'}
+                className={milestoneExamInfo ? 'text-emerald-600 shrink-0' : 'text-slate-300 shrink-0'}
               />
             </div>
 
             {/* 2. Marks Balance */}
             <div
               onClick={() => setActivePhase('BLUEPRINT')}
-              className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all ${
+              className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all min-w-0 ${
                 milestoneMarks
                   ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
                   : 'bg-amber-50/70 border-amber-200 text-amber-900 hover:border-amber-400'
               }`}
             >
-              <span className="flex items-center gap-1.5 truncate">
+              <span className="flex items-center gap-1.5 truncate min-w-0 pr-1">
                 <MatIcon name="balance" size={16} />
                 <span className="truncate">2. Marks ({defaultAllocatedMarks}/{targetTotalMarksNum})</span>
               </span>
               <MatIcon
                 name={milestoneMarks ? 'check_circle' : 'warning'}
                 size={16}
-                className={milestoneMarks ? 'text-emerald-600' : 'text-amber-500'}
+                className={milestoneMarks ? 'text-emerald-600 shrink-0' : 'text-amber-500 shrink-0'}
               />
             </div>
 
             {/* 3. Target Papers */}
             <div
               onClick={() => setActivePhase('BLUEPRINT')}
-              className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all ${
+              className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all min-w-0 ${
                 milestoneTargets
                   ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
                   : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-indigo-300'
               }`}
             >
-              <span className="flex items-center gap-1.5 truncate">
+              <span className="flex items-center gap-1.5 truncate min-w-0 pr-1">
                 <MatIcon name="groups" size={16} />
                 <span className="truncate">3. Targets ({targetPapersList.length}P)</span>
               </span>
               <MatIcon
                 name={milestoneTargets ? 'check_circle' : 'radio_button_unchecked'}
                 size={16}
-                className={milestoneTargets ? 'text-emerald-600' : 'text-slate-300'}
+                className={milestoneTargets ? 'text-emerald-600 shrink-0' : 'text-slate-300 shrink-0'}
               />
             </div>
 
             {/* 4. Sources */}
             <div
               onClick={() => setActivePhase('SOURCES')}
-              className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all ${
+              className={`p-2 rounded-xl border text-xs font-bold flex items-center justify-between cursor-pointer transition-all min-w-0 ${
                 milestoneSources
                   ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
                   : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-indigo-300'
               }`}
             >
-              <span className="flex items-center gap-1.5 truncate">
+              <span className="flex items-center gap-1.5 truncate min-w-0 pr-1">
                 <MatIcon name="folder_open" size={16} />
                 <span className="truncate">4. Sources ({totalMaterials})</span>
               </span>
               <MatIcon
                 name={milestoneSources ? 'check_circle' : 'radio_button_unchecked'}
                 size={16}
-                className={milestoneSources ? 'text-emerald-600' : 'text-slate-300'}
+                className={milestoneSources ? 'text-emerald-600 shrink-0' : 'text-slate-300 shrink-0'}
               />
             </div>
           </div>
         </div>
 
         {/* Phase Navigation Tabs (Hick's Law / Progressive Disclosure) */}
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 overflow-x-auto custom-scrollbar">
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl">
+        <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-1 sm:gap-1.5 p-1 bg-slate-100 rounded-2xl overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => setActivePhase('BLUEPRINT')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${
                 activePhase === 'BLUEPRINT'
                   ? 'bg-white text-indigo-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -549,7 +549,7 @@ export default function QPMakerForm({
             <button
               type="button"
               onClick={() => setActivePhase('SOURCES')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${
                 activePhase === 'SOURCES'
                   ? 'bg-white text-indigo-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -565,7 +565,7 @@ export default function QPMakerForm({
             <button
               type="button"
               onClick={() => setActivePhase('DESIGN')}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${
                 activePhase === 'DESIGN'
                   ? 'bg-white text-indigo-700 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -579,7 +579,7 @@ export default function QPMakerForm({
           <button
             type="button"
             onClick={() => setActivePhase(activePhase === 'ALL' ? 'BLUEPRINT' : 'ALL')}
-            className={`flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors whitespace-nowrap ${
+            className={`flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors whitespace-nowrap ${
               activePhase === 'ALL'
                 ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
@@ -908,19 +908,19 @@ export default function QPMakerForm({
                   <div className="space-y-3">
                     {/* Live Balance Banner */}
                     <div
-                      className={`p-3 rounded-2xl border flex items-center justify-between gap-2 text-xs font-bold ${
+                      className={`p-3 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-bold ${
                         isDefaultBalanced
                           ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
                           : 'bg-amber-50 text-amber-900 border-amber-200'
                       }`}
                     >
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-1.5 min-w-0">
                         <MatIcon
                           name={isDefaultBalanced ? 'check_circle' : 'warning'}
                           size={18}
                           className={isDefaultBalanced ? 'text-emerald-600 shrink-0' : 'text-amber-600 shrink-0'}
                         />
-                        <span>
+                        <span className="truncate">
                           {isDefaultBalanced
                             ? `Marks Balanced: ${defaultAllocatedMarks} / ${targetTotalMarksNum} Marks`
                             : `Marks Mismatch: Subjects sum to ${defaultAllocatedMarks} vs Target ${targetTotalMarksNum}`}
@@ -930,7 +930,7 @@ export default function QPMakerForm({
                         <button
                           type="button"
                           onClick={() => onUpdate({ totalMarks: String(defaultAllocatedMarks) })}
-                          className="flex items-center gap-1 px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-extrabold rounded-lg shadow-2xs transition-colors shrink-0"
+                          className="flex items-center justify-center gap-1 px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-extrabold rounded-lg shadow-2xs transition-colors shrink-0"
                         >
                           <MatIcon name="sync" size={12} />
                           <span>Auto-Sync Target</span>
@@ -940,7 +940,7 @@ export default function QPMakerForm({
 
                     <div className="space-y-2">
                       {(data.subjectDivisions || []).map((sub, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
+                        <div key={idx} className="flex items-center gap-2 min-w-0">
                           <input
                             type="text"
                             value={sub.subject}
@@ -950,7 +950,7 @@ export default function QPMakerForm({
                               onUpdate({ subjectDivisions: updated });
                             }}
                             placeholder="Subject Name (e.g. Physics)"
-                            className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600"
+                            className="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold outline-none focus:border-indigo-600"
                           />
                           <input
                             type="text"
@@ -961,7 +961,7 @@ export default function QPMakerForm({
                               onUpdate({ subjectDivisions: updated });
                             }}
                             placeholder="Marks"
-                            className="w-20 px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-center outline-none focus:border-indigo-600"
+                            className="w-16 sm:w-20 shrink-0 px-2 sm:px-3 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-bold text-center outline-none focus:border-indigo-600"
                           />
                           {data.subjectDivisions.length > 1 && (
                             <button
@@ -970,7 +970,7 @@ export default function QPMakerForm({
                                 const updated = data.subjectDivisions.filter((_, i) => i !== idx);
                                 onUpdate({ subjectDivisions: updated });
                               }}
-                              className="p-2 text-slate-400 hover:text-rose-600 rounded-xl transition-colors flex items-center justify-center"
+                              className="p-2 text-slate-400 hover:text-rose-600 rounded-xl transition-colors flex items-center justify-center shrink-0"
                               title="Delete Subject"
                             >
                               <MatIcon name="delete" size={18} />
@@ -992,16 +992,16 @@ export default function QPMakerForm({
 
                     return (
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between p-3 bg-purple-50/70 border border-purple-200 rounded-2xl">
-                          <div>
-                            <span className="text-xs font-bold text-purple-900 block">
+                        <div className="flex items-center justify-between p-3 bg-purple-50/70 border border-purple-200 rounded-2xl gap-2">
+                          <div className="min-w-0 flex-1">
+                            <span className="text-xs font-bold text-purple-900 block truncate">
                               Custom Marks for Batch {selectedDivisionClass}
                             </span>
-                            <span className="text-[11px] text-purple-700">
+                            <span className="text-[11px] text-purple-700 block truncate">
                               Override subject divisions specifically for this batch
                             </span>
                           </div>
-                          <label className="relative inline-flex items-center cursor-pointer">
+                          <label className="relative inline-flex items-center cursor-pointer shrink-0">
                             <input
                               type="checkbox"
                               checked={isEnabled}
@@ -1030,7 +1030,7 @@ export default function QPMakerForm({
                         {isEnabled && (
                           <div className="space-y-2 pt-1">
                             <div className="flex items-center gap-2">
-                              <label className="text-xs font-bold text-slate-700">Batch Max Marks:</label>
+                              <label className="text-xs font-bold text-slate-700 shrink-0">Batch Max Marks:</label>
                               <input
                                 type="text"
                                 value={clsConfig.maxMarks}
@@ -1045,12 +1045,12 @@ export default function QPMakerForm({
                                     }
                                   });
                                 }}
-                                className="w-24 px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-bold outline-none"
+                                className="w-20 sm:w-24 px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-bold outline-none"
                               />
                             </div>
 
                             {(clsConfig.subjects || []).map((sub: SubjectDivision, idx: number) => (
-                              <div key={idx} className="flex items-center gap-2">
+                              <div key={idx} className="flex items-center gap-2 min-w-0">
                                 <input
                                   type="text"
                                   value={sub.subject}
@@ -1065,7 +1065,7 @@ export default function QPMakerForm({
                                     });
                                   }}
                                   placeholder="Subject"
-                                  className="flex-1 px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-semibold outline-none"
+                                  className="flex-1 min-w-0 px-3 py-1.5 border border-slate-300 rounded-xl text-xs font-semibold outline-none"
                                 />
                                 <input
                                   type="text"
@@ -1081,7 +1081,7 @@ export default function QPMakerForm({
                                     });
                                   }}
                                   placeholder="Marks"
-                                  className="w-16 px-2 py-1.5 border border-slate-300 rounded-xl text-xs font-bold text-center outline-none"
+                                  className="w-16 shrink-0 px-2 py-1.5 border border-slate-300 rounded-xl text-xs font-bold text-center outline-none"
                                 />
                               </div>
                             ))}
@@ -1159,18 +1159,18 @@ export default function QPMakerForm({
                       <MatIcon name="tune" size={12} />
                       <span>Add Custom Variant:</span>
                     </span>
-                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <input
                         type="text"
                         value={newBatch}
                         onChange={(e) => setNewBatch(e.target.value.toUpperCase())}
                         placeholder="Batch (e.g. B1)"
-                        className="w-full sm:w-32 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold outline-none uppercase"
+                        className="w-full sm:w-28 md:w-32 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold outline-none uppercase shrink-0"
                       />
                       <select
                         value={newSelectedSet}
                         onChange={(e) => setNewSelectedSet(e.target.value)}
-                        className="w-full sm:w-36 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold outline-none"
+                        className="w-full sm:w-32 md:w-36 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold outline-none shrink-0"
                       >
                         {['Set A', 'Set B', 'Set C', 'Set D', 'Set E', 'Single Set (No Set)', 'Custom...'].map((s) => (
                           <option key={s} value={s}>
@@ -1184,7 +1184,7 @@ export default function QPMakerForm({
                           value={customSet}
                           onChange={(e) => setCustomSet(e.target.value)}
                           placeholder="Custom Set Name"
-                          className="w-full sm:w-32 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold outline-none"
+                          className="w-full sm:flex-1 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold outline-none min-w-0"
                         />
                       )}
                       <button
@@ -1205,7 +1205,7 @@ export default function QPMakerForm({
                           }
                           setCustomSet('');
                         }}
-                        className="flex items-center gap-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs shrink-0"
+                        className="w-full sm:w-auto flex items-center justify-center gap-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs shrink-0"
                       >
                         <MatIcon name="add" size={16} />
                         <span>Add Target</span>
@@ -1228,11 +1228,11 @@ export default function QPMakerForm({
           </div>
 
           {/* Phase 1 Footer Action */}
-          <div className="pt-4 flex items-center justify-between">
+          <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
             <button
               type="button"
               onClick={onSaveDay}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
             >
               <MatIcon name="save" size={16} />
               <span>Save Draft</span>
@@ -1240,7 +1240,7 @@ export default function QPMakerForm({
             <button
               type="button"
               onClick={() => switchPhase('SOURCES')}
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md transition-all"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md transition-all"
             >
               <span>Next: Question Sources &amp; Materials ({totalMaterials})</span>
               <MatIcon name="arrow_forward" size={16} />
@@ -1488,11 +1488,11 @@ export default function QPMakerForm({
           </div>
 
           {/* Phase 2 Footer Actions */}
-          <div className="pt-4 flex items-center justify-between">
+          <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
             <button
               type="button"
               onClick={() => switchPhase('BLUEPRINT')}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
             >
               <MatIcon name="arrow_back" size={16} />
               <span>Back to Blueprint</span>
@@ -1500,7 +1500,7 @@ export default function QPMakerForm({
             <button
               type="button"
               onClick={() => switchPhase('DESIGN')}
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md transition-all"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md transition-all"
             >
               <span>Next: Design &amp; Launchpad</span>
               <MatIcon name="arrow_forward" size={16} />
@@ -1735,11 +1735,11 @@ export default function QPMakerForm({
           </div>
 
           {/* Phase 3 Footer Actions */}
-          <div className="pt-4 flex items-center justify-between">
+          <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
             <button
               type="button"
               onClick={() => switchPhase('SOURCES')}
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+              className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
             >
               <MatIcon name="arrow_back" size={16} />
               <span>Back to Sources</span>
@@ -1747,7 +1747,7 @@ export default function QPMakerForm({
             <button
               type="button"
               onClick={onSaveDay}
-              className="flex items-center gap-1.5 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+              className="flex items-center justify-center gap-1.5 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
             >
               <MatIcon name="save" size={16} />
               <span>Save Day</span>

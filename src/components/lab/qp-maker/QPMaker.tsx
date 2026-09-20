@@ -527,38 +527,38 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
   const papersCount = (currentData.generatedPapers || []).length;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5 pb-16 px-2 sm:px-4">
+    <div className="w-full max-w-7xl mx-auto space-y-5 pb-16 px-1.5 sm:px-4 overflow-x-hidden">
       {/* Top Main Navigation Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-1">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-1 w-full min-w-0">
         {/* Title & Back */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5 min-w-0 max-w-full">
           <button
             onClick={onBack}
-            className="p-2 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 bg-white shadow-xs text-slate-700 flex items-center justify-center"
+            className="p-2 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 bg-white shadow-xs text-slate-700 flex items-center justify-center shrink-0"
             title="Return to Lab"
           >
             <MatIcon name="arrow_back" size={20} />
           </button>
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white rounded-2xl shadow-sm flex items-center justify-center">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="p-2 sm:p-2.5 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white rounded-2xl shadow-sm flex items-center justify-center shrink-0">
               <MatIcon name="menu_book" size={22} className="text-white" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <h2 className="text-base sm:text-xl font-black text-slate-900 tracking-tight truncate">
                   Question Paper Studio
                 </h2>
                 <button
                   type="button"
                   onClick={() => setDartSyncModalOpen(true)}
-                  className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-black bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-full border border-indigo-200 transition-colors"
+                  className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-black bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-full border border-indigo-200 transition-colors shrink-0"
                   title="View & sync Dart-ported question paper templates"
                 >
                   <MatIcon name="auto_awesome" size={14} className="text-indigo-500" />
                   <span>{templates.length} Templates</span>
                 </button>
               </div>
-              <p className="text-xs text-slate-500 font-medium">
+              <p className="text-[11px] sm:text-xs text-slate-500 font-medium truncate">
                 Structured Question Paper Generator &amp; Multi-Set Compiler
               </p>
             </div>
@@ -566,10 +566,10 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
         </div>
 
         {/* View Mode Switcher & Day Selector */}
-        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-end">
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-start sm:justify-end min-w-0">
           {/* Direct Day Selector Dropdown when in Editor or Viewer */}
           {days.length > 1 && viewMode !== 'DAYS_LIST' && (
-            <div className="flex items-center gap-1 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="flex items-center gap-1 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs shrink-0">
               <MatIcon name="calendar_month" size={16} className="text-indigo-600 shrink-0" />
               <select
                 value={selectedDay}
@@ -590,10 +590,10 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
           )}
 
           {/* View Mode Switcher Pills */}
-          <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-2xs">
+          <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-slate-200 shadow-2xs overflow-x-auto max-w-full">
             <button
               onClick={() => setViewMode('DAYS_LIST')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
                 viewMode === 'DAYS_LIST'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -607,7 +607,7 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
 
             <button
               onClick={() => setViewMode('DAY_EDITOR')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
                 viewMode === 'DAY_EDITOR'
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -621,7 +621,7 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
             {papersCount > 0 && (
               <button
                 onClick={() => setViewMode('PAPER_VIEWER')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
                   viewMode === 'PAPER_VIEWER'
                     ? 'bg-amber-600 text-white shadow-xs'
                     : 'text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/60'
