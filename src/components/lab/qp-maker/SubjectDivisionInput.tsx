@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import MatIcon from './MatIcon';
 import { SubjectDivision } from './types';
 
 interface Props {
@@ -20,7 +20,7 @@ export default function SubjectDivisionInput({ divisions, onChange }: Props) {
     onChange(divisions.map(d => d.id === id ? { ...d, [field]: value } : d));
   };
 
-  const subjects =['Physics', 'Chemistry', 'Mathematics', 'Biology', 'Botany', 'Zoology', 'General'];
+  const subjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'Botany', 'Zoology', 'General'];
 
   return (
     <div className="space-y-3">
@@ -49,7 +49,7 @@ export default function SubjectDivisionInput({ divisions, onChange }: Props) {
               className="p-2.5 sm:p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors border border-gray-200 sm:border-transparent bg-white sm:bg-transparent"
               title="Remove Subject"
             >
-              <Trash2 className="w-5 h-5 sm:w-4 sm:h-4" />
+              <MatIcon name="delete" size={18} />
             </button>
           </div>
         </div>
@@ -58,7 +58,8 @@ export default function SubjectDivisionInput({ divisions, onChange }: Props) {
         onClick={handleAdd} 
         className="flex items-center justify-center sm:justify-start gap-1 w-full sm:w-auto px-4 py-2.5 sm:p-0 text-sm text-indigo-600 hover:text-indigo-800 font-bold sm:font-medium bg-indigo-50 sm:bg-transparent rounded-lg transition-colors"
       >
-        <Plus className="w-4 h-4" /> Add Subject
+        <MatIcon name="add" size={16} />
+        <span>Add Subject</span>
       </button>
     </div>
   );

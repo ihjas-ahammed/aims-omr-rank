@@ -1,14 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  ArrowLeft,
-  CalendarDays,
-  Sliders,
-  BookOpen,
-  FileText,
-  Sparkles,
-  RefreshCw,
-  CheckCircle2
-} from 'lucide-react';
+import MatIcon from './MatIcon';
 import { format } from 'date-fns';
 import {
   QPMakerDayData,
@@ -543,14 +534,14 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="p-2 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 bg-white shadow-xs text-slate-700"
+            className="p-2 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 bg-white shadow-xs text-slate-700 flex items-center justify-center"
             title="Return to Lab"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <MatIcon name="arrow_back" size={20} />
           </button>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white rounded-2xl shadow-sm">
-              <FileText className="w-5 h-5" />
+            <div className="p-2.5 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white rounded-2xl shadow-sm flex items-center justify-center">
+              <MatIcon name="menu_book" size={22} className="text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -563,7 +554,7 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
                   className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-black bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-full border border-indigo-200 transition-colors"
                   title="View & sync Dart-ported question paper templates"
                 >
-                  <Sparkles className="w-3 h-3 text-indigo-500" />
+                  <MatIcon name="auto_awesome" size={14} className="text-indigo-500" />
                   <span>{templates.length} Templates</span>
                 </button>
               </div>
@@ -579,7 +570,7 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
           {/* Direct Day Selector Dropdown when in Editor or Viewer */}
           {days.length > 1 && viewMode !== 'DAYS_LIST' && (
             <div className="flex items-center gap-1 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
-              <CalendarDays className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <MatIcon name="calendar_month" size={16} className="text-indigo-600 shrink-0" />
               <select
                 value={selectedDay}
                 onChange={(e) => {
@@ -607,9 +598,11 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
+              title="Exam Days List"
             >
-              <CalendarDays className="w-3.5 h-3.5" />
-              <span>Days ({days.length})</span>
+              <MatIcon name="calendar_view_day" size={16} />
+              <span className="hidden sm:inline">Days</span>
+              <span>({days.length})</span>
             </button>
 
             <button
@@ -619,9 +612,10 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
                   ? 'bg-indigo-600 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
+              title={`Day ${selectedDay} Configuration`}
             >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>Day {selectedDay} Setup</span>
+              <MatIcon name="tune" size={16} />
+              <span>Day {selectedDay}</span>
             </button>
 
             {papersCount > 0 && (
@@ -632,9 +626,11 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
                     ? 'bg-amber-600 text-white shadow-xs'
                     : 'text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/60'
                 }`}
+                title="View Generated Question Papers"
               >
-                <BookOpen className="w-3.5 h-3.5 text-amber-600" />
-                <span>View Papers ({papersCount})</span>
+                <MatIcon name="description" size={16} className="text-amber-600" />
+                <span className="hidden sm:inline">Papers</span>
+                <span>({papersCount})</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               </button>
             )}

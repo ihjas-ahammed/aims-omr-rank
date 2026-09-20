@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Download, Printer } from 'lucide-react';
+import MatIcon from './MatIcon';
 
 interface QPPreviewModalProps {
   filename: string;
@@ -41,18 +41,18 @@ export default function QPPreviewModal({ filename, htmlContent, onClose }: QPPre
               onClick={handlePrint}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
             >
-              <Printer className="w-4 h-4" />
+              <MatIcon name="print" size={18} />
               <span className="hidden sm:inline">Print</span>
             </button>
             <button
               onClick={handleDownload}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors text-sm font-medium"
             >
-              <Download className="w-4 h-4" />
+              <MatIcon name="download" size={18} />
               <span className="hidden sm:inline">Download</span>
             </button>
             <button onClick={onClose} className="p-1.5 text-gray-500 hover:bg-gray-200 rounded-full transition-colors ml-2">
-              <X className="w-5 h-5" />
+              <MatIcon name="close" size={20} />
             </button>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutTemplate, CheckCircle2 } from 'lucide-react';
+import MatIcon from './MatIcon';
 import { QP_TEMPLATES } from './constants';
 
 interface Props {
@@ -11,7 +11,8 @@ export default function QPMakerTemplateSelector({ selectedId, onSelect }: Props)
   return (
     <div className="p-4 md:p-6 border-b border-gray-200">
       <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-        <LayoutTemplate className="w-5 h-5 text-indigo-600" /> Template Design
+        <MatIcon name="palette" size={20} className="text-indigo-600" />
+        <span>Template Design</span>
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {QP_TEMPLATES.map(template => (
@@ -28,7 +29,7 @@ export default function QPMakerTemplateSelector({ selectedId, onSelect }: Props)
               <h4 className={`font-bold ${selectedId === template.id ? 'text-indigo-900' : 'text-gray-800'}`}>
                 {template.name}
               </h4>
-              {selectedId === template.id && <CheckCircle2 className="w-5 h-5 text-indigo-600" />}
+              {selectedId === template.id && <MatIcon name="check_circle" size={20} className="text-indigo-600" />}
             </div>
             <p className="text-xs text-gray-500 leading-relaxed">{template.description}</p>
           </div>

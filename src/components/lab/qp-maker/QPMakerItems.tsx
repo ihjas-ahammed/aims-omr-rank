@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Upload, Type, Plus } from 'lucide-react';
+import MatIcon from './MatIcon';
 import { QPMakerDayData } from './types';
 import QPMakerImageCard from './QPMakerImageCard';
 import QPMakerTextCard from './QPMakerTextCard';
@@ -19,14 +19,15 @@ export default function QPMakerItems({ data, onFileUpload, onAddText, onRemoveIt
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFileUpload(e);
     if (fileInputRef.current) fileInputRef.current.value = '';
-  }
+  };
 
   return (
     <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50/30">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
         <div>
           <h3 className="font-bold text-gray-900 flex items-center gap-2">
-            <Plus className="w-5 h-5 text-indigo-600" /> Source Materials
+            <MatIcon name="folder_open" size={22} className="text-indigo-600" />
+            <span>Source Materials</span>
           </h3>
           <p className="text-xs text-gray-500 mt-1">Add images or text blocks containing your raw questions.</p>
         </div>
@@ -35,13 +36,15 @@ export default function QPMakerItems({ data, onFileUpload, onAddText, onRemoveIt
             onClick={onAddText}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-white border border-gray-300 text-gray-700 rounded-lg font-bold sm:font-medium hover:bg-gray-50 transition-colors shadow-sm text-sm"
           >
-            <Type className="w-4 h-4" /> Add Text
+            <MatIcon name="post_add" size={18} />
+            <span>Add Text</span>
           </button>
           <button 
             onClick={() => fileInputRef.current?.click()}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg font-bold sm:font-medium hover:bg-indigo-100 transition-colors shadow-sm text-sm"
           >
-            <Upload className="w-4 h-4" /> Add Images
+            <MatIcon name="add_photo_alternate" size={18} />
+            <span>Add Images</span>
           </button>
           <input 
             type="file" 
@@ -58,8 +61,7 @@ export default function QPMakerItems({ data, onFileUpload, onAddText, onRemoveIt
         {data.items.length === 0 ? (
           <div className="text-center py-10 bg-white border-2 border-dashed border-gray-200 rounded-xl">
             <div className="flex justify-center gap-2 mb-2 text-gray-300">
-              <Upload className="w-6 h-6" />
-              <Type className="w-6 h-6" />
+              <MatIcon name="cloud_upload" size={32} />
             </div>
             <p className="text-sm font-medium text-gray-500">No source materials added yet.</p>
           </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trash2, Type } from 'lucide-react';
+import MatIcon from './MatIcon';
 import { QPItem } from './types';
 
 interface QPMakerTextCardProps {
@@ -18,15 +18,16 @@ export default function QPMakerTextCard({ itemData, index, onRemove, onUpdateDes
       </div>
       <button 
         onClick={() => onRemove(itemData.id)}
-        className="absolute top-2 right-2 bg-red-50 text-red-500 p-1.5 rounded-full hover:bg-red-100 transition-colors z-10"
+        className="absolute top-2 right-2 bg-red-50 text-red-500 p-1.5 rounded-full hover:bg-red-100 transition-colors z-10 flex items-center justify-center"
         title="Remove Text Block"
       >
-        <Trash2 className="w-4 h-4" />
+        <MatIcon name="delete" size={16} />
       </button>
 
       <div className="w-full md:w-1/2 flex flex-col mt-4 md:mt-0 pt-2">
         <label className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 pl-1">
-          <Type className="w-3.5 h-3.5" /> Text Content
+          <MatIcon name="article" size={16} />
+          <span>Text Content</span>
         </label>
         <textarea
           value={itemData.textContent || ''}
@@ -36,8 +37,9 @@ export default function QPMakerTextCard({ itemData, index, onRemove, onUpdateDes
         />
       </div>
       <div className="w-full md:w-1/2 flex flex-col pt-2">
-        <label className="block text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 pl-1">
-          Instructions / Mapping
+        <label className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-wider mb-2 pl-1">
+          <MatIcon name="description" size={16} />
+          <span>Instructions / Mapping</span>
         </label>
         <textarea
           value={itemData.description}

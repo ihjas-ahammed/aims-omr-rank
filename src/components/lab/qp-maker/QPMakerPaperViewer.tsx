@@ -1,32 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  Palette,
-  Code,
-  RefreshCw,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Columns,
-  BookOpen,
-  Printer,
-  ExternalLink,
-  Download,
-  Copy,
-  GripVertical,
-  ArrowUp,
-  ArrowDown,
-  Edit3,
-  Check,
-  FileText,
-  Layers,
-  Search,
-  X,
-  Maximize2,
-  Minimize2,
-  ChevronDown,
-  ChevronRight,
-  Sparkles
-} from 'lucide-react';
+import MatIcon from './MatIcon';
 import { GeneratedPaper, QPSection, QPAsset } from './types';
 import { QpTemplate } from './defaultDartTemplates';
 import { compileQpHtml } from './qpCompiler';
@@ -192,8 +165,9 @@ export default function QPMakerPaperViewer({
 
   if (!activePaper) {
     return (
-      <div className="p-12 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
-        No generated question papers available to view.
+      <div className="p-12 text-center text-slate-500 bg-white rounded-2xl border border-slate-200 flex flex-col items-center justify-center gap-2">
+        <MatIcon name="description" size={36} className="text-slate-300" />
+        <span className="font-semibold text-sm">No generated question papers available to view.</span>
       </div>
     );
   }
@@ -398,7 +372,7 @@ export default function QPMakerPaperViewer({
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] min-h-[620px] bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden animate-fadeIn">
       {/* ========================================================================= */}
-      {/* 1. TOP STUDIO TOOLBAR                                                    */}
+      {/* 1. TOP STUDIO TOOLBAR (ICON-FIRST WITH MATERIAL ICONS)                    */}
       {/* ========================================================================= */}
       <div className="p-2.5 sm:px-4 border-b border-slate-200/90 bg-gradient-to-r from-slate-50 via-white to-slate-50 flex flex-wrap items-center justify-between gap-2.5 shrink-0">
         {/* Left: Paper Selector Tabs */}
@@ -417,16 +391,16 @@ export default function QPMakerPaperViewer({
                 key={idx}
                 type="button"
                 onClick={() => onSelectPaper(idx)}
-                className={`group flex items-center gap-2 px-3 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all ${
+                className={`group flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs whitespace-nowrap transition-all ${
                   isSel
                     ? 'bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-600/30'
                     : 'bg-white text-slate-700 hover:bg-slate-100/90 border border-slate-200/90 shadow-2xs hover:border-slate-300'
                 }`}
               >
-                <FileText
-                  className={`w-3.5 h-3.5 ${
-                    isSel ? 'text-indigo-200' : 'text-slate-400 group-hover:text-indigo-600'
-                  }`}
+                <MatIcon
+                  name="description"
+                  size={16}
+                  className={isSel ? 'text-indigo-200' : 'text-slate-400 group-hover:text-indigo-600'}
                 />
                 <span>{tabLabel}</span>
                 <span
@@ -441,29 +415,31 @@ export default function QPMakerPaperViewer({
           })}
         </div>
 
-        {/* Mobile Segmented Toggle (Questions vs Preview) */}
+        {/* Mobile Segmented Toggle */}
         <div className="flex md:hidden items-center bg-slate-200/80 p-0.5 rounded-xl text-xs font-bold w-full justify-center">
           <button
             type="button"
             onClick={() => setMobileTab('preview')}
-            className={`flex-1 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
               mobileTab === 'preview'
                 ? 'bg-white text-indigo-600 shadow-xs font-extrabold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Live Preview
+            <MatIcon name="visibility" size={16} />
+            <span>Preview</span>
           </button>
           <button
             type="button"
             onClick={() => setMobileTab('questions')}
-            className={`flex-1 py-1.5 rounded-lg transition-all ${
+            className={`flex-1 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
               mobileTab === 'questions'
                 ? 'bg-white text-indigo-600 shadow-xs font-extrabold'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Questions Editor ({totalPaperQuestions})
+            <MatIcon name="format_list_bulleted" size={16} />
+            <span>Questions ({totalPaperQuestions})</span>
           </button>
         </div>
 
@@ -471,7 +447,7 @@ export default function QPMakerPaperViewer({
         <div className="flex items-center gap-2 flex-wrap ml-auto">
           {/* Cluster 1: Template & Code */}
           <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-xl border border-slate-200 shadow-2xs">
-            <Palette className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+            <MatIcon name="palette" size={18} className="text-indigo-600" />
             <select
               value={currentTemplateId}
               onChange={(e) => handleSwitchTemplate(e.target.value)}
@@ -491,27 +467,28 @@ export default function QPMakerPaperViewer({
                 onOpenDesignEditor(curT);
               }}
               title="Edit Design HTML/CSS Permanently"
-              className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+              className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center"
             >
-              <Code className="w-3.5 h-3.5" />
+              <MatIcon name="code" size={16} />
             </button>
             <button
               type="button"
               onClick={onOpenDartSync}
               title="Sync latest templates from Dart"
-              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+              className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <MatIcon name="sync" size={16} />
             </button>
           </div>
 
           {/* Cluster 2: Typography & LaTeX Scaling */}
           <div className="hidden lg:flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
-            <span className="text-[11px] font-bold text-slate-500">Font:</span>
+            <MatIcon name="format_size" size={16} className="text-slate-500" title="Font Size" />
             <select
               value={currentFontSize}
               onChange={(e) => handleSwitchFontSize(e.target.value)}
               className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
+              title="Font Size"
             >
               {['10px', '11px', '12px', '13px', '14px', '15px', '16px', '18px'].map((sz) => (
                 <option key={sz} value={sz}>
@@ -520,11 +497,12 @@ export default function QPMakerPaperViewer({
               ))}
             </select>
             <div className="w-px h-3.5 bg-slate-200 mx-0.5" />
-            <span className="text-[11px] font-bold text-slate-500">LaTeX:</span>
+            <MatIcon name="functions" size={16} className="text-slate-500" title="LaTeX Size" />
             <select
               value={currentLatexSize}
               onChange={(e) => handleSwitchLatexSize(e.target.value)}
               className="text-xs font-bold text-slate-800 bg-transparent outline-none cursor-pointer"
+              title="LaTeX Formula Scale"
             >
               {['80%', '85%', '90%', '95%', '100%', '105%', '110%', '120%', '130%'].map((ls) => (
                 <option key={ls} value={ls}>
@@ -534,7 +512,7 @@ export default function QPMakerPaperViewer({
             </select>
           </div>
 
-          {/* Cluster 3: Layout Toggle Pills (Tactile Switch Affordance) */}
+          {/* Cluster 3: Layout Toggle Pills with Material Icons */}
           <button
             type="button"
             onClick={() => handleToggleTwoCol(!currentTwoCol)}
@@ -543,10 +521,14 @@ export default function QPMakerPaperViewer({
                 ? 'bg-indigo-50 border-indigo-300 text-indigo-700 shadow-2xs'
                 : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 shadow-2xs'
             }`}
-            title="Toggle 2-Column Newspaper Layout"
+            title="Toggle Two-Column Newspaper Layout"
           >
-            <Columns className={`w-3.5 h-3.5 ${currentTwoCol ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span>2-Col</span>
+            <MatIcon
+              name="view_column"
+              size={18}
+              className={currentTwoCol ? 'text-indigo-600' : 'text-slate-400'}
+            />
+            <span className="hidden xl:inline">2-Col</span>
             <span
               className={`w-2 h-2 rounded-full transition-colors ${
                 currentTwoCol ? 'bg-indigo-600' : 'bg-slate-300'
@@ -564,8 +546,12 @@ export default function QPMakerPaperViewer({
             }`}
             title="Toggle 2-Up Duplex Sheet Printing"
           >
-            <BookOpen className={`w-3.5 h-3.5 ${duplex ? 'text-indigo-600' : 'text-slate-400'}`} />
-            <span>Duplex</span>
+            <MatIcon
+              name="auto_stories"
+              size={18}
+              className={duplex ? 'text-indigo-600' : 'text-slate-400'}
+            />
+            <span className="hidden xl:inline">Duplex</span>
             <span
               className={`w-2 h-2 rounded-full transition-colors ${
                 duplex ? 'bg-indigo-600' : 'bg-slate-300'
@@ -573,16 +559,16 @@ export default function QPMakerPaperViewer({
             />
           </button>
 
-          {/* Cluster 4: Zoom Controls */}
+          {/* Cluster 4: Zoom Controls with Material Icons */}
           <div className="hidden sm:flex items-center gap-0.5 bg-white px-1.5 py-1 rounded-xl border border-slate-200 shadow-2xs">
             <button
               type="button"
               onClick={() => setZoomScale((prev) => Math.max(0.4, Math.round((prev - 0.05) * 100) / 100))}
               disabled={zoomScale <= 0.4}
               title="Zoom Out (-5%)"
-              className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-30 rounded-lg hover:bg-slate-100 transition-colors"
+              className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-30 rounded-lg hover:bg-slate-100 transition-colors flex items-center justify-center"
             >
-              <ZoomOut className="w-3.5 h-3.5" />
+              <MatIcon name="zoom_out" size={18} />
             </button>
             <button
               type="button"
@@ -597,73 +583,76 @@ export default function QPMakerPaperViewer({
               onClick={() => setZoomScale((prev) => Math.min(1.6, Math.round((prev + 0.05) * 100) / 100))}
               disabled={zoomScale >= 1.6}
               title="Zoom In (+5%)"
-              className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-30 rounded-lg hover:bg-slate-100 transition-colors"
+              className="p-1 text-slate-500 hover:text-slate-900 disabled:opacity-30 rounded-lg hover:bg-slate-100 transition-colors flex items-center justify-center"
             >
-              <ZoomIn className="w-3.5 h-3.5" />
+              <MatIcon name="zoom_in" size={18} />
             </button>
             {zoomScale !== 1.0 && (
               <button
                 type="button"
                 onClick={() => setZoomScale(1.0)}
                 title="Reset Zoom to 100%"
-                className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                className="p-1 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center justify-center"
               >
-                <RotateCcw className="w-3 h-3" />
+                <MatIcon name="restart_alt" size={16} />
               </button>
             )}
           </div>
 
-          {/* Desktop Full-Width Toggle */}
+          {/* Desktop Full Canvas Toggle */}
           <button
             type="button"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             className="hidden md:flex p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl border border-slate-200 bg-white shadow-2xs transition-all"
             title={sidebarCollapsed ? 'Show Questions Navigator' : 'Hide Questions Navigator (Full Canvas)'}
           >
-            {sidebarCollapsed ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            <MatIcon name={sidebarCollapsed ? 'fullscreen_exit' : 'fullscreen'} size={18} />
           </button>
 
-          {/* Cluster 5: Actions (Fitts's Law Priority) */}
+          {/* Cluster 5: Action Triggers (Using Material Icons) */}
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={handleOpenNewWindow}
               title="Open Paper in New Browser Tab"
-              className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl border border-slate-200 bg-white shadow-2xs transition-all"
+              className="p-1.5 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl border border-slate-200 bg-white shadow-2xs transition-all flex items-center justify-center"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
+              <MatIcon name="open_in_new" size={18} />
             </button>
 
             <button
               type="button"
               onClick={handleDownloadHtml}
               title="Download Standalone HTML File"
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs transition-all hover:text-indigo-600"
+              className="p-1.5 text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs transition-all hover:text-indigo-600 flex items-center justify-center"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">Export</span>
+              <MatIcon name="download" size={18} />
             </button>
 
             <button
               type="button"
               onClick={handleCopyHtml}
-              title="Copy compiled HTML to clipboard"
-              className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all ${
+              title={copied ? 'Copied to Clipboard!' : 'Copy Compiled HTML'}
+              className={`p-1.5 rounded-xl border transition-all flex items-center justify-center ${
                 copied
                   ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-2xs'
                   : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 hover:text-indigo-600 shadow-2xs'
               }`}
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              <span className="hidden xl:inline">{copied ? 'Copied!' : 'Copy'}</span>
+              <MatIcon
+                name={copied ? 'check' : 'content_copy'}
+                size={18}
+                className={copied ? 'text-emerald-600' : ''}
+              />
             </button>
 
             <button
               type="button"
               onClick={handlePrint}
+              title="Print Question Paper"
               className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-white bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-slate-800 hover:to-indigo-900 rounded-xl shadow-xs hover:shadow-sm transition-all active:scale-95 ml-0.5"
             >
-              <Printer className="w-3.5 h-3.5 text-indigo-300" />
+              <MatIcon name="print" size={18} className="text-indigo-300" />
               <span>Print</span>
             </button>
           </div>
@@ -674,7 +663,7 @@ export default function QPMakerPaperViewer({
       {/* 2. MAIN SPLIT BODY (QUESTIONS NAVIGATOR & LIVE PREVIEW FRAME)              */}
       {/* ========================================================================= */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Side: Questions Quick Navigator & Drag-Drop Reordering */}
+        {/* Left Side: Questions Quick Navigator */}
         <div
           className={`${
             mobileTab === 'questions'
@@ -684,12 +673,12 @@ export default function QPMakerPaperViewer({
               : 'hidden md:flex md:w-[320px] lg:w-[370px]'
           } flex-col border-r border-slate-200 bg-slate-50/50 overflow-hidden shrink-0 transition-all`}
         >
-          {/* Navigator Header */}
+          {/* Navigator Header with Material Icons */}
           <div className="p-3 border-b border-slate-200 bg-white space-y-2.5 shrink-0">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                  <Layers className="w-4 h-4" />
+                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
+                  <MatIcon name="format_list_bulleted" size={18} />
                 </div>
                 <div>
                   <span className="text-xs font-extrabold text-slate-900 block">
@@ -700,14 +689,19 @@ export default function QPMakerPaperViewer({
                   </span>
                 </div>
               </div>
-              <span className="text-[10px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-full shadow-2xs">
-                Drag to Reorder
+              <span className="text-[10px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-1">
+                <MatIcon name="drag_indicator" size={14} />
+                <span>Drag</span>
               </span>
             </div>
 
             {/* Quick Search in Questions */}
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <MatIcon
+                name="search"
+                size={16}
+                className="text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2"
+              />
               <input
                 type="text"
                 placeholder="Filter questions or keywords..."
@@ -719,9 +713,9 @@ export default function QPMakerPaperViewer({
                 <button
                   type="button"
                   onClick={() => setSearchFilter('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded flex items-center justify-center"
                 >
-                  <X className="w-3 h-3" />
+                  <MatIcon name="close" size={14} />
                 </button>
               )}
             </div>
@@ -762,14 +756,10 @@ export default function QPMakerPaperViewer({
                       <button
                         type="button"
                         onClick={() => toggleSectionCollapse(sIdx)}
-                        className="text-slate-400 hover:text-slate-700 p-0.5 rounded transition-colors"
+                        className="text-slate-400 hover:text-slate-700 p-0.5 rounded transition-colors flex items-center justify-center"
                         title={isCollapsed ? 'Expand Section' : 'Collapse Section'}
                       >
-                        {isCollapsed ? (
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        ) : (
-                          <ChevronDown className="w-3.5 h-3.5" />
-                        )}
+                        <MatIcon name={isCollapsed ? 'chevron_right' : 'expand_more'} size={18} />
                       </button>
 
                       <span className="px-1.5 py-0.5 text-[10px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200/80 rounded-md shrink-0">
@@ -809,10 +799,10 @@ export default function QPMakerPaperViewer({
                             instruction: sec.instruction
                           })
                         }
-                        className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                        className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors flex items-center justify-center"
                         title="Edit Section Details"
                       >
-                        <Edit3 className="w-3 h-3" />
+                        <MatIcon name="edit" size={16} />
                       </button>
                     </div>
                   </div>
@@ -828,7 +818,6 @@ export default function QPMakerPaperViewer({
                   {!isCollapsed && (
                     <div className="p-2 space-y-2">
                       {displayedQuestions.map((q) => {
-                        // Find original index in sec.questions
                         const originalQIdx = (sec.questions || []).findIndex(
                           (original) => original === q
                         );
@@ -876,11 +865,11 @@ export default function QPMakerPaperViewer({
                               <div className="flex items-center justify-between gap-1 mb-1.5">
                                 <div className="flex items-center gap-1.5">
                                   <span
-                                    className="text-slate-400 group-hover:text-indigo-600 cursor-grab active:cursor-grabbing p-0.5"
+                                    className="text-slate-400 group-hover:text-indigo-600 cursor-grab active:cursor-grabbing p-0.5 flex items-center justify-center"
                                     title="Drag to reorder question"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <GripVertical className="w-3.5 h-3.5" />
+                                    <MatIcon name="drag_indicator" size={16} />
                                   </span>
                                   <span className="px-1.5 py-0.5 text-[10px] font-black bg-indigo-100/70 text-indigo-800 rounded">
                                     Q.{q.number}
@@ -896,10 +885,10 @@ export default function QPMakerPaperViewer({
                                       e.stopPropagation();
                                       handleMoveQuestion(sIdx, qIdx, -1);
                                     }}
-                                    className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition-colors"
+                                    className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition-colors flex items-center justify-center"
                                     title="Move Up"
                                   >
-                                    <ArrowUp className="w-3 h-3" />
+                                    <MatIcon name="arrow_upward" size={14} />
                                   </button>
                                   <button
                                     type="button"
@@ -908,14 +897,15 @@ export default function QPMakerPaperViewer({
                                       e.stopPropagation();
                                       handleMoveQuestion(sIdx, qIdx, 1);
                                     }}
-                                    className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition-colors"
+                                    className="p-0.5 text-slate-400 hover:text-indigo-600 disabled:opacity-20 transition-colors flex items-center justify-center"
                                     title="Move Down"
                                   >
-                                    <ArrowDown className="w-3 h-3" />
+                                    <MatIcon name="arrow_downward" size={14} />
                                   </button>
 
-                                  <span className="px-1.5 py-0.5 text-[10px] font-black bg-slate-200/70 text-slate-700 rounded ml-1">
-                                    {q.marks}M
+                                  <span className="flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-black bg-slate-200/70 text-slate-700 rounded ml-1">
+                                    <MatIcon name="military_tech" size={12} />
+                                    <span>{q.marks}M</span>
                                   </span>
                                 </div>
                               </div>
@@ -933,8 +923,9 @@ export default function QPMakerPaperViewer({
                       })}
 
                       {(!sec.questions || sec.questions.length === 0) && (
-                        <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-300 rounded-xl bg-slate-50/50">
-                          Drop questions here
+                        <div className="p-4 text-center text-xs text-slate-400 border border-dashed border-slate-300 rounded-xl bg-slate-50/50 flex items-center justify-center gap-1.5">
+                          <MatIcon name="drag_indicator" size={16} />
+                          <span>Drop questions here</span>
                         </div>
                       )}
                     </div>
@@ -951,15 +942,16 @@ export default function QPMakerPaperViewer({
             mobileTab === 'preview' ? 'flex flex-1' : 'hidden md:flex md:flex-1'
           } bg-gradient-to-br from-slate-100 via-slate-200/60 to-slate-100 p-2 sm:p-4 overflow-hidden flex-col items-center justify-center relative`}
         >
-          {/* Subtle Paper Status Pill */}
+          {/* Subtle Paper Status Pill with Material Icons */}
           <div className="absolute top-3 left-4 z-10 hidden sm:flex items-center gap-2 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full border border-slate-300/70 shadow-xs text-[11px] font-bold text-slate-700">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>
               {activePaper.batch} • {activePaper.set || 'Set A'}
             </span>
             <span className="text-slate-300">•</span>
-            <span className="text-slate-500">
-              {templates.find((t) => t.id === currentTemplateId)?.name || 'Default'} Design
+            <span className="flex items-center gap-1 text-slate-500">
+              <MatIcon name="palette" size={14} />
+              <span>{templates.find((t) => t.id === currentTemplateId)?.name || 'Default'}</span>
             </span>
           </div>
 

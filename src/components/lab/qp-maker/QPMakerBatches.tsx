@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers } from 'lucide-react';
+import MatIcon from './MatIcon';
 import { QPMakerDayData } from './types';
 
 interface Props {
@@ -11,7 +11,8 @@ export default function QPMakerBatches({ data, onUpdate }: Props) {
   return (
     <div className="p-4 md:p-6 border-b border-gray-200">
       <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-        <Layers className="w-5 h-5 text-indigo-600" /> Batches & Sets
+        <MatIcon name="layers" size={20} className="text-indigo-600" />
+        <span>Batches & Sets</span>
       </h3>
       <p className="text-xs text-gray-500 mb-4">Define exactly which batches and sets the AI should output HTML files for.</p>
       <textarea

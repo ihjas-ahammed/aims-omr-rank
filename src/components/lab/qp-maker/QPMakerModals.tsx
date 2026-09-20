@@ -1,19 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  X,
-  Palette,
-  Code,
-  Check,
-  RotateCcw,
-  Save,
-  HelpCircle,
-  FileText,
-  Image as ImageIcon,
-  ExternalLink,
-  Sparkles,
-  RefreshCw,
-  Columns
-} from 'lucide-react';
+import MatIcon from './MatIcon';
 import { QpTemplate } from './defaultDartTemplates';
 import { buildPreviewHtml } from './qpCompiler';
 
@@ -83,8 +69,8 @@ export function TemplatePreviewModal({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-200 bg-gray-50/80">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg shrink-0">
-              <Palette className="w-5 h-5" />
+            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg shrink-0 flex items-center justify-center">
+              <MatIcon name="palette" size={20} />
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-bold text-gray-900 truncate">
@@ -95,7 +81,7 @@ export function TemplatePreviewModal({
           </div>
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 cursor-pointer bg-white px-2.5 py-1.5 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50">
-              <Columns className="w-3.5 h-3.5 text-indigo-600" />
+              <MatIcon name="view_column" size={16} className="text-indigo-600" />
               <span>2-Column</span>
               <input
                 type="checkbox"
@@ -108,7 +94,7 @@ export function TemplatePreviewModal({
               onClick={onClose}
               className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <X className="w-5 h-5" />
+              <MatIcon name="close" size={20} />
             </button>
           </div>
         </div>
@@ -139,7 +125,8 @@ export function TemplatePreviewModal({
               }}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors"
             >
-              <Check className="w-4 h-4" /> Use This Template
+              <MatIcon name="check" size={16} />
+              <span>Use This Template</span>
             </button>
           </div>
         </div>
@@ -197,8 +184,8 @@ export function DesignEditorModal({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-200 bg-gray-50/80">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg shrink-0">
-              <Code className="w-5 h-5" />
+            <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg shrink-0 flex items-center justify-center">
+              <MatIcon name="code" size={20} />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -224,14 +211,14 @@ export function DesignEditorModal({
             onClick={onClose}
             className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5" />
+            <MatIcon name="close" size={20} />
           </button>
         </div>
 
         {/* Placeholders Bar */}
         <div className="px-5 py-2.5 bg-slate-50 border-b border-gray-200 flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1">
-            <HelpCircle className="w-3.5 h-3.5 text-indigo-500" /> Insert Placeholder:
+            <MatIcon name="help_outline" size={16} className="text-indigo-500" /> Insert Placeholder:
           </span>
           {placeholders.map((tag) => (
             <button
@@ -269,7 +256,7 @@ export function DesignEditorModal({
             disabled={!template.isCustomized}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50 disabled:opacity-40 disabled:hover:bg-transparent rounded-lg transition-colors"
           >
-            <RotateCcw className="w-3.5 h-3.5" /> Reset to Default
+            <MatIcon name="restart_alt" size={16} /> Reset to Default
           </button>
           <div className="flex items-center gap-2">
             <button
@@ -285,7 +272,8 @@ export function DesignEditorModal({
               }}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors"
             >
-              <Save className="w-4 h-4" /> Save Permanently
+              <MatIcon name="save" size={16} />
+              <span>Save Permanently</span>
             </button>
           </div>
         </div>
@@ -371,7 +359,7 @@ export function QuestionEditorDialog({
             onClick={onClose}
             className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5" />
+            <MatIcon name="close" size={20} />
           </button>
         </div>
 
@@ -405,7 +393,7 @@ export function QuestionEditorDialog({
           {/* Math Formula Quick Chips */}
           <div>
             <div className="flex items-center gap-1.5 text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Math Formula Presets:
+              <MatIcon name="functions" size={16} className="text-indigo-500" /> Math Formula Presets:
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
               {mathChips.map((chip) => (
@@ -463,7 +451,8 @@ export function QuestionEditorDialog({
             }}
             className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors"
           >
-            <Save className="w-4 h-4" /> Save Question
+            <MatIcon name="save" size={16} />
+            <span>Save Question</span>
           </button>
         </div>
       </div>
@@ -516,7 +505,7 @@ export function SectionEditorDialog({
             onClick={onClose}
             className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5" />
+            <MatIcon name="close" size={20} />
           </button>
         </div>
 
@@ -576,7 +565,8 @@ export function SectionEditorDialog({
             }}
             className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-colors"
           >
-            <Save className="w-4 h-4" /> Save Section
+            <MatIcon name="save" size={16} />
+            <span>Save Section</span>
           </button>
         </div>
       </div>
@@ -604,9 +594,9 @@ export function ImageZoomModal({ open, src, title, isPdf, onClose }: ImageZoomMo
         <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-50/80">
           <div className="flex items-center gap-2 min-w-0">
             {isPdf ? (
-              <FileText className="w-5 h-5 text-red-600" />
+              <MatIcon name="picture_as_pdf" size={20} className="text-rose-600" />
             ) : (
-              <ImageIcon className="w-5 h-5 text-indigo-600" />
+              <MatIcon name="image" size={20} className="text-indigo-600" />
             )}
             <h3 className="text-sm font-bold text-gray-900 truncate">{title}</h3>
           </div>
@@ -614,14 +604,14 @@ export function ImageZoomModal({ open, src, title, isPdf, onClose }: ImageZoomMo
             onClick={onClose}
             className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5" />
+            <MatIcon name="close" size={20} />
           </button>
         </div>
 
         <div className="flex-1 bg-slate-900 p-4 flex items-center justify-center overflow-auto min-h-[300px]">
           {isPdf ? (
             <div className="text-center p-8 bg-white rounded-xl shadow-lg max-w-md">
-              <FileText className="w-16 h-16 text-red-500 mx-auto mb-3" />
+              <MatIcon name="picture_as_pdf" size={56} className="text-rose-500 mx-auto mb-3" />
               <h4 className="font-bold text-gray-900 text-base mb-1">{title}</h4>
               <p className="text-xs text-gray-500 mb-4">PDF Document is ready for AI question extraction.</p>
               <button
@@ -633,7 +623,8 @@ export function ImageZoomModal({ open, src, title, isPdf, onClose }: ImageZoomMo
                 }}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors"
               >
-                <ExternalLink className="w-4 h-4" /> Open PDF in New Tab
+                <MatIcon name="open_in_new" size={16} />
+                <span>Open PDF in New Tab</span>
               </button>
             </div>
           ) : (
@@ -696,7 +687,7 @@ export function DartSyncModal({ open, onClose, onParsedTemplates }: DartSyncModa
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col overflow-hidden border border-gray-100">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-200 bg-gray-50/80">
           <div className="flex items-center gap-2">
-            <RefreshCw className="w-5 h-5 text-indigo-600" />
+            <MatIcon name="sync" size={20} className="text-indigo-600" />
             <div>
               <h3 className="text-base font-bold text-gray-900">Sync / Upload Dart Templates</h3>
               <p className="text-xs text-gray-500">
@@ -708,7 +699,7 @@ export function DartSyncModal({ open, onClose, onParsedTemplates }: DartSyncModa
             onClick={onClose}
             className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5" />
+            <MatIcon name="close" size={20} />
           </button>
         </div>
 
@@ -757,7 +748,8 @@ export function DartSyncModal({ open, onClose, onParsedTemplates }: DartSyncModa
             disabled={!dartCode.trim()}
             className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-lg shadow-sm transition-colors"
           >
-            <RefreshCw className="w-4 h-4" /> Extract & Apply Templates
+            <MatIcon name="sync" size={16} />
+            <span>Extract & Apply Templates</span>
           </button>
         </div>
       </div>

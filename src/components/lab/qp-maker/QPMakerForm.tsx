@@ -1,39 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Calendar,
-  Clock,
-  Target,
-  FileText,
-  Plus,
-  Trash2,
-  Copy,
-  Sparkles,
-  Layers,
-  Palette,
-  Code,
-  Image as ImageIcon,
-  Upload,
-  Clipboard,
-  FileCode,
-  CheckCircle2,
-  AlertTriangle,
-  RefreshCw,
-  Columns,
-  Eye,
-  Type as TypeIcon,
-  HelpCircle,
-  BrainCircuit,
-  Sliders,
-  Maximize2,
-  Check,
-  ArrowRight,
-  ArrowLeft,
-  Zap,
-  Bookmark,
-  ShieldCheck,
-  Send,
-  BookOpen
-} from 'lucide-react';
+import MatIcon from './MatIcon';
 import {
   QPMakerDayData,
   SubjectDivision,
@@ -429,26 +395,24 @@ export default function QPMakerForm({
               type="button"
               onClick={onSaveDay}
               className="flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+              title="Save Day Configuration"
             >
-              Save Day
+              <MatIcon name="save" size={18} />
+              <span>Save Day</span>
             </button>
             <button
               type="button"
               onClick={onGenerate}
               disabled={isGenerating}
               className="flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm font-extrabold text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-50 rounded-xl shadow-md transition-all active:scale-95 hover:shadow-indigo-100"
+              title="Generate All Question Papers"
             >
-              {isGenerating ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Generating...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 text-amber-300 fill-amber-300" />
-                  <span>Generate All Papers</span>
-                </>
-              )}
+              <MatIcon
+                name={isGenerating ? 'sync' : 'bolt'}
+                size={20}
+                className={isGenerating ? 'animate-spin' : 'text-amber-300'}
+              />
+              <span>{isGenerating ? 'Generating...' : 'Generate All Papers'}</span>
             </button>
           </div>
         </div>
@@ -457,7 +421,7 @@ export default function QPMakerForm({
         <div className="pt-3 border-t border-slate-100 space-y-2.5">
           <div className="flex items-center justify-between text-xs font-bold text-slate-700">
             <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-indigo-600" />
+              <MatIcon name="shield" size={18} className="text-indigo-600" />
               <span>Blueprint Readiness ({readinessPercent}%)</span>
             </span>
             <span className="text-[11px] font-medium text-slate-500">
@@ -490,8 +454,15 @@ export default function QPMakerForm({
                   : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-indigo-300'
               }`}
             >
-              <span className="truncate">1. Exam Basics</span>
-              <span>{milestoneExamInfo ? '✓' : '•'}</span>
+              <span className="flex items-center gap-1.5 truncate">
+                <MatIcon name="event_note" size={16} />
+                <span className="truncate">1. Basics</span>
+              </span>
+              <MatIcon
+                name={milestoneExamInfo ? 'check_circle' : 'radio_button_unchecked'}
+                size={16}
+                className={milestoneExamInfo ? 'text-emerald-600' : 'text-slate-300'}
+              />
             </div>
 
             {/* 2. Marks Balance */}
@@ -503,8 +474,15 @@ export default function QPMakerForm({
                   : 'bg-amber-50/70 border-amber-200 text-amber-900 hover:border-amber-400'
               }`}
             >
-              <span className="truncate">2. Marks ({defaultAllocatedMarks}/{targetTotalMarksNum})</span>
-              <span>{milestoneMarks ? '✓' : '!'}</span>
+              <span className="flex items-center gap-1.5 truncate">
+                <MatIcon name="balance" size={16} />
+                <span className="truncate">2. Marks ({defaultAllocatedMarks}/{targetTotalMarksNum})</span>
+              </span>
+              <MatIcon
+                name={milestoneMarks ? 'check_circle' : 'warning'}
+                size={16}
+                className={milestoneMarks ? 'text-emerald-600' : 'text-amber-500'}
+              />
             </div>
 
             {/* 3. Target Papers */}
@@ -516,8 +494,15 @@ export default function QPMakerForm({
                   : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-indigo-300'
               }`}
             >
-              <span className="truncate">3. Targets ({targetPapersList.length}P)</span>
-              <span>{milestoneTargets ? '✓' : '•'}</span>
+              <span className="flex items-center gap-1.5 truncate">
+                <MatIcon name="groups" size={16} />
+                <span className="truncate">3. Targets ({targetPapersList.length}P)</span>
+              </span>
+              <MatIcon
+                name={milestoneTargets ? 'check_circle' : 'radio_button_unchecked'}
+                size={16}
+                className={milestoneTargets ? 'text-emerald-600' : 'text-slate-300'}
+              />
             </div>
 
             {/* 4. Sources */}
@@ -529,8 +514,15 @@ export default function QPMakerForm({
                   : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-indigo-300'
               }`}
             >
-              <span className="truncate">4. Sources ({totalMaterials})</span>
-              <span>{milestoneSources ? '✓' : '•'}</span>
+              <span className="flex items-center gap-1.5 truncate">
+                <MatIcon name="folder_open" size={16} />
+                <span className="truncate">4. Sources ({totalMaterials})</span>
+              </span>
+              <MatIcon
+                name={milestoneSources ? 'check_circle' : 'radio_button_unchecked'}
+                size={16}
+                className={milestoneSources ? 'text-emerald-600' : 'text-slate-300'}
+              />
             </div>
           </div>
         </div>
@@ -547,8 +539,8 @@ export default function QPMakerForm({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Target className="w-3.5 h-3.5" />
-              <span>1. Exam Blueprint</span>
+              <MatIcon name="assignment" size={16} />
+              <span>1. Blueprint</span>
               {milestoneExamInfo && milestoneMarks && (
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               )}
@@ -563,8 +555,8 @@ export default function QPMakerForm({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <ImageIcon className="w-3.5 h-3.5" />
-              <span>2. Questions &amp; Sources ({totalMaterials})</span>
+              <MatIcon name="auto_stories" size={16} />
+              <span>2. Sources ({totalMaterials})</span>
               {milestoneSources && (
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               )}
@@ -579,21 +571,22 @@ export default function QPMakerForm({
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Palette className="w-3.5 h-3.5" />
-              <span>3. Design &amp; Launchpad</span>
+              <MatIcon name="rocket_launch" size={16} />
+              <span>3. Launchpad</span>
             </button>
           </div>
 
           <button
             type="button"
             onClick={() => setActivePhase(activePhase === 'ALL' ? 'BLUEPRINT' : 'ALL')}
-            className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors whitespace-nowrap ${
+            className={`flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-xl border transition-colors whitespace-nowrap ${
               activePhase === 'ALL'
                 ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
             }`}
           >
-            {activePhase === 'ALL' ? '✓ Continuous View Active' : 'View All Sections'}
+            <MatIcon name="view_agenda" size={16} />
+            <span>{activePhase === 'ALL' ? 'Continuous View' : 'View All'}</span>
           </button>
         </div>
       </div>
@@ -603,7 +596,7 @@ export default function QPMakerForm({
         <div className="p-4 bg-indigo-50/90 border border-indigo-200 rounded-3xl space-y-2 animate-fadeIn shadow-xs">
           <div className="flex items-center justify-between text-xs font-black text-indigo-900">
             <span className="flex items-center gap-2">
-              <RefreshCw className="w-4 h-4 animate-spin text-indigo-600" />
+              <MatIcon name="sync" size={16} className="animate-spin text-indigo-600" />
               <span>Generating {generateProgress.target} ({generateProgress.current + 1} of {generateProgress.total})...</span>
             </span>
             <span className="font-mono">{generateProgress.percent}%</span>
@@ -629,7 +622,7 @@ export default function QPMakerForm({
               <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
                 <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                    <Target className="w-4 h-4 text-indigo-600" />
+                    <MatIcon name="assignment" size={18} className="text-indigo-600" />
                     <span>1. Examination Basics</span>
                   </div>
                   <span className="text-[11px] font-bold text-slate-400">Step 1 of 3</span>
@@ -638,8 +631,9 @@ export default function QPMakerForm({
                 <div className="space-y-3.5">
                   {/* Subtitle / Exam Title */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Subtitle / Examination Title
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                      <MatIcon name="edit_note" size={16} className="text-indigo-600" />
+                      <span>Subtitle / Examination Title</span>
                     </label>
                     <input
                       type="text"
@@ -649,22 +643,33 @@ export default function QPMakerForm({
                       className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-sm font-semibold outline-none transition-all"
                     />
 
-                    {/* Subtitle Quick Chips */}
+                    {/* Subtitle Quick Chips with Material Icons */}
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {SUBTITLE_PRESETS.map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() => onUpdate({ subtitle: preset })}
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded-lg border transition-all ${
-                            data.subtitle === preset
-                              ? 'bg-indigo-600 text-white border-indigo-600'
-                              : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
-                          }`}
-                        >
-                          {preset}
-                        </button>
-                      ))}
+                      {SUBTITLE_PRESETS.map((preset) => {
+                        let icon = 'label';
+                        if (preset.includes('Daily')) icon = 'today';
+                        else if (preset.includes('Weekly')) icon = 'event_repeat';
+                        else if (preset.includes('Unit')) icon = 'menu_book';
+                        else if (preset.includes('Model')) icon = 'workspace_premium';
+                        else if (preset.includes('Revision')) icon = 'history_edu';
+                        else if (preset.includes('Mock') || preset.includes('NEET')) icon = 'school';
+
+                        return (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => onUpdate({ subtitle: preset })}
+                            className={`flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-lg border transition-all ${
+                              data.subtitle === preset
+                                ? 'bg-indigo-600 text-white border-indigo-600'
+                                : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                            }`}
+                          >
+                            <MatIcon name={icon} size={12} />
+                            <span>{preset}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -672,7 +677,8 @@ export default function QPMakerForm({
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-indigo-600" /> Exam Date
+                        <MatIcon name="calendar_today" size={16} className="text-indigo-600" />
+                        <span>Exam Date</span>
                       </label>
                       <div className="flex items-center gap-1">
                         <button
@@ -683,9 +689,10 @@ export default function QPMakerForm({
                             const m = String(d.getMonth() + 1).padStart(2, '0');
                             onUpdate({ date: `${day}/${m}/${d.getFullYear()}` });
                           }}
-                          className="px-2 py-0.5 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
+                          className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors"
                         >
-                          Today
+                          <MatIcon name="today" size={12} />
+                          <span>Today</span>
                         </button>
                         <button
                           type="button"
@@ -696,9 +703,10 @@ export default function QPMakerForm({
                             const m = String(d.getMonth() + 1).padStart(2, '0');
                             onUpdate({ date: `${day}/${m}/${d.getFullYear()}` });
                           }}
-                          className="px-2 py-0.5 text-[10px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors"
+                          className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors"
                         >
-                          Tomorrow
+                          <MatIcon name="event" size={12} />
+                          <span>Tomorrow</span>
                         </button>
                       </div>
                     </div>
@@ -711,11 +719,12 @@ export default function QPMakerForm({
                     />
                   </div>
 
-                  {/* Duration & Marks */}
+                  {/* Duration & Marks with Material Icons */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-indigo-600" /> Duration (Mins)
+                        <MatIcon name="schedule" size={16} className="text-indigo-600" />
+                        <span>Duration (Mins)</span>
                       </label>
                       <input
                         type="text"
@@ -730,13 +739,14 @@ export default function QPMakerForm({
                             key={dp.value}
                             type="button"
                             onClick={() => onUpdate({ duration: dp.value })}
-                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded border ${
+                            className={`flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded border ${
                               data.duration === dp.value
                                 ? 'bg-indigo-600 text-white border-indigo-600'
                                 : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
                             }`}
                           >
-                            {dp.label}
+                            <MatIcon name="timer" size={12} />
+                            <span>{dp.label}</span>
                           </button>
                         ))}
                       </div>
@@ -744,7 +754,8 @@ export default function QPMakerForm({
 
                     <div>
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
-                        <Bookmark className="w-3.5 h-3.5 text-indigo-600" /> Total Marks
+                        <MatIcon name="military_tech" size={16} className="text-indigo-600" />
+                        <span>Total Marks</span>
                       </label>
                       <input
                         type="text"
@@ -759,13 +770,14 @@ export default function QPMakerForm({
                             key={mp}
                             type="button"
                             onClick={() => onUpdate({ totalMarks: mp })}
-                            className={`px-1.5 py-0.5 text-[10px] font-bold rounded border ${
+                            className={`flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-bold rounded border ${
                               data.totalMarks === mp
                                 ? 'bg-indigo-600 text-white border-indigo-600'
                                 : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
                             }`}
                           >
-                            {mp}M
+                            <MatIcon name="grade" size={12} />
+                            <span>{mp}M</span>
                           </button>
                         ))}
                       </div>
@@ -775,7 +787,8 @@ export default function QPMakerForm({
                   {/* AI Model Selector */}
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-500" /> AI Engine Model
+                      <MatIcon name="smart_toy" size={16} className="text-amber-500" />
+                      <span>AI Engine Model</span>
                     </label>
                     <select
                       value={selectedModel}
@@ -800,7 +813,7 @@ export default function QPMakerForm({
               <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
                 <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                    <BrainCircuit className="w-4 h-4 text-indigo-600" />
+                    <MatIcon name="calculate" size={18} className="text-indigo-600" />
                     <span>2. Subject Divisions &amp; Marks</span>
                   </div>
                   {selectedDivisionClass === 'ALL' ? (
@@ -815,7 +828,8 @@ export default function QPMakerForm({
                       }}
                       className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Add Subject
+                      <MatIcon name="add" size={16} />
+                      <span>Add Subject</span>
                     </button>
                   ) : (
                     data.classDivisions?.[selectedDivisionClass]?.enabled && (
@@ -836,7 +850,8 @@ export default function QPMakerForm({
                         }}
                         className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-800"
                       >
-                        <Plus className="w-3.5 h-3.5" /> Add Subject
+                        <MatIcon name="add" size={16} />
+                        <span>Add Subject</span>
                       </button>
                     )
                   )}
@@ -844,19 +859,21 @@ export default function QPMakerForm({
 
                 {/* Target Class Switcher Pills */}
                 <div className="flex items-center gap-1.5 flex-wrap p-1.5 bg-slate-50 border border-slate-200 rounded-2xl">
-                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider px-1">
-                    Scope:
+                  <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider px-1 flex items-center gap-1">
+                    <MatIcon name="tune" size={12} />
+                    <span>Scope:</span>
                   </span>
                   <button
                     type="button"
                     onClick={() => setSelectedDivisionClass('ALL')}
-                    className={`px-2.5 py-1 text-xs font-bold rounded-xl transition-all ${
+                    className={`px-2.5 py-1 text-xs font-bold rounded-xl transition-all flex items-center gap-1 ${
                       selectedDivisionClass === 'ALL'
                         ? 'bg-indigo-600 text-white shadow-xs'
                         : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
                     }`}
                   >
-                    All Classes (Default)
+                    <MatIcon name="groups" size={14} />
+                    <span>All Classes (Default)</span>
                   </button>
                   {availableClasses.map((cls) => {
                     const hasCustom = Boolean(data.classDivisions?.[cls]?.enabled);
@@ -866,7 +883,7 @@ export default function QPMakerForm({
                         key={cls}
                         type="button"
                         onClick={() => setSelectedDivisionClass(cls)}
-                        className={`px-2.5 py-1 text-xs font-bold rounded-xl transition-all ${
+                        className={`px-2.5 py-1 text-xs font-bold rounded-xl transition-all flex items-center gap-1 ${
                           isSel
                             ? 'bg-indigo-600 text-white shadow-xs'
                             : hasCustom
@@ -874,9 +891,10 @@ export default function QPMakerForm({
                             : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
                         }`}
                       >
-                        {cls}
+                        <MatIcon name="school" size={12} />
+                        <span>{cls}</span>
                         {hasCustom && (
-                          <span className="ml-1 text-[10px] font-black opacity-80">
+                          <span className="text-[10px] font-black opacity-80">
                             ({data.classDivisions[cls].maxMarks}M)
                           </span>
                         )}
@@ -897,11 +915,11 @@ export default function QPMakerForm({
                       }`}
                     >
                       <span className="flex items-center gap-1.5">
-                        {isDefaultBalanced ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                        ) : (
-                          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                        )}
+                        <MatIcon
+                          name={isDefaultBalanced ? 'check_circle' : 'warning'}
+                          size={18}
+                          className={isDefaultBalanced ? 'text-emerald-600 shrink-0' : 'text-amber-600 shrink-0'}
+                        />
                         <span>
                           {isDefaultBalanced
                             ? `Marks Balanced: ${defaultAllocatedMarks} / ${targetTotalMarksNum} Marks`
@@ -912,9 +930,10 @@ export default function QPMakerForm({
                         <button
                           type="button"
                           onClick={() => onUpdate({ totalMarks: String(defaultAllocatedMarks) })}
-                          className="px-2 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-extrabold rounded-lg shadow-2xs transition-colors shrink-0"
+                          className="flex items-center gap-1 px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-extrabold rounded-lg shadow-2xs transition-colors shrink-0"
                         >
-                          Auto-Sync Target
+                          <MatIcon name="sync" size={12} />
+                          <span>Auto-Sync Target</span>
                         </button>
                       )}
                     </div>
@@ -951,10 +970,10 @@ export default function QPMakerForm({
                                 const updated = data.subjectDivisions.filter((_, i) => i !== idx);
                                 onUpdate({ subjectDivisions: updated });
                               }}
-                              className="p-2 text-slate-400 hover:text-rose-600 rounded-xl transition-colors"
+                              className="p-2 text-slate-400 hover:text-rose-600 rounded-xl transition-colors flex items-center justify-center"
                               title="Delete Subject"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <MatIcon name="delete" size={18} />
                             </button>
                           )}
                         </div>
@@ -1078,15 +1097,16 @@ export default function QPMakerForm({
               <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
                 <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                    <Layers className="w-4 h-4 text-indigo-600" />
+                    <MatIcon name="layers" size={18} className="text-indigo-600" />
                     <span>3. Target Papers ({targetPapersList.length} Papers)</span>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowRawTargets(!showRawTargets)}
-                    className="text-xs font-bold text-indigo-600 hover:underline"
+                    className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline"
                   >
-                    {showRawTargets ? 'Visual Mode' : 'Raw Text Mode'}
+                    <MatIcon name="code" size={14} />
+                    <span>{showRawTargets ? 'Visual Mode' : 'Raw Mode'}</span>
                   </button>
                 </div>
 
@@ -1097,14 +1117,15 @@ export default function QPMakerForm({
                       key={tp.label}
                       type="button"
                       onClick={() => onUpdate({ batchesAndSets: tp.value })}
-                      className="px-2.5 py-1 text-[11px] font-bold bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-800 rounded-xl border border-slate-200 transition-colors"
+                      className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold bg-slate-50 hover:bg-indigo-50 text-slate-700 hover:text-indigo-800 rounded-xl border border-slate-200 transition-colors"
                     >
-                      + {tp.label}
+                      <MatIcon name="playlist_add" size={14} />
+                      <span>{tp.label.split('(')[0].trim()}</span>
                     </button>
                   ))}
                 </div>
 
-                {/* Target Variant Chips */}
+                {/* Target Variant Chips with Material Icons */}
                 {targetPapersList.length > 0 && (
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {targetPapersList.map((t, idx) => (
@@ -1112,6 +1133,7 @@ export default function QPMakerForm({
                         key={idx}
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200 shadow-2xs"
                       >
+                        <MatIcon name="label" size={14} className="text-indigo-600" />
                         <span>{t.label}</span>
                         <button
                           type="button"
@@ -1121,9 +1143,10 @@ export default function QPMakerForm({
                               .map((x) => x.label);
                             onUpdate({ batchesAndSets: syncTargetsToText(remaining) });
                           }}
-                          className="hover:text-rose-600"
+                          className="hover:text-rose-600 flex items-center justify-center"
+                          title="Remove Target"
                         >
-                          &times;
+                          <MatIcon name="close" size={14} />
                         </button>
                       </span>
                     ))}
@@ -1132,8 +1155,9 @@ export default function QPMakerForm({
 
                 {!showRawTargets ? (
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                      Add Custom Variant:
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block flex items-center gap-1">
+                      <MatIcon name="tune" size={12} />
+                      <span>Add Custom Variant:</span>
                     </span>
                     <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                       <input
@@ -1181,9 +1205,10 @@ export default function QPMakerForm({
                           }
                           setCustomSet('');
                         }}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs shrink-0"
+                        className="flex items-center gap-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs shrink-0"
                       >
-                        + Add Target
+                        <MatIcon name="add" size={16} />
+                        <span>Add Target</span>
                       </button>
                     </div>
                   </div>
@@ -1207,9 +1232,10 @@ export default function QPMakerForm({
             <button
               type="button"
               onClick={onSaveDay}
-              className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
             >
-              Save Draft
+              <MatIcon name="save" size={16} />
+              <span>Save Draft</span>
             </button>
             <button
               type="button"
@@ -1217,7 +1243,7 @@ export default function QPMakerForm({
               className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md transition-all"
             >
               <span>Next: Question Sources &amp; Materials ({totalMaterials})</span>
-              <ArrowRight className="w-4 h-4" />
+              <MatIcon name="arrow_forward" size={16} />
             </button>
           </div>
         </div>
@@ -1233,7 +1259,7 @@ export default function QPMakerForm({
             <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                  <ImageIcon className="w-4 h-4 text-indigo-600" />
+                  <MatIcon name="source" size={18} className="text-indigo-600" />
                   <span>4. Question Source Materials ({sourcesCount} Items)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -1243,10 +1269,11 @@ export default function QPMakerForm({
                     className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
                     title="Paste Image or Document from Clipboard"
                   >
-                    <Clipboard className="w-3.5 h-3.5" /> Paste
+                    <MatIcon name="content_paste" size={14} />
+                    <span>Paste</span>
                   </button>
                   <label className="flex items-center gap-1 px-3 py-1 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl cursor-pointer shadow-xs transition-colors">
-                    <Upload className="w-3.5 h-3.5" />
+                    <MatIcon name="upload_file" size={14} />
                     <span>Upload Images/PDF</span>
                     <input
                       type="file"
@@ -1263,7 +1290,7 @@ export default function QPMakerForm({
               {sourcesCount === 0 ? (
                 <div className="border-2 border-dashed border-slate-300 rounded-3xl p-8 text-center space-y-3 bg-slate-50/50">
                   <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto">
-                    <Upload className="w-6 h-6" />
+                    <MatIcon name="cloud_upload" size={24} />
                   </div>
                   <div className="space-y-1">
                     <h4 className="text-xs font-bold text-slate-800">Upload Question Sources or Question Images</h4>
@@ -1307,7 +1334,7 @@ export default function QPMakerForm({
                                 className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg"
                                 title="Zoom Image"
                               >
-                                <Eye className="w-4 h-4" />
+                                <MatIcon name="zoom_in" size={16} />
                               </button>
                             )}
 
@@ -1320,9 +1347,9 @@ export default function QPMakerForm({
                                 title="Run Gemini Vision OCR description"
                               >
                                 {isDescribing ? (
-                                  <RefreshCw className="w-3 h-3 animate-spin text-indigo-600" />
+                                  <MatIcon name="sync" size={14} className="animate-spin text-indigo-600" />
                                 ) : (
-                                  <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                  <MatIcon name="auto_awesome" size={14} className="text-amber-500" />
                                 )}
                                 <span>{isDescribing ? 'Extracting...' : 'AI Describe'}</span>
                               </button>
@@ -1337,7 +1364,7 @@ export default function QPMakerForm({
                               className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg"
                               title="Delete Item"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <MatIcon name="delete" size={16} />
                             </button>
                           </div>
                         </div>
@@ -1379,7 +1406,7 @@ export default function QPMakerForm({
             <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                  <FileCode className="w-4 h-4 text-indigo-600" />
+                  <MatIcon name="photo_library" size={18} className="text-indigo-600" />
                   <span>5. Diagrams &amp; Assets ({assetsCount} Files)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -1388,10 +1415,10 @@ export default function QPMakerForm({
                     onClick={() => handlePasteClipboard('asset')}
                     className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
                   >
-                    <Clipboard className="w-3.5 h-3.5" /> Paste
+                    <MatIcon name="content_paste" size={14} /> Paste
                   </button>
                   <label className="flex items-center gap-1 px-3 py-1 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl cursor-pointer shadow-xs transition-colors">
-                    <Upload className="w-3.5 h-3.5" />
+                    <MatIcon name="add_photo_alternate" size={14} />
                     <span>Upload Diagram</span>
                     <input
                       type="file"
@@ -1406,7 +1433,7 @@ export default function QPMakerForm({
 
               {assetsCount === 0 ? (
                 <div className="border-2 border-dashed border-slate-300 rounded-3xl p-8 text-center space-y-2 bg-slate-50/50">
-                  <ImageIcon className="w-8 h-8 text-slate-300 mx-auto" />
+                  <MatIcon name="image" size={32} className="text-slate-300 mx-auto" />
                   <p className="text-xs font-bold text-slate-600">No Diagrams Uploaded</p>
                   <p className="text-[11px] text-slate-400">
                     Upload standalone images referenced in questions as &lt;img src=&quot;filename.png&quot;&gt;.
@@ -1431,7 +1458,7 @@ export default function QPMakerForm({
                           }}
                           className="p-1 text-slate-400 hover:text-rose-600 rounded"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <MatIcon name="delete" size={14} />
                         </button>
                       </div>
 
@@ -1467,7 +1494,7 @@ export default function QPMakerForm({
               onClick={() => switchPhase('BLUEPRINT')}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <MatIcon name="arrow_back" size={16} />
               <span>Back to Blueprint</span>
             </button>
             <button
@@ -1475,7 +1502,8 @@ export default function QPMakerForm({
               onClick={() => switchPhase('DESIGN')}
               className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-xs shadow-md transition-all"
             >
-              <span>Next: Design &amp; Launchpad →</span>
+              <span>Next: Design &amp; Launchpad</span>
+              <MatIcon name="arrow_forward" size={16} />
             </button>
           </div>
         </div>
@@ -1491,7 +1519,7 @@ export default function QPMakerForm({
             <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
               <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                  <Palette className="w-4 h-4 text-indigo-600" />
+                  <MatIcon name="palette" size={18} className="text-indigo-600" />
                   <span>5. QP Design Template ({templates.length} Templates)</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -1503,14 +1531,14 @@ export default function QPMakerForm({
                     }}
                     className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:underline"
                   >
-                    <Code className="w-3.5 h-3.5" /> Edit HTML
+                    <MatIcon name="code" size={14} /> Edit HTML
                   </button>
                   <button
                     type="button"
                     onClick={onOpenDartSync}
                     className="flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-indigo-600"
                   >
-                    <RefreshCw className="w-3.5 h-3.5" /> Sync Dart
+                    <MatIcon name="sync" size={14} /> Sync Dart
                   </button>
                 </div>
               </div>
@@ -1526,7 +1554,7 @@ export default function QPMakerForm({
                   />
                   <div>
                     <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                      <Columns className="w-3.5 h-3.5 text-indigo-600" /> Two-Column Stream Layout
+                      <MatIcon name="view_column" size={16} className="text-indigo-600" /> Two-Column Stream Layout
                     </span>
                     <span className="text-[11px] text-slate-500">
                       Renders continuous dual columns like standard high-school entrance papers
@@ -1609,7 +1637,7 @@ export default function QPMakerForm({
                           }}
                           className="text-[11px] font-bold text-indigo-600 hover:underline flex items-center gap-1"
                         >
-                          <Eye className="w-3 h-3" /> Preview
+                          <MatIcon name="visibility" size={14} /> Preview
                         </button>
                         {isSel && (
                           <span className="text-[10px] font-black text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full">
@@ -1629,7 +1657,7 @@ export default function QPMakerForm({
               <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
                 <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <MatIcon name="psychology" size={18} className="text-amber-500" />
                     <span>6. AI Directives &amp; Guidelines</span>
                   </div>
                 </div>
@@ -1655,9 +1683,10 @@ export default function QPMakerForm({
                         key={chip}
                         type="button"
                         onClick={() => handleAddPresetPrompt(chip)}
-                        className="px-2.5 py-1 text-[11px] font-bold bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-800 rounded-xl border border-slate-200 transition-colors"
+                        className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-800 rounded-xl border border-slate-200 transition-colors"
                       >
-                        + {chip}
+                        <MatIcon name="add" size={14} />
+                        <span>{chip}</span>
                       </button>
                     ))}
                   </div>
@@ -1669,7 +1698,7 @@ export default function QPMakerForm({
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
                     <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 text-amber-300 text-xs font-bold">
-                      <Zap className="w-3.5 h-3.5 fill-amber-300" />
+                      <MatIcon name="bolt" size={14} className="text-amber-300" />
                       <span>Ready to Compile</span>
                     </div>
                     <h4 className="text-lg font-black tracking-tight">Generate All Variants</h4>
@@ -1691,12 +1720,12 @@ export default function QPMakerForm({
                 >
                   {isGenerating ? (
                     <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <MatIcon name="sync" size={18} className="animate-spin" />
                       <span>Generating Question Papers...</span>
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4 fill-slate-950" />
+                      <MatIcon name="rocket_launch" size={18} />
                       <span>Launch &amp; Compile All Papers Now</span>
                     </>
                   )}
@@ -1712,15 +1741,16 @@ export default function QPMakerForm({
               onClick={() => switchPhase('SOURCES')}
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <MatIcon name="arrow_back" size={16} />
               <span>Back to Sources</span>
             </button>
             <button
               type="button"
               onClick={onSaveDay}
-              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
+              className="flex items-center gap-1.5 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
             >
-              Save Day
+              <MatIcon name="save" size={16} />
+              <span>Save Day</span>
             </button>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Loader2, Sparkles } from 'lucide-react';
+import MatIcon from './MatIcon';
 import { QPMakerDayData } from './types';
 import QPMakerProgress from './QPMakerProgress';
 
@@ -16,7 +16,8 @@ export default function QPMakerInstructions({ data, onUpdate, isGenerating, gene
     <>
       <div className="p-4 md:p-6">
         <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-2">
-          <FileText className="w-4 h-4 text-indigo-500" /> Global / Additional Instructions
+          <MatIcon name="description" size={18} className="text-indigo-500" />
+          <span>Global / Additional Instructions</span>
         </label>
         <textarea
           value={data.extraInstructions}
@@ -40,8 +41,8 @@ export default function QPMakerInstructions({ data, onUpdate, isGenerating, gene
           disabled={isGenerating || data.items.length === 0}
           className="w-full flex items-center justify-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:active:scale-100"
         >
-          {isGenerating ? <Loader2 className="w-6 h-6 animate-spin" /> : <Sparkles className="w-6 h-6" />}
-          {isGenerating ? 'AI is generating papers...' : 'Generate Question Papers'}
+          {isGenerating ? <MatIcon name="sync" size={24} className="animate-spin" /> : <MatIcon name="auto_awesome" size={24} />}
+          <span>{isGenerating ? 'AI is generating papers...' : 'Generate Question Papers'}</span>
         </button>
       </div>
     </>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, X } from 'lucide-react';
+import MatIcon from './MatIcon';
 
 interface Props {
   days: number[];
@@ -26,7 +26,7 @@ export default function QPMakerDaySelector({ days, currentDay, onSetCurrentDay, 
               className={`px-2 py-2 rounded-r-md border-y border-r text-sm transition-colors ${currentDay === day ? 'bg-indigo-700 text-white border-indigo-700 hover:bg-indigo-800' : 'bg-white text-gray-400 border-gray-200 hover:bg-red-50 hover:text-red-500'}`}
               title="Delete Day"
             >
-              <X className="w-4 h-4" />
+              <MatIcon name="close" size={16} />
             </button>
           )}
         </div>
@@ -35,7 +35,8 @@ export default function QPMakerDaySelector({ days, currentDay, onSetCurrentDay, 
         onClick={onAddDay}
         className="flex items-center gap-1 px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 transition-colors text-sm font-medium shrink-0"
       >
-        <Plus className="w-4 h-4" /> Add Day
+        <MatIcon name="add" size={16} />
+        <span>Add Day</span>
       </button>
     </div>
   );

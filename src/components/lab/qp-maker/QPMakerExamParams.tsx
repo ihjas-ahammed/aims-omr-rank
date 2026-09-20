@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Clock, Target } from 'lucide-react';
+import MatIcon from './MatIcon';
 import SubjectDivisionInput from './SubjectDivisionInput';
 import { QPMakerDayData } from './types';
 
@@ -12,12 +12,13 @@ export default function QPMakerExamParams({ data, onUpdate }: Props) {
   return (
     <div className="p-4 md:p-6 border-b border-gray-200 bg-gray-50/50">
       <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-        <Target className="w-5 h-5 text-indigo-600" /> Exam Parameters
+        <MatIcon name="tune" size={20} className="text-indigo-600" />
+        <span>Exam Parameters</span>
       </h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div>
           <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-            <Calendar className="w-4 h-4 text-indigo-500" /> Date
+            <MatIcon name="calendar_today" size={16} className="text-indigo-500" /> Date
           </label>
           <input
             type="text"
@@ -29,7 +30,7 @@ export default function QPMakerExamParams({ data, onUpdate }: Props) {
         </div>
         <div>
           <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-            <Clock className="w-4 h-4 text-indigo-500" /> Duration (Mins)
+            <MatIcon name="schedule" size={16} className="text-indigo-500" /> Duration (Mins)
           </label>
           <input
             type="text"
@@ -41,7 +42,7 @@ export default function QPMakerExamParams({ data, onUpdate }: Props) {
         </div>
         <div className="sm:col-span-2 md:col-span-2">
           <label className="flex items-center gap-1.5 text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-            <Target className="w-4 h-4 text-indigo-500" /> Total Marks
+            <MatIcon name="military_tech" size={16} className="text-indigo-500" /> Total Marks
           </label>
           <input
             type="text"

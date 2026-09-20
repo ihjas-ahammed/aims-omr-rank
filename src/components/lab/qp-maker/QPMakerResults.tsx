@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GeneratedQP } from '../../../services/gemini/qpMakerService';
-import { Download, FileCode, Printer, RotateCcw, Eye } from 'lucide-react';
+import MatIcon from './MatIcon';
 import QPPreviewModal from './QPPreviewModal';
 
 interface QPMakerResultsProps {
@@ -9,7 +9,7 @@ interface QPMakerResultsProps {
 }
 
 export default function QPMakerResults({ results, onReset }: QPMakerResultsProps) {
-  const[previewFile, setPreviewFile] = useState<GeneratedQP | null>(null);
+  const [previewFile, setPreviewFile] = useState<GeneratedQP | null>(null);
 
   const handleDownload = (filename: string, content: string) => {
     const blob = new Blob([content], { type: 'text/html' });
@@ -40,15 +40,15 @@ export default function QPMakerResults({ results, onReset }: QPMakerResultsProps
               onClick={handleDownloadAll}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"
             >
-              <Download className="w-4 h-4" />
-              Download All
+              <MatIcon name="download" size={18} />
+              <span>Download All</span>
             </button>
             <button
               onClick={onReset}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 border border-gray-200 rounded-lg font-medium hover:bg-gray-200 transition-colors shadow-sm"
             >
-              <RotateCcw className="w-4 h-4" />
-              Edit & Regenerate
+              <MatIcon name="restart_alt" size={18} />
+              <span>Edit & Regenerate</span>
             </button>
           </div>
         </div>
@@ -57,8 +57,8 @@ export default function QPMakerResults({ results, onReset }: QPMakerResultsProps
           {results.map((res, i) => (
             <div key={i} className="flex flex-col bg-gray-50 rounded-xl border border-gray-200 p-4 hover:border-indigo-300 transition-colors shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg shrink-0">
-                  <FileCode className="w-6 h-6" />
+                <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg shrink-0 flex items-center justify-center">
+                  <MatIcon name="code" size={24} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <h4 className="font-bold text-gray-900 truncate" title={res.filename}>{res.filename}</h4>
@@ -70,13 +70,15 @@ export default function QPMakerResults({ results, onReset }: QPMakerResultsProps
                   onClick={() => setPreviewFile(res)}
                   className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
                 >
-                  <Eye className="w-4 h-4" /> Preview
+                  <MatIcon name="visibility" size={16} />
+                  <span>Preview</span>
                 </button>
                 <button
                   onClick={() => handleDownload(res.filename, res.htmlContent)}
                   className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition-colors text-sm font-medium"
                 >
-                  <Download className="w-4 h-4" /> Save
+                  <MatIcon name="download" size={16} />
+                  <span>Save</span>
                 </button>
               </div>
             </div>

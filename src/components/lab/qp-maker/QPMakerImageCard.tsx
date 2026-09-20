@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Sparkles, Loader2, Image as ImageIcon } from 'lucide-react';
+import MatIcon from './MatIcon';
 import { QPItem } from './types';
 import { fileToBase64 } from '../../../utils/imageProcessing';
 import { generateImageDescription } from '../../../services/gemini/qpMakerService';
@@ -42,31 +42,32 @@ export default function QPMakerImageCard({ itemData, index, onRemove, onUpdateDe
         {itemData.previewUrl ? (
           <img src={itemData.previewUrl} alt={`Source ${index + 1}`} className="w-full h-full object-contain bg-white" />
         ) : (
-          <ImageIcon className="w-8 h-8 text-gray-300" />
+          <MatIcon name="image" size={32} className="text-gray-300" />
         )}
         <div className="absolute top-0 left-0 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-br-lg z-10">
           Src {index + 1}
         </div>
         <button 
           onClick={() => onRemove(itemData.id)}
-          className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+          className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10 flex items-center justify-center"
           title="Remove Image"
         >
-          <Trash2 className="w-4 h-4" />
+          <MatIcon name="delete" size={16} />
         </button>
       </div>
       <div className="flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-2">
           <label className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-wider">
-            <ImageIcon className="w-3.5 h-3.5" /> Description / Mapping
+            <MatIcon name="description" size={16} />
+            <span>Description / Mapping</span>
           </label>
           <button
             onClick={handleAutoDescribe}
             disabled={isDescribing}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-colors disabled:opacity-50 border border-indigo-100 shadow-sm"
           >
-            {isDescribing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-            Auto-Describe
+            <MatIcon name={isDescribing ? "sync" : "auto_awesome"} size={16} className={isDescribing ? "animate-spin" : "text-amber-500"} />
+            <span>{isDescribing ? 'Extracting...' : 'Auto-Describe'}</span>
           </button>
         </div>
         <textarea
