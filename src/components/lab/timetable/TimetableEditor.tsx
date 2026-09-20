@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { 
   ArrowLeft, Save, Download, Copy, Share2, Plus, Trash2, ArrowUp, ArrowDown, 
-  Sparkles, Calendar, Clock, Phone, BookOpen, AlertCircle, Check, Eye, Edit3, X, CheckCircle2
+  Sparkles, Calendar, Clock, Phone, BookOpen, AlertCircle, Check, Eye, Edit3, X, CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import { PosterCardPreview, PosterSubject } from './PosterCardPreview';
-import { downloadTimetableCardImage, copyTimetableCardToClipboard } from '../../../utils/timetableCardExport';
+import { downloadTimetableCardImage, copyTimetableCardToClipboard, shareTimetableCardImage } from '../../../utils/timetableCardExport';
 import { getAutoIconForSubject } from '../../../services/timetableAiService';
 import { parseClipboardTimetable } from '../../../utils/timetableClipboardParser';
 
@@ -146,6 +147,7 @@ export const TimetableEditor: React.FC<Props> = ({
   // Operation States
   const [saving, setSaving] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [copying, setCopying] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [duplicateClassName, setDuplicateClassName] = useState('');
@@ -442,9 +444,31 @@ export const TimetableEditor: React.FC<Props> = ({
       await downloadTimetableCardImage(batchName, date);
       showToast('Poster card downloaded!');
     } catch (e: any) {
-      showToast('Download error: ' + e.message);
+      showToast('Download error: ' + (e?.message || 'Download failed'));
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleDirectShare = async () => {
+    setSharing(true);
+    try {
+      const res = await shareTimetableCardImage(batchName, date);
+      if (res.method === 'share') {
+        if (res.message !== 'Share cancelled') {
+          showToast('Poster card shared successfully!');
+        }
+      } else if (res.method === 'clipboard') {
+        showToast(res.message || 'Poster image copied to clipboard! (Ctrl+V to paste)');
+      } else if (res.method === 'download') {
+        showToast(res.message || 'Poster image downloaded!');
+      }
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') {
+        showToast('Share failed: ' + (e?.message || 'Error'));
+      }
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -549,19 +573,31 @@ export const TimetableEditor: React.FC<Props> = ({
 
           <button
             onClick={handleDownload}
-            disabled={downloading}
+            disabled={downloading || sharing}
             className="px-4 py-1.5 text-xs font-black bg-[#062e5b] hover:bg-[#0d427d] text-white flex items-center gap-1.5 shadow-sm transition-colors"
+            title="Download high-resolution poster PNG"
           >
-            <Download className="w-3.5 h-3.5" />
+            {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
             {downloading ? 'Rendering PNG...' : 'Download PNG'}
           </button>
 
           <button
-            onClick={() => setShowShareModal(true)}
-            className="px-3.5 py-1.5 text-xs font-bold bg-[#78b82a] hover:bg-[#5c921c] text-white flex items-center gap-1.5 shadow-sm transition-colors"
+            onClick={handleDirectShare}
+            disabled={sharing || downloading}
+            className="px-4 py-1.5 text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 shadow-sm transition-colors"
+            title="Directly share timetable poster image via WhatsApp, Telegram, or any installed app"
           >
-            <Share2 className="w-3.5 h-3.5" />
-            Share
+            {sharing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
+            {sharing ? 'Preparing Share...' : 'Direct Share Image'}
+          </button>
+
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="px-3 py-1.5 text-xs font-bold border border-slate-300 hover:bg-slate-50 text-slate-700 flex items-center gap-1.5 transition-colors shadow-xs"
+            title="Send text message via WhatsApp"
+          >
+            <Share2 className="w-3.5 h-3.5 text-[#78b82a]" />
+            WhatsApp Link
           </button>
         </div>
       </div>
@@ -1114,11 +1150,21 @@ export const TimetableEditor: React.FC<Props> = ({
           </button>
 
           <button
+            onClick={handleDirectShare}
+            disabled={sharing || downloading}
+            className="px-2.5 py-2 text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 shadow-sm"
+            title="Direct Share Image"
+          >
+            {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+            <span className="hidden sm:inline">{sharing ? 'Sharing...' : 'Share'}</span>
+          </button>
+
+          <button
             onClick={handleDownload}
-            disabled={downloading}
+            disabled={downloading || sharing}
             className="px-3.5 py-2 text-xs font-black bg-[#062e5b] text-white flex items-center gap-1.5 shadow-sm"
           >
-            <Download className="w-4 h-4" />
+            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             {downloading ? 'Exporting...' : 'Download'}
           </button>
 
@@ -1172,20 +1218,32 @@ export const TimetableEditor: React.FC<Props> = ({
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-2 border-t border-slate-100">
               <button
-                onClick={() => setShowShareModal(false)}
-                className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleOpenWhatsApp}
-                className="px-4 py-1.5 text-xs font-bold bg-[#78b82a] hover:bg-[#5c921c] text-white flex items-center gap-1.5 shadow-sm"
+                onClick={() => {
+                  setShowShareModal(false);
+                  handleDirectShare();
+                }}
+                className="px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 shadow-xs"
               >
                 <Share2 className="w-3.5 h-3.5" />
-                Open in WhatsApp
+                Direct Share Image Instead
               </button>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleOpenWhatsApp}
+                  className="px-4 py-1.5 text-xs font-bold bg-[#78b82a] hover:bg-[#5c921c] text-white flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  Open in WhatsApp
+                </button>
+              </div>
             </div>
           </div>
         </div>

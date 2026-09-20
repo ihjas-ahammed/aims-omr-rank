@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { 
   CalendarDays, Plus, Search, Sliders, ScanLine, Download, Trash2, 
   Copy, Edit2, Calendar, Clock, BookOpen, AlertTriangle, ArrowRight, X, Check,
-  Archive, Loader2, FileDown, Sparkles, ClipboardPaste, Link2
+  Archive, Loader2, FileDown, Sparkles, ClipboardPaste, Link2, Share2
 } from 'lucide-react';
 
 import { TeacherMappingsModal } from './TeacherMappingsModal';
@@ -11,7 +11,7 @@ import { TimetableAiSettingsModal } from './TimetableAiSettingsModal';
 import { PasteTimetableModal } from './PasteTimetableModal';
 import { DuplicateClassModal } from './DuplicateClassModal';
 import { PosterCardPreview } from './PosterCardPreview';
-import { downloadTimetableCardImage, captureTimetableCardBlob, createTimetableZipArchive } from '../../../utils/timetableCardExport';
+import { downloadTimetableCardImage, captureTimetableCardBlob, createTimetableZipArchive, shareTimetableCardImage } from '../../../utils/timetableCardExport';
 import { getTimetableAiConfig, TimetableAiConfig } from '../../../services/timetableAiService';
 import { saveAs } from 'file-saver';
 
@@ -84,8 +84,9 @@ export const TimetableManager: React.FC<Props> = ({
   const [targetDayForClass, setTargetDayForClass] = useState('');
   const [newClassName, setNewClassName] = useState('');
 
-  // Toast / Download Status
+  // Toast / Download / Share Status
   const [downloadingClassKey, setDownloadingClassKey] = useState<string | null>(null);
+  const [sharingClassKey, setSharingClassKey] = useState<string | null>(null);
   const [quickExportTarget, setQuickExportTarget] = useState<{ dayDate: string; classData: any } | null>(null);
 
   // Today & Tomorrow Strings
@@ -155,22 +156,48 @@ export const TimetableManager: React.FC<Props> = ({
   const [zippingDayDate, setZippingDayDate] = useState<string | null>(null);
   const [zipProgressText, setZipProgressText] = useState<string>('');
 
-  // Quick download helper
+  // Quick download helper with delay for DOM mounting & asset loading
   const handleQuickDownload = async (dayDate: string, c: any) => {
     const key = `${dayDate}_${c.class_name}`;
     setDownloadingClassKey(key);
     setQuickExportTarget({ dayDate, classData: c });
 
-    setTimeout(async () => {
-      try {
-        await downloadTimetableCardImage(c.class_name, dayDate, 'quick-export-poster-card');
-      } catch (e) {
-        console.error('Quick download failed:', e);
-      } finally {
-        setDownloadingClassKey(null);
-        setQuickExportTarget(null);
+    try {
+      // Small pause for React DOM mount and styles to settle
+      await new Promise(resolve => setTimeout(resolve, 200));
+      await downloadTimetableCardImage(c.class_name, dayDate, 'quick-export-poster-card');
+    } catch (e) {
+      console.error('Quick download failed:', e);
+    } finally {
+      setDownloadingClassKey(null);
+      setQuickExportTarget(null);
+    }
+  };
+
+  // Direct share image helper
+  const handleQuickShare = async (dayDate: string, c: any) => {
+    const key = `${dayDate}_${c.class_name}`;
+    setSharingClassKey(key);
+    setQuickExportTarget({ dayDate, classData: c });
+
+    try {
+      // Small pause for React DOM mount and styles to settle
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const res = await shareTimetableCardImage(c.class_name, dayDate, 'quick-export-poster-card');
+      if (res.method === 'clipboard') {
+        alert(res.message || 'Poster image copied to clipboard! (Paste into WhatsApp or chat)');
+      } else if (res.method === 'download') {
+        alert(res.message || 'Direct share not supported by this browser. Image downloaded!');
       }
-    }, 120);
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') {
+        console.error('Quick share failed:', e);
+        alert('Failed to share image: ' + (e?.message || 'Error'));
+      }
+    } finally {
+      setSharingClassKey(null);
+      setQuickExportTarget(null);
+    }
   };
 
   // Robust Sequential ZIP Exporter for all cards in a day (bypasses browser multi-download limits)
@@ -482,10 +509,27 @@ export const TimetableManager: React.FC<Props> = ({
                                 </button>
                                 <button
                                   onClick={() => handleQuickDownload(day.date, c)}
+                                  disabled={downloadingClassKey === `${day.date}_${c.class_name}` || sharingClassKey === `${day.date}_${c.class_name}`}
                                   className="p-1 text-[#062e5b] hover:bg-slate-200"
                                   title="Quick Download PNG Card"
                                 >
-                                  <Download className="w-3.5 h-3.5" />
+                                  {downloadingClassKey === `${day.date}_${c.class_name}` ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Download className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleQuickShare(day.date, c)}
+                                  disabled={sharingClassKey === `${day.date}_${c.class_name}` || downloadingClassKey === `${day.date}_${c.class_name}`}
+                                  className="p-1 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50"
+                                  title="Direct Share PNG Card Image"
+                                >
+                                  {sharingClassKey === `${day.date}_${c.class_name}` ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Share2 className="w-3.5 h-3.5" />
+                                  )}
                                 </button>
                                 <button
                                   onClick={() => onDeleteClassFromDay(day.date, c.class_name)}
