@@ -517,8 +517,8 @@ export default function QPMaker({ onBack }: { onBack: () => void }) {
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center min-h-[300px] text-gray-500 font-medium">
-        <RefreshCw className="w-5 h-5 animate-spin mr-2 text-indigo-600" />
-        Loading Question Paper Studio...
+        <MatIcon name="sync" size={20} className="animate-spin mr-2 text-indigo-600" />
+        <span>Loading Question Paper Studio...</span>
       </div>
     );
   }
