@@ -68,11 +68,11 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     load();
   }, []);
 
-  const load = async () => {
+  const load = async (forceRefresh = false) => {
     setLoading(true);
     setError('');
     try {
-      const [s, c] = await Promise.all([fetchAttendanceStudents(), fetchAllNoteSummaries()]);
+      const [s, c] = await Promise.all([fetchAttendanceStudents(forceRefresh), fetchAllNoteSummaries()]);
       setStudents(s);
       setSummaries(c);
     } catch (e: any) {
@@ -160,7 +160,9 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = students.filter(s => (q ? s.name.toLowerCase().includes(q) : s.batch === batch));
+    const list = students.filter(s =>
+      q ? s.name.toLowerCase().includes(q) || s.enrollNumber.toLowerCase().includes(q) : s.batch === batch
+    );
     if (sortBy === 'latest') {
       list.sort((a, b) => {
         const la = summaries[a.enrollNumber]?.lastTick || '';
@@ -234,7 +236,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
           >
             <Printer className="w-4 h-4" /> Print batch
           </button>
-          <button onClick={load} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600" aria-label="Reload">
+          <button onClick={() => load(true)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600" aria-label="Reload">
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </>
@@ -278,7 +280,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                 <input
                   value={query}
                   onChange={e => setQuery(e.target.value)}
-                  placeholder="Search student name (all batches)"
+                  placeholder="Search student name or enroll no. (all batches)"
                   className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:border-indigo-400"
                 />
               </div>
@@ -319,7 +321,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                           <div className="min-w-0">
                             <div className="text-sm font-semibold text-gray-900 truncate">{s.name}</div>
                             <div className="text-xs text-gray-500">
-                              {s.batch} • last tick {shortDate(sum?.lastTick || null)}
+                              #{s.enrollNumber} • {s.batch} • last tick {shortDate(sum?.lastTick || null)}
                             </div>
                           </div>
                           <span

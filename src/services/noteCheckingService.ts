@@ -18,20 +18,92 @@ export const NOTE_BATCHES = ['A1', 'A2', 'B1', 'B2', 'B3'];
 
 const PROGRESS_ROOT = 'note_checking';
 
-export async function fetchAttendanceStudents(): Promise<AttendanceStudent[]> {
+let cachedStudents: AttendanceStudent[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL_MS = 60 * 1000; // 1-minute cache to avoid re-downloading student rosters on re-renders
+
+export async function fetchAttendanceStudents(forceRefresh = false): Promise<AttendanceStudent[]> {
   if (!rtdb) throw new Error('Firebase is not configured');
-  const snap = await get(ref(rtdb, 'attendance/users'));
-  const raw = snap.val();
-  if (!raw) return [];
-  const list: any[] = Array.isArray(raw) ? raw : Object.values(raw);
-  return list
-    .filter(u => u && u.enabled !== 0 && (u.name || '').trim() && NOTE_BATCHES.includes(u.department))
-    .map(u => ({
-      enrollNumber: String(u.enroll_number),
-      name: String(u.name).trim().toUpperCase(),
-      batch: u.department as string
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+
+  if (!forceRefresh && cachedStudents && Date.now() - cacheTimestamp < CACHE_TTL_MS) {
+    return cachedStudents;
+  }
+
+  const map = new Map<string, AttendanceStudent>();
+
+  // 1. Primary source: attendance/by_student (contains registered students with name, department, enroll_number)
+  try {
+    const snap = await get(ref(rtdb, 'attendance/by_student'));
+    const raw = snap.val();
+    if (raw && typeof raw === 'object') {
+      Object.entries(raw).forEach(([key, val]: [string, any]) => {
+        if (!val) return;
+        const name = String(val.name || '').trim();
+        const batch = String(val.department || '').trim().toUpperCase();
+        const enrollNumber = String(val.enroll_number || key).trim();
+        if (name && NOTE_BATCHES.includes(batch) && enrollNumber) {
+          map.set(enrollNumber, {
+            enrollNumber,
+            name: name.toUpperCase(),
+            batch
+          });
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('Failed to fetch from attendance/by_student:', err);
+  }
+
+  // 2. Fallback / supplement: attendance/users (in case users node contains student names)
+  try {
+    const snap = await get(ref(rtdb, 'attendance/users'));
+    const raw = snap.val();
+    if (raw) {
+      const list: any[] = Array.isArray(raw) ? raw : Object.values(raw);
+      list.forEach(u => {
+        if (!u || u.enabled === 0) return;
+        const name = String(u.name || '').trim();
+        const batch = String(u.department || '').trim().toUpperCase();
+        const enrollNumber = String(u.enroll_number || '').trim();
+        if (name && NOTE_BATCHES.includes(batch) && enrollNumber && !map.has(enrollNumber)) {
+          map.set(enrollNumber, {
+            enrollNumber,
+            name: name.toUpperCase(),
+            batch
+          });
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('Failed to fetch from attendance/users:', err);
+  }
+
+  // 3. Fallback / supplement: existing records under note_checking
+  try {
+    const snap = await get(ref(rtdb, PROGRESS_ROOT));
+    const raw = snap.val();
+    if (raw && typeof raw === 'object') {
+      Object.entries(raw).forEach(([id, val]: [string, any]) => {
+        if (!val) return;
+        const name = String(val.name || '').trim();
+        const batch = String(val.batch || '').trim().toUpperCase();
+        if (name && NOTE_BATCHES.includes(batch) && !map.has(id)) {
+          map.set(id, {
+            enrollNumber: id,
+            name: name.toUpperCase(),
+            batch
+          });
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('Failed to fetch from note_checking:', err);
+  }
+
+  const result = Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  cachedStudents = result;
+  cacheTimestamp = Date.now();
+  return result;
 }
 
 export async function fetchNoteProgress(enrollNumber: string): Promise<NoteProgressMap> {
