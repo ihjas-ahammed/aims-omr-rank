@@ -27,46 +27,177 @@ export const FIRST_LANGUAGE_SUBJECTS: Record<FirstLanguageSubject, SubjectDef> =
   Malayalam: {
     id: 'malayalam1',
     nameEn: 'Malayalam I',
-    nameMl: 'മലയാളം I',
+    nameMl: 'മലയാളം I (കേരള പാഠാവലി)',
     code: 'MAL-1',
     color: 'from-pink-600 to-rose-600',
     bgGradient: 'bg-gradient-to-r from-pink-600 to-rose-600',
     borderColor: 'border-pink-200',
     chapters: [
-      { id: 'mal1-1', chapterNumber: 1, titleEn: 'UNIT 1', titleMl: 'UNIT 1', totalBoxes: 1 },
-      { id: 'mal1-2', chapterNumber: 2, titleEn: 'UNIT 2', titleMl: 'UNIT 2', totalBoxes: 1 },
-      { id: 'mal1-3', chapterNumber: 3, titleEn: 'UNIT 3', titleMl: 'UNIT 3', totalBoxes: 1 },
-      { id: 'mal1-4', chapterNumber: 4, titleEn: 'UNIT 4', titleMl: 'UNIT 4', totalBoxes: 1 }
+      {
+        id: 'mal1-1',
+        chapterNumber: 1,
+        unitEn: 'UNIT 1: LANGUAGE & CULTURE',
+        unitMl: 'യൂണിറ്റ് 1: ഭാഷ പൂത്തും സംസ്കാരം തളിർത്തും',
+        titleEn: 'KATHAKALATHIMOHANAM & SWATHANTHRYATHINTE CHIRAKUKAL',
+        titleMl: 'കഥകളതിമോഹനം & സ്വാതന്ത്ര്യത്തിന്റെ ചിറകുകൾ',
+        subtitleEn: '1. Kathakalathimohanam (Vallathol)  2. Swathanthryathinte Chirakukal (A.P.J. Abdul Kalam)  3. Mathrubhasha',
+        subtitleMl: '1. കഥകളതിമോഹനം  2. സ്വാതന്ത്ര്യത്തിന്റെ ചിറകുകൾ  3. മാതൃഭാഷ: നമ്മുടെ ഉള്ളിൽ ഒഴുകുന്ന ജീവനദി',
+        totalBoxes: 1
+      },
+      {
+        id: 'mal1-2',
+        chapterNumber: 2,
+        unitEn: 'UNIT 2: TRUTH WITHIN',
+        unitMl: 'യൂണിറ്റ് 2: ഉള്ളിലാണെപ്പോഴും ഉണ്മതാനെന്നപോൽ',
+        titleEn: 'RESIDENT EDITOR & ANNANNATHE & THEN',
+        titleMl: 'റസിഡന്റ് എഡിറ്റർ & അന്നന്നത്തെ... & തേൻ',
+        subtitleEn: '1. Resident Editor (V. Muzafer Ahamed)  2. Annannathe... (K. Satchidanandan)  3. Then (C.V. Balakrishnan)',
+        subtitleMl: '1. റസിഡന്റ് എഡിറ്റർ  2. അന്നന്നത്തെ...  3. തേൻ',
+        totalBoxes: 1
+      },
+      {
+        id: 'mal1-3',
+        chapterNumber: 3,
+        unitEn: 'UNIT 3: SOIL AND HUMAN',
+        unitMl: 'യൂണിറ്റ് 3: മണ്ണും മനുഷ്യനും (വിസ്തൃതലോകവിതാനത്തിൽ)',
+        titleEn: 'MANNUM MANUSHYANUM & BATTHERIKKADUTTHU MALANKARAYIL',
+        titleMl: 'മണ്ണും മനുഷ്യനും & ബത്തേരിക്കടുത്ത് മലങ്കരയിൽ',
+        subtitleEn: '1. Mannum Manushyanum (T. Padmanabhan)  2. Battherikkaduthu Malankarayil (P.P. Ramachandran)  3. Vellathinu Theliyaathirikkaanaavilla',
+        subtitleMl: '1. മണ്ണും മനുഷ്യനും (ടി. പത്മനാഭൻ)  2. ബത്തേരിക്കടുത്ത് മലങ്കരയിൽ (പി.പി. രാമചന്ദ്രൻ)  3. വെള്ളത്തിന് തെളിയാതിരിക്കാനാവില്ല (സാറാ ജോസഫ്)',
+        totalBoxes: 1
+      },
+      {
+        id: 'mal1-4',
+        chapterNumber: 4,
+        unitEn: 'UNIT 4: LAND AND WRITING',
+        unitMl: 'യൂണിറ്റ് 4: ദേശവും എഴുത്തും',
+        titleEn: 'DESHAVUM EZHUTHUM & ALAPPUZHAVELLAM',
+        titleMl: 'ദേശവും എഴുത്തും & ആലപ്പുഴവെള്ളം',
+        subtitleEn: '1. Deshavum Ezhuthum (Kovilan)  2. Alappuzhavellam (Anitha Thambi)  3. Muringa Marathoppu',
+        subtitleMl: '1. ദേശവും എഴുത്തും (കോവിലൻ)  2. ആലപ്പുഴവെള്ളം (അനിത തമ്പി)  3. മുരിങ്ങാമരത്തോപ്പ്',
+        totalBoxes: 1
+      },
+      {
+        id: 'mal1-5',
+        chapterNumber: 5,
+        unitEn: 'UNIT 5: THE JOURNEY',
+        unitMl: 'യൂണിറ്റ് 5: പ്രയാണം (സംഘർഷങ്ങൾ സങ്കീർത്തനങ്ങൾ)',
+        titleEn: 'PRAYAANAM & NARABALI',
+        titleMl: 'പ്രയാണം & നരബലി (പ്രലോഭനം)',
+        subtitleEn: '1. Prayaanam (Vayalar Ramavarma)  2. Narabali (Subodh Jawadekar) / Pralobhanam',
+        subtitleMl: '1. പ്രയാണം (വയലാർ രാമവർമ്മ)  2. നരബലി (സുബോധ് ജാവഡേക്കർ) / പ്രലോഭനം',
+        totalBoxes: 1
+      }
     ]
   },
   Arabic: {
     id: 'arabic',
     nameEn: 'Arabic',
-    nameMl: 'അറബിക്',
+    nameMl: 'അറബിക് (اللغة العربية)',
     code: 'ARB',
     color: 'from-emerald-600 to-teal-600',
     bgGradient: 'bg-gradient-to-r from-emerald-600 to-teal-600',
     borderColor: 'border-emerald-200',
     chapters: [
-      { id: 'arb-1', chapterNumber: 1, titleEn: 'UNIT 1', titleMl: 'UNIT 1', totalBoxes: 1 },
-      { id: 'arb-2', chapterNumber: 2, titleEn: 'UNIT 2', titleMl: 'UNIT 2', totalBoxes: 1 },
-      { id: 'arb-3', chapterNumber: 3, titleEn: 'UNIT 3', titleMl: 'UNIT 3', totalBoxes: 1 },
-      { id: 'arb-4', chapterNumber: 4, titleEn: 'UNIT 4', titleMl: 'UNIT 4', totalBoxes: 1 }
+      {
+        id: 'arb-1',
+        chapterNumber: 1,
+        unitEn: 'UNIT 1: SONGS OF SHEPHERDS',
+        unitMl: 'യൂണിറ്റ് 1: الوحدة الأولى',
+        titleEn: 'AGHANI AL-RUAT & RETURN TO LIFE',
+        titleMl: 'أغاني الرعاة & عودة إلى الحياة',
+        subtitleEn: '1. Aghani Al-Ruat  2. Awdatun ila Al-Hayat  3. Ghurfat Al-Ara',
+        subtitleMl: '١. أغاني الرعاة  ٢. عودة إلى الحياة  ٣. غرفة الآراء',
+        totalBoxes: 1
+      },
+      {
+        id: 'arb-2',
+        chapterNumber: 2,
+        unitEn: 'UNIT 2: NARRATIVES & REFLECTIONS',
+        unitMl: 'യൂണിറ്റ് 2: الوحدة الثانية',
+        titleEn: 'PROSE READINGS & EXPRESSIONS',
+        titleMl: 'الوحدة الثانية: نصوص وقراءات',
+        subtitleEn: 'Literary comprehension, expressions and textual activities',
+        subtitleMl: 'قراءات أدبية وتعبيرية وأنشطة لغوية',
+        totalBoxes: 1
+      },
+      {
+        id: 'arb-3',
+        chapterNumber: 3,
+        unitEn: 'UNIT 3: A GIRL LIKE A BUTTERFLY',
+        unitMl: 'യൂണിറ്റ് 3: الوحدة الثالثة',
+        titleEn: 'TIFLATUN KAL-FARASHA',
+        titleMl: 'طفلة كالفراشة (A Girl Like A Butterfly)',
+        subtitleEn: '1. Tiflatun Kal-Farasha  2. Najm Al-Hind  3. Abqariyyat Al-Tareekh',
+        subtitleMl: '١. طفلة كالفراشة  ٢. نجم الهند  ٣. عبقريات التاريخ',
+        totalBoxes: 1
+      },
+      {
+        id: 'arb-4',
+        chapterNumber: 4,
+        unitEn: 'UNIT 4: INTEGRITY AND JUSTICE',
+        unitMl: 'യൂണിറ്റ് 4: الوحدة الرابعة',
+        titleEn: 'TAWQEE AL-NAZAHA & ADALTA FA-AMINTA',
+        titleMl: 'توقيع النزاهة & عدلت فأمنت',
+        subtitleEn: '1. Tawqee Al-Nazaha  2. Adalta Fa-aminta  3. Sifr Al-Yadayn / Ardh Khas',
+        subtitleMl: '١. توقيع النزاهة  ٢. عدلت فأمنت  ٣. صفر اليدين / عرض خاص',
+        totalBoxes: 1
+      }
     ]
   },
   Urdu: {
     id: 'urdu',
     nameEn: 'Urdu',
-    nameMl: 'ഉറുദു',
+    nameMl: 'ഉറുദു (اردو)',
     code: 'URD',
     color: 'from-amber-600 to-orange-600',
     bgGradient: 'bg-gradient-to-r from-amber-600 to-orange-600',
     borderColor: 'border-amber-200',
     chapters: [
-      { id: 'urd-1', chapterNumber: 1, titleEn: 'UNIT 1', titleMl: 'UNIT 1', totalBoxes: 1 },
-      { id: 'urd-2', chapterNumber: 2, titleEn: 'UNIT 2', titleMl: 'UNIT 2', totalBoxes: 1 },
-      { id: 'urd-3', chapterNumber: 3, titleEn: 'UNIT 3', titleMl: 'UNIT 3', totalBoxes: 1 },
-      { id: 'urd-4', chapterNumber: 4, titleEn: 'UNIT 4', titleMl: 'UNIT 4', totalBoxes: 1 }
+      {
+        id: 'urd-1',
+        chapterNumber: 1,
+        unitEn: 'UNIT 1: CLASSICAL PROSE & POETRY',
+        unitMl: 'യൂണിറ്റ് 1: یونٹ 1',
+        titleEn: 'HIKAYAT WA NAZMEIN',
+        titleMl: 'حکایات و نظمیں (Prose & Poetry)',
+        subtitleEn: 'Introductory literary prose, moral tales and poems',
+        subtitleMl: 'نثری اسباق، اخلاقی کہانیاں اور ابتدائی منظومات',
+        totalBoxes: 1
+      },
+      {
+        id: 'urd-2',
+        chapterNumber: 2,
+        unitEn: 'UNIT 2: LITERATURE AND LIFE',
+        unitMl: 'യൂണിറ്റ് 2: یونٹ 2',
+        titleEn: 'ADAB AUR ZINDAGI',
+        titleMl: 'ادب اور زندگی (Literature and Life)',
+        subtitleEn: 'Narratives, letters, and poetic forms',
+        subtitleMl: 'مضامین، خطوط اور اصنافِ سخن',
+        totalBoxes: 1
+      },
+      {
+        id: 'urd-3',
+        chapterNumber: 3,
+        unitEn: 'UNIT 3: NATIONAL INTEGRATION & POETRY',
+        unitMl: 'യൂണിറ്റ് 3: یونٹ 3',
+        titleEn: 'QAUMI YAKJEHTI AUR SHAYARI',
+        titleMl: 'قومی یکجہتی اور شاعری',
+        subtitleEn: 'Patriotic poems, Ghazals, and character sketches',
+        subtitleMl: 'قومی نظمیں، نمائندہ غزلیں اور خاکے',
+        totalBoxes: 1
+      },
+      {
+        id: 'urd-4',
+        chapterNumber: 4,
+        unitEn: 'UNIT 4: MODERN THOUGHT & CULTURE',
+        unitMl: 'യൂണിറ്റ് 4: یونٹ 4',
+        titleEn: 'INQILAB-E-FIKR WA TAHZEEB',
+        titleMl: 'انقلابِ فکر و تہذیب',
+        subtitleEn: 'Social consciousness, scientific outlook and plays',
+        subtitleMl: 'سماجی شعور، سائنسی نقطہ نظر اور ڈرامہ',
+        totalBoxes: 1
+      }
     ]
   }
 };

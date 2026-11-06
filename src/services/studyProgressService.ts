@@ -687,8 +687,9 @@ export async function exportStudyProgressToExcel(records: StudentProgressRecord[
 
   records.forEach((rec, rIdx) => {
     const isMalayalam = rec.medium === 'Malayalam';
+    const subjectsForStudent = getSubjectListForStudent(rec.firstLanguage);
 
-    STUDY_SUBJECTS.forEach((subject) => {
+    subjectsForStudent.forEach((subject) => {
       const subName = isMalayalam ? subject.nameMl : subject.nameEn;
 
       subject.chapters.forEach((ch) => {
