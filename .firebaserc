@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "aims-plus-evaluation"
+    "default": "aims-plus-evaluation",
+    "kondotty": "aims-kondotty1"
   }
 }
