@@ -34,7 +34,9 @@ export const FIRST_LANGUAGE_SUBJECTS: Record<FirstLanguageSubject, SubjectDef> =
     borderColor: 'border-pink-200',
     chapters: [
       { id: 'mal1-1', chapterNumber: 1, titleEn: 'UNIT 1', titleMl: 'UNIT 1', totalBoxes: 1 },
-      { id: 'mal1-2', chapterNumber: 2, titleEn: 'UNIT 2', titleMl: 'UNIT 2', totalBoxes: 1 }
+      { id: 'mal1-2', chapterNumber: 2, titleEn: 'UNIT 2', titleMl: 'UNIT 2', totalBoxes: 1 },
+      { id: 'mal1-3', chapterNumber: 3, titleEn: 'UNIT 3', titleMl: 'UNIT 3', totalBoxes: 1 },
+      { id: 'mal1-4', chapterNumber: 4, titleEn: 'UNIT 4', titleMl: 'UNIT 4', totalBoxes: 1 }
     ]
   },
   Arabic: {
@@ -47,7 +49,9 @@ export const FIRST_LANGUAGE_SUBJECTS: Record<FirstLanguageSubject, SubjectDef> =
     borderColor: 'border-emerald-200',
     chapters: [
       { id: 'arb-1', chapterNumber: 1, titleEn: 'UNIT 1', titleMl: 'UNIT 1', totalBoxes: 1 },
-      { id: 'arb-2', chapterNumber: 2, titleEn: 'UNIT 2', titleMl: 'UNIT 2', totalBoxes: 1 }
+      { id: 'arb-2', chapterNumber: 2, titleEn: 'UNIT 2', titleMl: 'UNIT 2', totalBoxes: 1 },
+      { id: 'arb-3', chapterNumber: 3, titleEn: 'UNIT 3', titleMl: 'UNIT 3', totalBoxes: 1 },
+      { id: 'arb-4', chapterNumber: 4, titleEn: 'UNIT 4', titleMl: 'UNIT 4', totalBoxes: 1 }
     ]
   },
   Urdu: {
@@ -60,7 +64,9 @@ export const FIRST_LANGUAGE_SUBJECTS: Record<FirstLanguageSubject, SubjectDef> =
     borderColor: 'border-amber-200',
     chapters: [
       { id: 'urd-1', chapterNumber: 1, titleEn: 'UNIT 1', titleMl: 'UNIT 1', totalBoxes: 1 },
-      { id: 'urd-2', chapterNumber: 2, titleEn: 'UNIT 2', titleMl: 'UNIT 2', totalBoxes: 1 }
+      { id: 'urd-2', chapterNumber: 2, titleEn: 'UNIT 2', titleMl: 'UNIT 2', totalBoxes: 1 },
+      { id: 'urd-3', chapterNumber: 3, titleEn: 'UNIT 3', titleMl: 'UNIT 3', totalBoxes: 1 },
+      { id: 'urd-4', chapterNumber: 4, titleEn: 'UNIT 4', titleMl: 'UNIT 4', totalBoxes: 1 }
     ]
   }
 };
@@ -91,6 +97,34 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'ലെൻസുകൾ',
         subtitleEn: 'Refraction and optical lenses',
         subtitleMl: 'പ്രകാശ അപവർത്തനവും ലെൻസുകളും',
+        totalBoxes: 1
+      },
+      {
+        id: 'phy-3',
+        chapterNumber: 3,
+        titleEn: 'THE WORLD OF COLOURS AND VISION',
+        titleMl: 'കാഴ്ചയും വർണ്ണങ്ങളുടെ ലോകവും',
+        totalBoxes: 1
+      },
+      {
+        id: 'phy-4',
+        chapterNumber: 4,
+        titleEn: 'MAGNETIC EFFECT OF ELECTRIC CURRENT',
+        titleMl: 'വൈദ്യുതിയുടെ കാന്തികഫലം',
+        totalBoxes: 1
+      },
+      {
+        id: 'phy-5',
+        chapterNumber: 5,
+        titleEn: 'ELECTRIC ENERGY: CONSUMPTION AND CONSERVATION',
+        titleMl: 'വൈദ്യുതോർജ്ജം: ഉപയോഗവും സംരക്ഷണവും',
+        totalBoxes: 1
+      },
+      {
+        id: 'phy-6',
+        chapterNumber: 6,
+        titleEn: 'ELECTROMAGNETIC INDUCTION IN DAILY LIFE',
+        titleMl: 'വൈദ്യുതകാന്തിക പ്രേരണം: നിത്യജീവിതത്തിൽ',
         totalBoxes: 1
       }
     ]
@@ -130,6 +164,27 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         subtitleEn: 'Upto quantum numbers',
         subtitleMl: 'Upto quantum numbers',
         totalBoxes: 1
+      },
+      {
+        id: 'chem-4',
+        chapterNumber: 4,
+        titleEn: 'GAS LAWS AND MOLE CONCEPT',
+        titleMl: 'വാതക നിയമങ്ങളും, മോൾ സങ്കല്പവും',
+        totalBoxes: 1
+      },
+      {
+        id: 'chem-5',
+        chapterNumber: 5,
+        titleEn: 'ELECTROCHEMISTRY',
+        titleMl: 'വൈദ്യുത രസതന്ത്രം',
+        totalBoxes: 1
+      },
+      {
+        id: 'chem-6',
+        chapterNumber: 6,
+        titleEn: 'METALS',
+        titleMl: 'ലോഹങ്ങൾ',
+        totalBoxes: 1
       }
     ]
   },
@@ -158,6 +213,27 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'പരിണാമത്തിന്റെ വഴികൾ',
         subtitleEn: 'Evolutionary theory and origin of species',
         subtitleMl: 'പരിണാമ സിദ്ധാന്തങ്ങളും തെളിവുകളും',
+        totalBoxes: 1
+      },
+      {
+        id: 'bio-3',
+        chapterNumber: 3,
+        titleEn: 'BEHIND SENSATIONS',
+        titleMl: 'സംവേദനങ്ങൾക്ക് പിന്നിൽ',
+        totalBoxes: 1
+      },
+      {
+        id: 'bio-4',
+        chapterNumber: 4,
+        titleEn: 'CHEMORECEPTION IN ORGANISM',
+        titleMl: 'ജീവികളിലെ രാസസംവേദനം',
+        totalBoxes: 1
+      },
+      {
+        id: 'bio-5',
+        chapterNumber: 5,
+        titleEn: 'IMMUNITY AND HEALTH CARE',
+        titleMl: 'പ്രതിരോധവും ആരോഗ്യ സംരക്ഷണവും',
         totalBoxes: 1
       }
     ]
@@ -214,6 +290,48 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleMl: 'രണ്ടാംകൃതി സമവാക്യങ്ങൾ',
         subtitleEn: 'Quadratic equations and roots',
         subtitleMl: 'രണ്ടാംകൃതി സമവാക്യങ്ങളുടെ നിർദ്ധാരണം',
+        totalBoxes: 1
+      },
+      {
+        id: 'math-6',
+        chapterNumber: 6,
+        titleEn: 'TRIGONOMETRY',
+        titleMl: 'ത്രികോണമിതി',
+        totalBoxes: 1
+      },
+      {
+        id: 'math-7',
+        chapterNumber: 7,
+        titleEn: 'COORDINATES',
+        titleMl: 'സൂചകസംഖ്യകൾ',
+        totalBoxes: 1
+      },
+      {
+        id: 'math-8',
+        chapterNumber: 8,
+        titleEn: 'TANGENTS',
+        titleMl: 'തൊടുവരകൾ',
+        totalBoxes: 1
+      },
+      {
+        id: 'math-9',
+        chapterNumber: 9,
+        titleEn: 'POLYNOMIALS AND EQUATIONS',
+        titleMl: 'ബഹുപദങ്ങളും സമവാക്യങ്ങളും',
+        totalBoxes: 1
+      },
+      {
+        id: 'math-10',
+        chapterNumber: 10,
+        titleEn: 'CIRCLES AND LINES',
+        titleMl: 'വൃത്തങ്ങളും വരകളും',
+        totalBoxes: 1
+      },
+      {
+        id: 'math-11',
+        chapterNumber: 11,
+        titleEn: 'GEOMETRY AND ALGEBRA',
+        titleMl: 'ജ്യാമിതിയും ബീജഗണിതവും',
         totalBoxes: 1
       }
     ]
@@ -281,6 +399,71 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         subtitleEn: 'Modern Poetry',
         subtitleMl: 'Modern Poetry',
         totalBoxes: 1
+      },
+      {
+        id: 'eng-6',
+        chapterNumber: 3,
+        unitEn: 'UNIT 2: PATHS OF PROGRESS',
+        unitMl: 'UNIT 2: PATHS OF PROGRESS',
+        titleEn: 'THE SEEDLING',
+        titleMl: 'THE SEEDLING',
+        totalBoxes: 1
+      },
+      {
+        id: 'eng-7',
+        chapterNumber: 1,
+        unitEn: 'UNIT 3: THE TRUMPETS OF CHANGE',
+        unitMl: 'UNIT 3: THE TRUMPETS OF CHANGE',
+        titleEn: 'ANOTHER DAY IN PARADISE',
+        titleMl: 'ANOTHER DAY IN PARADISE',
+        totalBoxes: 1
+      },
+      {
+        id: 'eng-8',
+        chapterNumber: 2,
+        unitEn: 'UNIT 3: THE TRUMPETS OF CHANGE',
+        unitMl: 'UNIT 3: THE TRUMPETS OF CHANGE',
+        titleEn: 'WAR',
+        titleMl: 'WAR',
+        totalBoxes: 1
+      },
+      {
+        id: 'eng-9',
+        chapterNumber: 3,
+        unitEn: 'UNIT 3: THE TRUMPETS OF CHANGE',
+        unitMl: 'UNIT 3: THE TRUMPETS OF CHANGE',
+        titleEn: 'A PIECE OF STRING',
+        titleMl: 'A PIECE OF STRING',
+        totalBoxes: 1
+      },
+      {
+        id: 'eng-10',
+        chapterNumber: 1,
+        unitEn: 'UNIT 4: WOODLAND WHISPERS',
+        unitMl: 'UNIT 4: WOODLAND WHISPERS',
+        titleEn: 'SHAKUNTALAM',
+        titleMl: 'SHAKUNTALAM',
+        totalBoxes: 1
+      },
+      {
+        id: 'eng-11',
+        chapterNumber: 2,
+        unitEn: 'UNIT 4: WOODLAND WHISPERS',
+        unitMl: 'UNIT 4: WOODLAND WHISPERS',
+        titleEn: 'TRILLS AND THRILLS',
+        titleMl: 'TRILLS AND THRILLS',
+        subtitleEn: 'Bird Watching in India',
+        subtitleMl: 'Bird Watching in India',
+        totalBoxes: 1
+      },
+      {
+        id: 'eng-12',
+        chapterNumber: 3,
+        unitEn: 'UNIT 4: WOODLAND WHISPERS',
+        unitMl: 'UNIT 4: WOODLAND WHISPERS',
+        titleEn: 'THE WILD SWANS AT COOLE',
+        titleMl: 'THE WILD SWANS AT COOLE',
+        totalBoxes: 1
       }
     ]
   },
@@ -347,6 +530,61 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         subtitleEn: 'Story Analysis',
         subtitleMl: 'कहानी',
         totalBoxes: 1
+      },
+      {
+        id: 'hin-6',
+        chapterNumber: 1,
+        unitEn: 'UNIT 3',
+        unitMl: 'UNIT 3',
+        titleEn: 'DILLI MEIN UNIDE',
+        titleMl: 'दिल्ली में उनीदे (संस्मरण)',
+        subtitleEn: 'Memoir',
+        subtitleMl: 'संस्मरण',
+        totalBoxes: 1
+      },
+      {
+        id: 'hin-7',
+        chapterNumber: 2,
+        unitEn: 'UNIT 3',
+        unitMl: 'UNIT 3',
+        titleEn: 'MADHUR VACHAN',
+        titleMl: 'मधुर वचन (दोहे)',
+        subtitleEn: 'Couplets',
+        subtitleMl: 'दोहे',
+        totalBoxes: 1
+      },
+      {
+        id: 'hin-8',
+        chapterNumber: 3,
+        unitEn: 'UNIT 3',
+        unitMl: 'UNIT 3',
+        titleEn: 'EK TINKA',
+        titleMl: 'एक तिनका (कविता)',
+        subtitleEn: 'Poem',
+        subtitleMl: 'कविता',
+        totalBoxes: 1
+      },
+      {
+        id: 'hin-9',
+        chapterNumber: 1,
+        unitEn: 'UNIT 4',
+        unitMl: 'UNIT 4',
+        titleEn: 'GALILEO',
+        titleMl: 'गैलीलियो (लेख)',
+        subtitleEn: 'Article',
+        subtitleMl: 'लेख',
+        totalBoxes: 1
+      },
+      {
+        id: 'hin-10',
+        chapterNumber: 2,
+        unitEn: 'UNIT 4',
+        unitMl: 'UNIT 4',
+        titleEn: 'PAIDAL CHALTA HUA AADMI',
+        titleMl: 'पैदल चलता हुआ आदमी (कविता)',
+        subtitleEn: 'Poem',
+        subtitleMl: 'कविता',
+        totalBoxes: 1
       }
     ]
   },
@@ -394,6 +632,33 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         titleEn: 'VISHUKKANI',
         titleMl: 'വിഷുക്കണി',
         totalBoxes: 1
+      },
+      {
+        id: 'mal2-5',
+        chapterNumber: 2,
+        unitEn: 'UNIT 2: EKODARA SODARAR NAAM',
+        unitMl: 'UNIT : 2  ഏകോദര സോദരർ നാം',
+        titleEn: 'ANANDASHRUKKAL',
+        titleMl: 'ആനന്ദാശ്രുക്കൾ',
+        totalBoxes: 1
+      },
+      {
+        id: 'mal2-6',
+        chapterNumber: 3,
+        unitEn: 'UNIT 2: EKODARA SODARAR NAAM',
+        unitMl: 'UNIT : 2  ഏകോദര സോദരർ നാം',
+        titleEn: 'KETHALLU',
+        titleMl: 'കെത്തളു',
+        totalBoxes: 1
+      },
+      {
+        id: 'mal2-7',
+        chapterNumber: 1,
+        unitEn: 'UNIT 3: CHARITHRAM RACHICHA NAADAKAM',
+        unitMl: 'UNIT : 3  ചരിത്രം രചിച്ച നാടകം',
+        titleEn: 'CHARITHRAM RACHICHA NAADAKAM',
+        titleMl: 'ചരിത്രം രചിച്ച നാടകം',
+        totalBoxes: 1
       }
     ]
   },
@@ -432,6 +697,34 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         subtitleEn: 'Sociology perspectives',
         subtitleMl: 'സമൂഹശാസ്ത്ര സങ്കല്പങ്ങൾ',
         totalBoxes: 1
+      },
+      {
+        id: 'hist-4',
+        chapterNumber: 4,
+        titleEn: 'WEALTH AND THE WORLD',
+        titleMl: 'സമ്പത്തും ലോകവും',
+        totalBoxes: 1
+      },
+      {
+        id: 'hist-5',
+        chapterNumber: 5,
+        titleEn: 'PUBLIC OPINION IN DEMOCRACY',
+        titleMl: 'പൊതുജനാഭിപ്രായം ജനാധിപത്യത്തിൽ',
+        totalBoxes: 1
+      },
+      {
+        id: 'hist-6',
+        chapterNumber: 6,
+        titleEn: 'MASS MOVEMENT FOR FREEDOM',
+        titleMl: 'സ്വാതന്ത്ര്യത്തിനായുള്ള ബഹുജന മുന്നേറ്റം',
+        totalBoxes: 1
+      },
+      {
+        id: 'hist-7',
+        chapterNumber: 7,
+        titleEn: 'THE GLIMPSE OF FREE INDIA',
+        titleMl: 'സ്വതന്ത്ര ഇന്ത്യയുടെ വർത്തമാനം',
+        totalBoxes: 1
       }
     ]
   },
@@ -463,12 +756,33 @@ export const STUDY_SUBJECTS: SubjectDef[] = [
         totalBoxes: 1
       },
       {
+        id: 'geo-3',
+        chapterNumber: 3,
+        titleEn: 'FROM THE RAINY FORESTS TO THE LAND OF PERMAFROST',
+        titleMl: 'മഴക്കാടുകളിൽ നിന്ന് മഞ്ഞുരുകാത്ത നാട്ടിലേക്ക്',
+        totalBoxes: 1
+      },
+      {
         id: 'geo-4',
         chapterNumber: 4,
         titleEn: 'CONSUMERS RIGHT & PROTECTION',
         titleMl: 'ഉപഭോക്താവ് : അവകാശങ്ങളും സംരക്ഷണവും',
         subtitleEn: 'Consumer awareness and laws',
         subtitleMl: 'ഉപഭോക്തൃ അവകാശ സംരക്ഷണം',
+        totalBoxes: 1
+      },
+      {
+        id: 'geo-5',
+        chapterNumber: 5,
+        titleEn: 'MONEY AND ECONOMY',
+        titleMl: 'പണവും സമ്പദ് വ്യവസ്ഥയും',
+        totalBoxes: 1
+      },
+      {
+        id: 'geo-6',
+        chapterNumber: 6,
+        titleEn: 'THE CHANGING EARTH',
+        titleMl: 'മാറുന്ന ഭൂമി',
         totalBoxes: 1
       }
     ]
@@ -480,5 +794,7 @@ export function getSubjectListForStudent(firstLang?: FirstLanguageSubject): Subj
   return [langSub, ...STUDY_SUBJECTS];
 }
 
-export const TOTAL_CHAPTERS = STUDY_SUBJECTS.reduce((acc, sub) => acc + sub.chapters.length, 0) + 4;
+export const TOTAL_CHAPTERS =
+  STUDY_SUBJECTS.reduce((acc, sub) => acc + sub.chapters.length, 0) +
+  (FIRST_LANGUAGE_SUBJECTS['Malayalam']?.chapters.length || 4);
 export const TOTAL_CHECKPOINTS = TOTAL_CHAPTERS;
