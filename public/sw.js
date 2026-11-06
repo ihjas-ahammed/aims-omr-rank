@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aims-plus-pwa-v8';
+const CACHE_NAME = 'aims-plus-pwa-v9';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/app_icon.png',

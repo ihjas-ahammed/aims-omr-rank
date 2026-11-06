@@ -33,8 +33,27 @@ export async function fetchAttendanceStudents(forceRefresh = false): Promise<Att
 
   // 1. Primary source: attendance/by_student (contains registered students with name, department, enroll_number)
   try {
-    const snap = await get(ref(rtdb, 'attendance/by_student'));
-    const raw = snap.val();
+    let raw: any = null;
+    try {
+      const snap = await get(ref(rtdb, 'attendance/by_student'));
+      raw = snap.val();
+    } catch (sdkErr) {
+      console.warn('RTDB SDK get(attendance/by_student) failed, trying REST fallback:', sdkErr);
+    }
+
+    if (!raw) {
+      try {
+        const res = await fetch(
+          'https://aims-plus-evaluation-default-rtdb.asia-southeast1.firebasedatabase.app/attendance/by_student.json'
+        );
+        if (res.ok) {
+          raw = await res.json();
+        }
+      } catch (restErr) {
+        console.warn('REST fallback for attendance/by_student failed:', restErr);
+      }
+    }
+
     if (raw && typeof raw === 'object') {
       Object.entries(raw).forEach(([key, val]: [string, any]) => {
         if (!val) return;
@@ -80,8 +99,27 @@ export async function fetchAttendanceStudents(forceRefresh = false): Promise<Att
 
   // 3. Fallback / supplement: existing records under note_checking
   try {
-    const snap = await get(ref(rtdb, PROGRESS_ROOT));
-    const raw = snap.val();
+    let raw: any = null;
+    try {
+      const snap = await get(ref(rtdb, PROGRESS_ROOT));
+      raw = snap.val();
+    } catch (sdkErr) {
+      console.warn('RTDB SDK get(note_checking) failed, trying REST fallback:', sdkErr);
+    }
+
+    if (!raw) {
+      try {
+        const res = await fetch(
+          `https://aims-plus-evaluation-default-rtdb.asia-southeast1.firebasedatabase.app/${PROGRESS_ROOT}.json`
+        );
+        if (res.ok) {
+          raw = await res.json();
+        }
+      } catch (restErr) {
+        console.warn('REST fallback for note_checking failed:', restErr);
+      }
+    }
+
     if (raw && typeof raw === 'object') {
       Object.entries(raw).forEach(([id, val]: [string, any]) => {
         if (!val) return;
@@ -120,8 +158,28 @@ export interface NoteSummary {
 // Done-count and latest tick per student, for the list badges and sorting.
 export async function fetchAllNoteSummaries(): Promise<Record<string, NoteSummary>> {
   if (!rtdb) return {};
-  const snap = await get(ref(rtdb, PROGRESS_ROOT));
-  const raw = snap.val() || {};
+  let raw: any = null;
+  try {
+    const snap = await get(ref(rtdb, PROGRESS_ROOT));
+    raw = snap.val();
+  } catch (sdkErr) {
+    console.warn('RTDB SDK get(note_checking) failed, trying REST fallback:', sdkErr);
+  }
+
+  if (!raw) {
+    try {
+      const res = await fetch(
+        `https://aims-plus-evaluation-default-rtdb.asia-southeast1.firebasedatabase.app/${PROGRESS_ROOT}.json`
+      );
+      if (res.ok) {
+        raw = await res.json();
+      }
+    } catch (restErr) {
+      console.warn('REST fallback for note_checking summaries failed:', restErr);
+    }
+  }
+
+  raw = raw || {};
   const out: Record<string, NoteSummary> = {};
   Object.keys(raw).forEach(id => {
     const done = Object.values<any>(raw[id]?.chapters || {}).filter(c => c?.done);
@@ -134,8 +192,28 @@ export async function fetchAllNoteSummaries(): Promise<Record<string, NoteSummar
 // Every student's chapter ticks, keyed by enroll number (for the batch print matrix).
 export async function fetchAllNoteChapters(): Promise<Record<string, NoteProgressMap>> {
   if (!rtdb) return {};
-  const snap = await get(ref(rtdb, PROGRESS_ROOT));
-  const raw = snap.val() || {};
+  let raw: any = null;
+  try {
+    const snap = await get(ref(rtdb, PROGRESS_ROOT));
+    raw = snap.val();
+  } catch (sdkErr) {
+    console.warn('RTDB SDK get(note_checking) failed, trying REST fallback:', sdkErr);
+  }
+
+  if (!raw) {
+    try {
+      const res = await fetch(
+        `https://aims-plus-evaluation-default-rtdb.asia-southeast1.firebasedatabase.app/${PROGRESS_ROOT}.json`
+      );
+      if (res.ok) {
+        raw = await res.json();
+      }
+    } catch (restErr) {
+      console.warn('REST fallback for note_checking chapters failed:', restErr);
+    }
+  }
+
+  raw = raw || {};
   const out: Record<string, NoteProgressMap> = {};
   Object.keys(raw).forEach(id => {
     out[id] = raw[id]?.chapters || {};
