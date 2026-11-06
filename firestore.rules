@@ -56,7 +56,7 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
-    // Class 10 Term 1 Responses (INSPIRE Cheekkode)
+    // Class 10 Term 1 Responses (INSPIRE Cheekkode) - open access
     match /class10_term1_responses/{responseId} {
       allow read, write: if true;
     }
@@ -66,6 +66,16 @@ service cloud.firestore {
       allow read, write: if true;
     }
     match /deleted_study_progress/{docId} {
+      allow read, write: if true;
+    }
+
+    // Improvement Study Progress
+    match /improvement_study_progress/{docId} {
+      allow read, write: if true;
+    }
+
+    // Plus One Study Progress
+    match /plusone_study_progress/{docId} {
       allow read, write: if true;
     }
   }

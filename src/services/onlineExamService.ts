@@ -568,7 +568,7 @@ export async function exportExamResultsToExcel(
       if (q.type === 'mcq') {
         const studentAns = sub.mcqAnswers?.[q.number] || '—';
         const isCorrect = q.correctOption && studentAns.toUpperCase() === q.correctOption.toUpperCase();
-        rowValues[`q_${q.number}`] = `${studentAns} ${isCorrect ? '(+ ' + q.marks + ')' : studentAns !== '—' ? '(- ' + (q.negativeMarks || 1) + ')' : '(0)'}`;
+        rowValues[`q_${q.number}`] = `${studentAns} ${isCorrect ? '(+ ' + q.marks + ')' : studentAns !== '—' ? '(- ' + (q.negativeMarks ?? 1) + ')' : '(0)'}`;
       } else {
         const descAns = sub.descriptiveAnswers?.[q.number];
         const awarded = descAns?.awardedMarks !== undefined ? `${descAns.awardedMarks}/${q.marks} M` : 'Pending';

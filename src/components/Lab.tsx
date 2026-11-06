@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature, Presentation, ClipboardList, Moon, Calculator, Zap, GraduationCap } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'admin-online-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses' | 'lab-revaluation-responses' | 'teacher-log-form' | 'study-progress-form' | 'sem5-progress-mathematics' | 'sem5-progress-physics' | 'class10-term1-form' | 'class10-term1-admin') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'admin-online-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses' | 'lab-revaluation-responses' | 'teacher-log-form' | 'study-progress-form' | 'sem5-progress-mathematics' | 'sem5-progress-physics' | 'class10-term1-form' | 'class10-term1-admin' | 'plusone-progress-admin' | 'plusone-progress-form' | 'note-checking') => void;
 }
 
 export default function Lab({ onNavigate }: LabProps) {
@@ -330,6 +330,38 @@ export default function Lab({ onNavigate }: LabProps) {
           <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Revaluation Applications</h3>
           <p className="text-sm text-gray-600 flex-1">
             Collect and manage student revaluation requests for batches B1, B2, and B3 with subject-wise score inputs and Excel export.
+          </p>
+        </div>
+
+        <div
+          onClick={() => onNavigate('plusone-progress-admin')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-purple-50 text-purple-600 rounded-lg group-hover:bg-purple-100 transition-colors">
+              <GraduationCap className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Plus One Study Progress (A1 & A2)</h3>
+          <p className="text-sm text-gray-600 flex-1">
+            Class 11 intensive study planner monitor for Batches A1 & A2. View live chapter completion, exact due dates, and exam countdowns.
+          </p>
+        </div>
+
+        <div
+          onClick={() => onNavigate('note-checking')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg group-hover:bg-emerald-100 transition-colors">
+              <ClipboardList className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Note Checking</h3>
+          <p className="text-sm text-gray-600 flex-1">
+            Pick a batch, search a student and tick the NCERT chapters whose notes are completed (Plus One and Plus Two).
           </p>
         </div>
 

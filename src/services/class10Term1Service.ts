@@ -52,7 +52,7 @@ export interface Class10Term1Response {
   fl1Variant?: string; // Chosen first language variant e.g. "Malayalam I"
   subjects: Record<string, number | null>; // subjectId -> entered marks
   totalMarks: number; // auto-calculated
-  maxMarks: number; // 480
+  maxMarks: number; // 440
   percentage: number; // auto-calculated
   grade: string; // A+, A, B+, B, C+, C, D+, D, E
   notes?: string;
@@ -72,14 +72,14 @@ export function calculateSSLCGrade(percentage: number): { grade: string; label: 
   return { grade: 'E', label: 'Needs Improvement (<20%)', color: 'slate' };
 }
 
-const LOCAL_STORAGE_KEY = 'local_class10_term1_responses';
-
 export async function submitClass10Term1Response(
   response: Omit<Class10Term1Response, 'id' | 'submittedAt'>
 ): Promise<string> {
-  const localId = 'local_' + Math.random().toString(36).substring(2, 9);
+  if (!db) {
+    throw new Error('Firestore is not initialized.');
+  }
 
-  // Clean data so that Firestore NEVER receives undefined values (which throws FirebaseError addDoc() called with invalid data: undefined)
+  // Strip undefined fields so Firestore never receives them
   const cleanPayload: Record<string, any> = {};
   for (const [key, value] of Object.entries(response)) {
     if (value !== undefined) {
@@ -95,126 +95,49 @@ export async function submitClass10Term1Response(
     }
   }
 
-  if (!db) {
-    const localData = localStorage.getItem(LOCAL_STORAGE_KEY) || '[]';
-    const parsed: Class10Term1Response[] = JSON.parse(localData);
-    const newEntry: Class10Term1Response = {
-      ...(cleanPayload as any),
-      id: localId,
-      submittedAt: new Date().toISOString()
-    };
-    parsed.unshift(newEntry);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed));
-    return localId;
-  }
+  const docRef = await addDoc(collection(db, 'class10_term1_responses'), {
+    ...cleanPayload,
+    submittedAt: serverTimestamp()
+  });
 
-  try {
-    const docRef = await addDoc(collection(db, 'class10_term1_responses'), {
-      ...cleanPayload,
-      submittedAt: serverTimestamp()
-    });
-
-    // Mirror to localStorage
-    try {
-      const localData = localStorage.getItem(LOCAL_STORAGE_KEY) || '[]';
-      const parsed: Class10Term1Response[] = JSON.parse(localData);
-      parsed.unshift({
-        ...(cleanPayload as any),
-        id: docRef.id,
-        submittedAt: new Date().toISOString()
-      });
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed.slice(0, 150)));
-    } catch (e) {
-      // ignore
-    }
-
-    return docRef.id;
-  } catch (err) {
-    console.warn('Firestore write failed, using local storage fallback:', err);
-    const localData = localStorage.getItem(LOCAL_STORAGE_KEY) || '[]';
-    const parsed: Class10Term1Response[] = JSON.parse(localData);
-    const newEntry: Class10Term1Response = {
-      ...(cleanPayload as any),
-      id: localId,
-      submittedAt: new Date().toISOString()
-    };
-    parsed.unshift(newEntry);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed));
-    return localId;
-  }
+  return docRef.id;
 }
 
 export async function getClass10Term1Responses(): Promise<Class10Term1Response[]> {
   if (!db) {
-    const localData = localStorage.getItem(LOCAL_STORAGE_KEY) || '[]';
-    return JSON.parse(localData);
+    throw new Error('Firestore is not initialized.');
   }
 
-  try {
-    const q = query(collection(db, 'class10_term1_responses'), orderBy('submittedAt', 'desc'));
-    const snapshot = await getDocs(q);
-    const results: Class10Term1Response[] = [];
+  const q = query(collection(db, 'class10_term1_responses'), orderBy('submittedAt', 'desc'));
+  const snapshot = await getDocs(q);
+  const results: Class10Term1Response[] = [];
 
-    snapshot.forEach(docSnap => {
-      const data = docSnap.data();
-      results.push({
-        id: docSnap.id,
-        studentName: data.studentName || '',
-        className: data.className || 'Class 10',
-        batch: data.batch || '',
-        rollNo: data.rollNo || '',
-        phone: data.phone || '',
-        fl1Variant: data.fl1Variant || 'Malayalam I',
-        subjects: data.subjects || {},
-        totalMarks: typeof data.totalMarks === 'number' ? data.totalMarks : 0,
-        maxMarks: typeof data.maxMarks === 'number' ? data.maxMarks : TOTAL_MAX_MARKS,
-        percentage: typeof data.percentage === 'number' ? data.percentage : 0,
-        grade: data.grade || 'E',
-        notes: data.notes || '',
-        submittedAt: data.submittedAt
-      });
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    results.push({
+      id: docSnap.id,
+      studentName: data.studentName || '',
+      className: data.className || 'Class 10',
+      batch: data.batch || '',
+      rollNo: data.rollNo || '',
+      phone: data.phone || '',
+      fl1Variant: data.fl1Variant || 'Malayalam I',
+      subjects: data.subjects || {},
+      totalMarks: typeof data.totalMarks === 'number' ? data.totalMarks : 0,
+      maxMarks: typeof data.maxMarks === 'number' ? data.maxMarks : TOTAL_MAX_MARKS,
+      percentage: typeof data.percentage === 'number' ? data.percentage : 0,
+      grade: data.grade || 'E',
+      notes: data.notes || '',
+      submittedAt: data.submittedAt
     });
+  });
 
-    // Also merge any local-only entries that might not have reached Firestore
-    try {
-      const localData = localStorage.getItem(LOCAL_STORAGE_KEY) || '[]';
-      const localParsed: Class10Term1Response[] = JSON.parse(localData);
-      for (const localItem of localParsed) {
-        if (localItem.id?.startsWith('local_') && !results.some(r => r.id === localItem.id)) {
-          results.push(localItem);
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-
-    return results;
-  } catch (err) {
-    console.warn('Firestore fetch failed, returning localStorage cache:', err);
-    const localData = localStorage.getItem(LOCAL_STORAGE_KEY) || '[]';
-    return JSON.parse(localData);
-  }
+  return results;
 }
 
 export async function deleteClass10Term1Response(id: string): Promise<void> {
-  // Always delete from localStorage
-  try {
-    const localData = localStorage.getItem(LOCAL_STORAGE_KEY) || '[]';
-    const parsed: Class10Term1Response[] = JSON.parse(localData);
-    const filtered = parsed.filter(item => item.id !== id);
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(filtered));
-  } catch (e) {
-    console.error('Failed to remove from localStorage:', e);
+  if (!db) {
+    throw new Error('Firestore is not initialized.');
   }
-
-  if (!db || id.startsWith('local_')) {
-    return;
-  }
-
-  try {
-    await deleteDoc(doc(db, 'class10_term1_responses', id));
-  } catch (err) {
-    console.error('Firestore deleteDoc failed:', err);
-    throw err;
-  }
+  await deleteDoc(doc(db, 'class10_term1_responses', id));
 }

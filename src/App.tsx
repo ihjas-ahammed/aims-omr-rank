@@ -36,6 +36,9 @@ import TeacherLogForm from './components/lab/teacher-log/TeacherLogForm';
 import TeacherLogAdmin from './components/lab/teacher-log/TeacherLogAdmin';
 import { Sem5StudyProgressForm } from './components/lab/sem5-progress';
 import { Class10Term1Form, Class10Term1Admin } from './components/lab/class10-term1';
+import PlusOneStudyProgressForm from './components/lab/plusone/PlusOneStudyProgressForm';
+import PlusOneStudyProgressAdmin from './components/lab/plusone/PlusOneStudyProgressAdmin';
+import NoteChecking from './components/lab/note-checking/NoteChecking';
 
 import { 
   ExamDashboard, 
@@ -80,7 +83,7 @@ const DEFAULT_ANSWER_KEY = `{
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public' | 'revaluation-form' | 'lab-revaluation-responses' | 'lab-revaluation-responses-public' | 'teacher-log-form' | 'teacher-log-admin' | 'sem5-progress-mathematics' | 'sem5-progress-physics' | 'class10-term1-form' | 'class10-term1-admin';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public' | 'revaluation-form' | 'lab-revaluation-responses' | 'lab-revaluation-responses-public' | 'teacher-log-form' | 'teacher-log-admin' | 'sem5-progress-mathematics' | 'sem5-progress-physics' | 'class10-term1-form' | 'class10-term1-admin' | 'plusone-progress-form' | 'plusone-progress-admin' | 'note-checking';
 
 // Parse /aims-present/<mode>/<id> from a pathname. Returns null if it isn't a presenter route.
 function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dashboard'; id: string | null } | null {
@@ -207,6 +210,12 @@ export function getPathForView(view: ViewState): string {
       return '/form/class-10-term-1';
     case 'class10-term1-admin':
       return '/admin/class-10-term-1';
+    case 'plusone-progress-form':
+      return '/form/progress/plusone';
+    case 'plusone-progress-admin':
+      return '/admin/progress/plusone';
+    case 'note-checking':
+      return '/note-checking';
     case 'ranklist':
       return '/ranklist';
     case 'detail':
@@ -311,6 +320,18 @@ function resolveInitialView(): ViewState {
   }
   if (path === '/admin/responses/3f9a7c' || path === '/admin/improvement' || path === '/admin/improvement/3f9a7c' || path === '/admin/improvement-progress') {
     return 'lab-improvement-responses-public';
+  }
+
+  if (path === '/note-checking' || path === '/note-checking/') {
+    return 'note-checking';
+  }
+
+  // 5b. Plus One Study Progress Routes
+  if (path === '/form/progress/plusone' || path === '/progress/plusone' || path === '/form/plusone' || path === '/plusone') {
+    return 'plusone-progress-form';
+  }
+  if (path === '/admin/progress/plusone' || path === '/admin/plusone' || path === '/admin/progress/plus-one') {
+    return 'plusone-progress-admin';
   }
 
   // 6. Compensation Routes
@@ -1278,7 +1299,36 @@ export default function App() {
     view === 'aims-present-view' || 
     view === 'aims-present-control' ||
     (view as string) === 'lab-improvement-responses' ||
-    (view as string) === 'lab-improvement-responses-public';
+    (view as string) === 'lab-improvement-responses-public' ||
+    view === 'plusone-progress-form' ||
+    view === 'plusone-progress-admin' ||
+    view === 'note-checking';
+
+  if (view === 'note-checking') {
+    return <NoteChecking onBack={() => navigateToView('lab')} />;
+  }
+
+  if (view === 'plusone-progress-form') {
+    return (
+      <PlusOneStudyProgressForm 
+        onNavigateAdmin={() => {
+          window.history.pushState({}, '', '/admin/progress/plusone');
+          setView('plusone-progress-admin');
+        }}
+      />
+    );
+  }
+
+  if (view === 'plusone-progress-admin') {
+    return (
+      <PlusOneStudyProgressAdmin 
+        onBack={() => {
+          window.history.pushState({}, '', '/form/progress/plusone');
+          setView('plusone-progress-form');
+        }}
+      />
+    );
+  }
 
   if (view === 'class10-term1-form') {
     return <Class10Term1Form />;
@@ -1662,6 +1712,18 @@ export default function App() {
 
         {(view as string) === 'improvement-form' && (
           <ImprovementForm />
+        )}
+
+        {(view as string) === 'plusone-progress-admin' && (
+          <PlusOneStudyProgressAdmin 
+            onBack={() => navigateToView('lab')} 
+          />
+        )}
+
+        {(view as string) === 'plusone-progress-form' && (
+          <PlusOneStudyProgressForm 
+            onNavigateAdmin={() => navigateToView('plusone-progress-admin')}
+          />
         )}
 
         {(view as string) === 'study-progress-form' && (

@@ -1,0 +1,54 @@
+{
+  "title": "Physics OMR Test (4 MCQ)",
+  "subject": "Physics",
+  "className": "All Batches",
+  "instructions": "Answer all questions. Each correct answer gives 4 marks; each wrong answer loses 1 mark.",
+  "durationMinutes": 45,
+  "isPublished": true,
+  "questions": [
+    {
+      "id": "q1",
+      "number": 1,
+      "type": "mcq",
+      "prompt": "In Fleming's Left-Hand Rule, which finger indicates the direction of the magnetic field?",
+      "marks": 4,
+      "negativeMarks": 1,
+      "numOptions": 4,
+      "options": ["Thumb", "First finger", "Second finger", "Ring finger"],
+      "correctOption": "B"
+    },
+    {
+      "id": "q2",
+      "number": 2,
+      "type": "mcq",
+      "prompt": "Which metal alloy is used to manufacture the heating element in appliances like iron boxes and electric heaters?",
+      "marks": 4,
+      "negativeMarks": 1,
+      "numOptions": 4,
+      "options": ["Copper", "Aluminium", "Nichrome", "Tungsten"],
+      "correctOption": "C"
+    },
+    {
+      "id": "q3",
+      "number": 3,
+      "type": "mcq",
+      "prompt": "Which colour of light in the visible spectrum undergoes maximum atmospheric scattering due to its shorter wavelength?",
+      "marks": 4,
+      "negativeMarks": 1,
+      "numOptions": 4,
+      "options": ["Red", "Yellow", "Green", "Blue"],
+      "correctOption": "D"
+    },
+    {
+      "id": "q4",
+      "number": 4,
+      "type": "mcq",
+      "prompt": "The phenomenon of splitting white light into its component colours when passing through a glass prism is known as",
+      "marks": 4,
+      "negativeMarks": 1,
+      "numOptions": 4,
+      "options": ["Refraction", "Scattering", "Dispersion", "Internal reflection"],
+      "correctOption": "C"
+    }
+  ]
+}

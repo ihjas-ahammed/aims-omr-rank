@@ -504,13 +504,13 @@ export default function OnlineExamEvaluationAdmin({ examId, onBack }: OnlineExam
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-950/80 text-slate-400 font-bold border-b border-slate-800">
                 <tr>
-                  <th className="py-3 px-4">Student</th>
-                  <th className="py-3 px-4">Batch / Reg</th>
-                  <th className="py-3 px-4 text-center">MCQ Score</th>
-                  <th className="py-3 px-4 text-center">Descriptive Score</th>
-                  <th className="py-3 px-4 text-center">Total Score</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  <th className="py-3 px-3 sm:px-4">Student</th>
+                  <th className="hidden md:table-cell py-3 px-4">Batch / Reg</th>
+                  <th className="hidden md:table-cell py-3 px-4 text-center">MCQ Score</th>
+                  <th className="hidden md:table-cell py-3 px-4 text-center">Descriptive Score</th>
+                  <th className="py-3 px-3 sm:px-4 text-center">Total</th>
+                  <th className="hidden md:table-cell py-3 px-4 text-center">Status</th>
+                  <th className="py-3 px-3 sm:px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/80 font-medium">
@@ -522,25 +522,35 @@ export default function OnlineExamEvaluationAdmin({ examId, onBack }: OnlineExam
 
                   return (
                     <tr key={sub.id} className="hover:bg-slate-800/50 transition-colors">
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-3 sm:px-4">
                         <div className="font-extrabold text-white text-sm uppercase">
                           {sub.studentName}
                         </div>
                         <div className="text-[11px] text-slate-400 font-mono">
                           Submitted: {new Date(sub.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
+                        {/* Phone-only summary: these columns are hidden below md */}
+                        <div className="md:hidden mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-400">
+                          <span className="text-slate-200">{sub.studentClass}</span>
+                          <span>• MCQ {sub.mcqScore} M</span>
+                          {sub.isFullyGraded ? (
+                            <span className="font-black text-emerald-300">• Evaluated</span>
+                          ) : (
+                            <span className="font-black text-amber-300">• Pending</span>
+                          )}
+                        </div>
                       </td>
 
-                      <td className="py-3.5 px-4">
+                      <td className="hidden md:table-cell py-3.5 px-4">
                         <div className="text-slate-200">{sub.studentClass}</div>
                         <div className="text-[11px] text-slate-500">{sub.phoneNumber || sub.admissionNo || '—'}</div>
                       </td>
 
-                      <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-200">
+                      <td className="hidden md:table-cell py-3.5 px-4 text-center font-mono font-bold text-slate-200">
                         {sub.mcqScore} M
                       </td>
 
-                      <td className="py-3.5 px-4 text-center font-mono">
+                      <td className="hidden md:table-cell py-3.5 px-4 text-center font-mono">
                         {hasDescriptive ? (
                           <div>
                             <span className="font-bold text-purple-300">{sub.descriptiveScore} M</span>
@@ -551,13 +561,13 @@ export default function OnlineExamEvaluationAdmin({ examId, onBack }: OnlineExam
                         )}
                       </td>
 
-                      <td className="py-3.5 px-4 text-center font-mono">
-                        <span className="px-2.5 py-1 bg-indigo-500/20 text-indigo-300 font-black text-sm rounded-lg border border-indigo-500/30">
+                      <td className="py-3.5 px-3 sm:px-4 text-center font-mono">
+                        <span className="px-2 sm:px-2.5 py-1 bg-indigo-500/20 text-indigo-300 font-black text-sm rounded-lg border border-indigo-500/30 whitespace-nowrap">
                           {sub.totalScore} / {exam.totalMarks}
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-4 text-center">
+                      <td className="hidden md:table-cell py-3.5 px-4 text-center">
                         {sub.isFullyGraded ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-black rounded-full border border-emerald-500/30">
                             <CheckCircle2 className="w-3 h-3" /> Evaluated
@@ -569,7 +579,7 @@ export default function OnlineExamEvaluationAdmin({ examId, onBack }: OnlineExam
                         )}
                       </td>
 
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3.5 px-3 sm:px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           {/* AI Grade Button */}
                           {hasDescriptive && (
@@ -585,12 +595,12 @@ export default function OnlineExamEvaluationAdmin({ examId, onBack }: OnlineExam
                               {isEvaluatingThis ? (
                                 <>
                                   <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                                  <span>Grading...</span>
+                                  <span className="hidden sm:inline">Grading...</span>
                                 </>
                               ) : (
                                 <>
                                   <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                                  <span>AI Grade</span>
+                                  <span className="hidden sm:inline">AI Grade</span>
                                 </>
                               )}
                             </button>
@@ -731,7 +741,7 @@ export default function OnlineExamEvaluationAdmin({ examId, onBack }: OnlineExam
                           <div className="flex items-center justify-between text-[11px]">
                             <span className="font-bold">Q{q.number}</span>
                             <span className="font-mono text-[10px]">
-                              {isCorrect ? `+${q.marks}` : isWrong ? `-${q.negativeMarks || 1}` : '0'}
+                              {isCorrect ? `+${q.marks}` : isWrong ? `-${q.negativeMarks ?? 1}` : '0'}
                             </span>
                           </div>
                           <div className="mt-1 flex items-center justify-between">

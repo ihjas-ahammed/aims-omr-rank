@@ -7,7 +7,6 @@ import {
 } from '../../../services/revaluationService';
 import { 
   User, 
-  Phone, 
   BookOpen, 
   CheckCircle2, 
   Sparkles, 
@@ -30,7 +29,6 @@ import confetti from 'canvas-confetti';
 export default function RevaluationForm() {
   const [name, setName] = useState('');
   const [batch, setBatch] = useState<RevaluationBatch>('B1');
-  const [phone, setPhone] = useState('');
   const [notes, setNotes] = useState('');
 
   // Selected subjects with scores
@@ -185,7 +183,6 @@ export default function RevaluationForm() {
       const id = await submitRevaluationResponse({
         name: name.trim(),
         batch,
-        phone: phone.trim() || undefined,
         subjects: sanitizedSubjects,
         notes: notes.trim() || undefined
       });
@@ -209,7 +206,6 @@ export default function RevaluationForm() {
   const handleReset = () => {
     setName('');
     setBatch('B1');
-    setPhone('');
     setNotes('');
     setSelectedSubjects([]);
     setCustomSubjectName('');
@@ -394,23 +390,6 @@ export default function RevaluationForm() {
                   {errors.batch}
                 </p>
               )}
-            </div>
-
-            {/* Phone / Contact */}
-            <div>
-              <label htmlFor="student-phone-input" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Phone / WhatsApp Number <span className="text-slate-400 font-normal lowercase">(optional)</span>
-              </label>
-              <div className="relative">
-                <input
-                  id="student-phone-input"
-                  type="tel"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  placeholder="e.g., 9876543210"
-                  className="w-full px-4 py-3 bg-slate-50/70 border border-slate-200 rounded-2xl text-slate-900 text-sm font-medium placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
-                />
-              </div>
             </div>
 
           </div>
@@ -637,7 +616,7 @@ export default function RevaluationForm() {
               ) : (
                 <>
                   <Send className="w-5 h-5" />
-                  <span>Submit Revaluation Application</span>
+                  <span>Submit Revaluation Mark</span>
                 </>
               )}
             </button>

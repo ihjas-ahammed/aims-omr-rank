@@ -63,6 +63,11 @@ export default function OnlineExamsAdmin({ onBack, onNavigateToEvaluation }: Onl
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Exam-wide marking setup (applied to every MCQ, still editable per question)
+  const [mcqMarks, setMcqMarks] = useState(4);
+  const [negativeEnabled, setNegativeEnabled] = useState(true);
+  const [negativeValue, setNegativeValue] = useState(1);
+
   // Quick generator helper state
   const [quickMcqCount, setQuickMcqCount] = useState(10);
   const [quickDescCount, setQuickDescCount] = useState(2);
@@ -115,6 +120,10 @@ export default function OnlineExamsAdmin({ onBack, onNavigateToEvaluation }: Onl
       setInstructions(examToEdit.instructions || "");
       setDurationMinutes(examToEdit.durationMinutes || 0);
       setQuestions(examToEdit.questions || []);
+      const firstMcq = (examToEdit.questions || []).find(q => q.type === "mcq");
+      setMcqMarks(firstMcq?.marks ?? 4);
+      setNegativeEnabled((firstMcq?.negativeMarks ?? 1) > 0);
+      setNegativeValue(firstMcq?.negativeMarks || 1);
     } else {
       setEditingExamId(null);
       setTitle("");
@@ -158,8 +167,21 @@ export default function OnlineExamsAdmin({ onBack, onNavigateToEvaluation }: Onl
         }
       ];
       setQuestions(initialQuestions);
+      setMcqMarks(4);
+      setNegativeEnabled(true);
+      setNegativeValue(1);
     }
     setIsCreateModalOpen(true);
+  };
+
+  // Writes marks / negative marks to every MCQ. Negative marking off = 0 penalty.
+  const applyMarking = (marks: number, negEnabled: boolean, negValue: number) => {
+    setMcqMarks(marks);
+    setNegativeEnabled(negEnabled);
+    setNegativeValue(negValue);
+    setQuestions(prev => prev.map(q => q.type === "mcq"
+      ? { ...q, marks, negativeMarks: negEnabled ? negValue : 0 }
+      : q));
   };
 
   const handleAddQuestion = (type: "mcq" | "descriptive") => {
@@ -169,8 +191,8 @@ export default function OnlineExamsAdmin({ onBack, onNavigateToEvaluation }: Onl
       number: nextNum,
       type: "mcq",
       prompt: `Question ${nextNum}`,
-      marks: 4,
-      negativeMarks: 1,
+      marks: mcqMarks,
+      negativeMarks: negativeEnabled ? negativeValue : 0,
       numOptions: 4,
       options: ["Option A", "Option B", "Option C", "Option D"],
       correctOption: "A"
@@ -450,7 +472,7 @@ export default function OnlineExamsAdmin({ onBack, onNavigateToEvaluation }: Onl
               <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 Online Exams Manager
               </h1>
-              <span className="px-2.5 py-0.5 bg-indigo-500/20 text-indigo-300 text-[10px] font-black rounded-full uppercase tracking-wider border border-indigo-500/30">
+              <span className="hidden sm:inline px-2.5 py-0.5 bg-indigo-500/20 text-indigo-300 text-[10px] font-black rounded-full uppercase tracking-wider border border-indigo-500/30">
                 Descriptive + MCQ
               </span>
             </div>
@@ -460,14 +482,14 @@ export default function OnlineExamsAdmin({ onBack, onNavigateToEvaluation }: Onl
           </div>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
           {/* AI Generator Button */}
           <button
             onClick={() => {
               setAiError(null);
               setIsAiModalOpen(true);
             }}
-            className="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-purple-600/30 transition-all cursor-pointer hover:scale-102"
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-purple-600/30 transition-all cursor-pointer hover:scale-102"
           >
             <Sparkles className="w-4 h-4" />
             <span>✨ AI Exam Generator</span>
@@ -476,7 +498,7 @@ export default function OnlineExamsAdmin({ onBack, onNavigateToEvaluation }: Onl
           {/* Manual Create Button */}
           <button
             onClick={() => handleOpenCreateModal()}
-            className="flex items-center gap-2 px-3.5 sm:px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Create Exam</span>
@@ -944,6 +966,40 @@ export default function OnlineExamsAdmin({ onBack, onNavigateToEvaluation }: Onl
                     value={instructions}
                     onChange={(e) => setInstructions(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Marking Setup */}
+              <div className="p-3 sm:p-4 bg-slate-950/60 border border-slate-800 rounded-2xl flex flex-wrap items-end gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Marks per MCQ</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={mcqMarks}
+                    onChange={(e) => applyMarking(parseInt(e.target.value, 10) || 1, negativeEnabled, negativeValue)}
+                    className="w-24 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <label className="flex items-center gap-2 pb-2 text-xs font-bold text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={negativeEnabled}
+                    onChange={(e) => applyMarking(mcqMarks, e.target.checked, negativeValue)}
+                    className="w-4 h-4 accent-indigo-500"
+                  />
+                  Negative marking
+                </label>
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Deducted per wrong answer</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={negativeValue}
+                    disabled={!negativeEnabled}
+                    onChange={(e) => applyMarking(mcqMarks, negativeEnabled, parseInt(e.target.value, 10) || 0)}
+                    className="w-24 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 disabled:opacity-40"
                   />
                 </div>
               </div>

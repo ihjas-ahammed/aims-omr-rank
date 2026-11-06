@@ -255,9 +255,9 @@ export default function Class10Term1Form() {
         spread: 70,
         origin: { y: 0.6 }
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to submit marks:', err);
-      alert('Failed to submit marks. Please check your network connection.');
+      alert('Failed to submit: ' + (err?.message || String(err)));
       setSubmitting(false);
     }
   };

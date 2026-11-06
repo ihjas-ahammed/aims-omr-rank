@@ -60,8 +60,7 @@ export default function OnlineExamStudentPortal({ examId }: OnlineExamStudentPor
 
   // Student Profile state
   const [studentName, setStudentName] = useState('');
-  const [studentClass, setStudentClass] = useState('A1');
-  const [customClass, setCustomClass] = useState('');
+  const [studentClass, setStudentClass] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [savedProfiles, setSavedProfiles] = useState<SavedStudentProfile[]>([]);
   const [isAccountSwitcherOpen, setIsAccountSwitcherOpen] = useState(false);
@@ -181,8 +180,12 @@ export default function OnlineExamStudentPortal({ examId }: OnlineExamStudentPor
       alert('Please enter your full name.');
       return;
     }
+    if (!studentClass.trim()) {
+      alert('Please enter your batch name.');
+      return;
+    }
 
-    const finalClass = studentClass === 'Other' ? customClass.trim() || 'General' : studentClass;
+    const finalClass = studentClass.trim();
 
     // Save profile to device memory
     const updatedProfiles = savedProfiles.filter(p => p.name.toLowerCase() !== studentName.trim().toLowerCase());
@@ -295,7 +298,7 @@ export default function OnlineExamStudentPortal({ examId }: OnlineExamStudentPor
     setIsSubmitting(true);
 
     try {
-      const finalClass = studentClass === 'Other' ? customClass.trim() || 'General' : studentClass;
+      const finalClass = studentClass.trim();
 
       const subId = await submitOnlineExam(exam, {
         studentName,
@@ -398,14 +401,9 @@ export default function OnlineExamStudentPortal({ examId }: OnlineExamStudentPor
         {/* Header Branding */}
         <header className="w-full max-w-md mx-auto flex items-center justify-between py-4 relative z-10">
           <div className="flex items-center gap-2.5">
-            <img 
-              src="/aims_plus_icon.png" 
-              alt="AIMS Plus Logo" 
-              className="w-10 h-10 rounded-2xl object-contain bg-slate-900 border border-slate-800 p-0.5 shadow-lg shadow-indigo-500/10 shrink-0" 
-            />
             <div>
               <div className="flex items-center gap-1.5">
-                <h1 className="text-sm sm:text-base font-black tracking-tight text-white">AIMS Plus Online Exam</h1>
+                <h1 className="text-sm sm:text-base font-black tracking-tight text-white">Online Exam</h1>
                 <span className="px-1.5 py-0.2 bg-indigo-500/20 text-indigo-300 text-[9px] font-extrabold rounded-md border border-indigo-500/30">
                   PORTAL
                 </span>
@@ -474,28 +472,13 @@ export default function OnlineExamStudentPortal({ examId }: OnlineExamStudentPor
               <label className="block font-bold text-slate-300 mb-1.5 flex items-center gap-1.5">
                 <GraduationCap className="w-3.5 h-3.5 text-purple-400" /> Class / Batch *
               </label>
-              <select
+              <input
+                type="text"
+                placeholder="Enter your batch name..."
                 value={studentClass}
                 onChange={(e) => setStudentClass(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 font-medium"
-              >
-                <option value="A1">Batch A1</option>
-                <option value="A2">Batch A2</option>
-                <option value="B1">Batch B1</option>
-                <option value="B2">Batch B2</option>
-                <option value="B3">Batch B3</option>
-                <option value="Other">Other (Custom Batch)</option>
-              </select>
-
-              {studentClass === 'Other' && (
-                <input
-                  type="text"
-                  placeholder="Enter your batch / class name..."
-                  value={customClass}
-                  onChange={(e) => setCustomClass(e.target.value)}
-                  className="w-full mt-2 px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 text-xs"
-                />
-              )}
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-medium"
+              />
             </div>
 
             <div>
@@ -626,11 +609,6 @@ export default function OnlineExamStudentPortal({ examId }: OnlineExamStudentPor
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
           
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <img 
-              src="/aims_plus_icon.png" 
-              alt="Logo" 
-              className="w-8 h-8 rounded-xl object-contain bg-slate-950 border border-slate-800 p-0.5 shrink-0" 
-            />
             <div className="min-w-0">
               <h2 className="text-xs sm:text-sm font-extrabold text-white truncate">
                 {exam.title}
