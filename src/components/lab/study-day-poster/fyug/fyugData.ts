@@ -24,7 +24,12 @@ export interface Slot {
   subject: SubjectKey;
   teacher: string;
   room?: string;
+  time?: string; // filled in by getSlots, e.g. "9:30 – 10:30"
 }
+
+// Hour timings. Fridays have a shorter afternoon (2–3 and 3–4).
+const TIMES = ['9:30 – 10:30', '10:30 – 11:30', '11:40 – 12:30', '1:30 – 2:30', '2:30 – 3:30'];
+const FRIDAY_TIMES = ['9:30 – 10:30', '10:30 – 11:30', '11:40 – 12:30', '2:00 – 3:00', '3:00 – 4:00'];
 
 const SAFEEQUE = 'C A SAFEEQUE';
 const NAJIYA = 'NAJIYA K M';
@@ -71,7 +76,12 @@ export const WEEK: Record<number, Slot[]> = {
   ]
 };
 
-export const getSlots = (date: Date): Slot[] | null => WEEK[date.getDay()] ?? null;
+export function getSlots(date: Date): Slot[] | null {
+  const day = WEEK[date.getDay()];
+  if (!day) return null;
+  const times = date.getDay() === 5 ? FRIDAY_TIMES : TIMES;
+  return day.map((slot, i) => ({ ...slot, time: times[i] }));
+}
 
 // Tomorrow, or the next Monday when tomorrow falls on a weekend (there are no weekend classes).
 export function defaultDate(from = new Date()): { date: Date; skippedWeekend: boolean } {

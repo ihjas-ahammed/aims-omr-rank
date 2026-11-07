@@ -9,6 +9,11 @@ export interface FyugAssets {
 
 const NAVY = '#061a40';
 const FONT = "'Montserrat', sans-serif";
+const SCRIPT_FONT = "'Pacifico', cursive";
+
+export const SCRIPT_FONT_STYLESHEET = 'https://fonts.googleapis.com/css2?family=Pacifico&display=swap';
+export const SCRIPT_FONT_REQUEST: [string, string] = ['40px Pacifico', "Tomorrow's Timetable"];
+const TITLE_LINES = ["Tomorrow's", 'Timetable'];
 
 export async function loadFyugIcons(): Promise<Record<string, IconImage>> {
   const entries: [string, { viewBox: string; svg: string }][] = [...Object.entries(FYUG_ICONS), ['hero', FYUG_HERO]];
@@ -55,7 +60,7 @@ function drawSlot(ctx: CanvasRenderingContext2D, slot: Slot, hour: number, icons
   ctx.stroke();
 
   // Tinted icon panel
-  roundRectPath(ctx, x + 10, y + 10, 232, h - 20, 18);
+  roundRectPath(ctx, x + 10, y + 10, 214, h - 20, 18);
   ctx.fillStyle = sub.tint;
   ctx.fill();
 
@@ -74,12 +79,12 @@ function drawSlot(ctx: CanvasRenderingContext2D, slot: Slot, hour: number, icons
   ctx.font = `900 46px ${FONT}`;
   ctx.fillText(String(hour), x + 20 + bw / 2, y + h / 2 + 34);
 
-  drawIconContain(ctx, icons[sub.icon], x + 108, y + 16, 124, h - 32);
+  drawIconContain(ctx, icons[sub.icon], x + 106, y + 16, 110, h - 32);
 
   // Text block
-  const tx = x + 262;
-  const roomW = slotRoomWidth(ctx, slot);
-  const maxW = x + w - 20 - roomW - tx;
+  const tx = x + 240;
+  const rightW = rightColumnWidth(ctx, slot);
+  const maxW = x + w - 20 - rightW - 14 - tx;
 
   let size = 32;
   let lines: string[] = [];
@@ -108,28 +113,76 @@ function drawSlot(ctx: CanvasRenderingContext2D, slot: Slot, hour: number, icons
   ctx.fillText(slot.teacher, tx + 24, by + 19);
   setLetterSpacing(ctx, 0);
 
-  // Room tag
+  // Right column: time pill (with a small clock) above the navy room tag, centred as a stack.
+  const pillH = 38;
+  const roomH = 44;
+  const stackGap = 10;
+  const stackH = (slot.time ? pillH : 0) + (slot.time && slot.room ? stackGap : 0) + (slot.room ? roomH : 0);
+  let sy = y + (h - stackH) / 2;
+  const colRight = x + w - 20;
+
+  if (slot.time) {
+    ctx.font = `800 20px ${FONT}`;
+    const tw = ctx.measureText(slot.time).width;
+    const pw = tw + 52;
+    const px = colRight - pw;
+    roundRectPath(ctx, px, sy, pw, pillH, pillH / 2);
+    ctx.fillStyle = sub.tint;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = sub.accent;
+    ctx.stroke();
+    drawClock(ctx, px + 20, sy + pillH / 2, sub.accent);
+    ctx.fillStyle = sub.accent;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(slot.time, px + 36, sy + pillH / 2 + 1);
+    ctx.textBaseline = 'alphabetic';
+    sy += pillH + stackGap;
+  }
+
   if (slot.room) {
     ctx.font = `800 26px ${FONT}`;
     const pw = ctx.measureText(slot.room).width + 40;
-    const px = x + w - 20 - pw;
-    const ph = 46;
-    roundRectPath(ctx, px, y + (h - ph) / 2, pw, ph, ph / 2);
+    const px = colRight - pw;
+    roundRectPath(ctx, px, sy, pw, roomH, roomH / 2);
     ctx.fillStyle = NAVY;
     ctx.fill();
     ctx.fillStyle = '#ffffff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(slot.room, px + pw / 2, y + h / 2 + 1);
+    ctx.fillText(slot.room, px + pw / 2, sy + roomH / 2 + 1);
     ctx.textBaseline = 'alphabetic';
   }
 }
 
-// Room pill width (0 when the slot has no room), used to leave space for it beside the subject name.
-function slotRoomWidth(ctx: CanvasRenderingContext2D, slot: Slot): number {
-  if (!slot.room) return 0;
-  ctx.font = `800 26px ${FONT}`;
-  return ctx.measureText(slot.room).width + 40 + 18;
+function drawClock(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.2;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - 4.5);
+  ctx.lineTo(cx, cy);
+  ctx.lineTo(cx + 3.5, cy + 2);
+  ctx.stroke();
+  ctx.lineCap = 'butt';
+}
+
+// Width of the right-hand column (widest of the time pill and room tag) so the subject name can avoid it.
+function rightColumnWidth(ctx: CanvasRenderingContext2D, slot: Slot): number {
+  let wMax = 0;
+  if (slot.time) {
+    ctx.font = `800 20px ${FONT}`;
+    wMax = Math.max(wMax, ctx.measureText(slot.time).width + 52);
+  }
+  if (slot.room) {
+    ctx.font = `800 26px ${FONT}`;
+    wMax = Math.max(wMax, ctx.measureText(slot.room).width + 40);
+  }
+  return wMax;
 }
 
 export interface FyugRenderOptions {
@@ -148,20 +201,35 @@ export function renderFyugPoster(canvas: HTMLCanvasElement, { date, slots, asset
 
   drawBackgroundAndCorners(ctx, POSTER_W, POSTER_H, 'corners_aims');
 
-  // No institute logo on this one — a plain title where the logo would sit.
+  // No institute logo on this one — the title takes its place: "Tomorrow's Timetable", both words in the
+  // same script font with a blue→green gradient.
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = NAVY;
-  ctx.font = `900 54px ${FONT}`;
-  setLetterSpacing(ctx, 3);
-  ctx.fillText('TIMETABLE', POSTER_W / 2 + 2, 98);
-  setLetterSpacing(ctx, 0);
+  const cx = POSTER_W / 2;
+  const scriptSize = 64;
+  ctx.font = `${scriptSize}px ${SCRIPT_FONT}`;
+  const widest = Math.max(ctx.measureText(TITLE_LINES[0]).width, ctx.measureText(TITLE_LINES[1]).width);
+  const grad = ctx.createLinearGradient(cx - widest / 2, 0, cx + widest / 2, 0);
+  grad.addColorStop(0, '#0072dc');
+  grad.addColorStop(1, '#25a22b');
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 114, 220, 0.28)';
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetY = 4;
+  ctx.fillStyle = grad;
+  TITLE_LINES.forEach((line, i) => ctx.fillText(line, cx, 66 + i * 62));
+  ctx.restore();
+
+  // Accent rule under the title
+  ctx.fillStyle = grad;
+  roundRectPath(ctx, cx - 90, 148, 180, 5, 2.5);
+  ctx.fill();
 
   drawStudyHeader(ctx, {
     date,
     logo: null,
     hero: assets.icons.hero,
-    subtitle: `${slots.length} HOURS  •  HOUR 1 – HOUR ${slots.length}`
+    subtitle: daySpan(slots)
   });
 
   const top = 408;
@@ -171,4 +239,11 @@ export function renderFyugPoster(canvas: HTMLCanvasElement, { date, slots, asset
   slots.forEach((slot, i) => drawSlot(ctx, slot, i + 1, assets.icons, top + i * (h + gap), h));
 
   ctx.restore();
+}
+
+// "5 HOURS  •  9:30 – 3:30" from the first start to the last end time.
+function daySpan(slots: Slot[]): string {
+  const start = slots[0]?.time?.split(' – ')[0];
+  const end = slots[slots.length - 1]?.time?.split(' – ')[1];
+  return start && end ? `${slots.length} HOURS  •  ${start} – ${end}` : `${slots.length} HOURS`;
 }
