@@ -64,23 +64,11 @@ export const CALENDAR: CalendarEvent[] = [
   ev('2027-02-19', undefined, 'Classes Conclude On', 'classes')
 ];
 
-export interface Upcoming {
-  date: Date;
-  daysAway: number; // 0 = today
-  events: CalendarEvent[]; // everything on that date (some days have two)
-}
-
 const toKey = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-// The next calendar day (today included) that has an event, with all of that day's events.
-// Returns null once the last event has passed.
-export function getUpcoming(today = new Date()): Upcoming | null {
-  const todayKey = toKey(today);
-  const next = CALENDAR.filter((e) => e.date >= todayKey).sort((a, b) => a.date.localeCompare(b.date))[0];
-  if (!next) return null;
-  const date = new Date(next.date + 'T00:00:00');
-  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const daysAway = Math.round((date.getTime() - startOfToday.getTime()) / 86400000);
-  return { date, daysAway, events: CALENDAR.filter((e) => e.date === next.date) };
-}
+// Every special calendar event on the given day (some days have two); empty when there is none.
+export const getEventsOn = (date: Date): CalendarEvent[] => {
+  const key = toKey(date);
+  return CALENDAR.filter((e) => e.date === key);
+};

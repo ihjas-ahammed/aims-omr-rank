@@ -3,13 +3,14 @@ import { drawIconContain, drawStudyHeader, rasteriseIcon, setLetterSpacing, type
 import { FYUG_HERO, FYUG_ICONS } from './fyugIcons';
 import { SUBJECTS, type Slot } from './fyugData';
 import { EVENT_ICONS } from './calendarIcons';
-import type { CalendarEvent, Upcoming } from './calendar';
+import type { CalendarEvent } from './calendar';
 
 export interface FyugAssets {
   icons: Record<string, IconImage>;
 }
 
 const NAVY = '#061a40';
+const GREEN = '#168a1f';
 const HEADER_SHIFT = 120;
 const FONT = "'Montserrat', sans-serif";
 
@@ -189,8 +190,7 @@ function rightColumnWidth(ctx: CanvasRenderingContext2D, slot: Slot): number {
 }
 
 const FOOTER_BOTTOM = 1134;
-// Taller when a day has two events so both rows fit.
-const footerHeight = (up: Upcoming) => (up.events.length > 1 ? 158 : 128);
+const FOOTER_H = 172; // fixed, so the cards above never change size when a day has one or two events
 
 function fitText(ctx: CanvasRenderingContext2D, text: string, weight: number, start: number, min: number, maxW: number): number {
   let size = start;
@@ -202,85 +202,144 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, weight: number, st
   return size;
 }
 
-// Footer: the next calendar event(s) — date tile, "UPCOMING" label, event + course, and a days-to-go badge.
-function drawUpcomingFooter(ctx: CanvasRenderingContext2D, up: Upcoming, icons: Record<string, IconImage>) {
+// Footer (light theme): mint→sky card with a fine grid, date tile on the left, then "SPECIAL EVENT(S)" with the
+// day's calendar events listed in large type. Fixed height, so one or two events never change the bar.
+function drawEventsFooter(ctx: CanvasRenderingContext2D, events: CalendarEvent[], date: Date, icons: Record<string, IconImage>) {
   const x = 30;
-  const h = footerHeight(up);
-  const y = FOOTER_BOTTOM - h;
   const w = 740;
+  const h = FOOTER_H;
+  const y = FOOTER_BOTTOM - h;
 
-  // Navy gradient card
-  const g = ctx.createLinearGradient(x, y, x + w, y);
-  g.addColorStop(0, '#004080');
-  g.addColorStop(1, '#06306a');
+  // Card background + grid, clipped to the rounded card
   roundRectPath(ctx, x, y, w, h, 28);
-  ctx.fillStyle = g;
+  const bg = ctx.createLinearGradient(x, y, x + w, y + h);
+  bg.addColorStop(0, '#effaec');
+  bg.addColorStop(1, '#e6f1fc');
+  ctx.fillStyle = bg;
   ctx.fill();
 
-  // Date tile
-  const tx = x + 16;
-  const tw = 92;
-  roundRectPath(ctx, tx, y + 14, tw, h - 28, 20);
+  ctx.save();
+  roundRectPath(ctx, x, y, w, h, 28);
+  ctx.clip();
+  const step = 16;
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(0, 114, 220, 0.10)';
+  for (let gx = x + (step - ((x) % step)) % step; gx < x + w; gx += step) {
+    ctx.beginPath();
+    ctx.moveTo(gx, y);
+    ctx.lineTo(gx, y + h);
+    ctx.stroke();
+  }
+  for (let gy = y; gy < y + h; gy += step) {
+    ctx.beginPath();
+    ctx.moveTo(x, gy);
+    ctx.lineTo(x + w, gy);
+    ctx.stroke();
+  }
+  // Heavier accent line every fifth cell, green
+  ctx.strokeStyle = 'rgba(37, 162, 43, 0.16)';
+  ctx.lineWidth = 1.4;
+  for (let gx = x; gx < x + w; gx += step * 5) {
+    ctx.beginPath();
+    ctx.moveTo(gx, y);
+    ctx.lineTo(gx, y + h);
+    ctx.stroke();
+  }
+  for (let gy = y; gy < y + h; gy += step * 5) {
+    ctx.beginPath();
+    ctx.moveTo(x, gy);
+    ctx.lineTo(x + w, gy);
+    ctx.stroke();
+  }
+  // Soft glow at the top-right corner
+  const glow = ctx.createRadialGradient(x + w, y, 0, x + w, y, 220);
+  glow.addColorStop(0, 'rgba(92, 184, 92, 0.28)');
+  glow.addColorStop(1, 'rgba(92, 184, 92, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(x, y, w, h);
+  ctx.restore();
+
+  roundRectPath(ctx, x, y, w, h, 28);
+  ctx.lineWidth = 2.4;
+  ctx.strokeStyle = '#9fc3e4';
+  ctx.stroke();
+
+  // Date tile — fixed size, centred vertically in the bar; its text is centred inside it.
+  const tw = 96;
+  const th = 128;
+  const tx = x + 18;
+  const ty = y + (h - th) / 2;
+  roundRectPath(ctx, tx, ty, tw, th, 22);
   ctx.fillStyle = '#faf0ca';
   ctx.fill();
-  const month = up.date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-  const weekday = up.date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = NAVY;
+  ctx.stroke();
+
+  const month = date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+  const dayNum = String(date.getDate()).padStart(2, '0');
+  const blockH = 14 + 10 + 38 + 12 + 11; // month cap + gap + day cap + gap + weekday cap
+  const top = ty + (th - blockH) / 2;
+  const cxTile = tx + tw / 2;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#0072dc';
-  ctx.font = `800 17px ${FONT}`;
+  ctx.font = `800 18px ${FONT}`;
   setLetterSpacing(ctx, 2);
-  ctx.fillText(month, tx + tw / 2 + 1, y + 38);
+  ctx.fillText(month, cxTile + 1, top + 14);
   setLetterSpacing(ctx, 0);
   ctx.fillStyle = NAVY;
-  ctx.font = `900 48px ${FONT}`;
-  ctx.fillText(String(up.date.getDate()).padStart(2, '0'), tx + tw / 2, y + 82);
+  ctx.font = `900 52px ${FONT}`;
+  ctx.fillText(dayNum, cxTile, top + 14 + 10 + 38);
   ctx.fillStyle = '#4b5d7a';
-  ctx.font = `700 13px ${FONT}`;
+  ctx.font = `700 14px ${FONT}`;
   setLetterSpacing(ctx, 2);
-  ctx.fillText(weekday, tx + tw / 2 + 1, y + 102);
+  ctx.fillText(weekday, cxTile + 1, top + 14 + 10 + 38 + 12 + 11);
   setLetterSpacing(ctx, 0);
 
-  // Days-to-go badge on the right
-  const bw = 128;
-  const bx = x + w - 16 - bw;
-  roundRectPath(ctx, bx, y + 14, bw, h - 28, 20);
-  ctx.fillStyle = 'rgba(255,255,255,0.12)';
-  ctx.fill();
-  ctx.fillStyle = '#ffffff';
-  ctx.textAlign = 'center';
-  if (up.daysAway === 0 || up.daysAway === 1) {
-    // Fit the word inside the badge with side padding so it never touches the edges.
-    const word = up.daysAway === 0 ? 'TODAY' : 'TOMORROW';
-    ctx.fillStyle = '#8cd96c';
-    const size = fitText(ctx, word, 900, 30, 14, bw - 36);
-    ctx.fillText(word, bx + bw / 2, y + h / 2 + size * 0.34);
-  } else {
-    ctx.fillStyle = '#8cd96c';
-    ctx.font = `900 50px ${FONT}`;
-    ctx.fillText(String(up.daysAway), bx + bw / 2, y + h / 2 + 8);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `700 15px ${FONT}`;
-    setLetterSpacing(ctx, 2.5);
-    ctx.fillText('DAYS LEFT', bx + bw / 2 + 1, y + h / 2 + 34);
-    setLetterSpacing(ctx, 0);
-  }
-
-  // Middle: label + event rows
-  const mx = tx + tw + 20;
-  const mw = bx - 16 - mx;
-  ctx.textAlign = 'left';
-  ctx.fillStyle = '#8cd96c';
+  // "SPECIAL EVENT(S)" pill + rows, left-aligned
+  const mx = tx + tw + 24;
+  const mw = x + w - 24 - mx;
+  const many = events.length > 1;
+  const label = many ? 'SPECIAL EVENTS' : 'SPECIAL EVENT';
   ctx.font = `800 15px ${FONT}`;
   setLetterSpacing(ctx, 3);
-  ctx.fillText('UPCOMING EVENT', mx, y + 34);
+  const lw = ctx.measureText(label).width + 30;
+  setLetterSpacing(ctx, 0);
+  roundRectPath(ctx, mx, y + 14, lw, 28, 14);
+  ctx.fillStyle = GREEN;
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'left';
+  ctx.font = `800 15px ${FONT}`;
+  setLetterSpacing(ctx, 3);
+  ctx.fillText(label, mx + 15, y + 34);
   setLetterSpacing(ctx, 0);
 
-  const many = up.events.length > 1;
-  const rowsTop = y + 46;
-  const rowsH = h - 46 - 12;
-  const rowH = rowsH / up.events.length;
-  up.events.forEach((e, i) => drawEventRow(ctx, e, icons, mx, rowsTop + i * rowH, mw, rowH, many));
+  const rowsTop = y + 50;
+  const rowsH = h - 50 - 12;
+  const rowH = rowsH / events.length;
+  events.forEach((e, i) => drawEventRow(ctx, e, icons, mx, rowsTop + i * rowH, mw, rowH, many));
+}
+
+function rowLayout(ctx: CanvasRenderingContext2D, e: CalendarEvent, compact: boolean, maxTextW: number) {
+  const iconBox = compact ? 46 : 66;
+  const gap = 16;
+  const sub = e.subject ? SUBJECTS[e.subject] : null;
+  const course = sub ? sub.name : e.note ?? '';
+  const line = course + (sub && e.note ? ` • ${e.note}` : '');
+  const room = maxTextW - iconBox - gap;
+  const titleSize = fitText(ctx, e.event, 800, compact ? 25 : 40, 16, room);
+  const titleW = ctx.measureText(e.event).width;
+  const subSize = compact ? 17 : 23;
+  let lineW = 0;
+  let lineSize = subSize;
+  if (line) {
+    lineSize = fitText(ctx, line, 700, subSize, 12, room);
+    lineW = ctx.measureText(line).width;
+  }
+  return { iconBox, gap, line, titleSize, titleW, subSize: lineSize, lineW };
 }
 
 function drawEventRow(
@@ -289,50 +348,49 @@ function drawEventRow(
   icons: Record<string, IconImage>,
   x: number,
   y: number,
-  w: number,
+  maxTextW: number,
   h: number,
   compact: boolean
 ) {
+  const { iconBox, gap, line, titleSize, subSize } = rowLayout(ctx, e, compact, maxTextW);
   const sub = e.subject ? SUBJECTS[e.subject] : null;
-  const iconBox = compact ? 38 : 56;
+  const accent = sub ? sub.accent : '#0072dc';
+  const iy = y + (h - iconBox) / 2;
 
-  roundRectPath(ctx, x, y + (h - iconBox) / 2, iconBox, iconBox, iconBox * 0.28);
-  ctx.fillStyle = '#ffffff';
+  // Icon tile tinted with the course colour
+  roundRectPath(ctx, x, iy, iconBox, iconBox, iconBox * 0.26);
+  ctx.fillStyle = sub ? sub.tint : '#e1effc';
   ctx.fill();
-  drawIconContain(ctx, icons[`event_${e.kind}`], x + 4, y + (h - iconBox) / 2 + 4, iconBox - 8, iconBox - 8);
+  ctx.lineWidth = 2.4;
+  ctx.strokeStyle = accent;
+  ctx.stroke();
+  drawIconContain(ctx, icons[`event_${e.kind}`], x + 6, iy + 6, iconBox - 12, iconBox - 12);
 
-  const tx = x + iconBox + 14;
-  const tw = w - iconBox - 14;
-  const course = sub ? sub.name : e.note ?? '';
-  const extra = sub && e.note ? ` • ${e.note}` : '';
+  const tx = x + iconBox + gap;
+  const blockH = titleSize * 1.15 + (line ? 4 + subSize * 1.15 : 0);
+  const top = y + (h - blockH) / 2;
 
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
-  const titleSize = fitText(ctx, e.event, 800, compact ? 21 : 29, 16, tw);
-  const subSize = compact ? 15 : 18;
-  const blockH = titleSize * 1.15 + 4 + subSize * 1.15;
-  const top = y + (h - blockH) / 2;
-
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = NAVY;
   ctx.font = `800 ${titleSize}px ${FONT}`;
   ctx.fillText(e.event, tx, top + titleSize * 0.95);
 
-  const line = course + extra;
   if (line) {
-    fitText(ctx, line, 700, subSize, 12, tw);
-    ctx.fillStyle = '#b9d4f3';
+    ctx.font = `700 ${subSize}px ${FONT}`;
+    ctx.fillStyle = accent;
     ctx.fillText(line, tx, top + titleSize * 1.15 + 4 + subSize * 0.95);
   }
 }
 
 export interface FyugRenderOptions {
   date: Date;
-  upcoming: Upcoming | null;
+  events: CalendarEvent[]; // special calendar events on the poster's date (empty = no footer)
   slots: Slot[];
   assets: FyugAssets;
 }
 
-export function renderFyugPoster(canvas: HTMLCanvasElement, { date, upcoming, slots, assets }: FyugRenderOptions) {
+export function renderFyugPoster(canvas: HTMLCanvasElement, { date, events, slots, assets }: FyugRenderOptions) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
@@ -352,12 +410,12 @@ export function renderFyugPoster(canvas: HTMLCanvasElement, { date, upcoming, sl
   });
 
   const top = 408 - HEADER_SHIFT;
-  const bottom = upcoming ? FOOTER_BOTTOM - footerHeight(upcoming) - 12 : 1100;
+  const bottom = events.length ? FOOTER_BOTTOM - FOOTER_H - 12 : 1100;
   const gap = 12;
   const h = (bottom - top - gap * (slots.length - 1)) / slots.length;
   slots.forEach((slot, i) => drawSlot(ctx, slot, i + 1, assets.icons, top + i * (h + gap), h));
 
-  if (upcoming) drawUpcomingFooter(ctx, upcoming, assets.icons);
+  if (events.length) drawEventsFooter(ctx, events, date, assets.icons);
 
   ctx.restore();
 }
