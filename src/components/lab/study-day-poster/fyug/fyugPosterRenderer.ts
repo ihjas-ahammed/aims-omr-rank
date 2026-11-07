@@ -8,12 +8,9 @@ export interface FyugAssets {
 }
 
 const NAVY = '#061a40';
+const HEADER_SHIFT = 120;
 const FONT = "'Montserrat', sans-serif";
-const SCRIPT_FONT = "'Pacifico', cursive";
 
-export const SCRIPT_FONT_STYLESHEET = 'https://fonts.googleapis.com/css2?family=Pacifico&display=swap';
-export const SCRIPT_FONT_REQUEST: [string, string] = ['40px Pacifico', "Tomorrow's Timetable"];
-const TITLE_LINES = ["Tomorrow's", 'Timetable'];
 
 export async function loadFyugIcons(): Promise<Record<string, IconImage>> {
   const entries: [string, { viewBox: string; svg: string }][] = [...Object.entries(FYUG_ICONS), ['hero', FYUG_HERO]];
@@ -201,38 +198,16 @@ export function renderFyugPoster(canvas: HTMLCanvasElement, { date, slots, asset
 
   drawBackgroundAndCorners(ctx, POSTER_W, POSTER_H, 'corners_aims');
 
-  // No institute logo on this one — the title takes its place: "Tomorrow's Timetable", both words in the
-  // same script font with a blue→green gradient.
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  const cx = POSTER_W / 2;
-  const scriptSize = 64;
-  ctx.font = `${scriptSize}px ${SCRIPT_FONT}`;
-  const widest = Math.max(ctx.measureText(TITLE_LINES[0]).width, ctx.measureText(TITLE_LINES[1]).width);
-  const grad = ctx.createLinearGradient(cx - widest / 2, 0, cx + widest / 2, 0);
-  grad.addColorStop(0, '#0072dc');
-  grad.addColorStop(1, '#25a22b');
-  ctx.save();
-  ctx.shadowColor = 'rgba(0, 114, 220, 0.28)';
-  ctx.shadowBlur = 10;
-  ctx.shadowOffsetY = 4;
-  ctx.fillStyle = grad;
-  TITLE_LINES.forEach((line, i) => ctx.fillText(line, cx, 66 + i * 62));
-  ctx.restore();
-
-  // Accent rule under the title
-  ctx.fillStyle = grad;
-  roundRectPath(ctx, cx - 90, 148, 180, 5, 2.5);
-  ctx.fill();
-
+  // No logo and no title on this one: the header sits at the top and the cards use the freed space.
   drawStudyHeader(ctx, {
     date,
     logo: null,
     hero: assets.icons.hero,
-    subtitle: daySpan(slots)
+    subtitle: daySpan(slots),
+    shiftY: -HEADER_SHIFT
   });
 
-  const top = 408;
+  const top = 408 - HEADER_SHIFT;
   const bottom = 1100;
   const gap = 12;
   const h = (bottom - top - gap * (slots.length - 1)) / slots.length;

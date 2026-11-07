@@ -1,20 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Download } from 'lucide-react';
 import { POSTER_H, POSTER_SCALE, POSTER_W } from '../posterRenderer';
-import {
-  SCRIPT_FONT_REQUEST,
-  SCRIPT_FONT_STYLESHEET,
-  loadFyugIcons,
-  renderFyugPoster,
-  type FyugAssets
-} from './fyugPosterRenderer';
+import { loadFyugIcons, renderFyugPoster, type FyugAssets } from './fyugPosterRenderer';
 import { defaultDate, getSlots } from './fyugData';
 
 interface FyugTimetableProps {
   onBack?: () => void;
 }
-
-const SCRIPT_FONT_LINK_ID = 'fyug-timetable-script-font';
 
 const toInputDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -30,29 +22,12 @@ export default function FyugTimetable({ onBack }: FyugTimetableProps) {
     let cancelled = false;
     loadFyugIcons().then((icons) => !cancelled && setAssets({ icons }));
 
-    // The script title font is only needed on this page, so it is loaded here rather than in index.html.
-    if (!document.getElementById(SCRIPT_FONT_LINK_ID)) {
-      const link = document.createElement('link');
-      link.id = SCRIPT_FONT_LINK_ID;
-      link.rel = 'stylesheet';
-      link.href = SCRIPT_FONT_STYLESHEET;
-      document.head.appendChild(link);
-    }
-
-    // Canvas text only uses a web font once it has been loaded, so request every font the poster draws with.
-    const reload = () =>
-      Promise.all([
-        ...['700', '800', '900'].map((w) => document.fonts?.load(`${w} 20px Montserrat`)),
-        document.fonts?.load(SCRIPT_FONT_REQUEST[0], SCRIPT_FONT_REQUEST[1])
-      ])
-        .catch(() => undefined)
-        .then(() => !cancelled && setFontsTick((n) => n + 1));
-    reload();
-    // The stylesheet can land after the first request; ask again once it is in.
-    const retry = window.setTimeout(reload, 1500);
+    // Canvas text only uses a web font once it has been loaded, so request every weight the poster draws with.
+    Promise.all(['700', '800', '900'].map((w) => document.fonts?.load(`${w} 20px Montserrat`)))
+      .catch(() => undefined)
+      .then(() => !cancelled && setFontsTick((n) => n + 1));
     return () => {
       cancelled = true;
-      window.clearTimeout(retry);
     };
   }, []);
 

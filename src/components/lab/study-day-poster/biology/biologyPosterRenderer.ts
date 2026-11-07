@@ -216,11 +216,14 @@ export interface StudyHeaderOptions {
   logo: HTMLImageElement | null;
   hero: IconImage | undefined;
   subtitle: string;
+  shiftY?: number; // move the whole header up/down (negative = up), e.g. when there is no logo
 }
 
 // Shared by the Plus One poster pages: logo, big day number + weekday/month, hero icon and the navy subtitle pill.
-export function drawStudyHeader(ctx: CanvasRenderingContext2D, { date, logo, hero, subtitle }: StudyHeaderOptions) {
+export function drawStudyHeader(ctx: CanvasRenderingContext2D, { date, logo, hero, subtitle, shiftY = 0 }: StudyHeaderOptions) {
   const W = POSTER_W;
+  ctx.save();
+  ctx.translate(0, shiftY);
   // Institute logo (aspect-correct, centred)
   if (logo) {
     const ratio = Math.min(500 / logo.width, 112 / logo.height);
@@ -271,6 +274,7 @@ export function drawStudyHeader(ctx: CanvasRenderingContext2D, { date, logo, her
   setLetterSpacing(ctx, 1.5);
   ctx.fillText(subtitle, 74, 364);
   setLetterSpacing(ctx, 0);
+  ctx.restore();
 }
 
 export interface BioRenderOptions {
