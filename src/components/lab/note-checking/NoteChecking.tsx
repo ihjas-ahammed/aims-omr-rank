@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Search, Check, RefreshCw, Loader2, Users, Printer } from 'lucide-react';
 import {
   AttendanceStudent,
@@ -37,6 +37,25 @@ const timeLabel = (iso: string) =>
 const shortDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '—';
 
+type Status = 'green' | 'yellow' | 'red';
+
+// Screen badge colours and print colours per status.
+const STATUS_BADGE: Record<Status, string> = {
+  green: 'bg-emerald-100 text-emerald-700',
+  yellow: 'bg-amber-100 text-amber-700',
+  red: 'bg-red-100 text-red-700'
+};
+const STATUS_PRINT: Record<Status, string> = {
+  green: 'bg-green-200 text-green-900',
+  yellow: 'bg-yellow-200 text-yellow-900',
+  red: 'bg-red-200 text-red-900'
+};
+const STATUS_BAR: Record<Status, string> = {
+  green: 'border-green-600',
+  yellow: 'border-yellow-500',
+  red: 'border-red-600'
+};
+
 interface DoneItem {
   id: string;
   number: number;
@@ -52,15 +71,14 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   const [error, setError] = useState('');
   const [batch, setBatch] = useState<string>(NOTE_BATCHES[0]);
   const [query, setQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'latest'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'latest' | 'progress'>('name');
+  const [progressDesc, setProgressDesc] = useState(true);
   const [selected, setSelected] = useState<AttendanceStudent | null>(null);
   const [progress, setProgress] = useState<NoteProgressMap>({});
   const [progressLoading, setProgressLoading] = useState(false);
   const [activeSubject, setActiveSubject] = useState('');
   const [profileView, setProfileView] = useState<'subject' | 'day'>('subject');
   const [allChapters, setAllChapters] = useState<Record<string, NoteProgressMap>>({});
-  const printRef = useRef<HTMLDivElement>(null);
-  const [pageHeight, setPageHeight] = useState<number | null>(null);
   const [printMode, setPrintMode] = useState<'student' | 'batch' | null>(null);
 
   useEffect(() => {
@@ -158,6 +176,28 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     }
   };
 
+  // Class average of ticked chapters per batch. Students with no ticks are left out of the average
+  // (they are the majority and would drag it to ~0).
+  const batchAvg = useMemo(() => {
+    const acc: Record<string, { total: number; n: number }> = {};
+    students.forEach(s => {
+      const c = summaries[s.enrollNumber]?.count || 0;
+      if (c <= 0) return;
+      const a = (acc[s.batch] ||= { total: 0, n: 0 });
+      a.total += c;
+      a.n += 1;
+    });
+    return Object.fromEntries(Object.entries(acc).map(([b, v]) => [b, v.total / v.n])) as Record<string, number>;
+  }, [students, summaries]);
+
+  // green: at/above class average • yellow: below it • red: no ticks, or below a quarter of the average
+  const statusFor = (count: number, studentBatch: string): Status => {
+    const avg = batchAvg[studentBatch] || 0;
+    if (count <= 0 || count < avg / 4) return 'red';
+    if (count < avg) return 'yellow';
+    return 'green';
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = students.filter(s =>
@@ -169,9 +209,15 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
         const lb = summaries[b.enrollNumber]?.lastTick || '';
         return lb.localeCompare(la) || a.name.localeCompare(b.name);
       });
+    } else if (sortBy === 'progress') {
+      list.sort((a, b) => {
+        const ca = summaries[a.enrollNumber]?.count || 0;
+        const cb = summaries[b.enrollNumber]?.count || 0;
+        return (progressDesc ? cb - ca : ca - cb) || a.name.localeCompare(b.name);
+      });
     }
     return list;
-  }, [students, batch, query, sortBy, summaries]);
+  }, [students, batch, query, sortBy, progressDesc, summaries]);
 
   const print = async (mode: 'student' | 'batch') => {
     if (mode === 'batch') {
@@ -182,17 +228,11 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
         return;
       }
     }
-    setPageHeight(null);
     setPrintMode(mode);
-    // Render the sheet, measure it, then size the page to fit so nothing breaks across pages.
+    // Give React a moment to render the print sheet, then open the browser print dialog (real A4 pages).
     setTimeout(() => {
-      const px = printRef.current?.scrollHeight || 0;
-      setPageHeight(Math.ceil((px * 25.4) / 96) + 4);
-      setTimeout(() => {
-        window.print();
-        setPrintMode(null);
-        setPageHeight(null);
-      }, 150);
+      window.print();
+      setPrintMode(null);
     }, 200);
   };
 
@@ -296,17 +336,30 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                       <Users className="w-3.5 h-3.5" /> {filtered.length} students
                     </p>
                     <div className="flex rounded-lg border border-gray-200 bg-white overflow-hidden text-xs font-semibold">
-                      {(['name', 'latest'] as const).map(k => (
+                      {(['name', 'latest', 'progress'] as const).map(k => (
                         <button
                           key={k}
-                          onClick={() => setSortBy(k)}
+                          onClick={() => {
+                            if (k === 'progress' && sortBy === 'progress') setProgressDesc(d => !d);
+                            setSortBy(k);
+                          }}
                           className={`px-3 py-1.5 ${sortBy === k ? 'bg-indigo-600 text-white' : 'text-gray-600'}`}
                         >
-                          {k === 'name' ? 'Name' : 'Latest tick'}
+                          {k === 'name' ? 'Name' : k === 'latest' ? 'Latest tick' : `Progress ${sortBy === 'progress' ? (progressDesc ? '↓' : '↑') : ''}`.trim()}
                         </button>
                       ))}
                     </div>
                   </div>
+                  {!query && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[11px] text-gray-500">
+                      <span>
+                        Class avg {batch}: <b className="text-gray-700">{(batchAvg[batch] || 0).toFixed(1)}</b> (students with ticks)
+                      </span>
+                      <span className="flex items-center gap-1"><i className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> ≥ avg</span>
+                      <span className="flex items-center gap-1"><i className="w-2.5 h-2.5 rounded-full bg-amber-400" /> below avg</span>
+                      <span className="flex items-center gap-1"><i className="w-2.5 h-2.5 rounded-full bg-red-500" /> none or &lt; ¼ avg</span>
+                    </div>
+                  )}
                   <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
                     {filtered.map(s => {
                       const total = getSubjectsForBatch(s.batch).reduce((n, x) => n + x.chapters.length, 0);
@@ -324,11 +377,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                               #{s.enrollNumber} • {s.batch} • last tick {shortDate(sum?.lastTick || null)}
                             </div>
                           </div>
-                          <span
-                            className={`text-xs font-bold px-2 py-1 rounded-full ${
-                              done > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
-                            }`}
-                          >
+                          <span className={`text-xs font-bold px-2 py-1 rounded-full ${STATUS_BADGE[statusFor(done, s.batch)]}`}>
                             {done}/{total}
                           </span>
                         </button>
@@ -465,23 +514,25 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
         </div>
       </div>
 
-      {/* Print sheet: one continuous page sized to its content (no page breaks) */}
+      {/* Print sheet: real A4 pages (portrait for a student, landscape for a batch) with normal page breaks */}
       {printMode && (
         <div
-          ref={printRef}
-          className="fixed -left-[10000px] top-0 w-[210mm] bg-white text-black box-border p-[10mm] print:static print:left-0"
+          className="hidden print:block bg-white text-black box-border"
           style={{ printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact' } as React.CSSProperties}
         >
-          {pageHeight && (
-            <style>{`@media print { @page { size: 210mm ${pageHeight}mm; margin: 0; } html, body { background: #fff !important; } }`}</style>
-          )}
+          <style>{`@media print {
+            @page { size: A4 ${printMode === 'batch' ? 'landscape' : 'portrait'}; margin: 10mm; }
+            html, body { background: #fff !important; }
+            .np-avoid { break-inside: avoid; page-break-inside: avoid; }
+            thead { display: table-header-group; }
+          }`}</style>
 
           <div className="flex items-end justify-between border-b-4 border-black pb-3 mb-4">
             <div>
-              <div className="text-[11px] font-bold tracking-[0.25em] text-gray-600">AIMS PLUS</div>
-              <h1 className="text-2xl font-extrabold leading-tight">Note Checking</h1>
+              <div className="text-[13px] font-bold tracking-[0.25em] text-gray-600">AIMS PLUS</div>
+              <h1 className="text-[30px] font-extrabold leading-tight">Note Checking</h1>
             </div>
-            <div className="text-right text-[11px] text-gray-600">
+            <div className="text-right text-[13px] text-gray-600">
               {printMode === 'batch' ? `Batch ${batch} • ${gradeLabel(batch)}` : selected ? `${selected.batch} • ${gradeLabel(selected.batch)}` : ''}
               <br />
               Printed {printedOn}
@@ -490,23 +541,28 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
 
           {printMode === 'student' && selected && (
             <>
-              <div className="flex items-center justify-between rounded-lg border-2 border-black px-4 py-3 mb-5">
-                <div className="text-xl font-extrabold">{selected.name}</div>
+              <div className={`np-avoid flex items-center justify-between rounded-lg border-2 border-black px-5 py-4 mb-6 ${STATUS_PRINT[statusFor(doneCount, selected.batch)]}`}>
+                <div>
+                  <div className="text-[26px] font-extrabold">{selected.name}</div>
+                  <div className="text-[12px]">
+                    Batch {selected.batch} class average: {(batchAvg[selected.batch] || 0).toFixed(1)} chapters
+                  </div>
+                </div>
                 <div className="text-right">
-                  <div className="text-2xl font-extrabold leading-none">
+                  <div className="text-[34px] font-extrabold leading-none">
                     {doneCount}/{totalChapters}
                   </div>
-                  <div className="text-[10px] text-gray-600">chapters completed</div>
+                  <div className="text-[12px]">chapters completed</div>
                 </div>
               </div>
 
-              <h2 className="text-sm font-extrabold uppercase tracking-wider mb-2">Chapter-wise</h2>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-4 mb-6">
+              <h2 className="text-[15px] font-extrabold uppercase tracking-wider mb-3">Chapter-wise</h2>
+              <div className="grid grid-cols-2 gap-x-8 gap-y-5 mb-7">
                 {subjects.map(s => {
                   const d = s.chapters.filter(c => progress[c.id]?.done).length;
                   return (
-                    <div key={s.id}>
-                      <div className="flex justify-between border-b-2 border-black pb-1 mb-1 text-[12px] font-extrabold">
+                    <div key={s.id} className="np-avoid">
+                      <div className="flex justify-between border-b-2 border-black pb-1 mb-1 text-[14px] font-extrabold">
                         <span>{s.name}</span>
                         <span>
                           {d}/{s.chapters.length}
@@ -517,10 +573,10 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                         return (
                           <div
                             key={c.id}
-                            className={`flex items-center gap-2 px-1 py-[3px] text-[11px] ${ci % 2 ? 'bg-gray-100' : ''}`}
+                            className={`flex items-center gap-2 px-1 py-[4px] text-[13px] leading-snug ${ci % 2 ? 'bg-gray-100' : ''}`}
                           >
                             <span
-                              className={`inline-flex shrink-0 items-center justify-center w-[15px] h-[15px] border-[1.5px] border-black text-[11px] leading-none ${
+                              className={`inline-flex shrink-0 items-center justify-center w-[18px] h-[18px] border-2 border-black text-[13px] leading-none ${
                                 p?.done ? 'bg-black text-white font-bold' : 'bg-white'
                               }`}
                             >
@@ -529,7 +585,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                             <span className="flex-1">
                               <span className="text-gray-500">{c.number}.</span> {c.title}
                             </span>
-                            {p?.done && <span className="text-[9px] text-gray-600 whitespace-nowrap">{shortDate(p.at)}</span>}
+                            {p?.done && <span className="text-[11px] text-gray-600 whitespace-nowrap">{shortDate(p.at)}</span>}
                           </div>
                         );
                       })}
@@ -538,15 +594,15 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                 })}
               </div>
 
-              <h2 className="text-sm font-extrabold uppercase tracking-wider mb-2">Completed by day (latest first)</h2>
-              {doneByDay.length === 0 && <p className="text-[11px] text-gray-600">None yet.</p>}
+              <h2 className="text-[15px] font-extrabold uppercase tracking-wider mb-2">Completed by day (latest first)</h2>
+              {doneByDay.length === 0 && <p className="text-[13px] text-gray-600">None yet.</p>}
               {doneByDay.map(g => (
-                <div key={g.day} className="mb-2">
-                  <div className="text-[11px] font-bold bg-gray-200 px-2 py-[2px]">
+                <div key={g.day} className="mb-3">
+                  <div className="np-avoid text-[13px] font-bold bg-gray-200 px-2 py-[3px]">
                     {dayLabel(g.day)} • {g.items.length}
                   </div>
                   {g.items.map(it => (
-                    <div key={it.id} className="text-[11px] px-2 py-[2px] border-b border-gray-200">
+                    <div key={it.id} className="np-avoid text-[13px] px-2 py-[3px] border-b border-gray-200">
                       <b>{it.subject}</b> — {it.number}. {it.title}
                     </div>
                   ))}
@@ -557,21 +613,29 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
 
           {printMode === 'batch' && (
             <>
-              <p className="text-[11px] text-gray-600 mb-3">
-                {filtered.length} students • each square is a chapter number; <b>filled</b> = notes completed
+              <p className="text-[12.5px] text-gray-700 mb-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span>
+                  {filtered.length} students • each square is a chapter number; <b>filled</b> = notes completed
+                </span>
+                <span>
+                  Class avg: <b>{(batchAvg[batch] || 0).toFixed(1)}</b> (students with ticks)
+                </span>
+                <span className="inline-flex items-center gap-1"><i className="inline-block w-3 h-3 bg-green-200 border border-green-600" /> ≥ avg</span>
+                <span className="inline-flex items-center gap-1"><i className="inline-block w-3 h-3 bg-yellow-200 border border-yellow-500" /> below avg</span>
+                <span className="inline-flex items-center gap-1"><i className="inline-block w-3 h-3 bg-red-200 border border-red-600" /> none or &lt; ¼ avg</span>
               </p>
-              <table className="w-full border-collapse text-[11px]">
+              <table className="w-full border-collapse text-[13px]">
                 <thead>
                   <tr className="bg-black text-white text-left">
-                    <th className="py-1.5 pl-2 pr-1 w-6">#</th>
-                    <th className="py-1.5 pr-2">Student</th>
+                    <th className="py-2 pl-2 pr-1 w-8">#</th>
+                    <th className="py-2 pr-2">Student</th>
                     {batchSubjects.map(sub => (
-                      <th key={sub.id} className="py-1.5 px-2">
+                      <th key={sub.id} className="py-2 px-2">
                         {sub.name}
                       </th>
                     ))}
-                    <th className="py-1.5 px-2 text-center">Done</th>
-                    <th className="py-1.5 pr-2">Last</th>
+                    <th className="py-2 px-2 text-center">Done</th>
+                    <th className="py-2 pr-2">Last</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -579,19 +643,22 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                     const total = batchSubjects.reduce((n, x) => n + x.chapters.length, 0);
                     const chap = allChapters[s.enrollNumber] || {};
                     const sum = summaries[s.enrollNumber];
+                    const count = sum?.count || 0;
+                    const status = statusFor(count, s.batch);
                     return (
-                      <tr key={s.enrollNumber} className={`align-top border-b border-gray-300 ${i % 2 ? 'bg-gray-100' : ''}`}>
-                        <td className="py-1.5 pl-2 pr-1 text-gray-600">{i + 1}</td>
-                        <td className="py-1.5 pr-2 font-bold">{s.name}</td>
+                      <tr key={s.enrollNumber} className={`np-avoid align-top border-b border-gray-300 ${i % 2 ? 'bg-gray-50' : ''}`}>
+                        <td className={`py-2 pl-2 pr-1 text-gray-600 border-l-[6px] ${STATUS_BAR[status]}`}>{i + 1}</td>
+                        <td className="py-2 pr-2 font-bold">{s.name}</td>
                         {batchSubjects.map(sub => (
                           <td key={sub.id} className="py-1.5 px-2">
-                            <div className="flex flex-wrap gap-[3px]">
+                            {/* two compact lines per subject keeps a student to one short row */}
+                            <div className="flex flex-wrap gap-[2px]" style={{ width: Math.ceil(sub.chapters.length / 2) * 21 }}>
                               {sub.chapters.map(c => {
                                 const done = !!chap[c.id]?.done;
                                 return (
                                   <span
                                     key={c.id}
-                                    className={`inline-flex items-center justify-center w-[19px] h-[19px] border-[1.5px] border-black text-[9px] leading-none ${
+                                    className={`inline-flex items-center justify-center w-[19px] h-[19px] border-[1.5px] border-black text-[10px] leading-none ${
                                       done ? 'bg-black text-white font-bold' : 'bg-white text-gray-500'
                                     }`}
                                   >
@@ -602,10 +669,10 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                             </div>
                           </td>
                         ))}
-                        <td className="py-1.5 px-2 text-center font-bold whitespace-nowrap">
-                          {sum?.count || 0}/{total}
+                        <td className={`py-2 px-2 text-center font-extrabold whitespace-nowrap ${STATUS_PRINT[status]}`}>
+                          {count}/{total}
                         </td>
-                        <td className="py-1.5 pr-2 whitespace-nowrap text-gray-600">{shortDate(sum?.lastTick || null)}</td>
+                        <td className="py-2 pr-2 whitespace-nowrap text-gray-600">{shortDate(sum?.lastTick || null)}</td>
                       </tr>
                     );
                   })}
