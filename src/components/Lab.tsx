@@ -1,8 +1,8 @@
 import React from 'react';
-import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature, Presentation, ClipboardList, Moon, Calculator, Zap, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Crop, Beaker, ChevronRight, MonitorPlay, BookOpen, CalendarDays, ListOrdered, FileCheck, FileText, Receipt, CloudUpload, BarChart2, FileSignature, Presentation, ClipboardList, Moon, Calculator, Zap, GraduationCap, Image as ImageIcon } from 'lucide-react';
 
 interface LabProps {
-  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'admin-online-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses' | 'lab-revaluation-responses' | 'teacher-log-form' | 'study-progress-form' | 'sem5-progress-mathematics' | 'sem5-progress-physics' | 'class10-term1-form' | 'class10-term1-admin' | 'plusone-progress-admin' | 'plusone-progress-form' | 'note-checking') => void;
+  onNavigate: (view: 'lab-crop' | 'lab-exams' | 'admin-online-exams' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'home' | 'lab-improvement-responses' | 'lab-compensation-responses' | 'lab-revaluation-responses' | 'teacher-log-form' | 'study-progress-form' | 'sem5-progress-mathematics' | 'sem5-progress-physics' | 'class10-term1-form' | 'class10-term1-admin' | 'plusone-progress-admin' | 'plusone-progress-form' | 'note-checking' | 'study-day-poster') => void;
 }
 
 export default function Lab({ onNavigate }: LabProps) {
@@ -362,6 +362,22 @@ export default function Lab({ onNavigate }: LabProps) {
           <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Note Checking</h3>
           <p className="text-sm text-gray-600 flex-1">
             Pick a batch, search a student and tick the NCERT chapters whose notes are completed (Plus One and Plus Two).
+          </p>
+        </div>
+
+        <div
+          onClick={() => onNavigate('study-day-poster')}
+          className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer group flex flex-col"
+        >
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-100 transition-colors">
+              <ImageIcon className="w-6 h-6" />
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mt-4 mb-2">Study Day Poster</h3>
+          <p className="text-sm text-gray-600 flex-1">
+            Generate the daily chapter poster (date, chapter, topics, subject icons) from JSON and save it as a high-res PNG.
           </p>
         </div>
 

@@ -38,7 +38,12 @@ import { Sem5StudyProgressForm } from './components/lab/sem5-progress';
 import { Class10Term1Form, Class10Term1Admin } from './components/lab/class10-term1';
 import PlusOneStudyProgressForm from './components/lab/plusone/PlusOneStudyProgressForm';
 import PlusOneStudyProgressAdmin from './components/lab/plusone/PlusOneStudyProgressAdmin';
-import NoteChecking from './components/lab/note-checking/NoteChecking';
+import NoteCheckingGate from './components/lab/note-checking/NoteCheckingGate';
+import StudyDayPoster from './components/lab/study-day-poster/StudyDayPoster';
+import BiologyDayPoster from './components/lab/study-day-poster/biology/BiologyDayPoster';
+import AimsRevisionPoster from './components/lab/study-day-poster/aims/AimsRevisionPoster';
+import CsDayPoster from './components/lab/study-day-poster/cs/CsDayPoster';
+import FyugTimetable from './components/lab/study-day-poster/fyug/FyugTimetable';
 
 import { 
   ExamDashboard, 
@@ -83,7 +88,7 @@ const DEFAULT_ANSWER_KEY = `{
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public' | 'revaluation-form' | 'lab-revaluation-responses' | 'lab-revaluation-responses-public' | 'teacher-log-form' | 'teacher-log-admin' | 'sem5-progress-mathematics' | 'sem5-progress-physics' | 'class10-term1-form' | 'class10-term1-admin' | 'plusone-progress-form' | 'plusone-progress-admin' | 'note-checking';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public' | 'revaluation-form' | 'lab-revaluation-responses' | 'lab-revaluation-responses-public' | 'teacher-log-form' | 'teacher-log-admin' | 'sem5-progress-mathematics' | 'sem5-progress-physics' | 'class10-term1-form' | 'class10-term1-admin' | 'plusone-progress-form' | 'plusone-progress-admin' | 'note-checking' | 'study-day-poster' | 'study-day-poster-biology' | 'study-day-poster-aims' | 'study-day-poster-cs' | 'fyug-timetable';
 
 // Parse /aims-present/<mode>/<id> from a pathname. Returns null if it isn't a presenter route.
 function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dashboard'; id: string | null } | null {
@@ -216,6 +221,16 @@ export function getPathForView(view: ViewState): string {
       return '/admin/progress/plusone';
     case 'note-checking':
       return '/note-checking';
+    case 'study-day-poster':
+      return '/study-day-poster';
+    case 'study-day-poster-biology':
+      return '/study-day-poster/biology-2nd';
+    case 'study-day-poster-aims':
+      return '/study-day-poster/aims';
+    case 'study-day-poster-cs':
+      return '/study-day-poster/cs2';
+    case 'fyug-timetable':
+      return '/fyug-timetable';
     case 'ranklist':
       return '/ranklist';
     case 'detail':
@@ -324,6 +339,26 @@ function resolveInitialView(): ViewState {
 
   if (path === '/note-checking' || path === '/note-checking/') {
     return 'note-checking';
+  }
+
+  if (path === '/fyug-timetable' || path === '/fyug-timetable/') {
+    return 'fyug-timetable';
+  }
+
+  if (path === '/study-day-poster/cs2' || path === '/study-day-poster/cs2/') {
+    return 'study-day-poster-cs';
+  }
+
+  if (path === '/study-day-poster/aims' || path === '/study-day-poster/aims/') {
+    return 'study-day-poster-aims';
+  }
+
+  if (path === '/study-day-poster/biology-2nd' || path === '/study-day-poster/biology-2nd/') {
+    return 'study-day-poster-biology';
+  }
+
+  if (path === '/study-day-poster' || path === '/study-day-poster/' || path === '/study-poster') {
+    return 'study-day-poster';
   }
 
   // 5b. Plus One Study Progress Routes
@@ -1302,10 +1337,35 @@ export default function App() {
     (view as string) === 'lab-improvement-responses-public' ||
     view === 'plusone-progress-form' ||
     view === 'plusone-progress-admin' ||
-    view === 'note-checking';
+    view === 'note-checking' ||
+    view === 'study-day-poster' ||
+    view === 'study-day-poster-biology' ||
+    view === 'study-day-poster-aims' ||
+    view === 'study-day-poster-cs' ||
+    view === 'fyug-timetable';
 
   if (view === 'note-checking') {
-    return <NoteChecking onBack={() => navigateToView('lab')} />;
+    return <NoteCheckingGate onBack={() => navigateToView('lab')} />;
+  }
+
+  if (view === 'fyug-timetable') {
+    return <FyugTimetable onBack={() => navigateToView('lab')} />;
+  }
+
+  if (view === 'study-day-poster-cs') {
+    return <CsDayPoster onBack={() => navigateToView('lab')} />;
+  }
+
+  if (view === 'study-day-poster-aims') {
+    return <AimsRevisionPoster onBack={() => navigateToView('lab')} />;
+  }
+
+  if (view === 'study-day-poster-biology') {
+    return <BiologyDayPoster onBack={() => navigateToView('lab')} />;
+  }
+
+  if (view === 'study-day-poster') {
+    return <StudyDayPoster onBack={() => navigateToView('lab')} />;
   }
 
   if (view === 'plusone-progress-form') {
