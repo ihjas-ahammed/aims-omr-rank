@@ -213,8 +213,8 @@ function drawEventsFooter(ctx: CanvasRenderingContext2D, events: CalendarEvent[]
   // Card background + grid, clipped to the rounded card
   roundRectPath(ctx, x, y, w, h, 28);
   const bg = ctx.createLinearGradient(x, y, x + w, y + h);
-  bg.addColorStop(0, '#effaec');
-  bg.addColorStop(1, '#e6f1fc');
+  bg.addColorStop(0, '#004080');
+  bg.addColorStop(1, '#06306a');
   ctx.fillStyle = bg;
   ctx.fill();
 
@@ -223,7 +223,7 @@ function drawEventsFooter(ctx: CanvasRenderingContext2D, events: CalendarEvent[]
   ctx.clip();
   const step = 16;
   ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(0, 114, 220, 0.10)';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
   for (let gx = x + (step - ((x) % step)) % step; gx < x + w; gx += step) {
     ctx.beginPath();
     ctx.moveTo(gx, y);
@@ -237,7 +237,7 @@ function drawEventsFooter(ctx: CanvasRenderingContext2D, events: CalendarEvent[]
     ctx.stroke();
   }
   // Heavier accent line every fifth cell, green
-  ctx.strokeStyle = 'rgba(37, 162, 43, 0.16)';
+  ctx.strokeStyle = 'rgba(140, 217, 108, 0.20)';
   ctx.lineWidth = 1.4;
   for (let gx = x; gx < x + w; gx += step * 5) {
     ctx.beginPath();
@@ -253,7 +253,7 @@ function drawEventsFooter(ctx: CanvasRenderingContext2D, events: CalendarEvent[]
   }
   // Soft glow at the top-right corner
   const glow = ctx.createRadialGradient(x + w, y, 0, x + w, y, 220);
-  glow.addColorStop(0, 'rgba(92, 184, 92, 0.28)');
+  glow.addColorStop(0, 'rgba(92, 184, 92, 0.30)');
   glow.addColorStop(1, 'rgba(92, 184, 92, 0)');
   ctx.fillStyle = glow;
   ctx.fillRect(x, y, w, h);
@@ -261,7 +261,7 @@ function drawEventsFooter(ctx: CanvasRenderingContext2D, events: CalendarEvent[]
 
   roundRectPath(ctx, x, y, w, h, 28);
   ctx.lineWidth = 2.4;
-  ctx.strokeStyle = '#9fc3e4';
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
   ctx.stroke();
 
   // Date tile — fixed size, centred vertically in the bar; its text is centred inside it.
@@ -359,10 +359,10 @@ function drawEventRow(
 
   // Icon tile tinted with the course colour
   roundRectPath(ctx, x, iy, iconBox, iconBox, iconBox * 0.26);
-  ctx.fillStyle = sub ? sub.tint : '#e1effc';
+  ctx.fillStyle = '#ffffff';
   ctx.fill();
-  ctx.lineWidth = 2.4;
-  ctx.strokeStyle = accent;
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = sub ? sub.accent : '#8cd96c';
   ctx.stroke();
   drawIconContain(ctx, icons[`event_${e.kind}`], x + 6, iy + 6, iconBox - 12, iconBox - 12);
 
@@ -372,13 +372,13 @@ function drawEventRow(
 
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = NAVY;
+  ctx.fillStyle = '#ffffff';
   ctx.font = `800 ${titleSize}px ${FONT}`;
   ctx.fillText(e.event, tx, top + titleSize * 0.95);
 
   if (line) {
     ctx.font = `700 ${subSize}px ${FONT}`;
-    ctx.fillStyle = accent;
+    ctx.fillStyle = '#b9d4f3';
     ctx.fillText(line, tx, top + titleSize * 1.15 + 4 + subSize * 0.95);
   }
 }
