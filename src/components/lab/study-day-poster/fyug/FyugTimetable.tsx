@@ -3,6 +3,7 @@ import { ArrowLeft, Download } from 'lucide-react';
 import { POSTER_H, POSTER_SCALE, POSTER_W } from '../posterRenderer';
 import { loadFyugIcons, renderFyugPoster, type FyugAssets } from './fyugPosterRenderer';
 import { defaultDate, getSlots } from './fyugData';
+import { getUpcoming } from './calendar';
 
 interface FyugTimetableProps {
   onBack?: () => void;
@@ -33,12 +34,14 @@ export default function FyugTimetable({ onBack }: FyugTimetableProps) {
 
   const dateObj = useMemo(() => new Date(date + 'T00:00:00'), [date]);
   const slots = useMemo(() => getSlots(dateObj), [dateObj]);
+  // Next calendar event counted from the day the page is opened (today counts as 0 days away).
+  const upcoming = useMemo(() => getUpcoming(new Date()), []);
 
   useEffect(() => {
     if (canvasRef.current && assets && slots) {
-      renderFyugPoster(canvasRef.current, { date: dateObj, slots, assets });
+      renderFyugPoster(canvasRef.current, { date: dateObj, upcoming, slots, assets });
     }
-  }, [assets, dateObj, slots, fontsTick]);
+  }, [assets, dateObj, slots, upcoming, fontsTick]);
 
   const download = useCallback(() => {
     const canvas = canvasRef.current;

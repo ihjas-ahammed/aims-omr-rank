@@ -2,6 +2,8 @@ import { POSTER_H, POSTER_SCALE, POSTER_W, drawBackgroundAndCorners, roundRectPa
 import { drawIconContain, drawStudyHeader, rasteriseIcon, setLetterSpacing, type IconImage } from '../biology/biologyPosterRenderer';
 import { FYUG_HERO, FYUG_ICONS } from './fyugIcons';
 import { SUBJECTS, type Slot } from './fyugData';
+import { EVENT_ICONS } from './calendarIcons';
+import type { CalendarEvent, Upcoming } from './calendar';
 
 export interface FyugAssets {
   icons: Record<string, IconImage>;
@@ -13,7 +15,11 @@ const FONT = "'Montserrat', sans-serif";
 
 
 export async function loadFyugIcons(): Promise<Record<string, IconImage>> {
-  const entries: [string, { viewBox: string; svg: string }][] = [...Object.entries(FYUG_ICONS), ['hero', FYUG_HERO]];
+  const entries: [string, { viewBox: string; svg: string }][] = [
+    ...Object.entries(FYUG_ICONS),
+    ...Object.entries(EVENT_ICONS).map(([k, v]) => [`event_${k}`, v] as [string, { viewBox: string; svg: string }]),
+    ['hero', FYUG_HERO]
+  ];
   const loaded = await Promise.all(entries.map(([, i]) => rasteriseIcon(i.viewBox, i.svg)));
   return Object.fromEntries(entries.map(([k], i) => [k, loaded[i]]));
 }
@@ -182,13 +188,151 @@ function rightColumnWidth(ctx: CanvasRenderingContext2D, slot: Slot): number {
   return wMax;
 }
 
+const FOOTER_BOTTOM = 1134;
+// Taller when a day has two events so both rows fit.
+const footerHeight = (up: Upcoming) => (up.events.length > 1 ? 158 : 128);
+
+function fitText(ctx: CanvasRenderingContext2D, text: string, weight: number, start: number, min: number, maxW: number): number {
+  let size = start;
+  ctx.font = `${weight} ${size}px ${FONT}`;
+  while (ctx.measureText(text).width > maxW && size > min) {
+    size -= 1;
+    ctx.font = `${weight} ${size}px ${FONT}`;
+  }
+  return size;
+}
+
+// Footer: the next calendar event(s) — date tile, "UPCOMING" label, event + course, and a days-to-go badge.
+function drawUpcomingFooter(ctx: CanvasRenderingContext2D, up: Upcoming, icons: Record<string, IconImage>) {
+  const x = 30;
+  const h = footerHeight(up);
+  const y = FOOTER_BOTTOM - h;
+  const w = 740;
+
+  // Navy gradient card
+  const g = ctx.createLinearGradient(x, y, x + w, y);
+  g.addColorStop(0, '#004080');
+  g.addColorStop(1, '#06306a');
+  roundRectPath(ctx, x, y, w, h, 28);
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  // Date tile
+  const tx = x + 16;
+  const tw = 92;
+  roundRectPath(ctx, tx, y + 14, tw, h - 28, 20);
+  ctx.fillStyle = '#faf0ca';
+  ctx.fill();
+  const month = up.date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+  const weekday = up.date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#0072dc';
+  ctx.font = `800 17px ${FONT}`;
+  setLetterSpacing(ctx, 2);
+  ctx.fillText(month, tx + tw / 2 + 1, y + 38);
+  setLetterSpacing(ctx, 0);
+  ctx.fillStyle = NAVY;
+  ctx.font = `900 48px ${FONT}`;
+  ctx.fillText(String(up.date.getDate()).padStart(2, '0'), tx + tw / 2, y + 82);
+  ctx.fillStyle = '#4b5d7a';
+  ctx.font = `700 13px ${FONT}`;
+  setLetterSpacing(ctx, 2);
+  ctx.fillText(weekday, tx + tw / 2 + 1, y + 102);
+  setLetterSpacing(ctx, 0);
+
+  // Days-to-go badge on the right
+  const bw = 128;
+  const bx = x + w - 16 - bw;
+  roundRectPath(ctx, bx, y + 14, bw, h - 28, 20);
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  if (up.daysAway === 0 || up.daysAway === 1) {
+    // Fit the word inside the badge with side padding so it never touches the edges.
+    const word = up.daysAway === 0 ? 'TODAY' : 'TOMORROW';
+    ctx.fillStyle = '#8cd96c';
+    const size = fitText(ctx, word, 900, 30, 14, bw - 36);
+    ctx.fillText(word, bx + bw / 2, y + h / 2 + size * 0.34);
+  } else {
+    ctx.fillStyle = '#8cd96c';
+    ctx.font = `900 50px ${FONT}`;
+    ctx.fillText(String(up.daysAway), bx + bw / 2, y + h / 2 + 8);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `700 15px ${FONT}`;
+    setLetterSpacing(ctx, 2.5);
+    ctx.fillText('DAYS LEFT', bx + bw / 2 + 1, y + h / 2 + 34);
+    setLetterSpacing(ctx, 0);
+  }
+
+  // Middle: label + event rows
+  const mx = tx + tw + 20;
+  const mw = bx - 16 - mx;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#8cd96c';
+  ctx.font = `800 15px ${FONT}`;
+  setLetterSpacing(ctx, 3);
+  ctx.fillText('UPCOMING EVENT', mx, y + 34);
+  setLetterSpacing(ctx, 0);
+
+  const many = up.events.length > 1;
+  const rowsTop = y + 46;
+  const rowsH = h - 46 - 12;
+  const rowH = rowsH / up.events.length;
+  up.events.forEach((e, i) => drawEventRow(ctx, e, icons, mx, rowsTop + i * rowH, mw, rowH, many));
+}
+
+function drawEventRow(
+  ctx: CanvasRenderingContext2D,
+  e: CalendarEvent,
+  icons: Record<string, IconImage>,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  compact: boolean
+) {
+  const sub = e.subject ? SUBJECTS[e.subject] : null;
+  const iconBox = compact ? 38 : 56;
+
+  roundRectPath(ctx, x, y + (h - iconBox) / 2, iconBox, iconBox, iconBox * 0.28);
+  ctx.fillStyle = '#ffffff';
+  ctx.fill();
+  drawIconContain(ctx, icons[`event_${e.kind}`], x + 4, y + (h - iconBox) / 2 + 4, iconBox - 8, iconBox - 8);
+
+  const tx = x + iconBox + 14;
+  const tw = w - iconBox - 14;
+  const course = sub ? sub.name : e.note ?? '';
+  const extra = sub && e.note ? ` • ${e.note}` : '';
+
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  const titleSize = fitText(ctx, e.event, 800, compact ? 21 : 29, 16, tw);
+  const subSize = compact ? 15 : 18;
+  const blockH = titleSize * 1.15 + 4 + subSize * 1.15;
+  const top = y + (h - blockH) / 2;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `800 ${titleSize}px ${FONT}`;
+  ctx.fillText(e.event, tx, top + titleSize * 0.95);
+
+  const line = course + extra;
+  if (line) {
+    fitText(ctx, line, 700, subSize, 12, tw);
+    ctx.fillStyle = '#b9d4f3';
+    ctx.fillText(line, tx, top + titleSize * 1.15 + 4 + subSize * 0.95);
+  }
+}
+
 export interface FyugRenderOptions {
   date: Date;
+  upcoming: Upcoming | null;
   slots: Slot[];
   assets: FyugAssets;
 }
 
-export function renderFyugPoster(canvas: HTMLCanvasElement, { date, slots, assets }: FyugRenderOptions) {
+export function renderFyugPoster(canvas: HTMLCanvasElement, { date, upcoming, slots, assets }: FyugRenderOptions) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
@@ -208,10 +352,12 @@ export function renderFyugPoster(canvas: HTMLCanvasElement, { date, slots, asset
   });
 
   const top = 408 - HEADER_SHIFT;
-  const bottom = 1100;
+  const bottom = upcoming ? FOOTER_BOTTOM - footerHeight(upcoming) - 12 : 1100;
   const gap = 12;
   const h = (bottom - top - gap * (slots.length - 1)) / slots.length;
   slots.forEach((slot, i) => drawSlot(ctx, slot, i + 1, assets.icons, top + i * (h + gap), h));
+
+  if (upcoming) drawUpcomingFooter(ctx, upcoming, assets.icons);
 
   ctx.restore();
 }

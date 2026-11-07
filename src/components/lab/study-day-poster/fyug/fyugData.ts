@@ -1,5 +1,5 @@
 // Weekly timetable transcribed from the FYUG timetable screenshot (Mon–Fri, Hour 1–5).
-// Full subject titles come from the course notes in Downloads (the screenshot truncates them with "…").
+// Full subject titles come from the Sixth Semester academic calendar (the screenshot truncates them with "…").
 // A room is only set where the screenshot showed one.
 
 export type SubjectKey = 'thermo' | 'nuclear' | 'electronics' | 'electrical' | 'nano' | 'opto';
@@ -16,7 +16,7 @@ export const SUBJECTS: Record<SubjectKey, Subject> = {
   nuclear: { name: 'Nuclear and Particle Physics', icon: 'nuclear', accent: '#5b52d6', tint: '#ececfd' },
   electronics: { name: 'Electronics–II', icon: 'electronics', accent: '#2563eb', tint: '#e3edfd' },
   electrical: { name: 'Electrical and Photovoltaic Devices', icon: 'electrical', accent: '#0e7490', tint: '#dff5f9' },
-  nano: { name: 'Nanoscience and Nanotechnology', icon: 'nano', accent: '#16803c', tint: '#e3f6e8' },
+  nano: { name: 'Nanoscience and Technology', icon: 'nano', accent: '#16803c', tint: '#e3f6e8' },
   opto: { name: 'Optoelectronics and Semiconductor Devices', icon: 'opto', accent: '#0f766e', tint: '#ddf5f1' }
 };
 
