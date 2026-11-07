@@ -210,21 +210,51 @@ function drawEventsFooter(ctx: CanvasRenderingContext2D, events: CalendarEvent[]
   const h = FOOTER_H;
   const y = FOOTER_BOTTOM - h;
 
-  // Card background + grid, clipped to the rounded card
+  // Frosted glass: blur what is already drawn behind the bar (waves, grid, card edges), then lay a blue tint,
+  // a soft highlight, a faint grid and a light edge over it, with a drop shadow so the bar floats.
+  const scale = POSTER_SCALE;
+  const pad = 22;
+  const back = document.createElement('canvas');
+  back.width = Math.round((w + pad * 2) * scale);
+  back.height = Math.round((h + pad * 2) * scale);
+  const bctx = back.getContext('2d');
+  if (bctx) {
+    bctx.filter = 'blur(16px)'; // where ctx.filter is unsupported this is a no-op and the glass is just tinted
+    bctx.drawImage(ctx.canvas, (x - pad) * scale, (y - pad) * scale, back.width, back.height, 0, 0, back.width, back.height);
+  }
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(6, 26, 64, 0.35)';
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetY = 8;
   roundRectPath(ctx, x, y, w, h, 28);
-  const bg = ctx.createLinearGradient(x, y, x + w, y + h);
-  bg.addColorStop(0, '#004080');
-  bg.addColorStop(1, '#06306a');
-  ctx.fillStyle = bg;
+  ctx.fillStyle = 'rgba(6, 48, 106, 0.5)';
   ctx.fill();
+  ctx.restore();
 
   ctx.save();
   roundRectPath(ctx, x, y, w, h, 28);
   ctx.clip();
+  // Blurred backdrop (replace the unblurred pixels under the bar)
+  ctx.drawImage(back, 0, 0, back.width, back.height, x - pad, y - pad, w + pad * 2, h + pad * 2);
+  // Blue glass tint
+  const tint = ctx.createLinearGradient(x, y, x + w, y + h);
+  tint.addColorStop(0, 'rgba(0, 70, 150, 0.86)');
+  tint.addColorStop(1, 'rgba(6, 44, 100, 0.78)');
+  ctx.fillStyle = tint;
+  ctx.fillRect(x, y, w, h);
+  // Soft specular highlight along the top-left
+  const spec = ctx.createLinearGradient(x, y, x + w * 0.7, y + h);
+  spec.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
+  spec.addColorStop(0.45, 'rgba(255, 255, 255, 0.06)');
+  spec.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = spec;
+  ctx.fillRect(x, y, w, h);
+  // Faint grid for texture
   const step = 16;
   ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.07)';
-  for (let gx = x + (step - ((x) % step)) % step; gx < x + w; gx += step) {
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+  for (let gx = x + (step - (x % step)) % step; gx < x + w; gx += step) {
     ctx.beginPath();
     ctx.moveTo(gx, y);
     ctx.lineTo(gx, y + h);
@@ -236,32 +266,22 @@ function drawEventsFooter(ctx: CanvasRenderingContext2D, events: CalendarEvent[]
     ctx.lineTo(x + w, gy);
     ctx.stroke();
   }
-  // Heavier accent line every fifth cell, green
-  ctx.strokeStyle = 'rgba(140, 217, 108, 0.20)';
-  ctx.lineWidth = 1.4;
-  for (let gx = x; gx < x + w; gx += step * 5) {
-    ctx.beginPath();
-    ctx.moveTo(gx, y);
-    ctx.lineTo(gx, y + h);
-    ctx.stroke();
-  }
-  for (let gy = y; gy < y + h; gy += step * 5) {
-    ctx.beginPath();
-    ctx.moveTo(x, gy);
-    ctx.lineTo(x + w, gy);
-    ctx.stroke();
-  }
-  // Soft glow at the top-right corner
+  // Green glow at the top-right corner
   const glow = ctx.createRadialGradient(x + w, y, 0, x + w, y, 220);
-  glow.addColorStop(0, 'rgba(92, 184, 92, 0.30)');
-  glow.addColorStop(1, 'rgba(92, 184, 92, 0)');
+  glow.addColorStop(0, 'rgba(120, 210, 100, 0.30)');
+  glow.addColorStop(1, 'rgba(120, 210, 100, 0)');
   ctx.fillStyle = glow;
   ctx.fillRect(x, y, w, h);
   ctx.restore();
 
+  // Glass edge: bright rim on top/left fading to a faint one bottom/right
   roundRectPath(ctx, x, y, w, h, 28);
-  ctx.lineWidth = 2.4;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+  const rim = ctx.createLinearGradient(x, y, x + w, y + h);
+  rim.addColorStop(0, 'rgba(255, 255, 255, 0.75)');
+  rim.addColorStop(0.5, 'rgba(255, 255, 255, 0.25)');
+  rim.addColorStop(1, 'rgba(255, 255, 255, 0.5)');
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = rim;
   ctx.stroke();
 
   // Date tile — fixed size, centred vertically in the bar; its text is centred inside it.
@@ -378,7 +398,7 @@ function drawEventRow(
 
   if (line) {
     ctx.font = `700 ${subSize}px ${FONT}`;
-    ctx.fillStyle = '#b9d4f3';
+    ctx.fillStyle = '#e1eefc';
     ctx.fillText(line, tx, top + titleSize * 1.15 + 4 + subSize * 0.95);
   }
 }
