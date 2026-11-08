@@ -63,7 +63,7 @@ function drawCard(ctx: CanvasRenderingContext2D, x: number, y: number, w: number
   ctx.stroke();
 }
 
-function drawChapter(
+export function drawChapter(
   ctx: CanvasRenderingContext2D,
   day: CsChapter,
   icons: Record<string, IconImage>,
@@ -72,7 +72,7 @@ function drawChapter(
 ) {
   const x = 30;
   const w = 740;
-  const isRevision = day.tag === 'REVISION';
+  const isRevision = /REV/.test(day.tag);
   const accent = isRevision ? BLUE : GREEN;
   const tint = isRevision ? '#e1effc' : '#e3f9e1';
 
@@ -174,9 +174,16 @@ function drawChapter(
   });
 }
 
-function drawExam(ctx: CanvasRenderingContext2D, label: string, icons: Record<string, IconImage>, y: number, h: number) {
+export function drawExam(
+  ctx: CanvasRenderingContext2D,
+  label: string,
+  icons: Record<string, IconImage>,
+  y: number,
+  h: number,
+  iconKey = 'cs_revision'
+) {
   drawCard(ctx, 30, y, 740, h);
-  drawIconContain(ctx, icons.cs_revision, 280, y + 40, 240, 200);
+  drawIconContain(ctx, icons[iconKey], 280, y + 40, 240, 200);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = NAVY;

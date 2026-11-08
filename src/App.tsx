@@ -44,6 +44,7 @@ import BiologyDayPoster from './components/lab/study-day-poster/biology/BiologyD
 import AimsRevisionPoster from './components/lab/study-day-poster/aims/AimsRevisionPoster';
 import CsDayPoster from './components/lab/study-day-poster/cs/CsDayPoster';
 import FyugTimetable from './components/lab/study-day-poster/fyug/FyugTimetable';
+import PlusTwoPhyPoster from './components/lab/study-day-poster/plus-two-phy/PlusTwoPhyPoster';
 
 import { 
   ExamDashboard, 
@@ -88,7 +89,7 @@ const DEFAULT_ANSWER_KEY = `{
 
 const DEFAULT_TOPIC_MAPPING = `Here is the classification of the questions by chapter and specific topic based on the NCERT Class 12 Physics syllabus:\n\n### **Chapter 4: Moving Charges and Magnetism**\n*   **Magnetic Force on a Charge:** Q1, Q2\n*   **Biot-Savart Law:** Q3\n*   **Magnetic Field due to a Straight Wire:** Q4\n*   **Magnetic Field due to a Circular Current Loop:** Q5\n*   **The Solenoid (Ampere’s Circuital Law):** Q6\n*   **Force between Two Parallel Currents:** Q7\n*   **Moving Coil Galvanometer (Conversion to Voltmeter):** Q8\n\n### **Chapter 5: Magnetism and Matter**\n*   **The Magnetic Dipole (Magnetic Moment):** Q9\n*   **The Bar Magnet (Axial and Equatorial Fields):** Q10\n*   **Magnetic Dipole in a Uniform Magnetic Field (Potential Energy):** Q11\n*   **Magnetic Properties of Materials (Curie’s Law & Transitions):** Q12, Q13\n\n### **Chapter 6: Electromagnetic Induction (EMI)**\n*   **Magnetic Flux:** Q14, Q15\n*   **Faraday’s and Lenz’s Law (Induced EMF & Charge):** Q16, Q17\n*   **Motional Electromotive Force:** Q18, Q19, Q20\n*   **Eddy Currents:** Q21\n*   **Mutual Induction:** Q22\n*   **AC Generator (Peak EMF):** Q23\n\n### **Chapter 7: Alternating Current**\n*   **AC Voltage Applied to a Series LR Circuit (Impedance & Inductance):** Q24\n*   **Transformers:** Q25`;
 
-type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public' | 'revaluation-form' | 'lab-revaluation-responses' | 'lab-revaluation-responses-public' | 'teacher-log-form' | 'teacher-log-admin' | 'sem5-progress-mathematics' | 'sem5-progress-physics' | 'class10-term1-form' | 'class10-term1-admin' | 'plusone-progress-form' | 'plusone-progress-admin' | 'note-checking' | 'study-day-poster' | 'study-day-poster-biology' | 'study-day-poster-aims' | 'study-day-poster-cs' | 'fyug-timetable';
+type ViewState = 'home' | 'ranklist' | 'detail' | 'printableRanklist' | 'lab' | 'lab-crop' | 'lab-exams' | 'exam-setup' | 'exam-results' | 'exam-take' | 'admin-online-exams' | 'admin-online-exam-detail' | 'online-exam-portal' | 'lab-course-progress' | 'lab-timetable' | 'lab-atr-list' | 'lab-qp-maker' | 'lab-fee-logger' | 'lab-cloud-sessions' | 'lab-score-analysis' | 'lab-descriptive' | 'lab-aims-present' | 'aims-present-control' | 'aims-present-view' | 'improvement-form' | 'lab-improvement-responses' | 'lab-improvement-responses-public' | 'study-progress-form' | 'study-progress-admin' | 'compensation-form' | 'lab-compensation-responses' | 'lab-compensation-responses-public' | 'revaluation-form' | 'lab-revaluation-responses' | 'lab-revaluation-responses-public' | 'teacher-log-form' | 'teacher-log-admin' | 'sem5-progress-mathematics' | 'sem5-progress-physics' | 'class10-term1-form' | 'class10-term1-admin' | 'plusone-progress-form' | 'plusone-progress-admin' | 'note-checking' | 'study-day-poster' | 'study-day-poster-biology' | 'study-day-poster-aims' | 'study-day-poster-cs' | 'fyug-timetable' | 'plus-two-phy-poster';
 
 // Parse /aims-present/<mode>/<id> from a pathname. Returns null if it isn't a presenter route.
 function parsePresentRoute(pathname: string): { mode: 'control' | 'view' | 'dashboard'; id: string | null } | null {
@@ -231,6 +232,8 @@ export function getPathForView(view: ViewState): string {
       return '/study-day-poster/cs2';
     case 'fyug-timetable':
       return '/fyug-timetable';
+    case 'plus-two-phy-poster':
+      return '/study-day-posters/plus-two-phy3';
     case 'ranklist':
       return '/ranklist';
     case 'detail':
@@ -339,6 +342,15 @@ function resolveInitialView(): ViewState {
 
   if (path === '/note-checking' || path === '/note-checking/') {
     return 'note-checking';
+  }
+
+  if (
+    path === '/study-day-posters/plus-two-phy3' ||
+    path === '/study-day-posters/plus-two-phy3/' ||
+    path === '/study-day-poster/plus-two-phy3' ||
+    path === '/study-day-poster/plus-two-phy3/'
+  ) {
+    return 'plus-two-phy-poster';
   }
 
   if (path === '/fyug-timetable' || path === '/fyug-timetable/') {
@@ -1342,10 +1354,15 @@ export default function App() {
     view === 'study-day-poster-biology' ||
     view === 'study-day-poster-aims' ||
     view === 'study-day-poster-cs' ||
-    view === 'fyug-timetable';
+    view === 'fyug-timetable' ||
+    view === 'plus-two-phy-poster';
 
   if (view === 'note-checking') {
     return <NoteCheckingGate onBack={() => navigateToView('lab')} />;
+  }
+
+  if (view === 'plus-two-phy-poster') {
+    return <PlusTwoPhyPoster onBack={() => navigateToView('lab')} />;
   }
 
   if (view === 'fyug-timetable') {
