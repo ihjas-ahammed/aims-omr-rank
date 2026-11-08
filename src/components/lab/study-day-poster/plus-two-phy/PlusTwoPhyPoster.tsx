@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft, Check, Download } from 'lucide-react';
 import { POSTER_H, POSTER_SCALE, POSTER_W } from '../posterRenderer';
 import { loadPhyIcons, renderPhyPoster, type PhyAssets } from './phyPosterRenderer';
 import { PHY_CYCLE_LABEL, getPhyDay } from './phyData';
@@ -8,6 +8,23 @@ import logoUrl from '../biology/aims-plus-logo.png';
 interface PlusTwoPhyPosterProps {
   onBack?: () => void;
 }
+
+const BATCHES = ['B1', 'B2', 'B3'];
+const BATCH_KEY = 'plus_two_phy_batches';
+
+// Remembered ticks; falls back to every batch (the chart is the same for all of them).
+const readBatches = (): string[] => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(BATCH_KEY) || 'null');
+    if (Array.isArray(saved)) {
+      const valid = BATCHES.filter((b) => saved.includes(b));
+      if (valid.length) return valid;
+    }
+  } catch {
+    /* ignore */
+  }
+  return BATCHES;
+};
 
 const toInputDate = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -29,6 +46,7 @@ const loadLogo = (): Promise<HTMLImageElement> =>
 export default function PlusTwoPhyPoster({ onBack }: PlusTwoPhyPosterProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [date, setDate] = useState(() => offsetFromToday(1));
+  const [batches, setBatches] = useState<string[]>(readBatches);
   const [assets, setAssets] = useState<PhyAssets | null>(null);
   const [fontsTick, setFontsTick] = useState(0);
 
@@ -51,9 +69,9 @@ export default function PlusTwoPhyPoster({ onBack }: PlusTwoPhyPosterProps) {
 
   useEffect(() => {
     if (canvasRef.current && assets && day) {
-      renderPhyPoster(canvasRef.current, { date: dateObj, day, assets });
+      renderPhyPoster(canvasRef.current, { date: dateObj, batches, day, assets });
     }
-  }, [assets, dateObj, day, fontsTick]);
+  }, [assets, batches, dateObj, day, fontsTick]);
 
   const download = useCallback(() => {
     const canvas = canvasRef.current;
@@ -63,6 +81,20 @@ export default function PlusTwoPhyPoster({ onBack }: PlusTwoPhyPosterProps) {
     link.href = canvas.toDataURL('image/png');
     link.click();
   }, [date, day]);
+
+  // Tick / untick a batch; at least one stays ticked, and the poster always lists them in B1, B2, B3 order.
+  const toggleBatch = (b: string) => {
+    setBatches((cur) => {
+      const next = cur.includes(b) ? cur.filter((x) => x !== b) : BATCHES.filter((x) => x === b || cur.includes(x));
+      if (next.length === 0) return cur;
+      try {
+        localStorage.setItem(BATCH_KEY, JSON.stringify(next));
+      } catch {
+        /* storage unavailable — ticks just won't persist */
+      }
+      return next;
+    });
+  };
 
   const stepDate = (delta: number) => {
     const d = new Date(date + 'T00:00:00');
@@ -88,6 +120,41 @@ export default function PlusTwoPhyPoster({ onBack }: PlusTwoPhyPosterProps) {
 
       <main className="max-w-5xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-[320px_1fr] gap-8 items-start">
         <div className="space-y-5">
+          <section className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-bold text-xs text-slate-400 uppercase tracking-wider">Batch</h2>
+              <span className="text-[11px] text-slate-500">Shown on the poster</span>
+            </div>
+            <div className="flex gap-2">
+              {BATCHES.map((b) => {
+                const on = batches.includes(b);
+                return (
+                  <button
+                    key={b}
+                    type="button"
+                    role="checkbox"
+                    aria-checked={on}
+                    onClick={() => toggleBatch(b)}
+                    className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold border transition ${
+                      on
+                        ? 'bg-gradient-to-r from-blue-600 to-emerald-600 text-white border-transparent shadow-md shadow-blue-600/20'
+                        : 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span
+                      className={`w-4 h-4 rounded-[5px] border flex items-center justify-center ${
+                        on ? 'bg-white/90 border-white/90 text-emerald-700' : 'border-slate-500'
+                      }`}
+                    >
+                      {on && <Check className="w-3 h-3" strokeWidth={4} />}
+                    </span>
+                    {b}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
           <section className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-xs text-slate-400 uppercase tracking-wider">Study Date</h2>

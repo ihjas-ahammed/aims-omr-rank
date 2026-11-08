@@ -17,12 +17,13 @@ export async function loadPhyIcons(): Promise<Record<string, IconImage>> {
 
 export interface PhyRenderOptions {
   date: Date;
+  batches: string[]; // ticked batches, e.g. ['B1', 'B2', 'B3'] — shown in the subtitle bar instead of "PLUS TWO"
   day: PhyDay;
   assets: PhyAssets;
 }
 
 // Same AIMS PLUS poster design as the Plus One pages: logo, date row, subtitle bar, one chapter card.
-export function renderPhyPoster(canvas: HTMLCanvasElement, { date, day, assets }: PhyRenderOptions) {
+export function renderPhyPoster(canvas: HTMLCanvasElement, { date, batches, day, assets }: PhyRenderOptions) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
@@ -32,8 +33,11 @@ export function renderPhyPoster(canvas: HTMLCanvasElement, { date, day, assets }
 
   drawBackgroundAndCorners(ctx, POSTER_W, POSTER_H, 'corners_physics');
 
+  const batchLabel = batches.length ? batches.join(' / ') : 'PLUS TWO';
   const subtitle =
-    'topics' in day ? `PLUS TWO PHYSICS  •  DAY ${String(day.dayNo).padStart(2, '0')}` : 'PLUS TWO  •  PHYSICS';
+    'topics' in day
+      ? `${batchLabel}  •  PHYSICS  •  DAY ${String(day.dayNo).padStart(2, '0')}`
+      : `${batchLabel}  •  PHYSICS`;
   drawStudyHeader(ctx, { date, logo: assets.logo, hero: assets.icons.phy_hero, subtitle });
 
   const top = 408;
