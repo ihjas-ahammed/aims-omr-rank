@@ -81,7 +81,7 @@ export default function CsDayPoster({ onBack }: CsDayPosterProps) {
           )}
           <div>
             <h1 className="font-bold text-lg tracking-tight text-white leading-none">Computer Science Study Day Poster</h1>
-            <p className="text-xs text-slate-400 mt-0.5">Plus One • Chapters 01–04 • Cycle {CS_CYCLE_LABEL}</p>
+            <p className="text-xs text-slate-400 mt-0.5">Plus One • Chapters 02–05 • Cycle {CS_CYCLE_LABEL}</p>
           </div>
         </div>
       </header>

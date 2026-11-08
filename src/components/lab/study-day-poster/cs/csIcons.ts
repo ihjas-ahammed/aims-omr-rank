@@ -57,8 +57,6 @@ export const CS_ICONS: Record<string, BioIcon> = {
       ${sparkle(120, 90, 0.9)}
     `
   },
-  // Chapter 01: code brackets (shared catalog icon)
-  cs_code: SVG_CATALOG.cs_code,
   // Chapter 04: Python as an S-shaped snake with a tongue
   cs_python: {
     viewBox: '0 0 140 120',
@@ -71,7 +69,23 @@ export const CS_ICONS: Record<string, BioIcon> = {
       ${sparkle(24, 22, 0.9)}
     `
   },
-  // Chapter 05: C++ built from shapes
+  // Chapter 05: Python shell window with >>> prompt and cursor
+  cs_shell: {
+    viewBox: '0 0 140 120',
+    svg: `
+      <rect x="12" y="14" width="116" height="92" rx="12" fill="#061a40" stroke="#061a40" stroke-width="4"/>
+      <rect x="12" y="14" width="116" height="20" rx="12" fill="#0072dc"/>
+      <rect x="12" y="26" width="116" height="8" fill="#0072dc"/>
+      <circle cx="26" cy="24" r="3.6" fill="#ffffff"/><circle cx="38" cy="24" r="3.6" fill="#ffffff" opacity="0.7"/><circle cx="50" cy="24" r="3.6" fill="#ffffff" opacity="0.45"/>
+      <g fill="none" stroke="#5cb85c" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M26 50 L36 59 L26 68"/><path d="M42 50 L52 59 L42 68"/><path d="M58 50 L68 59 L58 68"/>
+      </g>
+      <rect x="78" y="52" width="10" height="16" rx="2" fill="#ffffff"/>
+      <path d="M26 86 H88 M26 96 H62" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+      ${sparkle(124, 12, 0.8)}
+    `
+  },
+  // Chapter 05 (old syllabus): C++ built from shapes
   cs_cpp: {
     viewBox: '0 0 140 120',
     svg: `

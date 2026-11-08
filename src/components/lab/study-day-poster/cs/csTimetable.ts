@@ -1,7 +1,7 @@
 // Plus One Computer Science, REVISED SCERT Kerala syllabus (2026–27 textbook, with Python), cycle 08 NOV – 15 NOV 2026.
 // Same plan for both batches. Chapter titles are the textbook's; the topics are condensed from the chapter-wise notes at
 // hsslive.in (Anagh R K / TJ / Ranjith V). The Part A / Part B split of the long chapters and the day-to-chapter plan
-// are our own planning, not something the textbook prescribes.
+// are our own planning, not something the textbook prescribes. Chapter numbers 02–05 are the revised textbook's own.
 
 export interface CsChapter {
   date: string; // YYYY-MM-DD
@@ -25,41 +25,11 @@ export const CS_CYCLE_LABEL = '08 NOV – 15 NOV 2026';
 
 export const CS_TIMETABLE: CsDay[] = [
   {
-    // Day 01 (Sunday) was already sent; kept here so the page still works for that date.
+    // Day 01 (Sunday) was already sent; kept so the page still works for that date.
     date: '2026-11-08',
     dayNo: 1,
-    tag: 'CHAPTER 01',
-    title: 'Introduction to Computing (Part A)',
-    icon: 'cs_code',
-    topics: [
-      'Evolution of Number Systems: Egyptian to Mayan & Roman',
-      'Abacus, Napier’s Bones & Pascaline',
-      'Leibniz’s Calculator & Jacquard’s Loom',
-      'Difference Engine & Analytical Engine (Babbage)',
-      'Mark I & the Stored Program Computer (von Neumann)',
-      'Generations of Computers: First to Fifth'
-    ]
-  },
-  {
-    date: '2026-11-09',
-    dayNo: 2,
-    tag: 'CHAPTER 01',
-    title: 'Introduction to Computing (Part B)',
-    icon: 'cs_code',
-    topics: [
-      'Evolution of Programming Languages: Machine, Assembly & High Level',
-      'Language Translators: Assembler, Compiler & Interpreter',
-      'Uses of Computers: Data Storage, Processing & Problem Solving',
-      'Networking & Communication: Internet, Email & Video Calls',
-      'Intelligent Decision Making: AI, Machine Learning & IoT',
-      'Computers for Data Processing: Input, Storage, Output & Visualisation'
-    ]
-  },
-  {
-    date: '2026-11-10',
-    dayNo: 3,
     tag: 'CHAPTER 02',
-    title: 'Data Representation and Boolean Algebra (Part A)',
+    title: 'Data Representation and Boolean Algebra (Part 1)',
     icon: 'cs_binary',
     topics: [
       'Number Systems: Decimal, Binary & Hexadecimal (Base/Radix)',
@@ -71,10 +41,10 @@ export const CS_TIMETABLE: CsDay[] = [
     ]
   },
   {
-    date: '2026-11-11',
-    dayNo: 4,
+    date: '2026-11-09',
+    dayNo: 2,
     tag: 'CHAPTER 02',
-    title: 'Data Representation and Boolean Algebra (Part B)',
+    title: 'Data Representation and Boolean Algebra (Part 2)',
     icon: 'cs_gate',
     topics: [
       'Image Representation: Pixels, Resolution & Colour Depth',
@@ -86,10 +56,10 @@ export const CS_TIMETABLE: CsDay[] = [
     ]
   },
   {
-    date: '2026-11-12',
-    dayNo: 5,
+    date: '2026-11-10',
+    dayNo: 3,
     tag: 'CHAPTER 03',
-    title: 'Computer System Organisation (Part A: Hardware)',
+    title: 'Computer System Organisation (Hardware & Memory)',
     icon: 'cs_chip',
     topics: [
       'Components of a Computer System: Hardware & Software',
@@ -101,10 +71,10 @@ export const CS_TIMETABLE: CsDay[] = [
     ]
   },
   {
-    date: '2026-11-13',
-    dayNo: 6,
+    date: '2026-11-11',
+    dayNo: 4,
     tag: 'CHAPTER 03',
-    title: 'Computer System Organisation (Part B: Software)',
+    title: 'Computer System Organisation (Software & Algorithms)',
     icon: 'cs_flowchart',
     topics: [
       'System Software: Operating System & Its Functions',
@@ -116,21 +86,49 @@ export const CS_TIMETABLE: CsDay[] = [
     ]
   },
   {
-    date: '2026-11-14',
-    dayNo: 7,
-    tag: 'CH 04 · REVISION',
-    title: 'Getting Started with Python & Revision (Ch 01–04)',
+    date: '2026-11-12',
+    dayNo: 5,
+    tag: 'CHAPTER 04',
+    title: 'Getting Started with Python',
     icon: 'cs_python',
     topics: [
-      'Python: Guido van Rossum, Features & Cross-Platform Use',
+      'Python: History (Guido van Rossum, 1991) & Applications',
+      'Why Python: Simple Syntax, Open Source & Cross-Platform',
       'Interpreter, Bytecode & Platform Independence',
-      'IDLE & Python Shell: Interactive Mode vs Script Mode',
-      'Revision: Number Conversions & 1’s / 2’s Complement Numericals',
-      'Revision: Boolean Laws, Logic Gates & Universal Gates',
-      'Revision: Memory, Software, Flowcharts & PYQ Drill'
+      'Python IDEs & IDLE: Python Shell and the >>> Prompt',
+      'Interactive Mode: Executing Statements Instantly',
+      'Script Mode: Saving .py Files & Run Module'
     ]
   },
-  { date: '2026-11-15', exam: true, label: 'COMPUTER SCIENCE EXAM — CHAPTERS 01 TO 04' }
+  {
+    date: '2026-11-13',
+    dayNo: 6,
+    tag: 'CHAPTER 05',
+    title: 'Python Fundamentals',
+    icon: 'cs_shell',
+    topics: [
+      'Character Set: Letters, Digits, Special Symbols & Whitespace',
+      'Tokens: Keywords & Rules for Valid Identifiers',
+      'Literals: String (Escape Sequences), Numeric, Boolean & None',
+      'Operators: Arithmetic, Relational, Logical, Assignment, Identity & Membership',
+      'Variables, Data Types & Mutable vs Immutable Objects',
+      'Expressions, Precedence, input() / print() & Comments'
+    ]
+  },
+  {
+    date: '2026-11-14',
+    dayNo: 7,
+    tag: 'REVISION',
+    title: 'Comprehensive Revision & Previous Years Questions (Ch 02–05)',
+    icon: 'cs_revision',
+    topics: [
+      'Number Conversions & 1’s / 2’s Complement Numericals',
+      'Boolean Law Proofs, Logic Circuits & Universal Gates',
+      'CPU Registers, Memory Hierarchy, Printers & Software',
+      'Flowchart Practice & Python Token / Identifier Classification'
+    ]
+  },
+  { date: '2026-11-15', exam: true, label: 'COMPUTER SCIENCE EXAM — CHAPTERS 02, 03, 04 & 05' }
 ];
 
 export const getCsDay = (dateKey: string): CsDay | null => CS_TIMETABLE.find((d) => d.date === dateKey) ?? null;
