@@ -11,6 +11,7 @@ export interface AimsAssets {
 }
 
 const NAVY = '#061a40';
+const TITLE = 'Project GOAT';
 const BLUE = '#0072dc';
 const GREEN = '#168a1f';
 const MONT = "'Montserrat', sans-serif";
@@ -295,13 +296,18 @@ export function renderAimsPoster(canvas: HTMLCanvasElement, { date, items, asset
     ctx.drawImage(assets.logo, (W - dw) / 2, 24, dw, dh);
   }
 
-  // Title
+  // Title — shorter than the old "Revision Schedule", so it can be set larger; shrink only if it ever overflows.
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = NAVY;
-  ctx.font = `900 50px ${MONT}`;
-  setLetterSpacing(ctx, 2);
-  ctx.fillText('REVISION SCHEDULE', W / 2, 232);
+  setLetterSpacing(ctx, 3);
+  let titleSize = 66;
+  ctx.font = `900 ${titleSize}px ${MONT}`;
+  while (ctx.measureText(TITLE).width > 680 && titleSize > 36) {
+    titleSize -= 2;
+    ctx.font = `900 ${titleSize}px ${MONT}`;
+  }
+  ctx.fillText(TITLE, W / 2 + 1.5, 238);
   setLetterSpacing(ctx, 0);
 
   // Date pill (dd/mm/yyyy)

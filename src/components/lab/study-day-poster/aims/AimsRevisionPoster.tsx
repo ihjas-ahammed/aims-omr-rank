@@ -80,7 +80,7 @@ export default function AimsRevisionPoster({ onBack }: AimsRevisionPosterProps) 
     const canvas = canvasRef.current;
     if (!canvas || !items) return;
     const link = document.createElement('a');
-    link.download = `aims-revision-${date}.png`;
+    link.download = `project-goat-${date}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   }, [date, items]);
@@ -104,7 +104,7 @@ export default function AimsRevisionPoster({ onBack }: AimsRevisionPosterProps) 
             </button>
           )}
           <div>
-            <h1 className="font-bold text-lg tracking-tight text-white leading-none">AIMS Revision Schedule</h1>
+            <h1 className="font-bold text-lg tracking-tight text-white leading-none">Project GOAT</h1>
             <p className="text-xs text-slate-400 mt-0.5">Class 10 • {prettyRange}</p>
           </div>
         </div>
