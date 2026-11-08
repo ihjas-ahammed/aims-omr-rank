@@ -57,6 +57,20 @@ export const CS_ICONS: Record<string, BioIcon> = {
       ${sparkle(120, 90, 0.9)}
     `
   },
+  // Chapter 01: code brackets (shared catalog icon)
+  cs_code: SVG_CATALOG.cs_code,
+  // Chapter 04: Python as an S-shaped snake with a tongue
+  cs_python: {
+    viewBox: '0 0 140 120',
+    svg: `
+      <path d="M104 30 C 104 8, 36 8, 36 38 C 36 62, 104 56, 104 82 C 104 108, 36 108, 36 90" fill="none" stroke="#061a40" stroke-width="22" stroke-linecap="round"/>
+      <path d="M104 30 C 104 8, 36 8, 36 38 C 36 62, 104 56, 104 82 C 104 108, 36 108, 36 90" fill="none" stroke="#0072dc" stroke-width="14" stroke-linecap="round" stroke-dasharray="30 12"/>
+      <circle cx="104" cy="30" r="15" fill="#5cb85c" stroke="#061a40" stroke-width="4.5"/>
+      <circle cx="109" cy="25" r="4" fill="#ffffff"/><circle cx="110" cy="25" r="2" fill="#061a40"/>
+      <path d="M118 36 L132 42 M118 36 L130 28" stroke="#d33a3a" stroke-width="3.2" stroke-linecap="round"/>
+      ${sparkle(24, 22, 0.9)}
+    `
+  },
   // Chapter 05: C++ built from shapes
   cs_cpp: {
     viewBox: '0 0 140 120',

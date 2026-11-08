@@ -1,5 +1,7 @@
-// Source: "AIMS PLUS — Plus One Computer Science Study Timetable (A1 & A2)" — same plan for both batches,
-// cycle 08 NOV – 15 NOV 2026. Saturday/Sunday rows were cut off in the PDF, so they are read from its HTML source.
+// Plus One Computer Science, REVISED SCERT Kerala syllabus (2026–27 textbook, with Python), cycle 08 NOV – 15 NOV 2026.
+// Same plan for both batches. Chapter titles are the textbook's; the topics are condensed from the chapter-wise notes at
+// hsslive.in (Anagh R K / TJ / Ranjith V). The Part A / Part B split of the long chapters and the day-to-chapter plan
+// are our own planning, not something the textbook prescribes.
 
 export interface CsChapter {
   date: string; // YYYY-MM-DD
@@ -23,109 +25,112 @@ export const CS_CYCLE_LABEL = '08 NOV – 15 NOV 2026';
 
 export const CS_TIMETABLE: CsDay[] = [
   {
+    // Day 01 (Sunday) was already sent; kept here so the page still works for that date.
     date: '2026-11-08',
     dayNo: 1,
-    tag: 'CHAPTER 02',
-    title: 'Data Representation and Boolean Algebra (Part 1)',
-    icon: 'cs_binary',
+    tag: 'CHAPTER 01',
+    title: 'Introduction to Computing (Part A)',
+    icon: 'cs_code',
     topics: [
-      'Number Systems (Decimal, Binary, Octal, Hex)',
-      'Number Conversions (Integer & Fractional)',
-      'Binary Arithmetic (Addition & Subtraction)',
-      "Integers: Sign & Magnitude, 1's & 2's Complement",
-      'Floating-Point Representation (Mantissa & Exponent)',
-      'Characters (ASCII, EBCDIC, ISCII, Unicode) & File Formats'
+      'Evolution of Number Systems: Egyptian to Mayan & Roman',
+      'Abacus, Napier’s Bones & Pascaline',
+      'Leibniz’s Calculator & Jacquard’s Loom',
+      'Difference Engine & Analytical Engine (Babbage)',
+      'Mark I & the Stored Program Computer (von Neumann)',
+      'Generations of Computers: First to Fifth'
     ]
   },
   {
     date: '2026-11-09',
     dayNo: 2,
-    tag: 'CHAPTER 02',
-    title: 'Data Representation and Boolean Algebra (Part 2)',
-    icon: 'cs_gate',
+    tag: 'CHAPTER 01',
+    title: 'Introduction to Computing (Part B)',
+    icon: 'cs_code',
     topics: [
-      'Introduction to Boolean Algebra & Binary Quantities',
-      'Basic Logic Gates (OR, AND, NOT) & Truth Tables',
-      'Basic Postulates & Principle of Duality',
-      'Boolean Laws (Identity, Idempotent, Involution, Absorption)',
-      "De Morgan's Theorems & Algebraic Proofs",
-      'Circuit Designing & Universal Gates (NAND & NOR)'
+      'Evolution of Programming Languages: Machine, Assembly & High Level',
+      'Language Translators: Assembler, Compiler & Interpreter',
+      'Uses of Computers: Data Storage, Processing & Problem Solving',
+      'Networking & Communication: Internet, Email & Video Calls',
+      'Intelligent Decision Making: AI, Machine Learning & IoT',
+      'Computers for Data Processing: Input, Storage, Output & Visualisation'
     ]
   },
   {
     date: '2026-11-10',
     dayNo: 3,
-    tag: 'CHAPTER 03',
-    title: 'Components of the Computer System (Hardware & Memory)',
-    icon: 'cs_chip',
+    tag: 'CHAPTER 02',
+    title: 'Data Representation and Boolean Algebra (Part A)',
+    icon: 'cs_binary',
     topics: [
-      'Data Processing & 6 Stages of Data Processing',
-      'Functional Units (Input, ALU, CU, Registers, Storage, Output)',
-      'Processors & CPU Registers (ACC, MAR, MBR, IR, PC)',
-      'Motherboard, Peripherals & Communication Ports',
-      'Primary Memory (RAM, ROM, Cache) & Secondary Storage',
-      'Input Devices & Output Devices (VDU, Printers, Plotter, 3D)'
+      'Number Systems: Decimal, Binary & Hexadecimal (Base/Radix)',
+      'Decimal to Binary & Binary to Hexadecimal Conversions',
+      'Binary Addition & Subtraction',
+      'Integer Representation: Sign & Magnitude, 1’s & 2’s Complement',
+      'Floating-Point Representation (Sign, Exponent & Mantissa)',
+      'Character Representation: ASCII & Unicode (UTF Encodings)'
     ]
   },
   {
     date: '2026-11-11',
     dayNo: 4,
-    tag: 'CHAPTER 03',
-    title: 'Components of the Computer System (e-Waste & Software)',
-    icon: 'cs_software',
+    tag: 'CHAPTER 02',
+    title: 'Data Representation and Boolean Algebra (Part B)',
+    icon: 'cs_gate',
     topics: [
-      'e-Waste: Hazardous Chemicals & Disposal Methods',
-      'Role of Students & Green Computing (Energy Star)',
-      'System Software: Operating System & Major Functions',
-      'Language Processors (Assembler, Interpreter, Compiler)',
-      'Utility Software & Application Software Packages',
-      'FOSS (4 Freedoms), Freeware, Shareware & Humanware'
+      'Image Representation: Pixels, Resolution & Colour Depth',
+      'Bitmap vs Vector Images & Image Formats',
+      'Audio Representation: Sampling, Digitisation & File Formats',
+      'Video Representation: Frames, Frame Rate, Bit Rate & Formats',
+      'Boolean Algebra: Logic Gates, Truth Tables, Identities & Duality',
+      'De Morgan’s Theorems & Universal Gates (NAND & NOR)'
     ]
   },
   {
     date: '2026-11-12',
     dayNo: 5,
-    tag: 'CHAPTER 04',
-    title: 'Principles of Programming and Problem Solving',
-    icon: 'cs_flowchart',
+    tag: 'CHAPTER 03',
+    title: 'Computer System Organisation (Part A: Hardware)',
+    icon: 'cs_chip',
     topics: [
-      'Approaches in Problem Solving (Top-Down & Bottom-Up)',
-      'Phases in Programming & Problem Identification',
-      'Algorithms (Characteristics) & Flowchart Symbols',
-      'Selection & Looping (Entry vs Exit Controlled Loops)',
-      'Coding, Translation & Debugging (Syntax, Logical, Runtime)',
-      'Execution, Testing, Documentation & Algorithm Evaluation'
+      'Components of a Computer System: Hardware & Software',
+      'CPU, Registers, Cache & Program Execution Steps',
+      'Processors: CPU, GPU, TPU/NPU & Heterogeneous Computing',
+      'Motherboard, Ports (USB Types) & Expansion Slots',
+      'Memory & Storage: RAM, ROM, Cache, HDD, Optical & SSD (NVMe)',
+      'Input & Output Devices: VDU, Printers, Plotters & Speakers'
     ]
   },
   {
     date: '2026-11-13',
     dayNo: 6,
-    tag: 'CHAPTER 05',
-    title: 'Introduction to C++ Programming',
-    icon: 'cs_cpp',
+    tag: 'CHAPTER 03',
+    title: 'Computer System Organisation (Part B: Software)',
+    icon: 'cs_flowchart',
     topics: [
-      'C++ Character Set (Letters, Digits, Special, White Spaces)',
-      'Tokens: Keywords & Rules for Valid Identifiers',
-      'Integer & Floating-Point Literals (Fractional & Exponential)',
-      'Character Literals, Escape Sequences & String Literals',
-      'Punctuators & Operators in C++',
-      'Integrated Development Environment (GCC & Geany IDE)'
+      'System Software: Operating System & Its Functions',
+      'Language Processors: Assembler, Compiler, Interpreter & Bytecode',
+      'Utility Software: Antivirus, Backup, Disk Cleaner & Compression',
+      'Application Software & Phases in Programming',
+      'Errors: Syntax, Logical & Run-time',
+      'Algorithms & Flowcharts: Symbols & Problem Solving'
     ]
   },
   {
     date: '2026-11-14',
     dayNo: 7,
-    tag: 'REVISION',
-    title: 'Comprehensive Revision & Previous Years Questions (Ch 02–05)',
-    icon: 'cs_revision',
+    tag: 'CH 04 · REVISION',
+    title: 'Getting Started with Python & Revision (Ch 01–04)',
+    icon: 'cs_python',
     topics: [
-      "Number Conversions & 1's / 2's Complement Numericals",
-      'Boolean Law Proofs, Logic Circuits & Universal Gates',
-      'CPU Registers, Memory Hierarchy, Printers & Software',
-      'Flowchart Practice & C++ Token / Identifier Classification'
+      'Python: Guido van Rossum, Features & Cross-Platform Use',
+      'Interpreter, Bytecode & Platform Independence',
+      'IDLE & Python Shell: Interactive Mode vs Script Mode',
+      'Revision: Number Conversions & 1’s / 2’s Complement Numericals',
+      'Revision: Boolean Laws, Logic Gates & Universal Gates',
+      'Revision: Memory, Software, Flowcharts & PYQ Drill'
     ]
   },
-  { date: '2026-11-15', exam: true, label: 'COMPUTER SCIENCE EXAM — CHAPTERS 02, 03, 04 & 05' }
+  { date: '2026-11-15', exam: true, label: 'COMPUTER SCIENCE EXAM — CHAPTERS 01 TO 04' }
 ];
 
 export const getCsDay = (dateKey: string): CsDay | null => CS_TIMETABLE.find((d) => d.date === dateKey) ?? null;
