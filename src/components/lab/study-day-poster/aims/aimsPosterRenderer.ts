@@ -11,7 +11,7 @@ export interface AimsAssets {
 }
 
 const NAVY = '#061a40';
-const TITLE = 'Project GOAT';
+const TITLE = 'PROJECT GOAT';
 const BLUE = '#0072dc';
 const GREEN = '#168a1f';
 const MONT = "'Montserrat', sans-serif";

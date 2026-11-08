@@ -104,7 +104,7 @@ export default function AimsRevisionPoster({ onBack }: AimsRevisionPosterProps) 
             </button>
           )}
           <div>
-            <h1 className="font-bold text-lg tracking-tight text-white leading-none">Project GOAT</h1>
+            <h1 className="font-bold text-lg tracking-tight text-white leading-none">PROJECT GOAT</h1>
             <p className="text-xs text-slate-400 mt-0.5">Class 10 • {prettyRange}</p>
           </div>
         </div>
