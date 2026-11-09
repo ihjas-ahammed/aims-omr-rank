@@ -418,17 +418,19 @@ export interface FyugRenderOptions {
   events: CalendarEvent[]; // special calendar events on the poster's date (empty = no footer)
   slots: Slot[];
   assets: FyugAssets;
+  height?: number; // logical px; defaults to the standard poster height
 }
 
-export function renderFyugPoster(canvas: HTMLCanvasElement, { date, events, slots, assets }: FyugRenderOptions) {
+export function renderFyugPoster(canvas: HTMLCanvasElement, { date, events, slots, assets, height = POSTER_H }: FyugRenderOptions) {
+  const H = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
   ctx.save();
   ctx.setTransform(POSTER_SCALE, 0, 0, POSTER_SCALE, 0, 0);
-  ctx.clearRect(0, 0, POSTER_W, POSTER_H);
+  ctx.clearRect(0, 0, POSTER_W, H);
 
-  drawBackgroundAndCorners(ctx, POSTER_W, POSTER_H, 'corners_aims');
+  drawBackgroundAndCorners(ctx, POSTER_W, H, 'corners_aims');
 
   // No logo and no title on this one: the header sits at the top and the cards use the freed space.
   drawStudyHeader(ctx, {
@@ -440,15 +442,10 @@ export function renderFyugPoster(canvas: HTMLCanvasElement, { date, events, slot
   });
 
   const top = 408 - HEADER_SHIFT;
-  const bottom = events.length ? FOOTER_BOTTOM - FOOTER_H - 12 : 1100;
+  const bottom = events.length ? FOOTER_BOTTOM - FOOTER_H - 12 : H - 60;
   const gap = 12;
-  // Cards never grow beyond the height they have on a 4-hour day, so a one-off day with a single card stays
-  // card-sized (centred in the free space) instead of stretching over the whole poster.
-  const maxH = 270;
-  const h = Math.min(maxH, (bottom - top - gap * (slots.length - 1)) / slots.length);
-  const stackH = h * slots.length + gap * (slots.length - 1);
-  const start = top + (bottom - top - stackH) / 2;
-  slots.forEach((slot, i) => drawSlot(ctx, slot, i + 1, assets.icons, start + i * (h + gap), h));
+const h = (bottom - top - gap * (slots.length - 1)) / slots.length;
+  slots.forEach((slot, i) => drawSlot(ctx, slot, i + 1, assets.icons, top + i * (h + gap), h));
 
   if (events.length) drawEventsFooter(ctx, events, date, assets.icons);
 

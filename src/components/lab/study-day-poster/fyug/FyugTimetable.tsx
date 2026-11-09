@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, Download } from 'lucide-react';
 import { POSTER_H, POSTER_SCALE, POSTER_W } from '../posterRenderer';
 import { loadFyugIcons, renderFyugPoster, type FyugAssets } from './fyugPosterRenderer';
-import { defaultDate, getSlots } from './fyugData';
+import { defaultDate, getPosterHeight, getSlots } from './fyugData';
 import { getEventsOn } from './calendar';
 
 interface FyugTimetableProps {
@@ -34,14 +34,15 @@ export default function FyugTimetable({ onBack }: FyugTimetableProps) {
 
   const dateObj = useMemo(() => new Date(date + 'T00:00:00'), [date]);
   const slots = useMemo(() => getSlots(dateObj), [dateObj]);
+  const posterH = getPosterHeight(dateObj) ?? POSTER_H;
   // Special calendar events on the poster's own date, listed in the footer.
   const events = useMemo(() => getEventsOn(dateObj), [dateObj]);
 
   useEffect(() => {
     if (canvasRef.current && assets && slots) {
-      renderFyugPoster(canvasRef.current, { date: dateObj, events, slots, assets });
+      renderFyugPoster(canvasRef.current, { date: dateObj, events, slots, assets, height: posterH });
     }
-  }, [assets, dateObj, slots, events, fontsTick]);
+  }, [assets, dateObj, slots, events, posterH, fontsTick]);
 
   const download = useCallback(() => {
     const canvas = canvasRef.current;
@@ -134,7 +135,7 @@ export default function FyugTimetable({ onBack }: FyugTimetableProps) {
               <canvas
                 ref={canvasRef}
                 width={POSTER_W * POSTER_SCALE}
-                height={POSTER_H * POSTER_SCALE}
+                height={posterH * POSTER_SCALE}
                 className="w-full h-auto block"
               />
             </div>
@@ -146,7 +147,7 @@ export default function FyugTimetable({ onBack }: FyugTimetableProps) {
           )}
           {slots && (
             <p className="text-xs text-slate-500 mt-3 text-center">
-              Output: <span className="text-slate-300 font-mono">{POSTER_W * POSTER_SCALE} × {POSTER_H * POSTER_SCALE} px</span> PNG
+              Output: <span className="text-slate-300 font-mono">{POSTER_W * POSTER_SCALE} × {posterH * POSTER_SCALE} px</span> PNG
             </p>
           )}
         </div>
