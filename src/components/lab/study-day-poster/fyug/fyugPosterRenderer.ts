@@ -1,7 +1,7 @@
 import { POSTER_H, POSTER_SCALE, POSTER_W, drawBackgroundAndCorners, roundRectPath } from '../posterRenderer';
 import { drawIconContain, drawStudyHeader, rasteriseIcon, setLetterSpacing, type IconImage } from '../biology/biologyPosterRenderer';
 import { FYUG_HERO, FYUG_ICONS } from './fyugIcons';
-import { SUBJECTS, type Slot } from './fyugData';
+import { SUBJECTS, getDaySubtitle, type Slot } from './fyugData';
 import { EVENT_ICONS } from './calendarIcons';
 import type { CalendarEvent } from './calendar';
 
@@ -76,12 +76,17 @@ function drawSlot(ctx: CanvasRenderingContext2D, slot: Slot, hour: number, icons
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
-  ctx.font = `700 14px ${FONT}`;
-  setLetterSpacing(ctx, 2);
-  ctx.fillText('HOUR', x + 20 + bw / 2 + 1, y + h / 2 - 8);
-  setLetterSpacing(ctx, 0);
-  ctx.font = `900 46px ${FONT}`;
-  ctx.fillText(String(hour), x + 20 + bw / 2, y + h / 2 + 34);
+  if (slot.badge) {
+    ctx.font = `900 26px ${FONT}`;
+    ctx.fillText(slot.badge, x + 20 + bw / 2, y + h / 2 + 9);
+  } else {
+    ctx.font = `700 14px ${FONT}`;
+    setLetterSpacing(ctx, 2);
+    ctx.fillText('HOUR', x + 20 + bw / 2 + 1, y + h / 2 - 8);
+    setLetterSpacing(ctx, 0);
+    ctx.font = `900 46px ${FONT}`;
+    ctx.fillText(String(hour), x + 20 + bw / 2, y + h / 2 + 34);
+  }
 
   drawIconContain(ctx, icons[sub.icon], x + 106, y + 16, 110, h - 32);
 
@@ -94,7 +99,7 @@ function drawSlot(ctx: CanvasRenderingContext2D, slot: Slot, hour: number, icons
   let lines: string[] = [];
   for (; size >= 20; size--) {
     ctx.font = `800 ${size}px ${FONT}`;
-    lines = wrap(ctx, sub.name, maxW);
+    lines = wrap(ctx, slot.title ?? sub.name, maxW);
     if (lines.length <= 2) break;
   }
   const lh = size * 1.22;
@@ -110,12 +115,17 @@ function drawSlot(ctx: CanvasRenderingContext2D, slot: Slot, hour: number, icons
     by += lh;
   }
   by += 10;
-  drawPerson(ctx, tx, by, sub.accent);
   ctx.fillStyle = sub.accent;
-  ctx.font = `700 20px ${FONT}`;
-  setLetterSpacing(ctx, 0.8);
-  ctx.fillText(slot.teacher, tx + 24, by + 19);
-  setLetterSpacing(ctx, 0);
+  if (slot.note) {
+    ctx.font = `700 22px ${FONT}`;
+    ctx.fillText(slot.note, tx, by + 19);
+  } else {
+    drawPerson(ctx, tx, by, sub.accent);
+    ctx.font = `700 20px ${FONT}`;
+    setLetterSpacing(ctx, 0.8);
+    ctx.fillText(slot.teacher, tx + 24, by + 19);
+    setLetterSpacing(ctx, 0);
+  }
 
   // Right column: time pill (with a small clock) above the navy room tag, centred as a stack.
   const pillH = 38;
@@ -425,15 +435,20 @@ export function renderFyugPoster(canvas: HTMLCanvasElement, { date, events, slot
     date,
     logo: null,
     hero: assets.icons.hero,
-    subtitle: daySpan(slots),
+    subtitle: getDaySubtitle(date) ?? daySpan(slots),
     shiftY: -HEADER_SHIFT
   });
 
   const top = 408 - HEADER_SHIFT;
   const bottom = events.length ? FOOTER_BOTTOM - FOOTER_H - 12 : 1100;
   const gap = 12;
-  const h = (bottom - top - gap * (slots.length - 1)) / slots.length;
-  slots.forEach((slot, i) => drawSlot(ctx, slot, i + 1, assets.icons, top + i * (h + gap), h));
+  // Cards never grow beyond the height they have on a 4-hour day, so a one-off day with a single card stays
+  // card-sized (centred in the free space) instead of stretching over the whole poster.
+  const maxH = 270;
+  const h = Math.min(maxH, (bottom - top - gap * (slots.length - 1)) / slots.length);
+  const stackH = h * slots.length + gap * (slots.length - 1);
+  const start = top + (bottom - top - stackH) / 2;
+  slots.forEach((slot, i) => drawSlot(ctx, slot, i + 1, assets.icons, start + i * (h + gap), h));
 
   if (events.length) drawEventsFooter(ctx, events, date, assets.icons);
 

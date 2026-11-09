@@ -25,6 +25,10 @@ export interface Slot {
   teacher: string;
   room?: string;
   time?: string; // filled in by getSlots, e.g. "9:30 – 10:30"
+  // Only for one-off days (see DATE_OVERRIDES): replaces the subject name, the teacher line and the "HOUR n" badge.
+  title?: string;
+  note?: string;
+  badge?: string;
 }
 
 // Hour timings. Fridays have a shorter afternoon (2–3 and 3–4).
@@ -76,7 +80,33 @@ export const WEEK: Record<number, Slot[]> = {
   ]
 };
 
+// One-off days that replace the weekly timetable entirely (key = YYYY-MM-DD).
+export const DATE_OVERRIDES: Record<string, { slots: Slot[]; subtitle: string }> = {
+  // 10 Nov 2026: only the Thermodynamics practical, at least three experiments to be done.
+  '2026-11-10': {
+    subtitle: 'THERMODYNAMICS LAB DAY',
+    slots: [
+      {
+        subject: 'thermo',
+        teacher: '',
+        title: 'Thermodynamics Practical',
+        note: 'Do at least 3 experiments',
+        badge: 'LAB'
+      }
+    ]
+  }
+};
+
+const dateKey = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+export function getDaySubtitle(date: Date): string | undefined {
+  return DATE_OVERRIDES[dateKey(date)]?.subtitle;
+}
+
 export function getSlots(date: Date): Slot[] | null {
+  const override = DATE_OVERRIDES[dateKey(date)];
+  if (override) return override.slots;
   const day = WEEK[date.getDay()];
   if (!day) return null;
   const times = date.getDay() === 5 ? FRIDAY_TIMES : TIMES;
