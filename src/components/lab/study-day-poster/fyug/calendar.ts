@@ -72,3 +72,10 @@ export const getEventsOn = (date: Date): CalendarEvent[] => {
   const key = toKey(date);
   return CALENDAR.filter((e) => e.date === key);
 };
+
+// The first day after the given date that has calendar events, with all of that day's events; empty when none are left.
+export const getNextEventsAfter = (date: Date): CalendarEvent[] => {
+  const key = toKey(date);
+  const next = CALENDAR.filter((e) => e.date > key).sort((a, b) => a.date.localeCompare(b.date))[0];
+  return next ? CALENDAR.filter((e) => e.date === next.date) : [];
+};

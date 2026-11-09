@@ -199,7 +199,6 @@ function rightColumnWidth(ctx: CanvasRenderingContext2D, slot: Slot): number {
   return wMax;
 }
 
-const FOOTER_BOTTOM = 1134;
 const FOOTER_H = 172; // fixed, so the cards above never change size when a day has one or two events
 
 function fitText(ctx: CanvasRenderingContext2D, text: string, weight: number, start: number, min: number, maxW: number): number {
@@ -214,11 +213,19 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, weight: number, st
 
 // Footer (light theme): mint→sky card with a fine grid, date tile on the left, then "SPECIAL EVENT(S)" with the
 // day's calendar events listed in large type. Fixed height, so one or two events never change the bar.
-function drawEventsFooter(ctx: CanvasRenderingContext2D, events: CalendarEvent[], date: Date, icons: Record<string, IconImage>) {
+function drawEventsFooter(
+  ctx: CanvasRenderingContext2D,
+  events: CalendarEvent[],
+  footerBottom: number,
+  nextLabel: boolean,
+  icons: Record<string, IconImage>
+) {
+  // The tile shows the events' own date (the poster's date, or a later one for the "next event" footer).
+  const date = new Date(events[0].date + 'T00:00:00');
   const x = 30;
   const w = 740;
   const h = FOOTER_H;
-  const y = FOOTER_BOTTOM - h;
+  const y = footerBottom - h;
 
   // Frosted glass: blur what is already drawn behind the bar (waves, grid, card edges), then lay a blue tint,
   // a soft highlight, a faint grid and a light edge over it, with a drop shadow so the bar floats.
@@ -332,7 +339,7 @@ function drawEventsFooter(ctx: CanvasRenderingContext2D, events: CalendarEvent[]
   const mx = tx + tw + 24;
   const mw = x + w - 24 - mx;
   const many = events.length > 1;
-  const label = many ? 'SPECIAL EVENTS' : 'SPECIAL EVENT';
+  const label = (nextLabel ? 'NEXT ' : '') + (many ? 'SPECIAL EVENTS' : 'SPECIAL EVENT');
   ctx.font = `800 15px ${FONT}`;
   setLetterSpacing(ctx, 3);
   const lw = ctx.measureText(label).width + 30;
@@ -418,10 +425,11 @@ export interface FyugRenderOptions {
   events: CalendarEvent[]; // special calendar events on the poster's date (empty = no footer)
   slots: Slot[];
   assets: FyugAssets;
+  nextLabel?: boolean; // footer shows a later event, so it is labelled NEXT SPECIAL EVENT
   height?: number; // logical px; defaults to the standard poster height
 }
 
-export function renderFyugPoster(canvas: HTMLCanvasElement, { date, events, slots, assets, height = POSTER_H }: FyugRenderOptions) {
+export function renderFyugPoster(canvas: HTMLCanvasElement, { date, events, slots, assets, height = POSTER_H, nextLabel = false }: FyugRenderOptions) {
   const H = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -442,12 +450,12 @@ export function renderFyugPoster(canvas: HTMLCanvasElement, { date, events, slot
   });
 
   const top = 408 - HEADER_SHIFT;
-  const bottom = events.length ? FOOTER_BOTTOM - FOOTER_H - 12 : H - 60;
+  const bottom = events.length ? H - 26 - FOOTER_H - 12 : H - 60;
   const gap = 12;
 const h = (bottom - top - gap * (slots.length - 1)) / slots.length;
   slots.forEach((slot, i) => drawSlot(ctx, slot, i + 1, assets.icons, top + i * (h + gap), h));
 
-  if (events.length) drawEventsFooter(ctx, events, date, assets.icons);
+  if (events.length) drawEventsFooter(ctx, events, H - 26, nextLabel, assets.icons);
 
   ctx.restore();
 }

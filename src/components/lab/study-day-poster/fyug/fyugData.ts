@@ -81,11 +81,12 @@ export const WEEK: Record<number, Slot[]> = {
 };
 
 // One-off days that replace the weekly timetable entirely (key = YYYY-MM-DD).
-export const DATE_OVERRIDES: Record<string, { slots: Slot[]; subtitle: string; height?: number }> = {
+export const DATE_OVERRIDES: Record<string, { slots: Slot[]; subtitle: string; height?: number; showNextEvent?: boolean }> = {
   // 10 Nov 2026: only the Thermodynamics practical, at least three experiments to be done.
   '2026-11-10': {
     subtitle: 'THERMODYNAMICS LAB DAY',
-    height: 620, // logical px; one normal-sized card, so the image is shorter than the usual 1160
+    height: 770, // logical px; one normal-sized card plus the footer, so the image is shorter than the usual 1160
+    showNextEvent: true, // no event on the day itself, so the footer shows the next one from the calendar
     slots: [
       {
         subject: 'thermo',
@@ -103,6 +104,10 @@ const dateKey = (d: Date) =>
 
 export function getDaySubtitle(date: Date): string | undefined {
   return DATE_OVERRIDES[dateKey(date)]?.subtitle;
+}
+
+export function showsNextEvent(date: Date): boolean {
+  return !!DATE_OVERRIDES[dateKey(date)]?.showNextEvent;
 }
 
 // Poster height for a day with fewer cards; undefined = the standard height.

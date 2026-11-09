@@ -2,8 +2,8 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, Download } from 'lucide-react';
 import { POSTER_H, POSTER_SCALE, POSTER_W } from '../posterRenderer';
 import { loadFyugIcons, renderFyugPoster, type FyugAssets } from './fyugPosterRenderer';
-import { defaultDate, getPosterHeight, getSlots } from './fyugData';
-import { getEventsOn } from './calendar';
+import { defaultDate, getPosterHeight, getSlots, showsNextEvent } from './fyugData';
+import { getEventsOn, getNextEventsAfter } from './calendar';
 
 interface FyugTimetableProps {
   onBack?: () => void;
@@ -36,13 +36,17 @@ export default function FyugTimetable({ onBack }: FyugTimetableProps) {
   const slots = useMemo(() => getSlots(dateObj), [dateObj]);
   const posterH = getPosterHeight(dateObj) ?? POSTER_H;
   // Special calendar events on the poster's own date, listed in the footer.
-  const events = useMemo(() => getEventsOn(dateObj), [dateObj]);
+  const events = useMemo(() => {
+    const own = getEventsOn(dateObj);
+    return own.length || !showsNextEvent(dateObj) ? own : getNextEventsAfter(dateObj);
+  }, [dateObj]);
+  const isNext = events.length > 0 && events[0].date !== date;
 
   useEffect(() => {
     if (canvasRef.current && assets && slots) {
-      renderFyugPoster(canvasRef.current, { date: dateObj, events, slots, assets, height: posterH });
+      renderFyugPoster(canvasRef.current, { date: dateObj, events, slots, assets, height: posterH, nextLabel: isNext });
     }
-  }, [assets, dateObj, slots, events, posterH, fontsTick]);
+  }, [assets, dateObj, slots, events, isNext, posterH, fontsTick]);
 
   const download = useCallback(() => {
     const canvas = canvasRef.current;
