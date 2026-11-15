@@ -7,12 +7,15 @@ import {
   NOTE_BATCHES,
   fetchAttendanceStudents,
   fetchNoteProgress,
-  fetchAllNoteSummaries,
   fetchAllNoteChapters,
   setChapterDone,
+  setChapterPartial,
   setManyChaptersDone
 } from '../../../services/noteCheckingService';
 import { getSubjectsForBatch } from '../../../data/ncertSyllabusData';
+
+// Print layout: portrait A4 with a fixed number of students per page, one single-line row each.
+const PRINT_ROWS_PER_PAGE = 50;
 
 interface NoteCheckingProps {
   onBack?: () => void;
@@ -50,14 +53,45 @@ const STATUS_PRINT: Record<Status, string> = {
   yellow: 'bg-yellow-200 text-yellow-900',
   red: 'bg-red-200 text-red-900'
 };
+// Solid bar fills for the printed subject progress bars.
+const PRINT_BAR: Record<Status, string> = { green: '#16a34a', yellow: '#eab308', red: '#dc2626' };
 const STATUS_BAR: Record<Status, string> = {
   green: 'border-green-600',
   yellow: 'border-yellow-500',
   red: 'border-red-600'
 };
 
+// Consecutive chapter numbers collapse into ranges: [1,2,3,5] -> "1–3,5".
+const fmtRanges = (nums: number[]) => {
+  const n = [...nums].sort((a, b) => a - b);
+  const parts: string[] = [];
+  for (let i = 0; i < n.length; ) {
+    let j = i;
+    while (j + 1 < n.length && n[j + 1] === n[j] + 1) j++;
+    parts.push(j - i >= 2 ? `${n[i]}–${n[j]}` : n.slice(i, j + 1).join(','));
+    i = j + 1;
+  }
+  return parts.join(',');
+};
+
+// One student's standing in one subject. `missing` holds the chapter numbers that most of the batch has
+// completed but this student has not; the status follows from how much of that expected set is missing.
+interface SubjectStat {
+  id: string;
+  name: string;
+  done: number;
+  total: number;
+  expected: number;
+  missing: number[];
+  status: Status;
+}
+
+const missingStatus = (missing: number, expected: number): Status =>
+  missing === 0 ? 'green' : missing * 2 <= expected ? 'yellow' : 'red';
+
 interface DoneItem {
   id: string;
+  partial?: boolean;
   number: number;
   title: string;
   subject: string;
@@ -66,7 +100,6 @@ interface DoneItem {
 
 export default function NoteChecking({ onBack }: NoteCheckingProps) {
   const [students, setStudents] = useState<AttendanceStudent[]>([]);
-  const [summaries, setSummaries] = useState<Record<string, NoteSummary>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [batch, setBatch] = useState<string>(NOTE_BATCHES[0]);
@@ -79,7 +112,12 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   const [activeSubject, setActiveSubject] = useState('');
   const [profileView, setProfileView] = useState<'subject' | 'day'>('subject');
   const [allChapters, setAllChapters] = useState<Record<string, NoteProgressMap>>({});
-  const [printMode, setPrintMode] = useState<'student' | 'batch' | null>(null);
+  const [subjectFilter, setSubjectFilter] = useState<string>('all');
+  const [incompleteOnly, setIncompleteOnly] = useState(false);
+  const [printMode, setPrintMode] = useState<'student' | 'batch' | 'partial' | null>(null);
+  // Partial check mode: tapping a chapter marks it partially checked (not complete) instead of done.
+  const [partialMode, setPartialMode] = useState(false);
+  const [listView, setListView] = useState<'students' | 'partial'>('students');
 
   useEffect(() => {
     document.title = 'Note Checking • AIMS PLUS';
@@ -90,9 +128,9 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     setLoading(true);
     setError('');
     try {
-      const [s, c] = await Promise.all([fetchAttendanceStudents(forceRefresh), fetchAllNoteSummaries()]);
+      const [s, c] = await Promise.all([fetchAttendanceStudents(forceRefresh), fetchAllNoteChapters()]);
       setStudents(s);
-      setSummaries(c);
+      setAllChapters(c);
     } catch (e: any) {
       setError(e?.message || 'Failed to load students');
     } finally {
@@ -120,7 +158,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
 
   const closeStudent = () => {
     setSelected(null);
-    fetchAllNoteSummaries().then(setSummaries).catch(() => {});
+    fetchAllNoteChapters().then(setAllChapters).catch(() => {});
   };
 
   const doneCount = Object.values(progress).filter(p => p.done).length;
@@ -131,7 +169,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     subjects.forEach(s =>
       s.chapters.forEach(c => {
         const p = progress[c.id];
-        if (p?.done) items.push({ id: c.id, number: c.number, title: c.title, subject: s.name, at: p.at });
+        if (p?.done || p?.partial) items.push({ id: c.id, partial: !p.done, number: c.number, title: c.title, subject: s.name, at: p.at });
       })
     );
     items.sort((a, b) => b.at.localeCompare(a.at));
@@ -158,6 +196,22 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     }
   };
 
+  // Partial check: only for chapters that are not done; tapping again clears it.
+  const togglePartial = async (chapterId: string) => {
+    if (!selected || progress[chapterId]?.done) return;
+    const next = !progress[chapterId]?.partial;
+    const prev = progress;
+    setProgress({ ...progress, [chapterId]: { done: false, partial: next, at: new Date().toISOString() } });
+    try {
+      await setChapterPartial(selected, chapterId, next);
+    } catch (e: any) {
+      setProgress(prev);
+      setError(e?.message || 'Failed to save');
+    }
+  };
+
+  const tapChapter = (chapterId: string) => (partialMode ? togglePartial(chapterId) : toggle(chapterId));
+
   const toggleSubject = async (subjectId: string, done: boolean) => {
     if (!selected) return;
     const subject = subjects.find(s => s.id === subjectId);
@@ -175,6 +229,56 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
       setError(e?.message || 'Failed to save');
     }
   };
+
+  // Done-count and latest tick per student, derived from the one read of every student's ticks.
+  const summaries = useMemo(() => {
+    const out: Record<string, NoteSummary> = {};
+    Object.entries(allChapters).forEach(([id, chap]) => {
+      const done = Object.values(chap).filter(c => c?.done);
+      out[id] = { count: done.length, lastTick: done.reduce<string | null>((m, c) => (!m || c.at > m ? c.at : m), null) };
+    });
+    return out;
+  }, [allChapters]);
+
+  // Chapters "expected" per batch and subject: done by more than half of the batch's students who have any tick
+  // (students with no ticks yet are the unchecked majority and would make every chapter look unexpected).
+  const expectedByBatch = useMemo(() => {
+    const out: Record<string, Record<string, Set<string>>> = {};
+    NOTE_BATCHES.forEach(b => {
+      const checked = students.filter(s => s.batch === b && (summaries[s.enrollNumber]?.count || 0) > 0);
+      const per: Record<string, Set<string>> = {};
+      getSubjectsForBatch(b).forEach(sub => {
+        per[sub.id] = new Set(
+          sub.chapters
+            .filter(c => checked.filter(s => allChapters[s.enrollNumber]?.[c.id]?.done).length * 2 > checked.length)
+            .map(c => c.id)
+        );
+      });
+      out[b] = per;
+    });
+    return out;
+  }, [students, summaries, allChapters]);
+
+  const statsOf = useMemo(() => {
+    const out: Record<string, SubjectStat[]> = {};
+    students.forEach(s => {
+      const chap = allChapters[s.enrollNumber] || {};
+      out[s.enrollNumber] = getSubjectsForBatch(s.batch).map(sub => {
+        const exp = expectedByBatch[s.batch]?.[sub.id] || new Set<string>();
+        const missing = sub.chapters.filter(c => exp.has(c.id) && !chap[c.id]?.done).map(c => c.number);
+        return {
+          id: sub.id,
+          name: sub.name,
+          done: sub.chapters.filter(c => chap[c.id]?.done).length,
+          total: sub.chapters.length,
+          expected: exp.size,
+          missing,
+          status: missingStatus(missing.length, exp.size)
+        };
+      });
+    });
+    return out;
+  }, [students, allChapters, expectedByBatch]);
 
   // Class average of ticked chapters per batch. Students with no ticks are left out of the average
   // (they are the majority and would drag it to ~0).
@@ -200,9 +304,18 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = students.filter(s =>
+    let list = students.filter(s =>
       q ? s.name.toLowerCase().includes(q) || s.enrollNumber.toLowerCase().includes(q) : s.batch === batch
     );
+    const inSubject = (st: SubjectStat) => subjectFilter === 'all' || st.id === subjectFilter;
+    // Subject / incomplete filters apply to the batch view only, not to a cross-batch search.
+    if (!q && incompleteOnly) {
+      list = list.filter(s => (statsOf[s.enrollNumber] || []).some(st => inSubject(st) && st.missing.length > 0));
+    }
+    const progressOf = (s: AttendanceStudent) =>
+      !q && subjectFilter !== 'all'
+        ? statsOf[s.enrollNumber]?.find(st => st.id === subjectFilter)?.done || 0
+        : summaries[s.enrollNumber]?.count || 0;
     if (sortBy === 'latest') {
       list.sort((a, b) => {
         const la = summaries[a.enrollNumber]?.lastTick || '';
@@ -211,23 +324,58 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
       });
     } else if (sortBy === 'progress') {
       list.sort((a, b) => {
-        const ca = summaries[a.enrollNumber]?.count || 0;
-        const cb = summaries[b.enrollNumber]?.count || 0;
+        const ca = progressOf(a);
+        const cb = progressOf(b);
         return (progressDesc ? cb - ca : ca - cb) || a.name.localeCompare(b.name);
       });
     }
     return list;
-  }, [students, batch, query, sortBy, progressDesc, summaries]);
+  }, [students, batch, query, sortBy, progressDesc, summaries, statsOf, subjectFilter, incompleteOnly]);
 
-  const print = async (mode: 'student' | 'batch') => {
-    if (mode === 'batch') {
-      try {
-        setAllChapters(await fetchAllNoteChapters());
-      } catch (e: any) {
-        setError(e?.message || 'Failed to load chapter ticks');
-        return;
-      }
-    }
+  // Students with partially checked chapters in the open batch, grouped by the day the partial check was made.
+  const partialGroups = useMemo(() => {
+    const lookup = new Map<string, { subject: string; order: number; number: number }>();
+    getSubjectsForBatch(batch).forEach((sub, si) =>
+      sub.chapters.forEach(c => lookup.set(c.id, { subject: sub.name, order: si, number: c.number }))
+    );
+    const byDay = new Map<string, Map<string, { student: AttendanceStudent; items: { subject: string; order: number; number: number }[] }>>();
+    students
+      .filter(s => s.batch === batch)
+      .forEach(s => {
+        Object.entries(allChapters[s.enrollNumber] || {}).forEach(([id, e]) => {
+          const meta = lookup.get(id);
+          if (!meta || !e?.partial || e.done) return;
+          const day = dayKey(e.at);
+          const m = byDay.get(day) || new Map();
+          const entry = m.get(s.enrollNumber) || { student: s, items: [] };
+          entry.items.push(meta);
+          m.set(s.enrollNumber, entry);
+          byDay.set(day, m);
+        });
+      });
+    return [...byDay.entries()]
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([day, m]) => ({
+        day,
+        students: [...m.values()]
+          .sort((a, b) => a.student.name.localeCompare(b.student.name))
+          .map(({ student, items }) => {
+            const subs = new Map<string, { order: number; nums: number[] }>();
+            items.forEach(it => {
+              const g = subs.get(it.subject) || { order: it.order, nums: [] };
+              g.nums.push(it.number);
+              subs.set(it.subject, g);
+            });
+            return {
+              student,
+              parts: [...subs.entries()].sort((a, b) => a[1].order - b[1].order).map(([subject, g]) => ({ subject, nums: g.nums }))
+            };
+          })
+      }));
+  }, [students, allChapters, batch]);
+  const partialStudentCount = new Set(partialGroups.flatMap(g => g.students.map(x => x.student.enrollNumber))).size;
+
+  const print = (mode: 'student' | 'batch' | 'partial') => {
     setPrintMode(mode);
     // Give React a moment to render the print sheet, then open the browser print dialog (real A4 pages).
     setTimeout(() => {
@@ -269,12 +417,12 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
       ) : (
         <>
           <button
-            onClick={() => print('batch')}
-            disabled={loading || query.trim() !== ''}
+            onClick={() => print(listView === 'partial' ? 'partial' : 'batch')}
+            disabled={loading || (listView === 'students' && query.trim() !== '') || (listView === 'partial' && partialGroups.length === 0)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 disabled:opacity-40"
             title="Print the selected batch"
           >
-            <Printer className="w-4 h-4" /> Print batch
+            <Printer className="w-4 h-4" /> {listView === 'partial' ? 'Print list' : 'Print batch'}
           </button>
           <button onClick={() => load(true)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600" aria-label="Reload">
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
@@ -303,6 +451,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                     onClick={() => {
                       setBatch(b);
                       setQuery('');
+                      setSubjectFilter('all');
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-semibold border whitespace-nowrap ${
                       batch === b && !query
@@ -315,6 +464,19 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                 ))}
               </div>
 
+              <div className="flex rounded-lg border border-gray-200 bg-white overflow-hidden text-sm font-semibold mb-3 w-fit">
+                {(['students', 'partial'] as const).map(k => (
+                  <button
+                    key={k}
+                    onClick={() => setListView(k)}
+                    className={`px-4 py-2 ${listView === k ? 'bg-indigo-600 text-white' : 'text-gray-600'}`}
+                  >
+                    {k === 'students' ? 'Students' : `Partial checks${partialStudentCount ? ` (${partialStudentCount})` : ''}`}
+                  </button>
+                ))}
+              </div>
+
+              {listView === 'students' && (
               <div className="relative mb-3">
                 <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -324,8 +486,92 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                   className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-gray-200 bg-white text-sm focus:outline-none focus:border-indigo-400"
                 />
               </div>
+              )}
 
-              {loading ? (
+              {listView === 'students' && !query && !loading && (
+                <div className="mb-3">
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {[{ id: 'all', name: 'All subjects' }, ...batchSubjects].map(sub => {
+                      const incomplete = students.filter(
+                        st =>
+                          st.batch === batch &&
+                          (statsOf[st.enrollNumber] || []).some(x => (sub.id === 'all' || x.id === sub.id) && x.missing.length > 0)
+                      ).length;
+                      return (
+                        <button
+                          key={sub.id}
+                          onClick={() => setSubjectFilter(sub.id)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border whitespace-nowrap ${
+                            subjectFilter === sub.id
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300'
+                          }`}
+                        >
+                          {sub.name}
+                          <span className={`ml-1.5 ${subjectFilter === sub.id ? 'text-indigo-100' : 'text-red-500'}`}>
+                            {incomplete} incomplete
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <label className="flex items-center gap-2 mt-2 text-xs text-gray-600 w-fit cursor-pointer">
+                    <input type="checkbox" checked={incompleteOnly} onChange={e => setIncompleteOnly(e.target.checked)} />
+                    Show only incomplete students
+                  </label>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Incomplete = missing a chapter that most checked students in {batch} have completed.
+                  </p>
+                </div>
+              )}
+
+              {listView === 'partial' ? (
+                loading ? (
+                  <div className="flex justify-center py-16 text-gray-400">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-[11px] text-gray-400">
+                      Chapters whose notes were checked but are not complete (e.g. submitted after leave), grouped by the day
+                      they were marked. Turn on “Partial check mode” inside a student to mark them.
+                    </p>
+                    {partialGroups.length === 0 && (
+                      <div className="p-8 text-center text-sm text-gray-400 bg-white rounded-xl border border-gray-200">
+                        No partial checks in {batch}
+                      </div>
+                    )}
+                    {partialGroups.map(g => (
+                      <div key={g.day}>
+                        <div className="text-xs font-bold text-gray-500 uppercase mb-1.5">
+                          {dayLabel(g.day)} • {g.students.length} student{g.students.length === 1 ? '' : 's'}
+                        </div>
+                        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+                          {g.students.map(({ student, parts }) => (
+                            <button
+                              key={student.enrollNumber}
+                              onClick={() => openStudent(student)}
+                              className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-amber-50"
+                            >
+                              <div className="min-w-0">
+                                <div className="text-sm font-semibold text-gray-900 truncate">{student.name}</div>
+                                <div className="text-xs text-gray-500">#{student.enrollNumber}</div>
+                              </div>
+                              <div className="text-xs text-amber-700 text-right">
+                                {parts.map(p => (
+                                  <div key={p.subject}>
+                                    {p.subject} <b>{fmtRanges(p.nums)}</b>
+                                  </div>
+                                ))}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : loading ? (
                 <div className="flex justify-center py-16 text-gray-400">
                   <Loader2 className="w-6 h-6 animate-spin" />
                 </div>
@@ -365,6 +611,8 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                       const total = getSubjectsForBatch(s.batch).reduce((n, x) => n + x.chapters.length, 0);
                       const sum = summaries[s.enrollNumber];
                       const done = sum?.count || 0;
+                      const stats = statsOf[s.enrollNumber] || [];
+                      const focus = !query && subjectFilter !== 'all' ? stats.find(x => x.id === subjectFilter) : undefined;
                       return (
                         <button
                           key={s.enrollNumber}
@@ -376,9 +624,32 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                             <div className="text-xs text-gray-500">
                               #{s.enrollNumber} • {s.batch} • last tick {shortDate(sum?.lastTick || null)}
                             </div>
+                            {focus ? (
+                              <div className="text-xs mt-1 text-gray-600">
+                                {focus.missing.length > 0 ? (
+                                  <>
+                                    Missing {focus.name} ch: <b className="text-red-600">{fmtRanges(focus.missing)}</b>
+                                  </>
+                                ) : (
+                                  <span className="text-emerald-600">Up to date in {focus.name}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {stats.map(st => (
+                                  <span key={st.id} className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${STATUS_BADGE[st.status]}`}>
+                                    {st.name} {st.done}/{st.total}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          <span className={`text-xs font-bold px-2 py-1 rounded-full ${STATUS_BADGE[statusFor(done, s.batch)]}`}>
-                            {done}/{total}
+                          <span
+                            className={`text-xs font-bold px-2 py-1 rounded-full ${
+                              focus ? STATUS_BADGE[focus.status] : STATUS_BADGE[statusFor(done, s.batch)]
+                            }`}
+                          >
+                            {focus ? `${focus.done}/${focus.total}` : `${done}/${total}`}
                           </span>
                         </button>
                       );
@@ -394,6 +665,17 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
 
           {selected && (
             <>
+              <label
+                className={`flex items-center gap-3 mb-3 px-3 py-2 rounded-lg border text-sm cursor-pointer ${
+                  partialMode ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-white border-gray-200 text-gray-700'
+                }`}
+              >
+                <input type="checkbox" checked={partialMode} onChange={e => setPartialMode(e.target.checked)} />
+                <span className="font-semibold">Partial check mode</span>
+                <span className="text-xs opacity-70">
+                  {partialMode ? 'Tap a chapter to mark it partially checked' : 'Off — tapping ticks a chapter as done'}
+                </span>
+              </label>
               <div className="flex rounded-lg border border-gray-200 bg-white overflow-hidden text-sm font-semibold mb-3 w-fit">
                 {(['subject', 'day'] as const).map(k => (
                   <button
@@ -426,16 +708,25 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                         {g.items.map(it => (
                           <button
                             key={it.id}
-                            onClick={() => toggle(it.id)}
+                            onClick={() => tapChapter(it.id)}
                             className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50"
                           >
-                            <span className="w-6 h-6 shrink-0 rounded-md bg-emerald-500 text-white flex items-center justify-center">
-                              <Check className="w-4 h-4" />
-                            </span>
+                            {it.partial ? (
+                              <span className="w-6 h-6 shrink-0 rounded-md border-2 border-amber-400 bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold">
+                                ½
+                              </span>
+                            ) : (
+                              <span className="w-6 h-6 shrink-0 rounded-md bg-emerald-500 text-white flex items-center justify-center">
+                                <Check className="w-4 h-4" />
+                              </span>
+                            )}
                             <span className="flex-1 text-sm text-gray-900">
                               <span className="text-gray-400 mr-2">{it.number}.</span>
                               {it.title}
-                              <span className="block text-xs text-gray-500">{it.subject}</span>
+                              <span className="block text-xs text-gray-500">
+                                {it.subject}
+                                {it.partial && <b className="ml-2 text-amber-600">Partial</b>}
+                              </span>
                             </span>
                             <span className="text-xs text-gray-400">{timeLabel(it.at)}</span>
                           </button>
@@ -460,6 +751,8 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                           }`}
                         >
                           {s.name} {d}/{s.chapters.length}
+                          {s.chapters.some(c => progress[c.id]?.partial && !progress[c.id]?.done) &&
+                            ` · ½${s.chapters.filter(c => progress[c.id]?.partial && !progress[c.id]?.done).length}`}
                         </button>
                       );
                     })}
@@ -468,9 +761,18 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                     .filter(s => s.id === activeSubject)
                     .map(s => {
                       const allDone = s.chapters.every(c => progress[c.id]?.done);
+                      const exp = expectedByBatch[selected.batch]?.[s.id];
+                      const missingNums = s.chapters.filter(c => exp?.has(c.id) && !progress[c.id]?.done).map(c => c.number);
                       return (
                         <div key={s.id}>
-                          <div className="flex justify-end mb-2">
+                          {exp && exp.size > 0 && (
+                            <p className={`text-xs mb-2 ${missingNums.length ? 'text-red-600' : 'text-emerald-600'}`}>
+                              {missingNums.length
+                                ? `Missing chapters most of ${selected.batch} have completed: ${fmtRanges(missingNums)}`
+                                : `Up to date with the chapters most of ${selected.batch} have completed`}
+                            </p>
+                          )}
+                          <div className={`flex justify-end mb-2 ${partialMode ? 'invisible' : ''}`}>
                             <button
                               onClick={() => toggleSubject(s.id, !allDone)}
                               className="text-xs font-semibold text-indigo-600 hover:underline"
@@ -485,20 +787,27 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                               return (
                                 <button
                                   key={c.id}
-                                  onClick={() => toggle(c.id)}
+                                  onClick={() => tapChapter(c.id)}
                                   className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50"
                                 >
                                   <span
-                                    className={`w-6 h-6 shrink-0 rounded-md border flex items-center justify-center ${
-                                      done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 bg-white'
+                                    className={`w-6 h-6 shrink-0 rounded-md border flex items-center justify-center text-sm font-bold ${
+                                      done
+                                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                                        : p?.partial
+                                          ? 'bg-amber-100 border-amber-400 text-amber-700'
+                                          : 'border-gray-300 bg-white'
                                     }`}
                                   >
-                                    {done && <Check className="w-4 h-4" />}
+                                    {done ? <Check className="w-4 h-4" /> : p?.partial ? '½' : null}
                                   </span>
                                   <span className="flex-1 text-sm text-gray-900">
                                     <span className="text-gray-400 mr-2">{c.number}.</span>
                                     {c.title}
                                   </span>
+                                  {p?.partial && !done && (
+                                    <span className="text-xs text-amber-600 font-semibold">Partial • {shortDate(p.at)}</span>
+                                  )}
                                   {done && <span className="text-xs text-gray-400">{shortDate(p.at)}</span>}
                                 </button>
                               );
@@ -521,23 +830,54 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
           style={{ printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact' } as React.CSSProperties}
         >
           <style>{`@media print {
-            @page { size: A4 ${printMode === 'batch' ? 'landscape' : 'portrait'}; margin: 10mm; }
+            @page { size: A4 portrait; margin: ${printMode === 'batch' ? '8mm' : '10mm'}; }
             html, body { background: #fff !important; }
             .np-avoid { break-inside: avoid; page-break-inside: avoid; }
             thead { display: table-header-group; }
           }`}</style>
 
-          <div className="flex items-end justify-between border-b-4 border-black pb-3 mb-4">
+          <div className={`flex items-end justify-between border-black ${printMode === 'batch' ? 'border-b-2 pb-1.5 mb-2' : 'border-b-4 pb-3 mb-4'}`}>
             <div>
-              <div className="text-[13px] font-bold tracking-[0.25em] text-gray-600">AIMS PLUS</div>
-              <h1 className="text-[30px] font-extrabold leading-tight">Note Checking</h1>
+              <div className={`font-bold tracking-[0.25em] text-gray-600 ${printMode === 'batch' ? 'text-[10px]' : 'text-[13px]'}`}>AIMS PLUS</div>
+              <h1 className={`font-extrabold leading-tight ${printMode === 'batch' ? 'text-[20px]' : 'text-[30px]'}`}>
+                Note Checking{printMode === 'partial' ? ' — Partial checks' : ''}
+              </h1>
             </div>
             <div className="text-right text-[13px] text-gray-600">
-              {printMode === 'batch' ? `Batch ${batch} • ${gradeLabel(batch)}` : selected ? `${selected.batch} • ${gradeLabel(selected.batch)}` : ''}
+              {printMode === 'batch' || printMode === 'partial' ? `Batch ${batch} • ${gradeLabel(batch)}` : selected ? `${selected.batch} • ${gradeLabel(selected.batch)}` : ''}
               <br />
               Printed {printedOn}
             </div>
           </div>
+
+          {printMode === 'partial' && (
+            <>
+              <p className="text-[12px] text-gray-700 mb-3">
+                Chapters whose notes were checked but are not complete, by the day they were marked. {partialStudentCount} student
+                {partialStudentCount === 1 ? '' : 's'}.
+              </p>
+              {partialGroups.map(g => (
+                <div key={g.day} className="mb-4">
+                  <div className="np-avoid text-[13px] font-bold bg-gray-200 px-2 py-[3px]">
+                    {dayLabel(g.day)} • {g.students.length}
+                  </div>
+                  {g.students.map(({ student, parts }, i) => (
+                    <div key={student.enrollNumber} className="np-avoid flex items-baseline gap-3 text-[13px] px-2 py-[3px] border-b border-gray-200">
+                      <span className="w-6 text-gray-500">{i + 1}</span>
+                      <b className="flex-1">{student.name}</b>
+                      <span className="text-right">
+                        {parts.map(p => (
+                          <span key={p.subject} className="ml-3">
+                            {p.subject} <b>{fmtRanges(p.nums)}</b>
+                          </span>
+                        ))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </>
+          )}
 
           {printMode === 'student' && selected && (
             <>
@@ -613,71 +953,103 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
 
           {printMode === 'batch' && (
             <>
-              <p className="text-[12.5px] text-gray-700 mb-3 flex flex-wrap items-center gap-x-4 gap-y-1">
-                <span>
-                  {filtered.length} students • each square is a chapter number; <b>filled</b> = notes completed
-                </span>
-                <span>
-                  Class avg: <b>{(batchAvg[batch] || 0).toFixed(1)}</b> (students with ticks)
-                </span>
-                <span className="inline-flex items-center gap-1"><i className="inline-block w-3 h-3 bg-green-200 border border-green-600" /> ≥ avg</span>
-                <span className="inline-flex items-center gap-1"><i className="inline-block w-3 h-3 bg-yellow-200 border border-yellow-500" /> below avg</span>
-                <span className="inline-flex items-center gap-1"><i className="inline-block w-3 h-3 bg-red-200 border border-red-600" /> none or &lt; ¼ avg</span>
+              <p className="text-[10px] leading-tight text-gray-700 mb-2">
+                <b>{filtered.length} students</b>
+                {subjectFilter !== 'all' || incompleteOnly
+                  ? ` (${incompleteOnly ? 'incomplete only' : 'filtered'}${
+                      subjectFilter !== 'all' ? ` • ${batchSubjects.find(x => x.id === subjectFilter)?.name}` : ''
+                    })`
+                  : ''}
+                {' • '}Bar = chapters completed of all chapters in the subject. Numbers = <b>missing chapters</b>: ones most of
+                the batch has completed that this student has not (✓ = none missing). Subject colour: green none missing,
+                yellow up to half missing, red more than half. Done column: class avg <b>{(batchAvg[batch] || 0).toFixed(1)}</b>.
               </p>
-              <table className="w-full border-collapse text-[13px]">
-                <thead>
-                  <tr className="bg-black text-white text-left">
-                    <th className="py-2 pl-2 pr-1 w-8">#</th>
-                    <th className="py-2 pr-2">Student</th>
-                    {batchSubjects.map(sub => (
-                      <th key={sub.id} className="py-2 px-2">
-                        {sub.name}
-                      </th>
-                    ))}
-                    <th className="py-2 px-2 text-center">Done</th>
-                    <th className="py-2 pr-2">Last</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((s, i) => {
-                    const total = batchSubjects.reduce((n, x) => n + x.chapters.length, 0);
-                    const chap = allChapters[s.enrollNumber] || {};
-                    const sum = summaries[s.enrollNumber];
-                    const count = sum?.count || 0;
-                    const status = statusFor(count, s.batch);
-                    return (
-                      <tr key={s.enrollNumber} className={`np-avoid align-top border-b border-gray-300 ${i % 2 ? 'bg-gray-50' : ''}`}>
-                        <td className={`py-2 pl-2 pr-1 text-gray-600 border-l-[6px] ${STATUS_BAR[status]}`}>{i + 1}</td>
-                        <td className="py-2 pr-2 font-bold">{s.name}</td>
+              {Array.from({ length: Math.ceil(filtered.length / PRINT_ROWS_PER_PAGE) }, (_, page) => {
+                const rows = filtered.slice(page * PRINT_ROWS_PER_PAGE, (page + 1) * PRINT_ROWS_PER_PAGE);
+                const totalCh = batchSubjects.reduce((n, x) => n + x.chapters.length, 0);
+                return (
+                  <table
+                    key={page}
+                    className="w-full border-collapse text-[10px]"
+                    style={{
+                      tableLayout: 'fixed',
+                      breakAfter: page < Math.ceil(filtered.length / PRINT_ROWS_PER_PAGE) - 1 ? 'page' : 'auto'
+                    }}
+                  >
+                    <colgroup>
+                      <col style={{ width: 24 }} />
+                      <col style={{ width: 140 }} />
+                      {batchSubjects.map(sub => (
+                        <col key={sub.id} />
+                      ))}
+                      <col style={{ width: 40 }} />
+                      <col style={{ width: 38 }} />
+                    </colgroup>
+                    <thead>
+                      <tr className="bg-black text-white text-left" style={{ height: 18 }}>
+                        <th className="pl-1.5">#</th>
+                        <th>Student</th>
                         {batchSubjects.map(sub => (
-                          <td key={sub.id} className="py-1.5 px-2">
-                            {/* two compact lines per subject keeps a student to one short row */}
-                            <div className="flex flex-wrap gap-[2px]" style={{ width: Math.ceil(sub.chapters.length / 2) * 21 }}>
-                              {sub.chapters.map(c => {
-                                const done = !!chap[c.id]?.done;
-                                return (
-                                  <span
-                                    key={c.id}
-                                    className={`inline-flex items-center justify-center w-[19px] h-[19px] border-[1.5px] border-black text-[10px] leading-none ${
-                                      done ? 'bg-black text-white font-bold' : 'bg-white text-gray-500'
-                                    }`}
-                                  >
-                                    {c.number}
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          </td>
+                          <th key={sub.id} className="px-1.5">
+                            {sub.name} <span className="font-normal opacity-70">· missing</span>
+                          </th>
                         ))}
-                        <td className={`py-2 px-2 text-center font-extrabold whitespace-nowrap ${STATUS_PRINT[status]}`}>
-                          {count}/{total}
-                        </td>
-                        <td className="py-2 pr-2 whitespace-nowrap text-gray-600">{shortDate(sum?.lastTick || null)}</td>
+                        <th className="text-center">Done</th>
+                        <th>Last</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                      {rows.map((s, i) => {
+                        const sum = summaries[s.enrollNumber];
+                        const count = sum?.count || 0;
+                        const status = statusFor(count, s.batch);
+                        const stats = statsOf[s.enrollNumber] || [];
+                        return (
+                          <tr
+                            key={s.enrollNumber}
+                            className={`border-b border-gray-300 ${i % 2 ? 'bg-gray-50' : ''}`}
+                            style={{ height: 18 }}
+                          >
+                            <td className={`pl-1 text-gray-600 border-l-[5px] ${STATUS_BAR[status]}`}>
+                              {page * PRINT_ROWS_PER_PAGE + i + 1}
+                            </td>
+                            <td className="pr-1 font-bold overflow-hidden whitespace-nowrap text-ellipsis">{s.name}</td>
+                            {stats.map(st => (
+                              <td key={st.id} className="px-1.5 overflow-hidden">
+                                <div className="flex items-center gap-1 whitespace-nowrap" style={{ height: 16 }}>
+                                  <span className="inline-block shrink-0 border border-black bg-white" style={{ width: 30, height: 7 }}>
+                                    <span
+                                      className="block h-full"
+                                      style={{
+                                        width: `${st.total ? (st.done / st.total) * 100 : 0}%`,
+                                        background: PRINT_BAR[st.status]
+                                      }}
+                                    />
+                                  </span>
+                                  <span className="shrink-0 text-[9px] text-gray-600">
+                                    {st.done}/{st.total}
+                                  </span>
+                                  {st.missing.length > 0 ? (
+                                    <span className="min-w-0 flex-1 overflow-hidden text-ellipsis font-extrabold text-red-700">
+                                      {fmtRanges(st.missing)}
+                                    </span>
+                                  ) : (
+                                    <span className="font-extrabold text-green-700">✓</span>
+                                  )}
+                                </div>
+                              </td>
+                            ))}
+                            <td className={`text-center font-extrabold whitespace-nowrap ${STATUS_PRINT[status]}`}>
+                              {count}/{totalCh}
+                            </td>
+                            <td className="whitespace-nowrap text-gray-600 text-[9px]">{shortDate(sum?.lastTick || null)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                );
+              })}
             </>
           )}
         </div>

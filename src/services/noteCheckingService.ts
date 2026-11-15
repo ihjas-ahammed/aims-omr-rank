@@ -10,6 +10,8 @@ export interface AttendanceStudent {
 export interface NoteChapterEntry {
   done: boolean;
   at: string;
+  // Chapter notes checked but not complete (e.g. submitted late after leave). Never set together with `done`.
+  partial?: boolean;
 }
 
 export type NoteProgressMap = Record<string, NoteChapterEntry>;
@@ -234,6 +236,23 @@ export async function setChapterDone(
     [`${base}/batch`]: student.batch,
     [`${base}/updatedAt`]: now,
     [`${base}/chapters/${chapterId}`]: { done, at: now }
+  });
+}
+
+// Marks (or clears) a chapter as partially checked. A partial chapter is not done, so it still counts as incomplete.
+export async function setChapterPartial(
+  student: AttendanceStudent,
+  chapterId: string,
+  partial: boolean
+): Promise<void> {
+  if (!rtdb) throw new Error('Firebase is not configured');
+  const now = new Date().toISOString();
+  const base = `${PROGRESS_ROOT}/${student.enrollNumber}`;
+  await update(ref(rtdb), {
+    [`${base}/name`]: student.name,
+    [`${base}/batch`]: student.batch,
+    [`${base}/updatedAt`]: now,
+    [`${base}/chapters/${chapterId}`]: partial ? { done: false, partial: true, at: now } : { done: false, at: now }
   });
 }
 
