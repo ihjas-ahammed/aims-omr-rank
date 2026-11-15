@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Download } from 'lucide-react';
 import { POSTER_H, POSTER_SCALE, POSTER_W } from '../posterRenderer';
-import { loadPhyIcons, renderPhyPoster, type PhyAssets } from './phyPosterRenderer';
-import { PHY_CYCLE_LABEL, getPhyDay } from './phyData';
+import { loadPlusTwoIcons, renderPlusTwoPoster, type PlusTwoAssets } from './plusTwoPosterRenderer';
+import { PLUS_TWO_CYCLES, getPlusTwoDay } from './plusTwoData';
 import logoUrl from '../biology/aims-plus-logo.png';
 
 interface PlusTwoPhyPosterProps {
@@ -29,12 +29,13 @@ const loadLogo = (): Promise<HTMLImageElement> =>
 export default function PlusTwoPhyPoster({ onBack }: PlusTwoPhyPosterProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [date, setDate] = useState(() => offsetFromToday(1));
-  const [assets, setAssets] = useState<PhyAssets | null>(null);
+  const [assets, setAssets] = useState<PlusTwoAssets | null>(null);
   const [fontsTick, setFontsTick] = useState(0);
+  const [posterH, setPosterH] = useState(POSTER_H);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([loadLogo(), loadPhyIcons()]).then(([logo, icons]) => {
+    Promise.all([loadLogo(), loadPlusTwoIcons()]).then(([logo, icons]) => {
       if (!cancelled) setAssets({ logo, icons });
     });
     // Canvas text only uses a web font once it has been loaded, so request every weight the poster draws with.
@@ -46,23 +47,25 @@ export default function PlusTwoPhyPoster({ onBack }: PlusTwoPhyPosterProps) {
     };
   }, []);
 
-  const day = useMemo(() => getPhyDay(date), [date]);
+  const found = useMemo(() => getPlusTwoDay(date), [date]);
+  const day = found?.day;
   const dateObj = useMemo(() => new Date(date + 'T00:00:00'), [date]);
 
   useEffect(() => {
-    if (canvasRef.current && assets && day) {
-      renderPhyPoster(canvasRef.current, { date: dateObj, day, assets });
+    if (canvasRef.current && assets && found) {
+      // The renderer sizes the canvas itself (short days get a shorter poster), so the height is not a JSX prop.
+      setPosterH(renderPlusTwoPoster(canvasRef.current, { date: dateObj, ...found, assets }));
     }
-  }, [assets, dateObj, day, fontsTick]);
+  }, [assets, dateObj, found, fontsTick]);
 
   const download = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !day) return;
+    if (!canvas || !found) return;
     const link = document.createElement('a');
-    link.download = `plus-two-physics-${date}.png`;
+    link.download = `plus-two-${found.cycle.subject.toLowerCase()}-${date}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
-  }, [date, day]);
+  }, [date, found]);
 
   const stepDate = (delta: number) => {
     const d = new Date(date + 'T00:00:00');
@@ -80,14 +83,14 @@ export default function PlusTwoPhyPoster({ onBack }: PlusTwoPhyPosterProps) {
             </button>
           )}
           <div>
-            <h1 className="font-bold text-lg tracking-tight text-white leading-none">Plus Two Physics Study Day Poster</h1>
-            <p className="text-xs text-slate-400 mt-0.5">Plus Two • Chapters 01–10 • Cycle {PHY_CYCLE_LABEL}</p>
+            <h1 className="font-bold text-lg tracking-tight text-white leading-none">Plus Two Study Day Poster</h1>
+            <p className="text-xs text-slate-400 mt-0.5">{found ? `${found.cycle.subject} • Cycle ${found.cycle.label}` : 'Plus Two • Physics and Mathematics weeks'}</p>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-[320px_1fr] gap-8 items-start">
-        <div className="space-y-5">
+      <main className="max-w-5xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-[320px_1fr] gap-6 md:gap-8 items-start">
+        <div className="space-y-5 order-2 md:order-1">
           <section className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-bold text-xs text-slate-400 uppercase tracking-wider">Study Date</h2>
@@ -123,6 +126,24 @@ export default function PlusTwoPhyPoster({ onBack }: PlusTwoPhyPosterProps) {
             </div>
           </section>
 
+          <section className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+            <h2 className="font-bold text-xs text-slate-400 uppercase tracking-wider mb-3">Weeks</h2>
+            <div className="space-y-2">
+              {PLUS_TWO_CYCLES.map((c) => (
+                <button
+                  key={c.subject}
+                  onClick={() => setDate(c.days[0].date)}
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl border transition ${
+                    found?.cycle === c ? 'border-blue-500/60 bg-blue-600/15' : 'border-slate-700 bg-slate-950 hover:bg-slate-800'
+                  }`}
+                >
+                  <span className="block text-sm font-semibold text-white">{c.subject}</span>
+                  <span className="block text-xs text-slate-400 mt-0.5">{c.label}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
           <button
             onClick={download}
             disabled={!day || !assets}
@@ -133,7 +154,7 @@ export default function PlusTwoPhyPoster({ onBack }: PlusTwoPhyPosterProps) {
           </button>
         </div>
 
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center order-1 md:order-2">
           {day ? (
             <div className="w-full max-w-[460px] rounded-2xl overflow-hidden bg-white shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),0_0_1px_1px_rgba(255,255,255,0.1)]">
               <canvas
@@ -146,12 +167,12 @@ export default function PlusTwoPhyPoster({ onBack }: PlusTwoPhyPosterProps) {
           ) : (
             <div className="w-full max-w-[460px] rounded-2xl border border-dashed border-slate-700 bg-slate-950/50 p-10 text-center">
               <p className="text-sm font-semibold text-slate-200">No timetable for this date</p>
-              <p className="text-xs text-slate-400 mt-1">The Plus Two Physics cycle runs {PHY_CYCLE_LABEL}. Pick a date inside it.</p>
+              <p className="text-xs text-slate-400 mt-1">{PLUS_TWO_CYCLES.map((c) => `${c.subject} ${c.label}`).join(' · ')}. Pick a date inside a week.</p>
             </div>
           )}
           {day && (
             <p className="text-xs text-slate-500 mt-3 text-center">
-              Output: <span className="text-slate-300 font-mono">{POSTER_W * POSTER_SCALE} × {POSTER_H * POSTER_SCALE} px</span> PNG
+              Output: <span className="text-slate-300 font-mono">{POSTER_W * POSTER_SCALE} × {posterH * POSTER_SCALE} px</span> PNG
             </p>
           )}
         </div>

@@ -19,7 +19,7 @@ export const PHY_TIMETABLE: PhyDay[] = [
       'Electric Field Lines, Superposition & Field Intensity',
       'Electric Dipole: Axial & Equatorial Field Derivations',
       'Torque & Work Done on Dipole in Uniform Field',
-      'Electric Flux (Φ = E·A) & Gauss’s Law Proof',
+      'Electric Flux & Gauss’s Law Proof',
       'Gauss’s Law Applications: Wire, Plane Sheet & Shell'
     ]
   },
@@ -32,10 +32,10 @@ export const PHY_TIMETABLE: PhyDay[] = [
     topics: [
       'Potential due to Point Charge & System of Charges',
       'Electrostatic Potential due to an Electric Dipole',
-      'Equipotential Surfaces & Relation (E = -dV/dr)',
+      'Equipotential Surfaces & Relation',
       'Potential Energy of System & Dipole in External Field',
       'Parallel Plate Capacitor & Effect of Dielectric',
-      'Series/Parallel Capacitors & Energy Stored (½CV^2)'
+      'Series/Parallel Capacitors & Energy Stored'
     ]
   },
   {
@@ -45,11 +45,11 @@ export const PHY_TIMETABLE: PhyDay[] = [
     title: 'Current Electricity',
     icon: 'phy_current',
     topics: [
-      'Drift Velocity (I = nAev_d), Mobility & Current Density',
+      'Drift Velocity, Mobility & Current Density',
       'Ohm’s Law, Resistivity & Temperature Dependence',
       'Electrical Energy, Power & Internal Resistance of Cell',
-      'Cells in Series & Parallel (Equivalent EMF Derivations)',
-      'Kirchhoff’s Junction Rule (KCL) & Loop Rule (KVL)',
+      'Cells in Series & Parallel',
+      'Kirchhoff’s Junction Rule & Loop Rule',
       'Wheatstone Bridge Principle & Balanced Condition'
     ]
   },
@@ -61,11 +61,11 @@ export const PHY_TIMETABLE: PhyDay[] = [
     icon: 'phy_moving',
     topics: [
       'Lorentz Force & Circular/Helical Motion in B-Field',
-      'Magnetic Force on Current-Carrying Conductor (Il×B)',
+      'Magnetic Force on Current-Carrying Conductor',
       'Biot-Savart Law & Field on Axis of Circular Loop',
       'Ampere’s Circuital Law: Straight Wire & Solenoid',
       'Force between Parallel Conductors & Torque on Loop',
-      'Moving Coil Galvanometer (Ammeter & Voltmeter Conv.)'
+      'Moving Coil Galvanometer'
     ]
   },
   {
@@ -76,11 +76,11 @@ export const PHY_TIMETABLE: PhyDay[] = [
     icon: 'phy_magnet_ac',
     topics: [
       'Bar Magnet, Gauss’s Law in Magnetism & Dipole Torque',
-      'Magnetisation, Intensity (H) & Dia/Para/Ferromagnetism',
+      'Magnetisation, Intensity & Dia/Para/Ferromagnetism',
       'Faraday’s Laws, Lenz’s Law, Motional EMF & Inductance',
-      'AC Generator & Transformer (Working & Energy Losses)',
-      'Phasor Diagrams (R, L, C), Series LCR & Resonance',
-      'Power in AC (P = VI cosφ), Power Factor & PYQ Drill'
+      'AC Generator & Transformer',
+      'Phasor Diagrams, Series LCR & Resonance',
+      'Power in AC, Power Factor & PYQ Drill'
     ]
   },
   {
@@ -94,8 +94,8 @@ export const PHY_TIMETABLE: PhyDay[] = [
       'Mirror Formula, Total Internal Reflection & Spherical Surface',
       'Lens Maker’s Formula, Thin Lenses & Prism Formula',
       'Compound Microscope & Astronomical Telescope',
-      'Huygens’ Principle (Reflection & Refraction Proofs)',
-      'Interference (YDSE), Single-Slit Diffraction & Polarisation'
+      'Huygens’ Principle',
+      'Interference, Single-Slit Diffraction & Polarisation'
     ]
   },
   { date: '2026-11-15', exam: true, label: 'PLUS TWO PHYSICS EXAM — CHAPTERS 01 TO 10' }
