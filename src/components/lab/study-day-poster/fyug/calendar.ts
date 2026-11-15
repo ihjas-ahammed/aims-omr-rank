@@ -73,9 +73,16 @@ export const getEventsOn = (date: Date): CalendarEvent[] => {
   return CALENDAR.filter((e) => e.date === key);
 };
 
-// The first day after the given date that has calendar events, with all of that day's events; empty when none are left.
-export const getNextEventsAfter = (date: Date): CalendarEvent[] => {
+// Calendar days after the given date that have events, soonest first, each with all of its events.
+export const getUpcomingEventDays = (date: Date, limit = Infinity): CalendarEvent[][] => {
   const key = toKey(date);
-  const next = CALENDAR.filter((e) => e.date > key).sort((a, b) => a.date.localeCompare(b.date))[0];
-  return next ? CALENDAR.filter((e) => e.date === next.date) : [];
+  const days = [...new Set(CALENDAR.filter((e) => e.date > key).map((e) => e.date))].sort();
+  return days.slice(0, limit).map((d) => CALENDAR.filter((e) => e.date === d));
+};
+
+// Whole days from one date to a later YYYY-MM-DD key (1 = the next day).
+export const daysUntil = (from: Date, key: string): number => {
+  const to = new Date(key + 'T00:00:00');
+  const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  return Math.round((to.getTime() - start.getTime()) / 86400000);
 };

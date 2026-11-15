@@ -353,7 +353,7 @@ function resolveInitialView(): ViewState {
     return 'plus-two-phy-poster';
   }
 
-  if (path === '/fyug-timetable' || path === '/fyug-timetable/') {
+  if (path === '/fyug-timetable' || path === '/fyug-timetable/' || path === '/fyug-timetable/topics' || path === '/fyug-timetable/topics/') {
     return 'fyug-timetable';
   }
 

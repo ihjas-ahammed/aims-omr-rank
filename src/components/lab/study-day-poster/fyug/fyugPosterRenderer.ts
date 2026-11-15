@@ -1,7 +1,7 @@
 import { POSTER_H, POSTER_SCALE, POSTER_W, drawBackgroundAndCorners, roundRectPath } from '../posterRenderer';
 import { drawIconContain, drawStudyHeader, rasteriseIcon, setLetterSpacing, type IconImage } from '../biology/biologyPosterRenderer';
 import { FYUG_HERO, FYUG_ICONS } from './fyugIcons';
-import { SUBJECTS, getDaySubtitle, type Slot } from './fyugData';
+import { SUBJECTS, getDaySubtitle, type Slot, type SubjectKey } from './fyugData';
 import { EVENT_ICONS } from './calendarIcons';
 import type { CalendarEvent } from './calendar';
 
@@ -40,6 +40,14 @@ function wrap(ctx: CanvasRenderingContext2D, text: string, maxW: number): string
   return lines;
 }
 
+// Text cut with an ellipsis so it never runs past maxW.
+function clip(ctx: CanvasRenderingContext2D, text: string, maxW: number): string {
+  if (ctx.measureText(text).width <= maxW) return text;
+  let t = text;
+  while (t.length > 1 && ctx.measureText(`${t}…`).width > maxW) t = t.slice(0, -1);
+  return `${t.trimEnd()}…`;
+}
+
 function drawPerson(ctx: CanvasRenderingContext2D, x: number, y: number, color: string) {
   ctx.fillStyle = color;
   ctx.beginPath();
@@ -51,10 +59,25 @@ function drawPerson(ctx: CanvasRenderingContext2D, x: number, y: number, color: 
   ctx.fill();
 }
 
-function drawSlot(ctx: CanvasRenderingContext2D, slot: Slot, hour: number, icons: Record<string, IconImage>, y: number, h: number) {
+const PROGRESS_ZONE = 20; // strip kept free along the bottom of a card for the syllabus progress bar
+const MIN_PAD = 12; // least clear space above and below a card's text block
+const FULL_CARD_H = 118; // cards shorter than this (more than five hours in a day) are drawn scaled down
+
+function drawSlot(
+  ctx: CanvasRenderingContext2D,
+  slot: Slot,
+  hour: number,
+  icons: Record<string, IconImage>,
+  w: number,
+  h: number,
+  progress?: number // fraction of the subject's syllabus ticked off, 0 to 1; undefined = no bar
+) {
   const sub = SUBJECTS[slot.subject];
-  const x = 30;
-  const w = 740;
+  // Drawn at the origin; renderFyugPoster translates (and, for short cards, scales) the context into place.
+  const x = 0;
+  const y = 0;
+  // Height the text block and the time/room stack centre in; the progress bar takes the strip below it.
+  const ch = progress === undefined ? h : h - PROGRESS_ZONE;
 
   roundRectPath(ctx, x, y, w, h, 24);
   ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
@@ -95,17 +118,20 @@ function drawSlot(ctx: CanvasRenderingContext2D, slot: Slot, hour: number, icons
   const rightW = rightColumnWidth(ctx, slot);
   const maxW = x + w - 20 - rightW - 14 - tx;
 
-  let size = 32;
+  const hasSubline = !!(slot.note || slot.teacher);
+  const teacherH = !hasSubline ? 0 : progress === undefined ? 26 : 24;
+  const titleGap = !hasSubline ? 0 : progress === undefined ? 10 : 6;
+  let size = progress === undefined ? 32 : 27;
   let lines: string[] = [];
-  for (; size >= 20; size--) {
+  for (; size >= 16; size--) {
     ctx.font = `800 ${size}px ${FONT}`;
-    lines = wrap(ctx, slot.title ?? sub.name, maxW);
-    if (lines.length <= 2) break;
+    lines = wrap(ctx, slot.title || sub.name, maxW);
+    // Shrink until the name is at most two lines and the block keeps MIN_PAD clear above and below it.
+    if (lines.length <= 2 && lines.length * size * 1.22 + titleGap + teacherH <= ch - MIN_PAD * 2) break;
   }
   const lh = size * 1.22;
-  const teacherH = 26;
-  const blockH = lines.length * lh + 10 + teacherH;
-  let by = y + (h - blockH) / 2;
+  const blockH = lines.length * lh + titleGap + teacherH;
+  let by = y + (ch - blockH) / 2;
 
   ctx.textAlign = 'left';
   ctx.fillStyle = NAVY;
@@ -114,25 +140,34 @@ function drawSlot(ctx: CanvasRenderingContext2D, slot: Slot, hour: number, icons
     ctx.fillText(l, tx, by + size * 0.9);
     by += lh;
   }
-  by += 10;
+  by += titleGap;
   ctx.fillStyle = sub.accent;
+  // The note / teacher line shrinks to stay clear of the time and room column.
   if (slot.note) {
-    ctx.font = `700 22px ${FONT}`;
-    ctx.fillText(slot.note, tx, by + 19);
-  } else {
+    let ns = 22;
+    for (; ns > 15; ns--) {
+      ctx.font = `700 ${ns}px ${FONT}`;
+      if (ctx.measureText(slot.note).width <= maxW) break;
+    }
+    ctx.fillText(clip(ctx, slot.note, maxW), tx, by + 19);
+  } else if (slot.teacher) {
     drawPerson(ctx, tx, by, sub.accent);
-    ctx.font = `700 20px ${FONT}`;
     setLetterSpacing(ctx, 0.8);
-    ctx.fillText(slot.teacher, tx + 24, by + 19);
+    let ts = 20;
+    for (; ts > 15; ts--) {
+      ctx.font = `700 ${ts}px ${FONT}`;
+      if (ctx.measureText(slot.teacher).width <= maxW - 24) break;
+    }
+    ctx.fillText(clip(ctx, slot.teacher, maxW - 24), tx + 24, by + 19);
     setLetterSpacing(ctx, 0);
   }
 
   // Right column: time pill (with a small clock) above the navy room tag, centred as a stack.
   const pillH = 38;
-  const roomH = 44;
-  const stackGap = 10;
+  const roomH = progress === undefined ? 44 : 38;
+  const stackGap = progress === undefined ? 10 : 8;
   const stackH = (slot.time ? pillH : 0) + (slot.time && slot.room ? stackGap : 0) + (slot.room ? roomH : 0);
-  let sy = y + (h - stackH) / 2;
+  let sy = y + (ch - stackH) / 2;
   const colRight = x + w - 20;
 
   if (slot.time) {
@@ -166,6 +201,30 @@ function drawSlot(ctx: CanvasRenderingContext2D, slot: Slot, hour: number, icons
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(slot.room, px + pw / 2, sy + roomH / 2 + 1);
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  // Syllabus progress: rounded track from the text column to the right edge, with the percentage after it.
+  if (progress !== undefined) {
+    const pct = `${Math.round(progress * 100)}%`;
+    ctx.font = `800 16px ${FONT}`;
+    const pctW = ctx.measureText('100%').width;
+    const barH = 8;
+    const barX = tx;
+    const barW = colRight - pctW - 10 - barX;
+    const barY = y + h - 11 - barH;
+    roundRectPath(ctx, barX, barY, barW, barH, barH / 2);
+    ctx.fillStyle = sub.tint;
+    ctx.fill();
+    if (progress > 0) {
+      roundRectPath(ctx, barX, barY, Math.max(barH, barW * Math.min(1, progress)), barH, barH / 2);
+      ctx.fillStyle = sub.accent;
+      ctx.fill();
+    }
+    ctx.fillStyle = sub.accent;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(pct, colRight, barY + barH / 2 + 1);
     ctx.textBaseline = 'alphabetic';
   }
 }
@@ -211,14 +270,21 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, weight: number, st
   return size;
 }
 
-// Footer (light theme): mint→sky card with a fine grid, date tile on the left, then "SPECIAL EVENT(S)" with the
-// day's calendar events listed in large type. Fixed height, so one or two events never change the bar.
+const shortDate = (key: string) =>
+  new Date(key + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
+
+// Footer: frosted blue glass bar with a date tile on the left, then "SPECIAL EVENT(S)" with that day's calendar
+// events in large type. When the poster's own date has none, it shows the next event day instead ("NEXT …" plus
+// how many days are left). A single event leaves room for a "THEN" line naming the event day after it.
+// Fixed height, so one or two events never change the bar.
 function drawEventsFooter(
   ctx: CanvasRenderingContext2D,
   events: CalendarEvent[],
   footerBottom: number,
   nextLabel: boolean,
-  icons: Record<string, IconImage>
+  icons: Record<string, IconImage>,
+  daysLeft: number | undefined,
+  then: CalendarEvent[]
 ) {
   // The tile shows the events' own date (the poster's date, or a later one for the "next event" footer).
   const date = new Date(events[0].date + 'T00:00:00');
@@ -354,14 +420,62 @@ function drawEventsFooter(
   ctx.fillText(label, mx + 15, y + 34);
   setLetterSpacing(ctx, 0);
 
+  // Countdown chip at the right end of the label row, when the bar is about a later day.
+  if (nextLabel && daysLeft !== undefined) {
+    const chip = daysLeft === 1 ? 'TOMORROW' : `IN ${daysLeft} DAYS`;
+    ctx.font = `800 15px ${FONT}`;
+    setLetterSpacing(ctx, 2);
+    const cw = ctx.measureText(chip).width + 28;
+    const cx = x + w - 24 - cw;
+    roundRectPath(ctx, cx, y + 14, cw, 28, 14);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
+    ctx.fill();
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(chip, cx + 14, y + 34);
+    setLetterSpacing(ctx, 0);
+  }
+
+  // "THEN" line along the bottom: the event day after the ones listed above.
+  const showThen = then.length > 0 && !many;
+  const thenH = showThen ? 28 : 0;
+  if (showThen) {
+    const e = then[0];
+    const ly = y + h - 12 - 22;
+    ctx.font = `800 13px ${FONT}`;
+    setLetterSpacing(ctx, 2);
+    const pw = ctx.measureText('THEN').width + 20;
+    roundRectPath(ctx, mx, ly, pw, 22, 11);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('THEN', mx + 10, ly + 16);
+    setLetterSpacing(ctx, 0);
+
+    const when = shortDate(e.date);
+    ctx.font = `800 16px ${FONT}`;
+    ctx.fillStyle = '#b9f0a8';
+    ctx.fillText(when, mx + pw + 10, ly + 17);
+    const whenW = ctx.measureText(when).width;
+    const course = e.subject ? SUBJECTS[e.subject].name : e.note ?? '';
+    const text = e.event + (course ? ` • ${course}` : '') + (then.length > 1 ? `  +${then.length - 1} more` : '');
+    const textX = mx + pw + 10 + whenW + 10;
+    const size = fitText(ctx, text, 700, 16, 11, x + w - 24 - textX);
+    ctx.font = `700 ${size}px ${FONT}`;
+    ctx.fillStyle = '#e1eefc';
+    ctx.fillText(text, textX, ly + 17);
+  }
+
   const rowsTop = y + 50;
-  const rowsH = h - 50 - 12;
+  const rowsH = h - 50 - 12 - thenH;
   const rowH = rowsH / events.length;
   events.forEach((e, i) => drawEventRow(ctx, e, icons, mx, rowsTop + i * rowH, mw, rowH, many));
 }
 
 function rowLayout(ctx: CanvasRenderingContext2D, e: CalendarEvent, compact: boolean, maxTextW: number) {
-  const iconBox = compact ? 46 : 66;
+  const iconBox = compact ? 46 : 62;
   const gap = 16;
   const sub = e.subject ? SUBJECTS[e.subject] : null;
   const course = sub ? sub.name : e.note ?? '';
@@ -422,14 +536,21 @@ function drawEventRow(
 
 export interface FyugRenderOptions {
   date: Date;
-  events: CalendarEvent[]; // special calendar events on the poster's date (empty = no footer)
+  events: CalendarEvent[]; // calendar events for the footer: the poster date's own, else the next event day's (empty = no footer)
   slots: Slot[];
   assets: FyugAssets;
   nextLabel?: boolean; // footer shows a later event, so it is labelled NEXT SPECIAL EVENT
+  daysLeft?: number; // days from the poster's date to that later event
+  then?: CalendarEvent[]; // the event day after the footer's, for the "THEN" line
+  progress?: Partial<Record<SubjectKey, number>>; // syllabus fraction per subject (0 to 1); omitted = no progress bars
   height?: number; // logical px; defaults to the standard poster height
+  subtitle?: string; // header bar text for a special day; defaults to the day's own subtitle or its hour span
 }
 
-export function renderFyugPoster(canvas: HTMLCanvasElement, { date, events, slots, assets, height = POSTER_H, nextLabel = false }: FyugRenderOptions) {
+export function renderFyugPoster(
+  canvas: HTMLCanvasElement,
+  { date, events, slots, assets, height = POSTER_H, nextLabel = false, daysLeft, then = [], progress, subtitle }: FyugRenderOptions
+) {
   const H = height;
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -445,17 +566,24 @@ export function renderFyugPoster(canvas: HTMLCanvasElement, { date, events, slot
     date,
     logo: null,
     hero: assets.icons.hero,
-    subtitle: getDaySubtitle(date) ?? daySpan(slots),
+    subtitle: subtitle || (getDaySubtitle(date) ?? daySpan(slots)),
     shiftY: -HEADER_SHIFT
   });
 
   const top = 408 - HEADER_SHIFT;
   const bottom = events.length ? H - 26 - FOOTER_H - 12 : H - 60;
   const gap = 12;
-const h = (bottom - top - gap * (slots.length - 1)) / slots.length;
-  slots.forEach((slot, i) => drawSlot(ctx, slot, i + 1, assets.icons, top + i * (h + gap), h));
+  const h = (bottom - top - gap * (slots.length - 1)) / slots.length;
+  const f = Math.min(1, h / FULL_CARD_H);
+  slots.forEach((slot, i) => {
+    ctx.save();
+    ctx.translate(30, top + i * (h + gap));
+    ctx.scale(f, f);
+    drawSlot(ctx, slot, i + 1, assets.icons, 740 / f, h / f, progress ? progress[slot.subject] ?? 0 : undefined);
+    ctx.restore();
+  });
 
-  if (events.length) drawEventsFooter(ctx, events, H - 26, nextLabel, assets.icons);
+  if (events.length) drawEventsFooter(ctx, events, H - 26, nextLabel, assets.icons, daysLeft, then);
 
   ctx.restore();
 }
@@ -464,5 +592,6 @@ const h = (bottom - top - gap * (slots.length - 1)) / slots.length;
 function daySpan(slots: Slot[]): string {
   const start = slots[0]?.time?.split(' – ')[0];
   const end = slots[slots.length - 1]?.time?.split(' – ')[1];
-  return start && end ? `${slots.length} HOURS  •  ${start} – ${end}` : `${slots.length} HOURS`;
+  const hours = `${slots.length} ${slots.length === 1 ? 'HOUR' : 'HOURS'}`;
+  return start && end ? `${hours}  •  ${start} – ${end}` : hours;
 }
