@@ -102,6 +102,14 @@ function drawSlot(
   if (slot.badge) {
     ctx.font = `900 26px ${FONT}`;
     ctx.fillText(slot.badge, x + 20 + bw / 2, y + h / 2 + 9);
+  } else if (hour === 0) {
+    // Orderless day: no hour number, the badge says the subject can come in any order.
+    ctx.font = `900 28px ${FONT}`;
+    ctx.fillText('ANY', x + 20 + bw / 2, y + h / 2 + 2);
+    ctx.font = `700 12px ${FONT}`;
+    setLetterSpacing(ctx, 1.5);
+    ctx.fillText('ORDER', x + 20 + bw / 2 + 1, y + h / 2 + 24);
+    setLetterSpacing(ctx, 0);
   } else {
     ctx.font = `700 14px ${FONT}`;
     setLetterSpacing(ctx, 2);
@@ -545,11 +553,12 @@ export interface FyugRenderOptions {
   progress?: Partial<Record<SubjectKey, number>>; // syllabus fraction per subject (0 to 1); omitted = no progress bars
   height?: number; // logical px; defaults to the standard poster height
   subtitle?: string; // header bar text for a special day; defaults to the day's own subtitle or its hour span
+  unordered?: boolean; // special day with known subjects but no fixed order or timings
 }
 
 export function renderFyugPoster(
   canvas: HTMLCanvasElement,
-  { date, events, slots, assets, height = POSTER_H, nextLabel = false, daysLeft, then = [], progress, subtitle }: FyugRenderOptions
+  { date, events, slots, assets, height = POSTER_H, nextLabel = false, daysLeft, then = [], progress, subtitle, unordered }: FyugRenderOptions
 ) {
   const H = height;
   const ctx = canvas.getContext('2d');
@@ -566,7 +575,7 @@ export function renderFyugPoster(
     date,
     logo: null,
     hero: assets.icons.hero,
-    subtitle: subtitle || (getDaySubtitle(date) ?? daySpan(slots)),
+    subtitle: subtitle || (unordered ? daySubjects(slots) : (getDaySubtitle(date) ?? daySpan(slots))),
     shiftY: -HEADER_SHIFT
   });
 
@@ -579,13 +588,18 @@ export function renderFyugPoster(
     ctx.save();
     ctx.translate(30, top + i * (h + gap));
     ctx.scale(f, f);
-    drawSlot(ctx, slot, i + 1, assets.icons, 740 / f, h / f, progress ? progress[slot.subject] ?? 0 : undefined);
+    drawSlot(ctx, slot, unordered ? 0 : i + 1, assets.icons, 740 / f, h / f, progress ? progress[slot.subject] ?? 0 : undefined);
     ctx.restore();
   });
 
   if (events.length) drawEventsFooter(ctx, events, H - 26, nextLabel, assets.icons, daysLeft, then);
 
   ctx.restore();
+}
+
+// "3 SUBJECTS  •  ANY ORDER" for an orderless day.
+function daySubjects(slots: Slot[]): string {
+  return `${slots.length} ${slots.length === 1 ? 'SUBJECT' : 'SUBJECTS'}  •  ANY ORDER`;
 }
 
 // "5 HOURS  •  9:30 – 3:30" from the first start to the last end time.

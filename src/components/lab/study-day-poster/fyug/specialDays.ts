@@ -5,6 +5,7 @@ import type { Slot } from './fyugData';
 
 export interface SpecialDay {
   subtitle?: string; // header bar text; empty = the usual "n HOURS • start – end"
+  unordered?: boolean; // subjects known, but no fixed order or timings: cards show "ANY ORDER" and no times
   slots: Slot[];
 }
 

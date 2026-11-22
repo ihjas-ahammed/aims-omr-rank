@@ -117,6 +117,7 @@ export default function FyugTimetable({ onBack }: FyugTimetableProps) {
         assets,
         height: posterH,
         subtitle: special?.subtitle?.trim() || undefined,
+        unordered: !!special?.unordered,
         nextLabel: isNext,
         daysLeft,
         progress: showProgress ? fractions : undefined

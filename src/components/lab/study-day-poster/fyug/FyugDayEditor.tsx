@@ -64,7 +64,7 @@ export default function FyugDayEditor({ day, onStart, onStartPracticals, onChang
     const last = day.slots[day.slots.length - 1];
     onChange({
       ...day,
-      slots: [...day.slots, { subject: last?.subject ?? 'thermo', teacher: last?.teacher ?? '', time: HOUR_TIMES[day.slots.length] ?? '' }]
+      slots: [...day.slots, { subject: last?.subject ?? 'thermo', teacher: last?.teacher ?? '', time: day.unordered ? '' : HOUR_TIMES[day.slots.length] ?? '' }]
     });
   };
 
@@ -86,6 +86,24 @@ export default function FyugDayEditor({ day, onStart, onStartPracticals, onChang
         onChange={(e) => onChange({ ...day, subtitle: e.target.value })}
       />
 
+      <label className="flex items-start gap-2 mt-3 text-xs text-slate-300 cursor-pointer">
+        <input
+          type="checkbox"
+          className="mt-0.5"
+          checked={!!day.unordered}
+          onChange={(e) =>
+            onChange({
+              ...day,
+              unordered: e.target.checked,
+              slots: e.target.checked ? day.slots.map((s) => ({ ...s, time: '' })) : day.slots
+            })
+          }
+        />
+        <span>
+          Orderless day <span className="text-slate-500">— subjects known, order and timings not fixed (no hour numbers or times)</span>
+        </span>
+      </label>
+
       <div className="mt-4 space-y-3">
         {day.slots.map((slot, i) => (
           <div key={i} className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
@@ -94,7 +112,7 @@ export default function FyugDayEditor({ day, onStart, onStartPracticals, onChang
                 className="px-2 py-0.5 rounded-md text-[10px] font-bold text-white"
                 style={{ backgroundColor: SUBJECTS[slot.subject].accent }}
               >
-                HOUR {i + 1}
+                {day.unordered ? `SUBJECT ${i + 1}` : `HOUR ${i + 1}`}
               </span>
               <div className="ml-auto flex items-center gap-0.5 text-slate-400">
                 <button onClick={() => move(i, -1)} disabled={i === 0} className="p-2 md:p-1 rounded hover:bg-slate-800 disabled:opacity-30" aria-label="Move up">
@@ -151,13 +169,15 @@ export default function FyugDayEditor({ day, onStart, onStartPracticals, onChang
                   </option>
                 ))}
               </select>
-              <input
-                className={input}
-                value={slot.time ?? ''}
-                list="fyug-times"
-                placeholder="Time"
-                onChange={(e) => setSlot(i, { time: e.target.value })}
-              />
+              {!day.unordered && (
+                <input
+                  className={input}
+                  value={slot.time ?? ''}
+                  list="fyug-times"
+                  placeholder="Time"
+                  onChange={(e) => setSlot(i, { time: e.target.value })}
+                />
+              )}
               <input
                 className={input}
                 value={slot.room ?? ''}
@@ -189,7 +209,7 @@ export default function FyugDayEditor({ day, onStart, onStartPracticals, onChang
         className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 md:py-2 text-xs font-bold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition disabled:opacity-40"
       >
         <Plus className="w-3.5 h-3.5" />
-        <span>Add hour</span>
+        <span>{day.unordered ? 'Add subject' : 'Add hour'}</span>
       </button>
       <p className="text-[11px] text-slate-500 mt-3">A note shows in place of the teacher. Saved in this browser, for this date only.</p>
 
