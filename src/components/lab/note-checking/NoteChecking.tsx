@@ -135,6 +135,8 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   const [leaveByDay, setLeaveByDay] = useState<Record<string, Record<string, LeaveVerifiedEntry>>>({});
   const [leavePending, setLeavePending] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfAll, setPdfAll] = useState(false);
+  const pdfTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const lastTap = useRef<{ id: string; t: number }>({ id: '', t: 0 });
   const [listening, setListening] = useState(false);
@@ -594,12 +596,13 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   // The printed list shows only the filtered subject when a subject filter is on.
   const printSubjects = subjectFilter === 'all' ? batchSubjects : batchSubjects.filter(x => x.id === subjectFilter);
 
-  const downloadPdf = (mode: 'student' | 'batch' | 'partial' | 'leave') => {
+  const downloadPdf = (mode: 'student' | 'batch' | 'partial' | 'leave', all = false) => {
+    setPdfAll(all && mode === 'batch');
     setPrintMode(mode);
     setPdfBusy(true);
     setTimeout(async () => {
       try {
-        const who = mode === 'student' ? selected?.name.replace(/\s+/g, '-') : batch;
+        const who = mode === 'student' ? selected?.name.replace(/\s+/g, '-') : all && mode === 'batch' ? 'all-batches' : batch;
         await exportSheetToPdf(
           sheetRef.current!,
           `Note-checking_${who}${mode === 'partial' ? '_partial' : mode === 'leave' ? '_leave-verified' : ''}_${mode === 'leave' ? leaveDay : new Date().toISOString().slice(0, 10)}.pdf`,
@@ -610,6 +613,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
       } finally {
         setPrintMode(null);
         setPdfBusy(false);
+        setPdfAll(false);
       }
     }, 300);
   };
@@ -668,10 +672,22 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
       ) : (
         <>
           <button
-            onClick={() => downloadPdf(listView === 'partial' ? 'partial' : listView === 'leave' ? 'leave' : 'batch')}
+            onClick={() => {
+              if (listView !== 'students') return downloadPdf(listView === 'partial' ? 'partial' : 'leave');
+              // Double-tap downloads every batch in one file; a single tap (after a short wait) just this batch.
+              if (pdfTimer.current) {
+                clearTimeout(pdfTimer.current);
+                pdfTimer.current = null;
+                return downloadPdf('batch', true);
+              }
+              pdfTimer.current = setTimeout(() => {
+                pdfTimer.current = null;
+                downloadPdf('batch');
+              }, 300);
+            }}
             disabled={pdfBusy || loading || (listView === 'students' && query.trim() !== '') || (listView === 'partial' && partialGroups.length === 0) || (listView === 'leave' && leaveRows.ok.length === 0)}
             className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 disabled:opacity-40"
-            title="Download the current list as PDF"
+            title="Download the current list as PDF (double-tap: all batches)"
           >
             {pdfBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}<span className="hidden sm:inline">PDF</span>
           </button>
@@ -1238,7 +1254,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
               </h1>
             </div>
             <div className="text-right text-[13px] text-gray-600">
-              {printMode === 'batch' || printMode === 'partial' || printMode === 'leave' ? `Batch ${batch} • ${gradeLabel(batch)}` : selected ? `${selected.batch} • ${gradeLabel(selected.batch)}` : ''}
+              {printMode === 'batch' && pdfAll ? 'All batches' : printMode === 'batch' || printMode === 'partial' || printMode === 'leave' ? `Batch ${batch} • ${gradeLabel(batch)}` : selected ? `${selected.batch} • ${gradeLabel(selected.batch)}` : ''}
               <br />
               Printed {printedOn}
             </div>
@@ -1360,34 +1376,47 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
             </>
           )}
 
-          {printMode === 'batch' && (
+          {printMode === 'batch' &&
+            (pdfAll ? NOTE_BATCHES : [batch]).map((b, bi) => {
+              const bSubjects = getSubjectsForBatch(b);
+              const sf = pdfAll ? 'all' : subjectFilter;
+              const inc = pdfAll ? false : incompleteOnly;
+              const bPrintSubjects = sf === 'all' ? bSubjects : bSubjects.filter(x => x.id === sf);
+              const list = pdfAll ? students.filter(x => x.batch === b) : filtered;
+              return (
+                <React.Fragment key={b}>
             <>
+              {pdfAll && (
+                <div className="np-avoid text-[13px] font-extrabold bg-gray-200 px-2 py-[3px] mb-1">
+                  Batch {b} • {gradeLabel(b)}
+                </div>
+              )}
               <p className="text-[10px] leading-tight text-gray-700 mb-2">
-                <b>{filtered.length} students</b>
-                {subjectFilter !== 'all' || incompleteOnly
-                  ? ` (${incompleteOnly ? 'incomplete only' : 'filtered'}${
-                      subjectFilter !== 'all' ? ` • ${batchSubjects.find(x => x.id === subjectFilter)?.name}` : ''
+                <b>{list.length} students</b>
+                {sf !== 'all' || inc
+                  ? ` (${inc ? 'incomplete only' : 'list'}${
+                      sf !== 'all' ? ` • ${bSubjects.find(x => x.id === sf)?.name}` : ''
                     })`
                   : ''}
-                {' • '}Bar = chapters completed of all chapters in the subject. Numbers = <b>missing chapters</b>: ones {idealOf(batch) ? `the ideal student (${idealOf(batch)!.name})` : 'most of the batch'} has completed that this student has not (✓ = none missing). Subject colour: green none missing,
-                yellow up to half missing, red more than half. {subjectFilter !== 'all' ? 'Done column: chapters done in this subject.' : <>Done column: class avg <b>{(batchAvg[batch] || 0).toFixed(1)}</b>.</>}
+                {' • '}Bar = chapters completed of all chapters in the subject. Numbers = <b>missing chapters</b>: ones {idealOf(b) ? `the ideal student (${idealOf(b)!.name})` : 'most of the batch'} has completed that this student has not (✓ = none missing). Subject colour: green none missing,
+                yellow up to half missing, red more than half. {sf !== 'all' ? 'Done column: chapters done in this subject.' : <>Done column: class avg <b>{(batchAvg[b] || 0).toFixed(1)}</b>.</>}
               </p>
-              {Array.from({ length: Math.ceil(filtered.length / PRINT_ROWS_PER_PAGE) }, (_, page) => {
-                const rows = filtered.slice(page * PRINT_ROWS_PER_PAGE, (page + 1) * PRINT_ROWS_PER_PAGE);
-                const totalCh = batchSubjects.reduce((n, x) => n + x.chapters.length, 0);
+              {Array.from({ length: Math.ceil(list.length / PRINT_ROWS_PER_PAGE) }, (_, page) => {
+                const rows = list.slice(page * PRINT_ROWS_PER_PAGE, (page + 1) * PRINT_ROWS_PER_PAGE);
+                const totalCh = bSubjects.reduce((n, x) => n + x.chapters.length, 0);
                 return (
                   <table
                     key={page}
-                    className={`w-full border-collapse text-[10px] ${page > 0 ? 'np-force-break' : ''}`}
+                    className={`w-full border-collapse text-[10px] ${page > 0 || (pdfAll && bi > 0) ? 'np-force-break' : ''}`}
                     style={{
                       tableLayout: 'fixed',
-                      breakAfter: page < Math.ceil(filtered.length / PRINT_ROWS_PER_PAGE) - 1 ? 'page' : 'auto'
+                      breakAfter: page < Math.ceil(list.length / PRINT_ROWS_PER_PAGE) - 1 || (pdfAll && bi < NOTE_BATCHES.length - 1) ? 'page' : 'auto'
                     }}
                   >
                     <colgroup>
                       <col style={{ width: 24 }} />
                       <col style={{ width: 140 }} />
-                      {printSubjects.map(sub => (
+                      {bPrintSubjects.map(sub => (
                         <col key={sub.id} />
                       ))}
                       <col style={{ width: 40 }} />
@@ -1397,7 +1426,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                       <tr className="bg-black text-white text-left" style={{ height: 18 }}>
                         <th className="pl-1.5">#</th>
                         <th>Student</th>
-                        {printSubjects.map(sub => (
+                        {bPrintSubjects.map(sub => (
                           <th key={sub.id} className="px-1.5">
                             {sub.name} <span className="font-normal opacity-70">· missing</span>
                           </th>
@@ -1412,9 +1441,9 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                         const count = sum?.count || 0;
                         const status = overallStatus(s, count);
                         const stats = (statsOf[s.enrollNumber] || []).filter(
-                          st => subjectFilter === 'all' || st.id === subjectFilter
+                          st => sf === 'all' || st.id === sf
                         );
-                        const only = subjectFilter !== 'all' ? stats[0] : undefined;
+                        const only = sf !== 'all' ? stats[0] : undefined;
                         return (
                           <tr
                             key={s.enrollNumber}
@@ -1462,7 +1491,9 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                 );
               })}
             </>
-          )}
+                </React.Fragment>
+              );
+            })}
         </div>
       )}
     </>
