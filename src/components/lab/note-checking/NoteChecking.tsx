@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Search, Check, RefreshCw, Loader2, Users, Printer, Download, Mic, MicOff, Star } from 'lucide-react';
+import { ArrowLeft, Search, Check, RefreshCw, Loader2, Users, Printer, Download, Mic, MicOff, Star, Settings } from 'lucide-react';
 import {
   AttendanceStudent,
   NoteProgressMap,
@@ -21,6 +21,8 @@ import {
 import { getSubjectsForBatch } from '../../../data/ncertSyllabusData';
 import { exportSheetToPdf } from './pdfExport';
 import { matchChapter } from './voiceMatch';
+import VoiceSettingsPanel from './VoiceSettingsPanel';
+import { VoiceSettings, loadVoiceSettings, saveVoiceSettings, speakText } from './voiceSettings';
 
 // Print layout: portrait A4 with a fixed number of students per page, one single-line row each.
 const PRINT_ROWS_PER_PAGE = 50;
@@ -141,6 +143,15 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   const [interim, setInterim] = useState('');
   const [hearing, setHearing] = useState(false);
   const recogRef = useRef<any>(null);
+  const pausedRef = useRef(false);
+  const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>(loadVoiceSettings);
+  const [showVoiceSettings, setShowVoiceSettings] = useState(false);
+  const voiceSettingsRef = useRef(voiceSettings);
+  voiceSettingsRef.current = voiceSettings;
+  const updateVoiceSettings = (v: VoiceSettings) => {
+    setVoiceSettings(v);
+    saveVoiceSettings(v);
+  };
 
   useEffect(() => {
     document.title = 'Note Checking • AIMS PLUS';
@@ -293,6 +304,21 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   };
 
   // Voice tick: say a chapter name of the open subject; add "partial" to mark it partially checked.
+  // Speaks the mapped result (not the raw transcript); the mic is paused meanwhile so it does not hear itself.
+  const speakFeedback = (text: string, failure = false) => {
+    const st = voiceSettingsRef.current;
+    if (!st.ttsEnabled || (failure && !st.ttsFailures)) return;
+    const r = recogRef.current;
+    pausedRef.current = true;
+    try { r?.stop(); } catch { /* not running */ }
+    speakText(text, st, () => {
+      pausedRef.current = false;
+      if (r && recogRef.current === r) {
+        try { r.start(); } catch { /* onend will restart */ }
+      }
+    });
+  };
+
   const handleSpeech = async (text: string) => {
     if (!selected) return;
     const sub = subjects.find(x => x.id === activeSubject);
@@ -301,6 +327,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     if (!m.chapterId) {
       setVoiceOk('err');
       navigator.vibrate?.([60, 40, 60]);
+      speakFeedback(m.reason === 'ambiguous' ? 'Unclear' : 'Not found', true);
       setVoiceMsg(`“${text}” — ${m.reason === 'ambiguous' ? 'matches more than one chapter' : 'no match in ' + sub.name}`);
       return;
     }
@@ -320,6 +347,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     }
     setVoiceOk('ok');
     navigator.vibrate?.(40);
+    speakFeedback(`${ch.title}${m.partial ? ', partial' : ''}${cur?.done && !m.partial ? ', already done' : ''}`);
     setVoiceMsg(`${m.partial ? '½ ' : '✓ '}${ch.number}. ${ch.title}${cur?.done ? ' (already done)' : ''}`);
   };
 
@@ -331,6 +359,8 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   const stopListening = () => {
     recogRef.current?.stop();
     recogRef.current = null;
+    pausedRef.current = false;
+    window.speechSynthesis?.cancel();
     setListening(false);
     setInterim('');
     setHearing(false);
@@ -344,7 +374,9 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     const r = new SR();
     r.continuous = true;
     r.interimResults = true;
-    r.lang = 'en-IN';
+    const st = voiceSettingsRef.current;
+    r.lang = st.lang;
+    if (st.offlineStt) r.processLocally = true;
     r.onresult = (e: any) => {
       let live = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -356,14 +388,17 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     r.onspeechstart = () => setHearing(true);
     r.onspeechend = () => setHearing(false);
     r.onerror = (e: any) => {
-      if (e.error !== 'no-speech' && e.error !== 'aborted') {
+      if (e.error === 'language-not-supported' && voiceSettingsRef.current.offlineStt) {
+        setVoiceMsg('Offline pack for this language is missing — open Voice settings → Check / download pack');
+        stopListening();
+      } else if (e.error !== 'no-speech' && e.error !== 'aborted') {
         setVoiceMsg(`Voice error: ${e.error}`);
         if (e.error === 'not-allowed') stopListening();
       }
     };
     // Chrome ends the session after silence; restart while the button is on.
     r.onend = () => {
-      if (recogRef.current === r) {
+      if (recogRef.current === r && !pausedRef.current) {
         try { r.start(); } catch { /* already running */ }
       }
     };
@@ -1011,7 +1046,15 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                   {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
                   {listening ? 'Stop voice' : 'Voice tick'}
                 </button>
+                <button
+                  onClick={() => setShowVoiceSettings(v => !v)}
+                  aria-label="Voice settings"
+                  className={`px-2.5 py-2 rounded-lg border ${showVoiceSettings ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'bg-white border-gray-200 text-gray-600'}`}
+                >
+                  <Settings className="w-4 h-4" />
+                </button>
               </div>
+              {showVoiceSettings && <VoiceSettingsPanel value={voiceSettings} onChange={updateVoiceSettings} />}
               {(listening || voiceMsg) && (
                 <div className="mb-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
                   {listening && (
