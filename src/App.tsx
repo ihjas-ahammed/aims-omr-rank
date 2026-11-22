@@ -348,7 +348,10 @@ function resolveInitialView(): ViewState {
     path === '/study-day-posters/plus-two-phy3' ||
     path === '/study-day-posters/plus-two-phy3/' ||
     path === '/study-day-poster/plus-two-phy3' ||
-    path === '/study-day-poster/plus-two-phy3/'
+    path === '/study-day-poster/plus-two-phy3/' ||
+    path === '/study-day-posters/plus2-chem' ||
+    path === '/study-day-posters/plus2-chem/' ||
+    path === '/study-day-poster/plus2-chem'
   ) {
     return 'plus-two-phy-poster';
   }

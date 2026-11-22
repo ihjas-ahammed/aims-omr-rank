@@ -1,5 +1,6 @@
 import { PHY_CYCLE_LABEL, PHY_TIMETABLE } from './phyData';
 import { MATH_CYCLE_LABEL, MATH_TIMETABLE } from './mathData';
+import { CHEM_CYCLE_LABEL, CHEM_TIMETABLE } from './chemData';
 
 // Plus Two study schedule: one subject per week (a "cycle"), a chapter or two per day and an exam on the last day.
 
@@ -53,6 +54,14 @@ export const PLUS_TWO_CYCLES: PlusTwoCycle[] = [
     tint: '#e3f9e1',
     examIcon: 'math_exam',
     days: MATH_TIMETABLE
+  },
+  {
+    subject: 'CHEMISTRY',
+    label: CHEM_CYCLE_LABEL,
+    accent: '#7c3aed',
+    tint: '#f1e9fd',
+    examIcon: 'chem_exam',
+    days: CHEM_TIMETABLE
   }
 ];
 

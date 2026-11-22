@@ -15,6 +15,7 @@ import {
 } from "../biology/biologyPosterRenderer";
 import { PHY_HERO, PHY_ICONS } from "./phyIcons";
 import { MATH_ICONS } from "./mathIcons";
+import { CHEM_ICONS } from "./chemIcons";
 import {
   isExamDay,
   type PlusTwoChapter,
@@ -38,6 +39,7 @@ export async function loadPlusTwoIcons(): Promise<Record<string, IconImage>> {
   const entries: [string, { viewBox: string; svg: string }][] = [
     ...Object.entries(PHY_ICONS),
     ...Object.entries(MATH_ICONS),
+    ...Object.entries(CHEM_ICONS),
     ["phy_hero", PHY_HERO],
   ];
   const loaded = await Promise.all(
