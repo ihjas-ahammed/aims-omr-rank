@@ -6,6 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 AIMS Plus Lab is a React application for evaluating OMR (Optical Mark Recognition) sheets using Google's Gemini AI. It processes exam answer sheets, extracts student names and answers, calculates scores, and generates ranklists with topic-wise analysis.
 
+## Git
+
+There is only one branch: `main`. Never create branches (no feature branches, no worktree branches); commit and push directly to `main`.
+
 ## Commands
 
 ```bash
