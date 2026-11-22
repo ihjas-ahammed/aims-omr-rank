@@ -91,35 +91,29 @@ function drawSlot(
   ctx.fillStyle = sub.tint;
   ctx.fill();
 
-  // Hour badge
-  const bw = 78;
-  roundRectPath(ctx, x + 20, y + 20, bw, h - 40, 14);
-  ctx.fillStyle = sub.accent;
-  ctx.fill();
-  ctx.fillStyle = '#ffffff';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'alphabetic';
-  if (slot.badge) {
-    ctx.font = `900 26px ${FONT}`;
-    ctx.fillText(slot.badge, x + 20 + bw / 2, y + h / 2 + 9);
-  } else if (hour === 0) {
-    // Orderless day: no hour number, the badge says the subject can come in any order.
-    ctx.font = `900 28px ${FONT}`;
-    ctx.fillText('ANY', x + 20 + bw / 2, y + h / 2 + 2);
-    ctx.font = `700 12px ${FONT}`;
-    setLetterSpacing(ctx, 1.5);
-    ctx.fillText('ORDER', x + 20 + bw / 2 + 1, y + h / 2 + 24);
-    setLetterSpacing(ctx, 0);
-  } else {
-    ctx.font = `700 14px ${FONT}`;
-    setLetterSpacing(ctx, 2);
-    ctx.fillText('HOUR', x + 20 + bw / 2 + 1, y + h / 2 - 8);
-    setLetterSpacing(ctx, 0);
-    ctx.font = `900 46px ${FONT}`;
-    ctx.fillText(String(hour), x + 20 + bw / 2, y + h / 2 + 34);
+  // Hour badge (an orderless day has none)
+  if (hour !== 0) {
+    const bw = 78;
+    roundRectPath(ctx, x + 20, y + 20, bw, h - 40, 14);
+    ctx.fillStyle = sub.accent;
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    if (slot.badge) {
+      ctx.font = `900 26px ${FONT}`;
+      ctx.fillText(slot.badge, x + 20 + bw / 2, y + h / 2 + 9);
+    } else {
+      ctx.font = `700 14px ${FONT}`;
+      setLetterSpacing(ctx, 2);
+      ctx.fillText('HOUR', x + 20 + bw / 2 + 1, y + h / 2 - 8);
+      setLetterSpacing(ctx, 0);
+      ctx.font = `900 46px ${FONT}`;
+      ctx.fillText(String(hour), x + 20 + bw / 2, y + h / 2 + 34);
+    }
   }
 
-  drawIconContain(ctx, icons[sub.icon], x + 106, y + 16, 110, h - 32);
+  drawIconContain(ctx, icons[sub.icon], hour === 0 ? x + 62 : x + 106, y + 16, 110, h - 32);
 
   // Text block
   const tx = x + 240;
@@ -597,9 +591,9 @@ export function renderFyugPoster(
   ctx.restore();
 }
 
-// "3 SUBJECTS  •  ANY ORDER" for an orderless day.
+// "3 SUBJECTS" for an orderless day.
 function daySubjects(slots: Slot[]): string {
-  return `${slots.length} ${slots.length === 1 ? 'SUBJECT' : 'SUBJECTS'}  •  ANY ORDER`;
+  return `${slots.length} ${slots.length === 1 ? 'SUBJECT' : 'SUBJECTS'}`;
 }
 
 // "5 HOURS  •  9:30 – 3:30" from the first start to the last end time.
