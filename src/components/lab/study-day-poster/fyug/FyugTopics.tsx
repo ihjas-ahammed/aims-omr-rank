@@ -10,6 +10,7 @@ import {
   onProgressChange,
   overall,
   saveProgress,
+  startProgressSync,
   totalUnits,
   unitPercent,
   type Progress
@@ -23,7 +24,10 @@ export default function FyugTopics() {
   const [progress, setProgress] = useState<Progress>(loadProgress);
   const [open, setOpen] = useState<SubjectKey | null>(SUBJECT_KEYS[0]);
 
-  useEffect(() => onProgressChange(() => setProgress(loadProgress())), []);
+  useEffect(() => {
+    startProgressSync();
+    return onProgressChange(() => setProgress(loadProgress()));
+  }, []);
 
   const total = useMemo(() => overall(progress), [progress]);
 

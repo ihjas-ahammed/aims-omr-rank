@@ -4,7 +4,7 @@ import { POSTER_H, POSTER_SCALE, POSTER_W } from '../posterRenderer';
 import { loadFyugIcons, renderFyugPoster, type FyugAssets } from './fyugPosterRenderer';
 import { SUBJECTS, defaultDate, getDaySubtitle, getPosterHeight, getSlots } from './fyugData';
 import { daysUntil, getEventsOn, getUpcomingEventDays } from './calendar';
-import { SUBJECT_KEYS, formatUnits, loadProgress, onProgressChange, overall, subjectFraction, type Progress } from './progress';
+import { SUBJECT_KEYS, formatUnits, loadProgress, onProgressChange, overall, startProgressSync, subjectFraction, type Progress } from './progress';
 import FyugTopics from './FyugTopics';
 import FyugDayEditor, { practicalTitle } from './FyugDayEditor';
 import { loadSpecialDays, saveSpecialDays, specialDayHeight, type SpecialDay } from './specialDays';
@@ -32,7 +32,10 @@ export default function FyugTimetable({ onBack }: FyugTimetableProps) {
   const [progress, setProgress] = useState<Progress>(loadProgress);
   const [showProgress, setShowProgress] = useState(() => localStorage.getItem(SHOW_PROGRESS_KEY) !== '0');
 
-  useEffect(() => onProgressChange(() => setProgress(loadProgress())), []);
+  useEffect(() => {
+    startProgressSync();
+    return onProgressChange(() => setProgress(loadProgress()));
+  }, []);
 
   const switchTab = (next: 'poster' | 'topics') => {
     setTab(next);
