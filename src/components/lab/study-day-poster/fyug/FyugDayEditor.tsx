@@ -138,13 +138,19 @@ export default function FyugDayEditor({ day, onStart, onStartPracticals, onChang
                 placeholder="Title (instead of subject name)"
                 onChange={(e) => setSlot(i, { title: e.target.value })}
               />
-              <input
+              <select
                 className={`${input} col-span-2`}
                 value={slot.teacher}
-                list="fyug-teachers"
-                placeholder="Teacher"
                 onChange={(e) => setSlot(i, { teacher: e.target.value })}
-              />
+                aria-label="Teacher"
+              >
+                <option value="">No teacher</option>
+                {[...TEACHERS, ...(slot.teacher && !TEACHERS.includes(slot.teacher) ? [slot.teacher] : [])].map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
               <input
                 className={input}
                 value={slot.time ?? ''}
@@ -187,11 +193,6 @@ export default function FyugDayEditor({ day, onStart, onStartPracticals, onChang
       </button>
       <p className="text-[11px] text-slate-500 mt-3">A note shows in place of the teacher. Saved in this browser, for this date only.</p>
 
-      <datalist id="fyug-teachers">
-        {TEACHERS.map((t) => (
-          <option key={t} value={t} />
-        ))}
-      </datalist>
       <datalist id="fyug-rooms">
         {ROOMS.map((r) => (
           <option key={r} value={r} />
