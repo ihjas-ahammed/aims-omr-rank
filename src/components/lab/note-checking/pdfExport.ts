@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 
 // Renders an on-screen A4 sheet to a multi-page PDF. Pages are cut at row boundaries (elements marked
 // `.np-avoid`, `tr`, or `.np-force-break` for a forced new page) so no row is split in half.
