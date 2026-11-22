@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowDown, ArrowUp, Plus, RotateCcw, Trash2 } from 'lucide-react';
-import { HOUR_TIMES, ROOMS, SUBJECTS, TEACHERS, type Slot, type SubjectKey } from './fyugData';
+import { HOUR_TIMES, SUBJECTS, TEACHERS, type Slot, type SubjectKey } from './fyugData';
 import { MAX_SLOTS, type SpecialDay } from './specialDays';
 
 interface FyugDayEditorProps {
@@ -17,7 +17,7 @@ const input =
 
 export const practicalTitle = (subject: SubjectKey) => `${SUBJECTS[subject].name} Practical`;
 
-// Special timetable editor: replace the hours of one date (subject, teacher, time, room, or a free title) when
+// Special timetable editor: replace the hours of one date (subject, teacher, time, or a free title) when
 // the timetable changes at short notice, e.g. a day with only practicals. The poster redraws on every edit.
 export default function FyugDayEditor({ day, onStart, onStartPracticals, onChange, onReset }: FyugDayEditorProps) {
   if (!day) {
@@ -180,13 +180,6 @@ export default function FyugDayEditor({ day, onStart, onStartPracticals, onChang
               )}
               <input
                 className={input}
-                value={slot.room ?? ''}
-                list="fyug-rooms"
-                placeholder="Room"
-                onChange={(e) => setSlot(i, { room: e.target.value })}
-              />
-              <input
-                className={input}
                 value={slot.note ?? ''}
                 placeholder="Note"
                 onChange={(e) => setSlot(i, { note: e.target.value })}
@@ -213,11 +206,6 @@ export default function FyugDayEditor({ day, onStart, onStartPracticals, onChang
       </button>
       <p className="text-[11px] text-slate-500 mt-3">A note shows in place of the teacher. Saved in this browser, for this date only.</p>
 
-      <datalist id="fyug-rooms">
-        {ROOMS.map((r) => (
-          <option key={r} value={r} />
-        ))}
-      </datalist>
       <datalist id="fyug-times">
         {HOUR_TIMES.map((t) => (
           <option key={t} value={t} />

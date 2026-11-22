@@ -76,7 +76,7 @@ function drawSlot(
   // Drawn at the origin; renderFyugPoster translates (and, for short cards, scales) the context into place.
   const x = 0;
   const y = 0;
-  // Height the text block and the time/room stack centre in; the progress bar takes the strip below it.
+  // Height the text block and the time pill centre in; the progress bar takes the strip below it.
   const ch = progress === undefined ? h : h - PROGRESS_ZONE;
 
   roundRectPath(ctx, x, y, w, h, 24);
@@ -144,7 +144,7 @@ function drawSlot(
   }
   by += titleGap;
   ctx.fillStyle = sub.accent;
-  // The note / teacher line shrinks to stay clear of the time and room column.
+  // The note / teacher line shrinks to stay clear of the time column.
   if (slot.note) {
     let ns = 22;
     for (; ns > 15; ns--) {
@@ -164,11 +164,9 @@ function drawSlot(
     setLetterSpacing(ctx, 0);
   }
 
-  // Right column: time pill (with a small clock) above the navy room tag, centred as a stack.
+  // Right column: time pill (with a small clock) centred.
   const pillH = 38;
-  const roomH = progress === undefined ? 44 : 38;
-  const stackGap = progress === undefined ? 10 : 8;
-  const stackH = (slot.time ? pillH : 0) + (slot.time && slot.room ? stackGap : 0) + (slot.room ? roomH : 0);
+  const stackH = slot.time ? pillH : 0;
   let sy = y + (ch - stackH) / 2;
   const colRight = x + w - 20;
 
@@ -188,21 +186,6 @@ function drawSlot(
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(slot.time, px + 36, sy + pillH / 2 + 1);
-    ctx.textBaseline = 'alphabetic';
-    sy += pillH + stackGap;
-  }
-
-  if (slot.room) {
-    ctx.font = `800 26px ${FONT}`;
-    const pw = ctx.measureText(slot.room).width + 40;
-    const px = colRight - pw;
-    roundRectPath(ctx, px, sy, pw, roomH, roomH / 2);
-    ctx.fillStyle = NAVY;
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(slot.room, px + pw / 2, sy + roomH / 2 + 1);
     ctx.textBaseline = 'alphabetic';
   }
 
@@ -246,16 +229,12 @@ function drawClock(ctx: CanvasRenderingContext2D, cx: number, cy: number, color:
   ctx.lineCap = 'butt';
 }
 
-// Width of the right-hand column (widest of the time pill and room tag) so the subject name can avoid it.
+// Width of the right-hand column (the time pill) so the subject name can avoid it.
 function rightColumnWidth(ctx: CanvasRenderingContext2D, slot: Slot): number {
   let wMax = 0;
   if (slot.time) {
     ctx.font = `800 20px ${FONT}`;
     wMax = Math.max(wMax, ctx.measureText(slot.time).width + 52);
-  }
-  if (slot.room) {
-    ctx.font = `800 26px ${FONT}`;
-    wMax = Math.max(wMax, ctx.measureText(slot.room).width + 40);
   }
   return wMax;
 }

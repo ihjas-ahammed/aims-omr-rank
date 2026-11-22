@@ -1,6 +1,5 @@
 // Weekly timetable transcribed from the FYUG timetable screenshot (Mon–Fri, Hour 1–5).
 // Full subject titles come from the Sixth Semester academic calendar (the screenshot truncates them with "…").
-// A room is only set where the screenshot showed one.
 
 export type SubjectKey = 'thermo' | 'nuclear' | 'electronics' | 'electrical' | 'nano' | 'opto';
 
@@ -23,7 +22,6 @@ export const SUBJECTS: Record<SubjectKey, Subject> = {
 export interface Slot {
   subject: SubjectKey;
   teacher: string;
-  room?: string;
   time?: string; // filled in by getSlots, e.g. "9:30 – 10:30"
   // Only for one-off days (see DATE_OVERRIDES): replaces the subject name, the teacher line and the "HOUR n" badge.
   title?: string;
@@ -39,47 +37,45 @@ const SAFEEQUE = 'C A SAFEEQUE';
 const NAJIYA = 'NAJIYA K M';
 const RAHOOF = 'ABDUL RAHOOF.K.A';
 const SHANID = 'MOHD SHANID N A';
-const N101 = 'N 101';
 
 export const TEACHERS = [SAFEEQUE, NAJIYA, RAHOOF, SHANID];
-export const ROOMS = [N101];
 export const HOUR_TIMES = TIMES;
 
 // Index = weekday number (1 = Monday … 5 = Friday); each day lists Hour 1 … Hour 5.
 export const WEEK: Record<number, Slot[]> = {
   1: [
-    { subject: 'thermo', teacher: SAFEEQUE, room: N101 },
-    { subject: 'nuclear', teacher: NAJIYA, room: N101 },
-    { subject: 'electronics', teacher: RAHOOF, room: N101 },
-    { subject: 'electronics', teacher: RAHOOF, room: N101 },
-    { subject: 'electronics', teacher: RAHOOF, room: N101 }
+    { subject: 'thermo', teacher: SAFEEQUE },
+    { subject: 'nuclear', teacher: NAJIYA },
+    { subject: 'electronics', teacher: RAHOOF },
+    { subject: 'electronics', teacher: RAHOOF },
+    { subject: 'electronics', teacher: RAHOOF }
   ],
   2: [
-    { subject: 'electronics', teacher: RAHOOF, room: N101 },
+    { subject: 'electronics', teacher: RAHOOF },
     { subject: 'nuclear', teacher: SAFEEQUE },
     { subject: 'nano', teacher: SHANID },
     { subject: 'nano', teacher: SHANID },
     { subject: 'electrical', teacher: RAHOOF }
   ],
   3: [
-    { subject: 'electronics', teacher: RAHOOF, room: N101 },
+    { subject: 'electronics', teacher: RAHOOF },
     { subject: 'electrical', teacher: RAHOOF },
-    { subject: 'thermo', teacher: SAFEEQUE, room: N101 },
+    { subject: 'thermo', teacher: SAFEEQUE },
     { subject: 'nano', teacher: SHANID },
     { subject: 'nano', teacher: SHANID }
   ],
   4: [
     { subject: 'opto', teacher: SHANID },
     { subject: 'opto', teacher: SHANID },
-    { subject: 'nuclear', teacher: NAJIYA, room: N101 },
+    { subject: 'nuclear', teacher: NAJIYA },
     { subject: 'thermo', teacher: NAJIYA },
-    { subject: 'thermo', teacher: SAFEEQUE, room: N101 }
+    { subject: 'thermo', teacher: SAFEEQUE }
   ],
   5: [
     { subject: 'electrical', teacher: RAHOOF },
     { subject: 'opto', teacher: SHANID },
     { subject: 'opto', teacher: SHANID },
-    { subject: 'nuclear', teacher: NAJIYA, room: N101 },
+    { subject: 'nuclear', teacher: NAJIYA },
     { subject: 'thermo', teacher: SAFEEQUE }
   ]
 };
