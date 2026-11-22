@@ -552,7 +552,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   const printedOn = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const header = (
-    <div className="flex items-center gap-3 mb-4">
+    <div className="flex items-center gap-2 mb-4">
       {(selected || onBack) && (
         <button
           onClick={selected ? closeStudent : onBack}
@@ -562,12 +562,12 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
           <ArrowLeft className="w-5 h-5" />
         </button>
       )}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 basis-0">
         <h1 className="text-xl font-bold text-gray-900 truncate">{selected ? selected.name : 'Note Checking'}</h1>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 truncate">
           {selected
             ? `${selected.batch} • ${gradeLabel(selected.batch)} • ${doneCount}/${totalChapters} chapters`
-            : 'Tick the chapters whose notes are completed'}
+            : 'Tick completed notes'}
         </p>
       </div>
       {selected ? (
@@ -575,15 +575,15 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
         <button
           onClick={() => downloadPdf('student')}
           disabled={pdfBusy}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 disabled:opacity-40"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 disabled:opacity-40"
         >
-          {pdfBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} PDF
+          {pdfBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}<span className="hidden sm:inline">PDF</span>
         </button>
         <button
           onClick={() => print('student')}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300"
         >
-          <Printer className="w-4 h-4" /> Print
+          <Printer className="w-4 h-4" /> <span className="hidden sm:inline">Print</span>
         </button>
         </>
       ) : (
@@ -591,18 +591,18 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
           <button
             onClick={() => downloadPdf(listView === 'partial' ? 'partial' : 'batch')}
             disabled={pdfBusy || loading || (listView === 'students' && query.trim() !== '') || (listView === 'partial' && partialGroups.length === 0)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 disabled:opacity-40"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 disabled:opacity-40"
             title="Download the current list as PDF"
           >
-            {pdfBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} PDF
+            {pdfBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}<span className="hidden sm:inline">PDF</span>
           </button>
           <button
             onClick={() => print(listView === 'partial' ? 'partial' : 'batch')}
             disabled={loading || (listView === 'students' && query.trim() !== '') || (listView === 'partial' && partialGroups.length === 0)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 disabled:opacity-40"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 disabled:opacity-40"
             title="Print the selected batch"
           >
-            <Printer className="w-4 h-4" /> {listView === 'partial' ? 'Print list' : 'Print batch'}
+            <Printer className="w-4 h-4" /> <span className="hidden sm:inline">{listView === 'partial' ? 'Print list' : 'Print batch'}</span>
           </button>
           <button onClick={() => load(true)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600" aria-label="Reload">
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
