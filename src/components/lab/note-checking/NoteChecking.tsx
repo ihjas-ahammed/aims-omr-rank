@@ -129,6 +129,9 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   const lastTap = useRef<{ id: string; t: number }>({ id: '', t: 0 });
   const [listening, setListening] = useState(false);
   const [voiceMsg, setVoiceMsg] = useState('');
+  const [voiceOk, setVoiceOk] = useState<'ok' | 'err' | ''>('');
+  const [interim, setInterim] = useState('');
+  const [hearing, setHearing] = useState(false);
   const recogRef = useRef<any>(null);
 
   useEffect(() => {
@@ -256,6 +259,8 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     if (!sub) return;
     const m = matchChapter(text, sub.chapters);
     if (!m.chapterId) {
+      setVoiceOk('err');
+      navigator.vibrate?.([60, 40, 60]);
       setVoiceMsg(`“${text}” — ${m.reason === 'ambiguous' ? 'matches more than one chapter' : 'no match in ' + sub.name}`);
       return;
     }
@@ -273,6 +278,8 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
         setError(e?.message || 'Failed to save');
       }
     }
+    setVoiceOk('ok');
+    navigator.vibrate?.(40);
     setVoiceMsg(`${m.partial ? '½ ' : '✓ '}${ch.number}. ${ch.title}${cur?.done ? ' (already done)' : ''}`);
   };
 
@@ -285,6 +292,8 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     recogRef.current?.stop();
     recogRef.current = null;
     setListening(false);
+    setInterim('');
+    setHearing(false);
   };
   const startListening = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -294,13 +303,18 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     }
     const r = new SR();
     r.continuous = true;
-    r.interimResults = false;
+    r.interimResults = true;
     r.lang = 'en-IN';
     r.onresult = (e: any) => {
+      let live = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         if (e.results[i].isFinal) speechRef.current(e.results[i][0].transcript);
+        else live += e.results[i][0].transcript;
       }
+      setInterim(live);
     };
+    r.onspeechstart = () => setHearing(true);
+    r.onspeechend = () => setHearing(false);
     r.onerror = (e: any) => {
       if (e.error !== 'no-speech' && e.error !== 'aborted') {
         setVoiceMsg(`Voice error: ${e.error}`);
@@ -314,7 +328,8 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
       }
     };
     recogRef.current = r;
-    setVoiceMsg('Listening… say a chapter name');
+    setVoiceMsg('');
+    setVoiceOk('');
     setListening(true);
     r.start();
   };
@@ -884,10 +899,21 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                 </button>
               </div>
               {(listening || voiceMsg) && (
-                <p className="text-xs text-gray-600 mb-3 px-1">
-                  {voiceMsg}
-                  {listening && ' • say the chapter name (of the open subject); add “partial” for a partial tick'}
-                </p>
+                <div className="mb-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm">
+                  {listening && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${hearing ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`} />
+                      <span className="min-w-0 truncate">
+                        {interim ? <>Hearing: <b className="text-gray-900">{interim}</b></> : hearing ? 'Hearing…' : 'Listening — say a chapter name, add “partial” for ½'}
+                      </span>
+                    </div>
+                  )}
+                  {voiceMsg && (
+                    <div className={`font-semibold ${listening ? 'mt-1' : ''} ${voiceOk === 'ok' ? 'text-emerald-600' : voiceOk === 'err' ? 'text-red-600' : 'text-gray-600'}`}>
+                      {voiceMsg}
+                    </div>
+                  )}
+                </div>
               )}
               <div className="flex rounded-lg border border-gray-200 bg-white overflow-hidden text-sm font-semibold mb-3 w-fit">
                 {(['subject', 'day'] as const).map(k => (
