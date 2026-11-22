@@ -74,4 +74,4 @@ Data in Realtime Database `note_checking/{enrollNumber}` = `{name, batch, update
 
 ## Backups
 
-Full Realtime Database exports go in `backups/` (gitignored, contains student data): `curl "https://aims-plus-evaluation-default-rtdb.asia-southeast1.firebasedatabase.app/.json?print=pretty"`. Latest: `backups/rtdb_aims-plus-evaluation_2026-11-15_075208.json` (41 MB, 15 top-level nodes), taken before the attendance name-sync work. Firestore is not included. RTDB rules are open (`.read`/`.write` true), so take a backup before any bulk write.
+Full Realtime Database exports go in `backups/` (gitignored, contains student data): `curl "https://aims-plus-evaluation-default-rtdb.asia-southeast1.firebasedatabase.app/.json?print=pretty"`. Latest: `backups/rtdb_aims-plus-evaluation_2026-11-22_152118.json` (43 MB), taken before the note-checking PDF/ideal/voice update. Firestore is not included. RTDB rules are open (`.read`/`.write` true), so take a backup before any bulk write.
