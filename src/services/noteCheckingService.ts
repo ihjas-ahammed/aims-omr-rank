@@ -293,3 +293,26 @@ export async function setIdealStudent(batch: string, enrollNumber: string | null
   if (!rtdb) throw new Error('Firebase is not configured');
   await set(ref(rtdb, `${CONFIG_ROOT}/${batch}`), enrollNumber ? { idealEnroll: enrollNumber } : null);
 }
+
+// "Leave notes verified": one tick per student per calendar day, stored by day so a day's list is a single small read.
+const LEAVE_ROOT = 'note_leave_verified';
+
+export interface LeaveVerifiedEntry {
+  at: string;
+  name: string;
+  batch: string;
+}
+
+export async function fetchLeaveVerified(day: string): Promise<Record<string, LeaveVerifiedEntry>> {
+  if (!rtdb) return {};
+  const snap = await get(ref(rtdb, `${LEAVE_ROOT}/${day}`));
+  return (snap.val() as Record<string, LeaveVerifiedEntry>) || {};
+}
+
+export async function setLeaveVerified(student: AttendanceStudent, day: string, verified: boolean): Promise<void> {
+  if (!rtdb) throw new Error('Firebase is not configured');
+  await set(
+    ref(rtdb, `${LEAVE_ROOT}/${day}/${student.enrollNumber}`),
+    verified ? { at: new Date().toISOString(), name: student.name, batch: student.batch } : null
+  );
+}

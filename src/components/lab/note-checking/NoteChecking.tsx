@@ -13,7 +13,10 @@ import {
   setManyChaptersDone,
   NoteBatchConfig,
   fetchNoteConfig,
-  setIdealStudent
+  setIdealStudent,
+  LeaveVerifiedEntry,
+  fetchLeaveVerified,
+  setLeaveVerified
 } from '../../../services/noteCheckingService';
 import { getSubjectsForBatch } from '../../../data/ncertSyllabusData';
 import { exportSheetToPdf } from './pdfExport';
@@ -119,11 +122,16 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   const [allChapters, setAllChapters] = useState<Record<string, NoteProgressMap>>({});
   const [subjectFilter, setSubjectFilter] = useState<string>('all');
   const [incompleteOnly, setIncompleteOnly] = useState(false);
-  const [printMode, setPrintMode] = useState<'student' | 'batch' | 'partial' | null>(null);
+  const [printMode, setPrintMode] = useState<'student' | 'batch' | 'partial' | 'leave' | null>(null);
   // Partial check mode: tapping a chapter marks it partially checked (not complete) instead of done.
   const [partialMode, setPartialMode] = useState(false);
-  const [listView, setListView] = useState<'students' | 'partial'>('students');
+  const [listView, setListView] = useState<'students' | 'partial' | 'leave'>('students');
   const [config, setConfig] = useState<Record<string, NoteBatchConfig>>({});
+  // Leave notes verified: one tick per student per day; `leaveByDay[day][enroll]`.
+  const today = dayKey(new Date().toISOString());
+  const [leaveDay, setLeaveDay] = useState(today);
+  const [leaveByDay, setLeaveByDay] = useState<Record<string, Record<string, LeaveVerifiedEntry>>>({});
+  const [leavePending, setLeavePending] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const lastTap = useRef<{ id: string; t: number }>({ id: '', t: 0 });
@@ -157,6 +165,38 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    [today, leaveDay].forEach(d => {
+      if (!leaveByDay[d]) fetchLeaveVerified(d).then(m => setLeaveByDay(p => (p[d] ? p : { ...p, [d]: m }))).catch(() => {});
+    });
+  }, [leaveDay]);
+
+  const leaveToday = leaveByDay[today] || {};
+  const toggleLeaveVerified = async (st: AttendanceStudent) => {
+    const on = !leaveToday[st.enrollNumber];
+    const prev = leaveByDay;
+    setLeaveByDay(p => {
+      const d = { ...(p[today] || {}) };
+      if (on) d[st.enrollNumber] = { at: new Date().toISOString(), name: st.name, batch: st.batch };
+      else delete d[st.enrollNumber];
+      return { ...p, [today]: d };
+    });
+    try {
+      await setLeaveVerified(st, today, on);
+    } catch (e: any) {
+      setLeaveByDay(prev);
+      setError(e?.message || 'Failed to save');
+    }
+  };
+
+  const leaveDayMap = leaveByDay[leaveDay] || {};
+  const leaveRows = useMemo(() => {
+    const inBatch = students.filter(x => x.batch === batch);
+    const ok = inBatch.filter(x => leaveDayMap[x.enrollNumber]).sort((a, b) => a.name.localeCompare(b.name));
+    const pending = inBatch.filter(x => !leaveDayMap[x.enrollNumber]);
+    return { ok, pending };
+  }, [students, batch, leaveDayMap]);
 
   const subjects = useMemo(() => (selected ? getSubjectsForBatch(selected.batch) : []), [selected]);
   const totalChapters = useMemo(() => subjects.reduce((n, s) => n + s.chapters.length, 0), [subjects]);
@@ -517,7 +557,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   }, [students, allChapters, batch]);
   const partialStudentCount = new Set(partialGroups.flatMap(g => g.students.map(x => x.student.enrollNumber))).size;
 
-  const print = (mode: 'student' | 'batch' | 'partial') => {
+  const print = (mode: 'student' | 'batch' | 'partial' | 'leave') => {
     setPrintMode(mode);
     // Give React a moment to render the print sheet, then open the browser print dialog (real A4 pages).
     setTimeout(() => {
@@ -530,7 +570,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   // The printed list shows only the filtered subject when a subject filter is on.
   const printSubjects = subjectFilter === 'all' ? batchSubjects : batchSubjects.filter(x => x.id === subjectFilter);
 
-  const downloadPdf = (mode: 'student' | 'batch' | 'partial') => {
+  const downloadPdf = (mode: 'student' | 'batch' | 'partial' | 'leave') => {
     setPrintMode(mode);
     setPdfBusy(true);
     setTimeout(async () => {
@@ -538,7 +578,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
         const who = mode === 'student' ? selected?.name.replace(/\s+/g, '-') : batch;
         await exportSheetToPdf(
           sheetRef.current!,
-          `Note-checking_${who}${mode === 'partial' ? '_partial' : ''}_${new Date().toISOString().slice(0, 10)}.pdf`,
+          `Note-checking_${who}${mode === 'partial' ? '_partial' : mode === 'leave' ? '_leave-verified' : ''}_${mode === 'leave' ? leaveDay : new Date().toISOString().slice(0, 10)}.pdf`,
           mode === 'batch' ? 8 : 10
         );
       } catch (e: any) {
@@ -604,20 +644,20 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
       ) : (
         <>
           <button
-            onClick={() => downloadPdf(listView === 'partial' ? 'partial' : 'batch')}
-            disabled={pdfBusy || loading || (listView === 'students' && query.trim() !== '') || (listView === 'partial' && partialGroups.length === 0)}
+            onClick={() => downloadPdf(listView === 'partial' ? 'partial' : listView === 'leave' ? 'leave' : 'batch')}
+            disabled={pdfBusy || loading || (listView === 'students' && query.trim() !== '') || (listView === 'partial' && partialGroups.length === 0) || (listView === 'leave' && leaveRows.ok.length === 0)}
             className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 disabled:opacity-40"
             title="Download the current list as PDF"
           >
             {pdfBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}<span className="hidden sm:inline">PDF</span>
           </button>
           <button
-            onClick={() => print(listView === 'partial' ? 'partial' : 'batch')}
-            disabled={loading || (listView === 'students' && query.trim() !== '') || (listView === 'partial' && partialGroups.length === 0)}
+            onClick={() => print(listView === 'partial' ? 'partial' : listView === 'leave' ? 'leave' : 'batch')}
+            disabled={loading || (listView === 'students' && query.trim() !== '') || (listView === 'partial' && partialGroups.length === 0) || (listView === 'leave' && leaveRows.ok.length === 0)}
             className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 disabled:opacity-40"
             title="Print the selected batch"
           >
-            <Printer className="w-4 h-4" /> <span className="hidden sm:inline">{listView === 'partial' ? 'Print list' : 'Print batch'}</span>
+            <Printer className="w-4 h-4" /> <span className="hidden sm:inline">{listView === 'students' ? 'Print batch' : 'Print list'}</span>
           </button>
           <button onClick={() => load(true)} className="p-2 rounded-lg hover:bg-gray-100 text-gray-600" aria-label="Reload">
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
@@ -660,13 +700,17 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
               </div>
 
               <div className="flex rounded-lg border border-gray-200 bg-white overflow-hidden text-sm font-semibold mb-3 w-fit">
-                {(['students', 'partial'] as const).map(k => (
+                {(['students', 'partial', 'leave'] as const).map(k => (
                   <button
                     key={k}
                     onClick={() => setListView(k)}
                     className={`px-4 py-2 ${listView === k ? 'bg-indigo-600 text-white' : 'text-gray-600'}`}
                   >
-                    {k === 'students' ? 'Students' : `Partial checks${partialStudentCount ? ` (${partialStudentCount})` : ''}`}
+                    {k === 'students'
+                      ? 'Students'
+                      : k === 'partial'
+                        ? `Partial checks${partialStudentCount ? ` (${partialStudentCount})` : ''}`
+                        : 'Leave notes'}
                   </button>
                 ))}
               </div>
@@ -722,7 +766,63 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                 </div>
               )}
 
-              {listView === 'partial' ? (
+              {listView === 'leave' ? (
+                loading ? (
+                  <div className="flex justify-center py-16 text-gray-400">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-[11px] text-gray-400">
+                      Students whose leave notes were verified as up to date. The tick is per day (open a student and tap “Leave
+                      notes verified” — it starts fresh every day). Pick any date to see that day’s list.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <input
+                        type="date"
+                        value={leaveDay}
+                        max={today}
+                        onChange={e => e.target.value && setLeaveDay(e.target.value)}
+                        className="px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm"
+                      />
+                      {leaveDay !== today && (
+                        <button onClick={() => setLeaveDay(today)} className="text-xs font-semibold text-indigo-600">
+                          Today
+                        </button>
+                      )}
+                      <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                        <input type="checkbox" checked={leavePending} onChange={e => setLeavePending(e.target.checked)} />
+                        Show not verified
+                      </label>
+                    </div>
+                    <div className="text-xs font-bold text-gray-500 uppercase">
+                      {dayLabel(leaveDay)} • {batch} • {leaveRows.ok.length} verified • {leaveRows.pending.length} not yet
+                    </div>
+                    <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
+                      {(leavePending ? leaveRows.pending : leaveRows.ok).map(st => (
+                        <button
+                          key={st.enrollNumber}
+                          onClick={() => openStudent(st)}
+                          className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-indigo-50"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-gray-900 truncate">{st.name}</div>
+                            <div className="text-xs text-gray-500">#{st.enrollNumber}</div>
+                          </div>
+                          {leaveDayMap[st.enrollNumber] && (
+                            <span className="text-xs text-emerald-600 font-semibold">✓ {timeLabel(leaveDayMap[st.enrollNumber].at)}</span>
+                          )}
+                        </button>
+                      ))}
+                      {(leavePending ? leaveRows.pending : leaveRows.ok).length === 0 && (
+                        <div className="p-8 text-center text-sm text-gray-400">
+                          {leavePending ? 'Everyone is verified' : `No leave notes verified in ${batch} on this day`}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              ) : listView === 'partial' ? (
                 loading ? (
                   <div className="flex justify-center py-16 text-gray-400">
                     <Loader2 className="w-6 h-6 animate-spin" />
@@ -820,6 +920,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                             <div className="text-sm font-semibold text-gray-900 truncate">{s.name}</div>
                             <div className="text-xs text-gray-500">
                               #{s.enrollNumber} • {s.batch} • last tick {shortDate(sum?.lastTick || null)}
+                              {leaveToday[s.enrollNumber] && <b className="ml-1 text-emerald-600">• leave ✓</b>}
                             </div>
                             {focus ? (
                               <div className="text-xs mt-1 text-gray-600">
@@ -875,6 +976,19 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                 </span>
               </label>
               <div className="flex flex-wrap gap-2 mb-3">
+                <button
+                  onClick={() => toggleLeaveVerified(selected)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-semibold ${
+                    leaveToday[selected.enrollNumber]
+                      ? 'bg-emerald-100 border-emerald-400 text-emerald-800'
+                      : 'bg-white border-gray-200 text-gray-700 hover:border-emerald-400'
+                  }`}
+                >
+                  <span className={`w-4 h-4 rounded border flex items-center justify-center ${leaveToday[selected.enrollNumber] ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-400'}`}>
+                    {leaveToday[selected.enrollNumber] && <Check className="w-3 h-3" />}
+                  </span>
+                  Leave notes verified today
+                </button>
                 <button
                   onClick={toggleIdeal}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-semibold ${
@@ -1088,15 +1202,30 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
             <div>
               <div className={`font-bold tracking-[0.25em] text-gray-600 ${printMode === 'batch' ? 'text-[10px]' : 'text-[13px]'}`}>AIMS PLUS</div>
               <h1 className={`font-extrabold leading-tight ${printMode === 'batch' ? 'text-[20px]' : 'text-[30px]'}`}>
-                Note Checking{printMode === 'partial' ? ' — Partial checks' : ''}
+                Note Checking{printMode === 'partial' ? ' — Partial checks' : printMode === 'leave' ? ' — Leave notes verified' : ''}
               </h1>
             </div>
             <div className="text-right text-[13px] text-gray-600">
-              {printMode === 'batch' || printMode === 'partial' ? `Batch ${batch} • ${gradeLabel(batch)}` : selected ? `${selected.batch} • ${gradeLabel(selected.batch)}` : ''}
+              {printMode === 'batch' || printMode === 'partial' || printMode === 'leave' ? `Batch ${batch} • ${gradeLabel(batch)}` : selected ? `${selected.batch} • ${gradeLabel(selected.batch)}` : ''}
               <br />
               Printed {printedOn}
             </div>
           </div>
+
+          {printMode === 'leave' && (
+            <>
+              <p className="text-[12px] text-gray-700 mb-3">
+                Leave notes verified on <b>{dayLabel(leaveDay)}</b> • {leaveRows.ok.length} of {leaveRows.ok.length + leaveRows.pending.length} students.
+              </p>
+              {leaveRows.ok.map((st, i) => (
+                <div key={st.enrollNumber} className="np-avoid flex items-baseline gap-3 text-[13px] px-2 py-[3px] border-b border-gray-200">
+                  <span className="w-6 text-gray-500">{i + 1}</span>
+                  <b className="flex-1">{st.name}</b>
+                  <span className="text-gray-600">{timeLabel(leaveDayMap[st.enrollNumber].at)}</span>
+                </div>
+              ))}
+            </>
+          )}
 
           {printMode === 'partial' && (
             <>
