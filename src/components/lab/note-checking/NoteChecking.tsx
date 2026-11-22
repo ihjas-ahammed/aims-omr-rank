@@ -22,7 +22,7 @@ import { getSubjectsForBatch } from '../../../data/ncertSyllabusData';
 import { exportSheetToPdf } from './pdfExport';
 import { matchChapter } from './voiceMatch';
 import VoiceSettingsPanel from './VoiceSettingsPanel';
-import { VoiceSettings, loadVoiceSettings, saveVoiceSettings, speakText } from './voiceSettings';
+import { VoiceSettings, loadVoiceSettings, saveVoiceSettings } from './voiceSettings';
 
 // Print layout: portrait A4 with a fixed number of students per page, one single-line row each.
 const PRINT_ROWS_PER_PAGE = 50;
@@ -143,7 +143,6 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   const [interim, setInterim] = useState('');
   const [hearing, setHearing] = useState(false);
   const recogRef = useRef<any>(null);
-  const pausedRef = useRef(false);
   const [voiceSettings, setVoiceSettings] = useState<VoiceSettings>(loadVoiceSettings);
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const voiceSettingsRef = useRef(voiceSettings);
@@ -304,30 +303,16 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   };
 
   // Voice tick: say a chapter name of the open subject; add "partial" to mark it partially checked.
-  // Speaks the mapped result (not the raw transcript); the mic is paused meanwhile so it does not hear itself.
-  const speakFeedback = (text: string, failure = false) => {
-    const st = voiceSettingsRef.current;
-    if (!st.ttsEnabled || (failure && !st.ttsFailures)) return;
-    const r = recogRef.current;
-    pausedRef.current = true;
-    try { r?.stop(); } catch { /* not running */ }
-    speakText(text, st, () => {
-      pausedRef.current = false;
-      if (r && recogRef.current === r) {
-        try { r.start(); } catch { /* onend will restart */ }
-      }
-    });
-  };
-
-  const handleSpeech = async (text: string) => {
+  const handleSpeech = async (alts: string[]) => {
+    const text = alts[0];
     if (!selected) return;
     const sub = subjects.find(x => x.id === activeSubject);
     if (!sub) return;
-    const m = matchChapter(text, sub.chapters);
+    // The first of the engine's guesses that matches a chapter wins.
+    const m = alts.map(a => matchChapter(a, sub.chapters)).find(x => x.chapterId) || matchChapter(text, sub.chapters);
     if (!m.chapterId) {
       setVoiceOk('err');
       navigator.vibrate?.([60, 40, 60]);
-      speakFeedback(m.reason === 'ambiguous' ? 'Unclear' : 'Not found', true);
       setVoiceMsg(`“${text}” — ${m.reason === 'ambiguous' ? 'matches more than one chapter' : 'no match in ' + sub.name}`);
       return;
     }
@@ -347,7 +332,6 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     }
     setVoiceOk('ok');
     navigator.vibrate?.(40);
-    speakFeedback(`${ch.title}${m.partial ? ', partial' : ''}${cur?.done && !m.partial ? ', already done' : ''}`);
     setVoiceMsg(`${m.partial ? '½ ' : '✓ '}${ch.number}. ${ch.title}${cur?.done ? ' (already done)' : ''}`);
   };
 
@@ -359,8 +343,6 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   const stopListening = () => {
     recogRef.current?.stop();
     recogRef.current = null;
-    pausedRef.current = false;
-    window.speechSynthesis?.cancel();
     setListening(false);
     setInterim('');
     setHearing(false);
@@ -373,14 +355,21 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     }
     const r = new SR();
     r.continuous = true;
-    r.interimResults = true;
+    r.interimResults = voiceSettingsRef.current.interim;
     const st = voiceSettingsRef.current;
     r.lang = st.lang;
+    r.maxAlternatives = st.maxAlternatives;
     if (st.offlineStt) r.processLocally = true;
     r.onresult = (e: any) => {
       let live = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) speechRef.current(e.results[i][0].transcript);
+        if (e.results[i].isFinal) {
+          const alts: string[] = [];
+          for (let k = 0; k < e.results[i].length; k++) {
+            if (k === 0 || e.results[i][k].confidence >= st.minConfidence) alts.push(e.results[i][k].transcript);
+          }
+          speechRef.current(alts);
+        }
         else live += e.results[i][0].transcript;
       }
       setInterim(live);
@@ -398,7 +387,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     };
     // Chrome ends the session after silence; restart while the button is on.
     r.onend = () => {
-      if (recogRef.current === r && !pausedRef.current) {
+      if (recogRef.current === r) {
         try { r.start(); } catch { /* already running */ }
       }
     };
