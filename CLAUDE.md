@@ -69,6 +69,8 @@ Data in Realtime Database `note_checking/{enrollNumber}` = `{name, batch, update
 - **Subject-wise classification:** a chapter is "expected" when more than half of the batch's checked students (those with at least one tick) completed it. A student's missing chapters = expected and not done. Subject status: green none missing, yellow up to half missing, red more than half. Batch list has subject buttons with incomplete counts, an "incomplete only" filter, per-subject chips, and a missing-chapters line.
 - **Batch print:** portrait A4, exactly 50 students per page, one line each: progress bar, done/total, missing chapter numbers as ranges (✓ when none), overall Done and last tick. Prints the current filter. The single-student print is unchanged.
 - **Partial check mode:** switch inside a student; tapping marks a chapter `partial: true` (not done, still counts as incomplete). "Partial checks" tab lists students by the day marked (for notes submitted after leave) and can be printed.
+- **Ideal student:** inside a student, "Set as ideal" stores `note_checking_config/{batch}/idealEnroll`; that student's done chapters then define the expected set (instead of the class majority) and the overall colour. With a subject filter, the list and print show only that subject's complete/incomplete state.
+- **PDF + shortcuts:** "PDF" downloads the current list/student sheet (`pdfExport.ts`, html2canvas + jsPDF, cut at row boundaries). Double-tapping a chapter marks it partial without partial mode. "Voice tick" uses the browser SpeechRecognition (Chrome): say a chapter name of the open subject (`voiceMatch.ts`), add "partial" to mark it ½.
 
 ## Backups
 

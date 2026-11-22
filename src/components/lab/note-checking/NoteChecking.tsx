@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Search, Check, RefreshCw, Loader2, Users, Printer } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, Search, Check, RefreshCw, Loader2, Users, Printer, Download, Mic, MicOff, Star } from 'lucide-react';
 import {
   AttendanceStudent,
   NoteProgressMap,
@@ -10,9 +10,14 @@ import {
   fetchAllNoteChapters,
   setChapterDone,
   setChapterPartial,
-  setManyChaptersDone
+  setManyChaptersDone,
+  NoteBatchConfig,
+  fetchNoteConfig,
+  setIdealStudent
 } from '../../../services/noteCheckingService';
 import { getSubjectsForBatch } from '../../../data/ncertSyllabusData';
+import { exportSheetToPdf } from './pdfExport';
+import { matchChapter } from './voiceMatch';
 
 // Print layout: portrait A4 with a fixed number of students per page, one single-line row each.
 const PRINT_ROWS_PER_PAGE = 50;
@@ -118,6 +123,13 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   // Partial check mode: tapping a chapter marks it partially checked (not complete) instead of done.
   const [partialMode, setPartialMode] = useState(false);
   const [listView, setListView] = useState<'students' | 'partial'>('students');
+  const [config, setConfig] = useState<Record<string, NoteBatchConfig>>({});
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const lastTap = useRef<{ id: string; t: number }>({ id: '', t: 0 });
+  const [listening, setListening] = useState(false);
+  const [voiceMsg, setVoiceMsg] = useState('');
+  const recogRef = useRef<any>(null);
 
   useEffect(() => {
     document.title = 'Note Checking • AIMS PLUS';
@@ -128,9 +140,14 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     setLoading(true);
     setError('');
     try {
-      const [s, c] = await Promise.all([fetchAttendanceStudents(forceRefresh), fetchAllNoteChapters()]);
+      const [s, c, cfg] = await Promise.all([
+        fetchAttendanceStudents(forceRefresh),
+        fetchAllNoteChapters(),
+        fetchNoteConfig().catch(() => ({}))
+      ]);
       setStudents(s);
       setAllChapters(c);
+      setConfig(cfg);
     } catch (e: any) {
       setError(e?.message || 'Failed to load students');
     } finally {
@@ -210,7 +227,101 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     }
   };
 
-  const tapChapter = (chapterId: string) => (partialMode ? togglePartial(chapterId) : toggle(chapterId));
+  // Forces a chapter to partial (or clears it), whatever its current state.
+  const applyPartial = async (chapterId: string, partial: boolean) => {
+    if (!selected) return;
+    const prev = progress;
+    setProgress(p => ({ ...p, [chapterId]: { done: false, partial, at: new Date().toISOString() } }));
+    try {
+      await setChapterPartial(selected, chapterId, partial);
+    } catch (e: any) {
+      setProgress(prev);
+      setError(e?.message || 'Failed to save');
+    }
+  };
+
+  // Single tap ticks (or partial in partial mode); a quick second tap on the same chapter makes it partial.
+  const tapChapter = (chapterId: string) => {
+    if (partialMode) return togglePartial(chapterId);
+    const now = Date.now();
+    const dbl = lastTap.current.id === chapterId && now - lastTap.current.t < 350;
+    lastTap.current = dbl ? { id: '', t: 0 } : { id: chapterId, t: now };
+    return dbl ? applyPartial(chapterId, true) : toggle(chapterId);
+  };
+
+  // Voice tick: say a chapter name of the open subject; add "partial" to mark it partially checked.
+  const handleSpeech = async (text: string) => {
+    if (!selected) return;
+    const sub = subjects.find(x => x.id === activeSubject);
+    if (!sub) return;
+    const m = matchChapter(text, sub.chapters);
+    if (!m.chapterId) {
+      setVoiceMsg(`“${text}” — ${m.reason === 'ambiguous' ? 'matches more than one chapter' : 'no match in ' + sub.name}`);
+      return;
+    }
+    const ch = sub.chapters.find(c => c.id === m.chapterId)!;
+    const cur = progressRef.current[ch.id];
+    if (m.partial) {
+      if (!cur?.done) await applyPartial(ch.id, true);
+    } else if (!cur?.done) {
+      const prev = progressRef.current;
+      setProgress(p => ({ ...p, [ch.id]: { done: true, at: new Date().toISOString() } }));
+      try {
+        await setChapterDone(selected, ch.id, true);
+      } catch (e: any) {
+        setProgress(prev);
+        setError(e?.message || 'Failed to save');
+      }
+    }
+    setVoiceMsg(`${m.partial ? '½ ' : '✓ '}${ch.number}. ${ch.title}${cur?.done ? ' (already done)' : ''}`);
+  };
+
+  const speechRef = useRef(handleSpeech);
+  speechRef.current = handleSpeech;
+  const progressRef = useRef(progress);
+  progressRef.current = progress;
+
+  const stopListening = () => {
+    recogRef.current?.stop();
+    recogRef.current = null;
+    setListening(false);
+  };
+  const startListening = () => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      setVoiceMsg('Voice input is not supported in this browser (use Chrome)');
+      return;
+    }
+    const r = new SR();
+    r.continuous = true;
+    r.interimResults = false;
+    r.lang = 'en-IN';
+    r.onresult = (e: any) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) speechRef.current(e.results[i][0].transcript);
+      }
+    };
+    r.onerror = (e: any) => {
+      if (e.error !== 'no-speech' && e.error !== 'aborted') {
+        setVoiceMsg(`Voice error: ${e.error}`);
+        if (e.error === 'not-allowed') stopListening();
+      }
+    };
+    // Chrome ends the session after silence; restart while the button is on.
+    r.onend = () => {
+      if (recogRef.current === r) {
+        try { r.start(); } catch { /* already running */ }
+      }
+    };
+    recogRef.current = r;
+    setVoiceMsg('Listening… say a chapter name');
+    setListening(true);
+    r.start();
+  };
+  useEffect(() => () => recogRef.current?.stop(), []);
+  useEffect(() => {
+    if (!selected && recogRef.current) stopListening();
+  }, [selected]);
 
   const toggleSubject = async (subjectId: string, done: boolean) => {
     if (!selected) return;
@@ -247,17 +358,23 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     NOTE_BATCHES.forEach(b => {
       const checked = students.filter(s => s.batch === b && (summaries[s.enrollNumber]?.count || 0) > 0);
       const per: Record<string, Set<string>> = {};
+      // An ideal (complete) student, when set, defines the expected chapters instead of the class majority.
+      const ideal = config[b]?.idealEnroll ? allChapters[config[b].idealEnroll!] : undefined;
       getSubjectsForBatch(b).forEach(sub => {
         per[sub.id] = new Set(
           sub.chapters
-            .filter(c => checked.filter(s => allChapters[s.enrollNumber]?.[c.id]?.done).length * 2 > checked.length)
+            .filter(c =>
+              ideal
+                ? ideal[c.id]?.done
+                : checked.filter(s => allChapters[s.enrollNumber]?.[c.id]?.done).length * 2 > checked.length
+            )
             .map(c => c.id)
         );
       });
       out[b] = per;
     });
     return out;
-  }, [students, summaries, allChapters]);
+  }, [students, summaries, allChapters, config]);
 
   const statsOf = useMemo(() => {
     const out: Record<string, SubjectStat[]> = {};
@@ -300,6 +417,16 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
     if (count <= 0 || count < avg / 4) return 'red';
     if (count < avg) return 'yellow';
     return 'green';
+  };
+
+  // Overall colour: against the ideal student when one is set (share of expected chapters missing), else the class average.
+  const overallStatus = (s: AttendanceStudent, count: number): Status => {
+    if (!config[s.batch]?.idealEnroll) return statusFor(count, s.batch);
+    const st = statsOf[s.enrollNumber] || [];
+    return missingStatus(
+      st.reduce((n, x) => n + x.missing.length, 0),
+      st.reduce((n, x) => n + x.expected, 0)
+    );
   };
 
   const filtered = useMemo(() => {
@@ -385,6 +512,42 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
   };
 
   const batchSubjects = useMemo(() => getSubjectsForBatch(batch), [batch]);
+  // The printed list shows only the filtered subject when a subject filter is on.
+  const printSubjects = subjectFilter === 'all' ? batchSubjects : batchSubjects.filter(x => x.id === subjectFilter);
+
+  const downloadPdf = (mode: 'student' | 'batch' | 'partial') => {
+    setPrintMode(mode);
+    setPdfBusy(true);
+    setTimeout(async () => {
+      try {
+        const who = mode === 'student' ? selected?.name.replace(/\s+/g, '-') : batch;
+        await exportSheetToPdf(
+          sheetRef.current!,
+          `Note-checking_${who}${mode === 'partial' ? '_partial' : ''}_${new Date().toISOString().slice(0, 10)}.pdf`,
+          mode === 'batch' ? 8 : 10
+        );
+      } catch (e: any) {
+        setError(e?.message || 'Failed to create PDF');
+      } finally {
+        setPrintMode(null);
+        setPdfBusy(false);
+      }
+    }, 300);
+  };
+
+  const idealOf = (b: string) => students.find(x => x.enrollNumber === config[b]?.idealEnroll);
+  const toggleIdeal = async () => {
+    if (!selected) return;
+    const isIdeal = config[selected.batch]?.idealEnroll === selected.enrollNumber;
+    const prev = config;
+    setConfig({ ...config, [selected.batch]: isIdeal ? {} : { idealEnroll: selected.enrollNumber } });
+    try {
+      await setIdealStudent(selected.batch, isIdeal ? null : selected.enrollNumber);
+    } catch (e: any) {
+      setConfig(prev);
+      setError(e?.message || 'Failed to save');
+    }
+  };
 
   const printedOn = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -408,14 +571,31 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
         </p>
       </div>
       {selected ? (
+        <>
+        <button
+          onClick={() => downloadPdf('student')}
+          disabled={pdfBusy}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 disabled:opacity-40"
+        >
+          {pdfBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} PDF
+        </button>
         <button
           onClick={() => print('student')}
           className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300"
         >
           <Printer className="w-4 h-4" /> Print
         </button>
+        </>
       ) : (
         <>
+          <button
+            onClick={() => downloadPdf(listView === 'partial' ? 'partial' : 'batch')}
+            disabled={pdfBusy || loading || (listView === 'students' && query.trim() !== '') || (listView === 'partial' && partialGroups.length === 0)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-gray-200 text-sm font-semibold text-gray-700 hover:border-indigo-300 disabled:opacity-40"
+            title="Download the current list as PDF"
+          >
+            {pdfBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} PDF
+          </button>
           <button
             onClick={() => print(listView === 'partial' ? 'partial' : 'batch')}
             disabled={loading || (listView === 'students' && query.trim() !== '') || (listView === 'partial' && partialGroups.length === 0)}
@@ -520,7 +700,9 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                     Show only incomplete students
                   </label>
                   <p className="text-[11px] text-gray-400 mt-1">
-                    Incomplete = missing a chapter that most checked students in {batch} have completed.
+                    {config[batch]?.idealEnroll
+                      ? `Incomplete = missing a chapter that the ideal student (${students.find(x => x.enrollNumber === config[batch].idealEnroll)?.name || '—'}) has completed.`
+                      : `Incomplete = missing a chapter that most checked students in ${batch} have completed.`}
                   </p>
                 </div>
               )}
@@ -628,10 +810,11 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                               <div className="text-xs mt-1 text-gray-600">
                                 {focus.missing.length > 0 ? (
                                   <>
-                                    Missing {focus.name} ch: <b className="text-red-600">{fmtRanges(focus.missing)}</b>
+                                    <b className="text-red-600">{focus.name} incomplete</b> — missing ch:{' '}
+                                    <b className="text-red-600">{fmtRanges(focus.missing)}</b>
                                   </>
                                 ) : (
-                                  <span className="text-emerald-600">Up to date in {focus.name}</span>
+                                  <span className="text-emerald-600 font-semibold">{focus.name} complete</span>
                                 )}
                               </div>
                             ) : (
@@ -646,7 +829,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                           </div>
                           <span
                             className={`text-xs font-bold px-2 py-1 rounded-full ${
-                              focus ? STATUS_BADGE[focus.status] : STATUS_BADGE[statusFor(done, s.batch)]
+                              focus ? STATUS_BADGE[focus.status] : STATUS_BADGE[overallStatus(s, done)]
                             }`}
                           >
                             {focus ? `${focus.done}/${focus.total}` : `${done}/${total}`}
@@ -676,6 +859,36 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                   {partialMode ? 'Tap a chapter to mark it partially checked' : 'Off — tapping ticks a chapter as done'}
                 </span>
               </label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                <button
+                  onClick={toggleIdeal}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-semibold ${
+                    config[selected.batch]?.idealEnroll === selected.enrollNumber
+                      ? 'bg-yellow-100 border-yellow-400 text-yellow-800'
+                      : 'bg-white border-gray-200 text-gray-700 hover:border-yellow-400'
+                  }`}
+                >
+                  <Star className="w-4 h-4" />
+                  {config[selected.batch]?.idealEnroll === selected.enrollNumber
+                    ? `Ideal for ${selected.batch} (tap to remove)`
+                    : `Set as ideal for ${selected.batch}`}
+                </button>
+                <button
+                  onClick={listening ? stopListening : startListening}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-semibold ${
+                    listening ? 'bg-red-600 border-red-600 text-white' : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-300'
+                  }`}
+                >
+                  {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  {listening ? 'Stop voice' : 'Voice tick'}
+                </button>
+              </div>
+              {(listening || voiceMsg) && (
+                <p className="text-xs text-gray-600 mb-3 px-1">
+                  {voiceMsg}
+                  {listening && ' • say the chapter name (of the open subject); add “partial” for a partial tick'}
+                </p>
+              )}
               <div className="flex rounded-lg border border-gray-200 bg-white overflow-hidden text-sm font-semibold mb-3 w-fit">
                 {(['subject', 'day'] as const).map(k => (
                   <button
@@ -768,8 +981,8 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                           {exp && exp.size > 0 && (
                             <p className={`text-xs mb-2 ${missingNums.length ? 'text-red-600' : 'text-emerald-600'}`}>
                               {missingNums.length
-                                ? `Missing chapters most of ${selected.batch} have completed: ${fmtRanges(missingNums)}`
-                                : `Up to date with the chapters most of ${selected.batch} have completed`}
+                                ? `Missing chapters ${config[selected.batch]?.idealEnroll ? 'the ideal student has' : `most of ${selected.batch} have`} completed: ${fmtRanges(missingNums)}`
+                                : `Up to date with the chapters ${config[selected.batch]?.idealEnroll ? 'the ideal student has' : `most of ${selected.batch} have`} completed`}
                             </p>
                           )}
                           <div className={`flex justify-end mb-2 ${partialMode ? 'invisible' : ''}`}>
@@ -826,8 +1039,17 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
       {/* Print sheet: real A4 pages (portrait for a student, landscape for a batch) with normal page breaks */}
       {printMode && (
         <div
-          className="hidden print:block bg-white text-black box-border"
-          style={{ printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact' } as React.CSSProperties}
+          ref={sheetRef}
+          className={`${pdfBusy ? '' : 'hidden print:block'} bg-white text-black box-border`}
+          style={
+            {
+              printColorAdjust: 'exact',
+              WebkitPrintColorAdjust: 'exact',
+              ...(pdfBusy
+                ? { position: 'fixed', top: 0, left: -10000, width: `${210 - 2 * (printMode === 'batch' ? 8 : 10)}mm` }
+                : {})
+            } as React.CSSProperties
+          }
         >
           <style>{`@media print {
             @page { size: A4 portrait; margin: ${printMode === 'batch' ? '8mm' : '10mm'}; }
@@ -881,7 +1103,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
 
           {printMode === 'student' && selected && (
             <>
-              <div className={`np-avoid flex items-center justify-between rounded-lg border-2 border-black px-5 py-4 mb-6 ${STATUS_PRINT[statusFor(doneCount, selected.batch)]}`}>
+              <div className={`np-avoid flex items-center justify-between rounded-lg border-2 border-black px-5 py-4 mb-6 ${STATUS_PRINT[overallStatus(selected, doneCount)]}`}>
                 <div>
                   <div className="text-[26px] font-extrabold">{selected.name}</div>
                   <div className="text-[12px]">
@@ -960,9 +1182,8 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                       subjectFilter !== 'all' ? ` • ${batchSubjects.find(x => x.id === subjectFilter)?.name}` : ''
                     })`
                   : ''}
-                {' • '}Bar = chapters completed of all chapters in the subject. Numbers = <b>missing chapters</b>: ones most of
-                the batch has completed that this student has not (✓ = none missing). Subject colour: green none missing,
-                yellow up to half missing, red more than half. Done column: class avg <b>{(batchAvg[batch] || 0).toFixed(1)}</b>.
+                {' • '}Bar = chapters completed of all chapters in the subject. Numbers = <b>missing chapters</b>: ones {idealOf(batch) ? `the ideal student (${idealOf(batch)!.name})` : 'most of the batch'} has completed that this student has not (✓ = none missing). Subject colour: green none missing,
+                yellow up to half missing, red more than half. {subjectFilter !== 'all' ? 'Done column: chapters done in this subject.' : <>Done column: class avg <b>{(batchAvg[batch] || 0).toFixed(1)}</b>.</>}
               </p>
               {Array.from({ length: Math.ceil(filtered.length / PRINT_ROWS_PER_PAGE) }, (_, page) => {
                 const rows = filtered.slice(page * PRINT_ROWS_PER_PAGE, (page + 1) * PRINT_ROWS_PER_PAGE);
@@ -970,7 +1191,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                 return (
                   <table
                     key={page}
-                    className="w-full border-collapse text-[10px]"
+                    className={`w-full border-collapse text-[10px] ${page > 0 ? 'np-force-break' : ''}`}
                     style={{
                       tableLayout: 'fixed',
                       breakAfter: page < Math.ceil(filtered.length / PRINT_ROWS_PER_PAGE) - 1 ? 'page' : 'auto'
@@ -979,7 +1200,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                     <colgroup>
                       <col style={{ width: 24 }} />
                       <col style={{ width: 140 }} />
-                      {batchSubjects.map(sub => (
+                      {printSubjects.map(sub => (
                         <col key={sub.id} />
                       ))}
                       <col style={{ width: 40 }} />
@@ -989,7 +1210,7 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                       <tr className="bg-black text-white text-left" style={{ height: 18 }}>
                         <th className="pl-1.5">#</th>
                         <th>Student</th>
-                        {batchSubjects.map(sub => (
+                        {printSubjects.map(sub => (
                           <th key={sub.id} className="px-1.5">
                             {sub.name} <span className="font-normal opacity-70">· missing</span>
                           </th>
@@ -1002,8 +1223,11 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                       {rows.map((s, i) => {
                         const sum = summaries[s.enrollNumber];
                         const count = sum?.count || 0;
-                        const status = statusFor(count, s.batch);
-                        const stats = statsOf[s.enrollNumber] || [];
+                        const status = overallStatus(s, count);
+                        const stats = (statsOf[s.enrollNumber] || []).filter(
+                          st => subjectFilter === 'all' || st.id === subjectFilter
+                        );
+                        const only = subjectFilter !== 'all' ? stats[0] : undefined;
                         return (
                           <tr
                             key={s.enrollNumber}
@@ -1039,8 +1263,8 @@ export default function NoteChecking({ onBack }: NoteCheckingProps) {
                                 </div>
                               </td>
                             ))}
-                            <td className={`text-center font-extrabold whitespace-nowrap ${STATUS_PRINT[status]}`}>
-                              {count}/{totalCh}
+                            <td className={`text-center font-extrabold whitespace-nowrap ${STATUS_PRINT[only ? only.status : status]}`}>
+                              {only ? `${only.done}/${only.total}` : `${count}/${totalCh}`}
                             </td>
                             <td className="whitespace-nowrap text-gray-600 text-[9px]">{shortDate(sum?.lastTick || null)}</td>
                           </tr>

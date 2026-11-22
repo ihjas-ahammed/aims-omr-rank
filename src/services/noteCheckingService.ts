@@ -274,3 +274,22 @@ export async function setManyChaptersDone(
   });
   await update(ref(rtdb), patch);
 }
+
+// Per-batch settings live outside `note_checking` so they never show up as students.
+const CONFIG_ROOT = 'note_checking_config';
+
+export interface NoteBatchConfig {
+  idealEnroll?: string;
+}
+
+export async function fetchNoteConfig(): Promise<Record<string, NoteBatchConfig>> {
+  if (!rtdb) return {};
+  const snap = await get(ref(rtdb, CONFIG_ROOT));
+  return (snap.val() as Record<string, NoteBatchConfig>) || {};
+}
+
+// The ideal student is a complete student of the batch; their ticks define the chapters the class should have done.
+export async function setIdealStudent(batch: string, enrollNumber: string | null): Promise<void> {
+  if (!rtdb) throw new Error('Firebase is not configured');
+  await set(ref(rtdb, `${CONFIG_ROOT}/${batch}`), enrollNumber ? { idealEnroll: enrollNumber } : null);
+}
